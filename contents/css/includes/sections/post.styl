@@ -19,6 +19,15 @@
 .post-body
 	padding: 1em 0
 
+	h1, h2, h3, h4, h5, h6
+		margin: .5em 0
+
+	h2
+		font-weight: 900
+
+	h3, h4, h5, h6
+		font-weight: 700
+
 	p
 		font-size: 1.1em
 
@@ -29,16 +38,29 @@
 		&:last-child
 			padding: 0
 
-	h1, h2, h3, h4, h5, h6
-		margin: .5em 0
+	blockquote
+		font-style: italic
+		margin: 1em 0
 
-	h2
-		font-weight: 900
+		@media small
+			border-left: .5em solid link-primary-color
+			padding-left: 1.5em
 
-	h3, h4, h5, h6
-		font-weight: 700
+	hr
+		width: 50%
+		outline: none
+		border: 1px solid header-border-color
+
+		margin-bottom: 1.5em
+
+	img
+		display: block
+		margin: 0 auto
+		max-width: 100%
 
 .share-buttons
+
+	width: 100%
 
 	.post-date
 		font-size: 1.25em
