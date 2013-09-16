@@ -1,0 +1,22 @@
+extends layout
+
+block vars
+  - var bodyclass = 'single-post';
+
+block prepend title
+  | #{ page.title + " - "}
+
+block content
+  post = page
+  article.post(itemscope, itemtype="http://schema.org/BlogPosting")
+    header.post-header
+      .post-title
+        h1(itemprop="name headline").post-headline= post.title
+        h2(itemprop="description").post-subtitle= post.metadata.subtitle
+    .post-body!= typogr(post.html).typogrify()
+
+block action
+  .share-buttons
+    p.post-date(itemprop="datePublished")= moment(post.date).utc().format('MMM DD YYYY')
+    a.tweet-btn.btn(href="https://twitter.com/intent/tweet?text=\"#{post.title}\"&url=#{encodeURIComponent(post.getUrl(locals.url))}&via=bendrucker") Like It? Tweet It! <i class="icon-twitter"></i>
+    a.email-btn.btn(href="#") Get New Posts by Email <i class="icon-mail"></i>
