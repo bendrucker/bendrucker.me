@@ -37,6 +37,6 @@ html(lang='en')
     footer.page-footer
       div.content-wrap
         block footer
-          p &copy; #{ new Date().getFullYear() } #{ locals.owner }
-          p Source
-            i.icon-github
+          p.copyright &copy; #{ new Date().getFullYear() } #{ locals.owner }
+          a(href="https://github.com/bendrucker/bendrucker.me", title="bendrucker.me's Wintersmith generator source on GitHub")
+            p.source Source <i class="icon-github"></i>
