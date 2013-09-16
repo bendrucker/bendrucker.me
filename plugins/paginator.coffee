@@ -5,27 +5,27 @@ module.exports = (env, callback) ->
 
   defaults =
     template: 'index.jade' # template that renders pages
-    articles: 'articles' # directory containing contents to paginate
+    posts: 'posts' # directory containing contents to paginate
     first: 'index.html' # filename/url for first page
     filename: 'page/%d/index.html' # filename for rest of pages
-    perPage: 2 # number of articles per page
+    perPage: 2 # number of posts per page
 
   # assign defaults any option not set in the config file
   options = env.config.paginator or {}
   for key, value of defaults
     options[key] ?= defaults[key]
 
-  getArticles = (contents) ->
-    # helper that returns a list of articles found in *contents*
-    # note that each article is assumed to have its own directory in the articles directory
-    articles = contents[options.articles]._.directories.map (item) -> item.index
-    articles.sort (a, b) -> b.date - a.date
-    return articles
+  getPosts = (contents) ->
+    # helper that returns a list of posts found in *contents*
+    # note that each post is assumed to have its own directory in the posts directory
+    posts = contents[options.posts]._.directories.map (item) -> item.index
+    posts.sort (a, b) -> b.date - a.date
+    return posts
 
   class PaginatorPage extends env.plugins.Page
-    ### A page has a number and a list of articles ###
+    ### A page has a number and a list of posts ###
 
-    constructor: (@pageNum, @articles) ->
+    constructor: (@pageNum, @posts) ->
 
     getFilename: ->
       if @pageNum is 1
@@ -34,7 +34,7 @@ module.exports = (env, callback) ->
         options.filename.replace '%d', @pageNum
 
     getView: -> (env, locals, contents, templates, callback) ->
-      # simple view to pass articles and pagenum to the paginator template
+      # simple view to pass posts and pagenum to the paginator template
       # note that this function returns a funciton
 
       # get the pagination template
@@ -43,7 +43,7 @@ module.exports = (env, callback) ->
         return callback new Error "unknown paginator template '#{ options.template }'"
 
       # setup the template context
-      ctx = {env, contents, @articles, @prevPage, @nextPage}
+      ctx = {env, contents, @posts, @prevPage, @nextPage}
 
       # extend the template context with the enviroment locals
       env.utils.extend ctx, locals
@@ -55,15 +55,15 @@ module.exports = (env, callback) ->
   # i.e. contents._.paginator
   env.registerGenerator 'paginator', (contents, callback) ->
 
-    # find all articles
-    articles = getArticles contents
+    # find all posts
+    posts = getPosts contents
 
     # populate pages
-    numPages = Math.ceil articles.length / options.perPage
+    numPages = Math.ceil posts.length / options.perPage
     pages = []
     for i in [0...numPages]
-      pageArticles = articles.slice i * options.perPage, (i + 1) * options.perPage
-      pages.push new PaginatorPage i + 1, pageArticles
+      pagePosts = posts.slice i * options.perPage, (i + 1) * options.perPage
+      pages.push new PaginatorPage i + 1, pagePosts
 
     # add references to prev/next to each page
     for page, i in pages
@@ -80,8 +80,8 @@ module.exports = (env, callback) ->
     # callback with the generated contents
     callback null, rv
 
-  # add the article helper to the environment so we can use it later
-  env.helpers.getArticles = getArticles
+  # add the post helper to the environment so we can use it later
+  env.helpers.getPosts = getPosts
 
   # tell the plugin manager we are done
   callback()

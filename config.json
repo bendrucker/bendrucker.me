@@ -6,9 +6,9 @@
     "description": "Founder of Valet.io. Photographer, coder, designer, fitness geek. Trying to make things people love."
   },
   "plugins": [
-    "./plugins/paginator.coffee",
     "wintersmith-stylus",
-    "wintersmith-livereload"
+    "wintersmith-livereload",
+    "./plugins/paginator"
   ],
   "require": {
     "moment": "moment",
@@ -21,8 +21,5 @@
   "markdown": {
     "smartLists": true,
     "smartypants": true
-  },
-  "paginator": {
-    "perPage": 3
   }
 }
