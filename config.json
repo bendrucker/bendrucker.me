@@ -15,6 +15,7 @@
     "_": "lodash",
     "typogr": "typogr"
   },
+  "ignore": ["css/includes/**/*", "*.DS_Store"],
   "jade": {
     "pretty": true
   },
