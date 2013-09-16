@@ -1,13 +1,14 @@
 {
   "locals": {
     "url": "http://localhost:8080",
-    "name": "The Wintersmith's blog",
-    "owner": "Someone",
-    "description": "Ramblings of an immor(t)al demigod"
+    "name": "Ben Drucker",
+    "owner": "Ben Drucker",
+    "description": "Founder of Valet.io. Photographer, coder, designer, fitness geek. Trying to make things people love."
   },
   "plugins": [
     "./plugins/paginator.coffee",
-    "./node_modules/wintersmith-stylus/"
+    "wintersmith-stylus",
+    "wintersmith-livereload"
   ],
   "require": {
     "moment": "moment",
