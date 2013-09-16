@@ -17,6 +17,7 @@ block content
 
 block action
   .share-buttons
-    p.post-date(itemprop="datePublished")= moment(post.date).utc().format('MMM DD YYYY')
-    a.tweet-btn.btn(href="https://twitter.com/intent/tweet?text=\"#{post.title}\"&url=#{encodeURIComponent(post.getUrl(locals.url))}&via=bendrucker") Like It? Tweet It! <i class="icon-twitter"></i>
-    a.email-btn.btn(href="#") Get New Posts by Email <i class="icon-mail"></i>
+    .content-wrap
+      p.post-date(itemprop="datePublished")= moment(post.date).utc().format('MMM DD YYYY')
+      a.tweet-btn.btn(href="https://twitter.com/intent/tweet?text=\"#{post.title}\"&url=#{encodeURIComponent(post.getUrl(locals.url))}&via=bendrucker") Like It? Tweet It! <i class="icon-twitter"></i>
+      a.email-btn.btn(href="#") Get Posts by Email <i class="icon-mail"></i>
