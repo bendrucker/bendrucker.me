@@ -12,6 +12,8 @@ But that’s just not how the human brain works. I became skilled at feeding inf
 ### Small
 The small chunks go into [Clear](http://www.realmacsoftware.com/clear/), a brilliantly simple Mac, iPhone, and soon-to-be iPad app. Clear has no tags, projects, or inbox. Just lists, and items that can be checked off as they are completed. Tasks I want to do today go into *Do*, tasks I can hand off to someone else go in *Delegate*, and tasks I want to save for the future go into *File*. Its simple interface and gesture-based controls are perfectly suited to the fast brain. The app stays out of your way. Clear is my inbox—tasks go straight from my brain into one of my three lists.
 
+![Clear from Realmac Software](clear.png)
+
 ### Big
 One of my biggest struggles with Things was collaborative projects. I’d used [Asana](http://asana.com) with a number of teams and struggled to meld it with my own system. With Clear now acting as my inbox, I moved entirely to Asana for large projects and haven’t looked back. Asana—aside from its abysmal mobile app—is brilliantly usable. It makes it simple to divide and conquer big projects, especially across large remote teams. Asana is perfectly suited to the slow brain. It shines in cases where five extra minutes of big-picture outlining now will save hours of confusion later.
 
