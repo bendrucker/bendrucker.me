@@ -3,10 +3,10 @@
 global-reset()
 reset-html5()
 
-@import includes
-
 *
 	box-sizing: border-box
+
+@import includes
 
 .content-wrap
 	max-width: max-container-width
@@ -19,49 +19,3 @@ a
 	&:hover
 		color: link-secondary-color
 
-.page-header
-	padding: 1em .5em
-
-	background-color: header-background-color
-	border-bottom: 1px solid header-border-color
-
-	.content-wrap
-		clearfix()
-
-	border-bottom: 1px solid d
-
-.my-headshot
-	float: left
-	margin-right: 1em
-	@media small
-		margin-right: 2em
-
-	width: 75px
-	height: 75px
-	
-	background: #fff
-	image: '/images/ben-drucker-sq.png'
-
-	border-radius: 3px
-
-	edge-color = #444
-
-.about-me
-	float: left
-
-	h1
-		font-weight: 700
-		margin-bottom: .25em
-		font-size: 1.75em
-
-		color: #515766
-
-		a
-			font-weight: 300
-			font-size: .65em
-
-	h2
-		font-size: 1em
-		font-weight: 300
-		line-height: 1.25em
-		color: #9d9d9d
