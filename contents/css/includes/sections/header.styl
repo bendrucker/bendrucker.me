@@ -75,5 +75,28 @@ minimal-header-view()
 		h2
 			display: none
 
+wide-header-view()
+	.my-headshot
+		float: left
+		margin-right: 1em
+
+	.about-me
+		text-align: left
+
+		h1
+			a
+				display: inline
+
+		h2
+			font-size: .7em
+
+			@media medium
+				font-size: 1em
+
+.page-header
+	@media small
+		wide-header-view()
+
 body.single-post
-	minimal-header-view()
+	@media max-small
+		minimal-header-view()
