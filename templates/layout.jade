@@ -30,6 +30,17 @@ html(lang='en')
           div.about-me
             h1 Ben Drucker <a href="http://twitter.com/bendrucker" target="_blank" rel="me">@bendrucker</a>
             h2 Founder and developer of <a href="http://www.valet.io" title="Inbound fundraising and marketing tools for causes">Valet.io</a>.<br><a href="http://www.bdrucker.com" title="Ben Drucker Photography - Maplewood, New Jersey">Photographer</a>, coder, designer, fitness geek.
+    nav.primary-nav
+      .content-wrap
+        ul.nav-items
+          li.nav-item
+            a(href='/about', title='About Me') <i class="icon-user"></i> Me
+          li.nav-item
+            a(href='/', title='Blog Posts') <i class="icon-book"></i> Posts
+          li.nav-item
+            a(href='/', title='My Projects') <i class="icon-layers"></i> Work
+    .content-wrap
+      hr.nav-divider
     div#content
       div.content-wrap
         block content
