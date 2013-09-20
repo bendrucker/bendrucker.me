@@ -88,15 +88,12 @@ wide-header-view()
 				display: inline
 
 		h2
-			font-size: .7em
-
-			@media medium
-				font-size: 1em
+			font-size: 1em
 
 .page-header
 	@media small
 		wide-header-view()
 
-body.single-post
+.single-post.page-header
 	@media max-small
 		minimal-header-view()
