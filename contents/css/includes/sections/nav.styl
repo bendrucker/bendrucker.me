@@ -1,5 +1,10 @@
 .primary-nav
+	
 	text-align: center
+
+	@media small
+		font-size: 1.25em
+
 	.nav-items
 		list-style: none
 		clearfix()
@@ -8,20 +13,64 @@
 	.nav-item
 		float: left
 		margin: 0 .25em
-		padding: .5em .75em
+		padding: @margin
 
-		color: link-primary-color
-		border: 2px solid link-primary-color
-
-		border-radius: 40px
+		a
+			display: block
+		
 
 		i
 			position: relative
 			top: .1em
 			margin-right: .25em
 
-.nav-divider
-	width: 50%
-	border: 1px solid header-border-color
 
-	margin: 0 auto
+		@media small
+			margin: 0 .25em
+			padding: 0
+			border-radius: 5em
+			overflow: hidden
+
+			a
+				clearfix()
+				background: lighten(link-primary-color, 75%)
+
+				&:hover
+					background: lighten(link-primary-color, 60%)
+
+				transition: .2s all linear
+
+			i, span
+				display: block
+				float: left
+
+			v-padding = .5em
+
+			i
+				padding: v-padding .75em
+				top: 0
+				margin: 0
+
+				background-color = darken(link-primary-color, 30%)
+				background: rgba(background-color, .5)
+				color: white
+
+				text-shadow: 0 1px 1px rgba(darken(link-primary-color, 40%), .15)
+
+			span
+				padding: v-padding 1em
+				color: darken(link-primary-color, 30%)
+
+				text-shadow: 0 1px 0 white
+
+
+		@media medium
+			margin: 0 .75em
+
+	&:after
+		content: ''
+		display: block
+		width: 50%
+		max-width: (remove-unit(max-container-width) / 2)em
+		margin: 0 auto
+		border-bottom: 2px solid header-border-color

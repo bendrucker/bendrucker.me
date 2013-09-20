@@ -34,13 +34,17 @@ html(lang='en')
       .content-wrap
         ul.nav-items
           li.nav-item
-            a(href='/about', title='About Me') <i class="icon-user"></i> Me
+            a(href='/about', title='About Me')
+              i.icon-user
+              span Me
           li.nav-item
-            a(href='/', title='Blog Posts') <i class="icon-book"></i> Posts
+            a(href='/', title='Blog Posts')
+              i.icon-book
+              span Posts
           li.nav-item
-            a(href='/', title='My Projects') <i class="icon-layers"></i> Work
-    .content-wrap
-      hr.nav-divider
+            a(href='/', title='My Projects')
+              i.icon-layers
+              span Work
     div#content
       div.content-wrap
         block content
