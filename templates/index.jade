@@ -8,3 +8,10 @@ block content
           h2.post-headline= post.title
           p.post-date= moment(post.date).utc().fromNow()
         h3.post-subtitle= post.metadata.subtitle
+        .post-tags
+          ul
+            if post.metadata.series
+              li.post-series= post.metadata.series
+            if post.metadata.categories
+              each category in post.metadata.categories.split(', ')
+                li.post-category= category

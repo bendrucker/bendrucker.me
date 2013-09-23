@@ -2,7 +2,7 @@
 	.post
 		display: block
 
-		spacing = 1em
+		spacing = .5em
 
 		padding-bottom: spacing
 		margin: spacing 0
@@ -30,9 +30,42 @@
 		font-size: 1em
 		margin: 0
 
+.post-tags
+	display: none
+	font-size: .6em
+
+	margin: .5em 0
+	padding: @margin
+
+	ul
+		clearfix()
+	li
+		float: left
+		margin-right: .5em
+
+		font-weight: 700
+
+		padding: .5em 1em
+		border-radius: 10em
+
+		text-transform: uppercase
+
+		background: lighten(link-primary-color, 75%)
+		color: darken(link-primary-color, 25%)
+		text-shadow: 0 1px 0 white
+
+		&.post-series
+			background: darken(link-primary-color, 25%)
+			color: white
+			text-shadow: 0 1px 0 rgba(black, .5)
+
+			font-weight: 900
+
 @media small
 	.posts
 		font-size: 1.25em
+	.post-tags
+		display: block
 @media large
 	.posts
 		font-size: 1.5em
