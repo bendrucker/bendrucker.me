@@ -2,6 +2,8 @@
 title: "Entrepreneur Interview: Dan Shipper"
 subtitle: I talk with Dan Shipper, blogger and founder of Firefly, about Dorm Room Fund and the case against dropping out. 
 date: 2013-04-08
+categories: Startups, Education
+series: Entrepreneur Interviews
 template: post.jade
 ---
 

@@ -2,6 +2,7 @@
 title: Going All In
 subtitle: I’m leaving school and depending on my company’s success. And that still scares me.
 date: 2013-07-30
+categories: Startups, Education
 template: post.jade
 ---
 

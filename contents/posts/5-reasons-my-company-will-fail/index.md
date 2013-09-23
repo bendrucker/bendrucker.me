@@ -2,6 +2,7 @@
 title: 5 Reasons Why My Company Will Fail
 subtitle: And why those failures won’t teach me anything
 date: 2013-08-12
+categories: Startups
 template: post.jade
 ---
 
