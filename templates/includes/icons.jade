@@ -1,0 +1,4 @@
+- var touchIcons = {'iphone': '60x60', 'ipad': '76x76', 'iphone@2x': '120x120', 'ipad@2x': '152x152'}
+link(rel='shortcut icon', href='/favicon.ico')
+each size, device in touchIcons
+	link(rel='apple-touch-icon', sizes=size, href='/images/touch-icons/#{device}.png')
