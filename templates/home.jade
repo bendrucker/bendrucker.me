@@ -2,6 +2,7 @@ extends layout
 
 block content
   .posts
+    - var posts = env.helpers.getPosts(contents)
     each post in posts
       a(href=post.url, title=post.title).post
         .post-title

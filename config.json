@@ -1,6 +1,6 @@
 {
   "locals": {
-    "url": "http://localhost:8080",
+    "url": "http://bendrucker.me",
     "name": "Ben Drucker",
     "owner": "Ben Drucker",
     "description": "Founder of Valet.io. Photographer, coder, designer, fitness geek. Trying to make things people love."
@@ -14,7 +14,7 @@
     "_": "lodash",
     "typogr": "typogr"
   },
-  "ignore": ["*.DS_Store"],
+  "ignore": ["*.DS_Store", "css/**/!(main).styl"],
   "jade": {
     "pretty": true
   },
