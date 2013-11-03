@@ -4,7 +4,7 @@ module.exports = (env, callback) ->
       e.g. "paginator": {"perPage": 10} ###
 
   defaults =
-    template: 'index.jade' # template that renders pages
+    template: 'home.jade' # template that renders pages
     posts: 'posts' # directory containing contents to paginate
     first: 'index.html' # filename/url for first page
     filename: 'page/%d/index.html' # filename for rest of pages
