@@ -1,5 +1,4 @@
 box: wercker/nodejs
-step: lukevivier/gh-pages@0.2.1
 build:
     steps:
         - npm-install
@@ -8,7 +7,7 @@ build:
             code: ./node_modules/.bin/wintersmith build -o ./build
 deploy:
     steps:
-        - gh-pages:
+        - lukevivier/gh-pages:
             token: $GH_TOKEN
             basedir: build
             domain: www.bendrucker.me
