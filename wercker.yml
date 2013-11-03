@@ -6,7 +6,7 @@ build:
         - script:
             name: wintersmith build
             code: ./node_modules/.bin/wintersmith build -o ./build
-depoy:
+deploy:
     steps:
         - gh-pages:
             token: $GH_TOKEN
