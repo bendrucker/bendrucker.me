@@ -7,7 +7,7 @@ build:
             code: ./node_modules/.bin/wintersmith build -o ./build
 depoy:
     steps:
-        - bendrucker.me/gh-pages:
+        - lukevivier/gh-pages:
             token: $GH_TOKEN
             basedir: build
             domain: bendrucker.me
