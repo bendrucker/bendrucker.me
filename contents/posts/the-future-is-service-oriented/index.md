@@ -2,7 +2,7 @@
 title: The Future is Service-Oriented
 subtitle: It’s easier than ever to build distributed applications—start now
 date: 2013-10-21
-categories: Startups
+categories: Code, Software
 template: post.jade
 ---
 
