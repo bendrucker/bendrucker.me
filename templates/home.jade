@@ -7,7 +7,7 @@ block content
       a(href=post.url, title=post.title).post
         .post-title
           h2.post-headline= post.title
-          p.post-date= moment(post.date).utc().fromNow()
+          p.post-date= moment(post.date).format('MMM D')
         h3.post-subtitle= post.metadata.subtitle
         .post-tags
           ul
