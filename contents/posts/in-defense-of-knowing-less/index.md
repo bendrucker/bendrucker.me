@@ -1,6 +1,6 @@
 ---
 title: In Defense of Knowing Less
-subtitle: Learn and do more by letting go of your impulse to know a lot
+subtitle: Learn and do more by letting go of your impulse to know everything
 date: 2013-11-13
 categories: Productivity, Reflections
 template: post.jade
@@ -16,7 +16,7 @@ Tim says he reads one business magazine (Inc) and skims an industry magazine. Th
 
 My instinct was to dismiss the "media fast" as a luxury for well-connected celebrities like Tim. It's easy to construct a high-functioning filter between you and an ocean of digital content if every person in that layer is smart, accomplished, and worldly in their own right. The media fast sounds like a justification for being an ignorant and narrow-minded workaholic—unless you have the network that Tim does. That rang true when 4HWW was published in 2007, but since then the capacity to build a network of experts has been extended to anyone with an Internet connection—using Twitter. The barriers to drawing on the information filters of brilliant and accomplished people have dropped precipitously in the past five years. Your knowledge network is no longer limited to your peers. 
 
- If you keep your knowledge stream slim, it will be easy to identify the content which is truly worth consuming. I read a [great post](http://epaley.com/2013/11/12/vaporizing-vc-interest/)) yesterday because two people whose opinions I value—[Charlie O'Donnell](http://twitter.com/ceonyc) and [Mark Suster](https://twitter.com/msuster)—both called it a "must read." You can take advantage of the same curation mechanism for any subject. Resist the temptation to follow the news organizations themselves in an attempt to create a social RSS reader. Listen to the experts and cut out the middlemen. 
+ If you keep your knowledge stream slim, it will be easy to identify the content which is truly worth consuming. I read a [great post](http://epaley.com/2013/11/12/vaporizing-vc-interest/) yesterday because two people whose opinions I value—[Charlie O'Donnell](http://twitter.com/ceonyc) and [Mark Suster](https://twitter.com/msuster)—both called it a "must read." You can take advantage of the same curation mechanism for any subject. Resist the temptation to follow the news organizations themselves in an attempt to create a social RSS reader. Listen to the experts and cut out the middlemen. 
 
 By advocating "knowing less" I'm not promoting anti-intellectualism. Rather, I'm asking you to take stock of all the information you pack into your head every day and question how much of it is directly actionable or intellectually meaningful. Poring through every page of the New York Times doesn't have nearly the value (or rigor) of knowing enough about a single issue to teach, advocate, and organize people around it. For every snippet that affects what you work on, who you work with, and how you work—the slivers of precious *signal*—you'll slog through page after page of usesless *noise*. 
 
