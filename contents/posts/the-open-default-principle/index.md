@@ -1,5 +1,6 @@
 ---
 title: The Open Default Principle
+subtitle: How sharing everything helps me beat the gatekeepers
 date: 2013-12-16
 categories: Reflections, Open
 template: post.jade
