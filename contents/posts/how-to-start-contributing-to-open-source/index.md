@@ -22,7 +22,7 @@ While it's increasingly common for companies to allow employees to devote work h
 
 ### Document, Document, Document
 
-> I'm having trouble with *Feature/Method*. According to the docs (*link to the relevant section*) I would expect *Expectation*. Instead I'm seeing *Result*. Here's what I'm doing: *Sample Code*. 
+"I'm having trouble with *Feature/Method*. According to the docs (*link to the relevant section*) I would expect *Expectation*. Instead I'm seeing *Result*. Here's what I'm doing: *Sample Code*."
 
 Make it easy for someone to help you. Use proper [GitHub Flavored Markdown](https://help.github.com/articles/github-flavored-markdown#syntax-highlighting), especially [syntax highlighting](https://help.github.com/articles/github-flavored-markdown#syntax-highlighting). Include links to the relevant lines in your own project. Don't make a veteran contributor work harder than they need to: they're already helping you for free. 
 
