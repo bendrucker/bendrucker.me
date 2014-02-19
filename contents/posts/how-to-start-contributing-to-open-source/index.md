@@ -6,7 +6,7 @@ categories: Software, Open Source
 template: post.jade
 ---
 
-Even while starting a company, I devote a lot of time to open source software projects. I contribute to a few bigger projects (including [Bookshelf](http://bookshelfjs.org) and [Knex](http://knexjs.org) as co-lead) and spend time on a handful of small projects of my own. It's something new developers always want to ask me about. At this point GitHub has all but replaced the resume. Not only is every commit available for anyone to see, but also every issue, pull request, and comment (more on how to dissect GitHub as an employer in a future post). 
+Even while starting a company, I devote a lot of time to open source software projects. I contribute to a few bigger projects (including [Bookshelf](http://bookshelfjs.org) and [Knex](http://knexjs.org) one of two collaborators helping [the author](https://github.com/tgriesser)) and spend time on a handful of small projects of my own. It's something new developers always want to ask me about. At this point GitHub has all but replaced the resume. Not only is every commit available for anyone to see, but also every issue, pull request, and comment (more on how to dissect GitHub as an employer in a future post). 
 
 Most of these questions from new developers are prefaced with: "open source is intimidating. I don't know where to start." It's a chicken and egg problem. Learning to write high quality code is the obvious fix, but open source contributions are also one of the best ways to improve your abilities as a developer. Here are a few guiding principles for cutting through the intimidation and getting started in the open source community:
 
