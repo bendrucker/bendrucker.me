@@ -1,11 +1,14 @@
 {
   "dependencies": {
-    "wintersmith": "~2.0.7",
+    "wintersmith": "~2.0.10",
     "moment": "2.x",
     "typogr": "0.5.x",
-    "wintersmith-stylus": "~0.4.0",
+    "wintersmith-stylus": "git://github.com/bendrucker/wintersmith-stylus.git",
     "lodash": "~2.0.0",
     "wintersmith-showdown": "git://github.com/lhagan/wintersmith-showdown.git"
   },
-  "repository": "none"
+  "repository": "none",
+  "scripts": {
+    "build": "wintersmith build"
+  }
 }
