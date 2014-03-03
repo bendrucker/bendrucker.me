@@ -1,6 +1,6 @@
 ---
 title: Six Months as a Dropout
-subtitle: What I've learned about life and startups in six months as a full time founder and college dropout.
+subtitle: What I've learned about life and startups in six months as a full time founder and college dropout
 date: 2014-03-03
 categories: Startups, Education, Personal Development, Reflections
 template: post.jade
