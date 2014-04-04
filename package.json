@@ -16,7 +16,9 @@
     "gulp": "~3.6.0",
     "gulp-uncss": "~0.4.1",
     "gulp-imagemin": "~0.2.0",
-    "gulp-bump": "~0.1.7"
+    "gulp-bump": "~0.1.7",
+    "grunt": "~0.4.4",
+    "assemble": "~0.4.37"
   },
   "author": "Ben Drucker <bvdrucker@gmail.com> (http://www.bendrucker.me)",
   "license": "MIT"
