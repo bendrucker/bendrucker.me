@@ -3,7 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title></title>
+    <title>
+      {{#if seo_title}}
+        {{seo_title}}
+      {{else}}
+        {{title}} | Ben Drucker
+      {{/if}}
+    </title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="/styles/main.css" />
