@@ -21,8 +21,17 @@ gulp.task('styles:development', function () {
 gulp.task('styles:production', function () {
   return gulp.src('./styles/main.styl')
     .pipe(plugins.stylus({
-      use: ['nib'],
-      set: ['compress']
+      use: ['nib']
+    }))
+    .pipe(plugins.size({
+      title: 'Before optimization:',
+      showFiles: true
+    }))
+    .pipe(plugins.combineMediaQueries())
+    .pipe(plugins.minifyCss())
+    .pipe(plugins.size({
+      title: 'After optimization:',
+      showFiles: true
     }))
     .pipe(gulp.dest(build + '/styles'));
 });
