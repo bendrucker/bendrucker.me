@@ -1,14 +1,10 @@
 {
-  "dependencies": {
-    "wintersmith": "~2.0.10",
-    "moment": "2.x",
-    "typogr": "0.5.x",
-    "wintersmith-stylus": "git://github.com/bendrucker/wintersmith-stylus.git",
-    "lodash": "~2.0.0",
-    "wintersmith-showdown": "git://github.com/lhagan/wintersmith-showdown.git"
-  },
-  "repository": "none",
-  "scripts": {
-    "build": "wintersmith build"
-  }
+  "name": "bendrucker.me",
+  "private": true,
+  "description": "My personal website",
+  "version": "1.1.0",
+  "dependencies": {},
+  "devDependencies": {},
+  "author": "Ben Drucker <bvdrucker@gmail.com> (http://www.bendrucker.me)",
+  "license": "MIT"
 }
