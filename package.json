@@ -21,7 +21,9 @@
     "grunt": "~0.4.4",
     "assemble": "~0.4.37",
     "gulp-minify-css": "~0.3.0",
-    "gulp-size": "~0.2.0"
+    "gulp-size": "~0.2.0",
+    "assemble-contrib-permalinks": "~0.3.6",
+    "handlebars-helper-partial": "~0.1.3"
   },
   "author": "Ben Drucker <bvdrucker@gmail.com> (http://www.bendrucker.me)",
   "license": "MIT"

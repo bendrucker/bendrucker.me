@@ -1,0 +1,17 @@
+---
+layout: default
+---
+
+<article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="post-header">
+    <div class="post-title">
+      <h1 itemprop="name headline" class="post-headline">{{post.title}}</h1>
+      <h2 itemprop="description" class="post-subtitle">{{post.subtitle}}</h1>
+    </div>
+  </header>
+  <div class="post-body">
+    {{#markdown}} 
+      {{> body }}
+    {{/markdown}}
+  </div>
+</article>
