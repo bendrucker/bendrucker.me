@@ -9,6 +9,7 @@ module.exports = function (grunt) {
           'assemble-contrib-permalinks',
           'handlebars-helper-partial'
         ],
+        partials: './partials/*.hbs',
         layoutdir: './layouts',
         layoutext: '.hbs',
         layout: 'default'
