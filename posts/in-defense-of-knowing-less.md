@@ -3,7 +3,6 @@ title: In Defense of Knowing Less
 subtitle: Learn and do more by letting go of your impulse to know everything
 date: 2013-11-13
 categories: Productivity, Reflections
-template: post.jade
 ---
 
 I can't remember the last time I picked up a newspaper, either physically or digitally. But at its peak (maybe two years ago) my media glut consisted of two newspapers, eight magazines, and at least fifty RSS feeds. Add in email newsletters, NPR, and daily visits to the likes of TechCrunch, and I was spending hours a day filtering and consuming news. 

@@ -2,7 +2,6 @@
 title: When No One's Looking
 date: 2013-10-07
 categories: Reflections
-template: post.jade
 ---
 
 One of my favorite things about waking up at 5 a.m. is that I see a very different kind of commuter than I would at rush hour. Mixed in with the lawyers and bankers are maintenance and food service workers, deliverymen stocking stores, and security guards awaiting the morning rush. They, unlike me, have no choice but to be at work before the sun rises.

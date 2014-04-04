@@ -3,7 +3,6 @@ title: 5 Reasons Why My Company Will Fail
 subtitle: And why those failures won’t teach me anything
 date: 2013-08-12
 categories: Startups
-template: post.jade
 ---
 
 I’m not sure when it became cool to embrace failure, but it’s time to stop. Whether it’s a small misstep that is soon forgotten or a huge mistake that kills your company, you will not inherently learn anything simply by virtue of having failed. Great entrepreneurs are by no means strangers to failure. But there’s one thing they do differently—they anticipate how they’ll overcome it.

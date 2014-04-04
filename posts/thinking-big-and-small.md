@@ -3,7 +3,6 @@ title: Thinking Big and Small
 subtitle: Put productivity tools to work for you, not the other way around.
 date: 2013-05-26
 categories: Productivity
-template: post.jade
 ---
 
 Daniel Kahneman’s [Thinking, Fast and Slow](http://amzn.com/B00555X8OA), while not directly concerned with productivity, got me thinking about my own routine. Until recently I was a [Things](http://culturedcode.com/things/) devotee, feeding items into my Inbox and diligently tagging, grouping, and scheduling every task with painstaking detail and devotion. Using a single pipeline, I assumed, would form more consistent habits and reduce the cognitive overhead of juggling multiple tools.

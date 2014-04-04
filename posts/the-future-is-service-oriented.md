@@ -3,7 +3,6 @@ title: The Future is Service-Oriented
 subtitle: It’s easier than ever to build distributed applications—start now
 date: 2013-10-21
 categories: Code, Software
-template: post.jade
 ---
 
 It’s pretty easy to be the programmer-hipster and dismiss any new web technology as unfit for “real” work. But there’s something happening right now that I’m pretty excited about, and I think you should be too: building distributed applications is becoming accessible to hacks like me.

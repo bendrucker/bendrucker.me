@@ -3,7 +3,6 @@ title: The 5 a.m. Principle
 subtitle: Getting up early makes me more creative, but you don’t need to wake up early to take advantage
 date: 2013-10-14
 categories: Productivity
-template: post.jade
 ---
 
 I started working on a habit in September that to most people seems to border on masochistic: I get up every weekday at or before 5:30 a.m. I borrowed the idea from [Paul DeJoe](https://twitter.com/PDEJOE), who wrote about how his [perspective on work was different at 4 a.m.](http://www.fastcompany.com/3013856/how-to-be-a-success-at-everything/why-productive-people-get-up-insanely-early) versus a more traditional wakeup time. Paul got plenty of flack for a link-bait title and the implication that waking up absurdly early was the only way to be productive. But beneath the prescriptive essay and the comment-rage, the idea of adopting an atypical sleep schedule to become happier and more productive is very much worth considering.

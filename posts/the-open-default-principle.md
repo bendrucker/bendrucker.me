@@ -3,7 +3,6 @@ title: The Open Default Principle
 subtitle: How sharing everything helps me beat the gatekeepers
 date: 2013-12-16
 categories: Reflections, Open
-template: post.jade
 ---
 
 > While it's clear you didn't do any of the required reading, the depth of your research and your level of understanding of the topic was impressive. B+

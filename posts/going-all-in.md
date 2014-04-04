@@ -3,7 +3,6 @@ title: Going All In
 subtitle: I’m leaving school and depending on my company’s success. And that still scares me.
 date: 2013-07-30
 categories: Startups, Education
-template: post.jade
 ---
 
 Dropping out. It’s the perennial young entrepreneur’s dream—the glory of getting accepted to Y Combinator, raising millions, and gracing the front page of TechCrunch. You join the ranks of Bill Gates, Mark Zuckerberg, Jack Dorsey, and David Karp. That’s how I imagined it too. But now that it’s here, leaving school doesn’t feel like this at all. It’s strangely lonely.

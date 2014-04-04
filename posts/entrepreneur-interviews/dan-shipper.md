@@ -4,7 +4,6 @@ subtitle: I talk with Dan Shipper, blogger and founder of Firefly, about Dorm Ro
 date: 2013-04-08
 categories: Startups, Education
 series: Entrepreneur Interviews
-template: post.jade
 ---
 
 Dan Shipper has a trait that's exceptionally rare among young entrepreneurs—he's focused on building a traditional stable business.

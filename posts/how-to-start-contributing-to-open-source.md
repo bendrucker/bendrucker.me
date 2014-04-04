@@ -3,7 +3,6 @@ title: How to Start Contributing to Open Source
 subtitle: Open source lets you give back and learn more. The hardest part is getting started.
 date: 2014-02-19
 categories: Software, Open Source
-template: post.jade
 ---
 
 Even while starting a company, I devote a lot of time to open source software projects. I contribute to a few bigger projects (including [Bookshelf](http://bookshelfjs.org) and [Knex](http://knexjs.org) one of two collaborators helping [the author](https://github.com/tgriesser)) and spend time on a handful of small projects of my own. It's something new developers always want to ask me about. At this point GitHub has all but replaced the resume. Not only is every commit available for anyone to see, but also every issue, pull request, and comment (more on how to dissect GitHub as an employer in a future post). 

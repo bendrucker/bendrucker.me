@@ -3,7 +3,6 @@ title: Six Months as a Dropout
 subtitle: What I've learned about life and startups in six months as a full time founder and college dropout
 date: 2014-03-03
 categories: Startups, Education, Personal Development, Reflections
-template: post.jade
 ---
 
 Today marks six months since what would have been the start of my junior year at Columbia. I made the [decision to leave school](http://www.bendrucker.me/posts/going-all-in/) to work full time on [Valet.io](http://www.valet.io) in July, but it wasn't entirely real until September, when all my friends returned to school for a new semester. As they set their class schedules, I found myself alone in New York City with no schedule or structure—just a blank slate.

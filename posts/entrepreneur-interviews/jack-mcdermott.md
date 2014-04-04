@@ -4,7 +4,6 @@ subtitle: I talk with Jack McDermott about Rough Draft Ventures and building com
 date: 2013-04-01
 categories: Startups, Education
 series: Entrepreneur Interviews
-template: post.jade
 ---
 
 *This is the first post in a series of profiles with student founders and entrepreneurs. Know someone I should feature? [Email me](mailto:bvdrucker@gmail.com).*

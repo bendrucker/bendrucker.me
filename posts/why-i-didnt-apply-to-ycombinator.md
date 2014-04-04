@@ -2,7 +2,6 @@
 title: Why I Didn’t Apply to Y Combinator
 date: 2013-10-25
 categories: Startups
-template: post.jade
 ---
 
 The October 21st deadline for Y Combinator’s Winter 2014 class came and went, and no, I didn’t apply. Don’t get me wrong—Y Combinator is a world class program. Every single graduate I’ve met has nothing but praise for the mentorship and network it offers.

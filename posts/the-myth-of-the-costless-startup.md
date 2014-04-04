@@ -3,7 +3,6 @@ title: The Myth of the Costless Startup
 subtitle: Early capital matters to student startups as much as any other
 date: 2013-07-08
 categories: Startups
-template: post.jade
 ---
 
 >Why are students looking for money? They have free housing, free food, and no job. So maybe they run an ad or two. How could they possibly need money?

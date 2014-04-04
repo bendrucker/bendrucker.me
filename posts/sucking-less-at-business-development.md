@@ -3,7 +3,6 @@ title: Sucking Less at Business Development
 subtitle: How I'm re-engineering my relationship habits
 date: 2014-01-15
 categories: Business, Startups
-template: post.jade
 ---
 
 I've had an awful habit of meeting lots of smart people and never knowing how to turn an occasional interaction into a relationship that provided real value on both sides. I turned my notes on habits to help me suck less at business development into this presentation:

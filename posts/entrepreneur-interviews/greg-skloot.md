@@ -4,7 +4,6 @@ subtitle: I chat with Greg Skloot, now founder of Attendware, about how he turne
 date: 2013-04-24
 categories: Startups, Education
 series: Entrepreneur Interviews
-template: post.jade
 ---
 
 Greg Skloot literally wrote the [book](http://www.gettingorganized.co/) on operating a successful student group. As president of the [Northeastern University Entrepreneurs Club](http://www.northeastern.edu/entrepreneurs/), he grew participation from a dozen to more than one hundred students per week. Many young entrepreneurs find themselves spending more and more time off campus as their businesses grow (myself included). There are significant costs to this fracture between student and entrepreneurial life. It prevents the success stories from easily giving back and makes it hard for new entrepreneurs to join the broader community. Greg built a community nearly from scratch and I wanted to find out what had driven his success at Northeastern. 

@@ -4,7 +4,6 @@ subtitle: The intro to my brief but very worthwhile discussion series with stude
 date: 2013-03-18
 categories: Startups, Education
 series: Entrepreneur Interviews
-template: post.jade
 ---
 
 *"Entrepreneurship is a mindset, not a job title,"* quipped Jack Dorsey in front of a captivated audience earlier this month at the NYU Entrepreneurship Festival. This is hardly a novel insight—it was what came next that really struck me. He explained that entrepreneurship and startups weren't inextricably linked—*"You can be an entrepreneur in a school or anywhere else,"* he told us. The moment he mentioned schools, it clicked.

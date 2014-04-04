@@ -3,7 +3,6 @@ title: How Citi Bike Salvaged a Botched Launch
 subtitle: Why you might want to reconsider "launching"
 date: 2013-10-08
 categories: Startups
-template: post.jade
 ---
 
 With more than seventy thousand members, 2.5 million trips, and five million miles traveled, New York’s newly created Citi Bike program is nothing short of a massive success. The privately funded, for-profit program is so popular that City Councilmen are [begging](http://www.nydailynews.com/new-york/citi-bike-stuck-gear-article-1.1413269) to use public funds to speed expansion into the outer boroughs, calling it “a piece of public transportation infrastructure.” And yet at launch, Citi Bike managed to alienate both the anti-bike crowd (understandable) as well as its most eager customers (unforgivable). Month-long waits for new subscribers, broken bikes and docks, and availability problems in high traffic areas turned its first users into vocal critics. Three months since its May launch, complaints have all but disappeared.

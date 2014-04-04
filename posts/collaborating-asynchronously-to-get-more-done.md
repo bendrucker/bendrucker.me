@@ -3,7 +3,6 @@ title: Collaborating Asynchronously to Get More Done
 subtitle: How applying a software design principle made work meaningful again
 date: 2013-11-06
 categories: Productivity, Code
-template: post.jade
 ---
 
 I've been thinking a lot lately about remote work and building a distributed team. Not having a class or work schedule is a new experience for me. Without any clue how to cope with that, I ended up adopting a nine-to-five-style routine, despite total freedom to do otherwise. That became a serious bottleneck for a team that hails from four cities and three time zones, so I started from scratch in search of a better way to work.
