@@ -10,6 +10,7 @@ module.exports = function (grunt) {
           'handlebars-helper-partial'
         ],
         partials: './partials/*.hbs',
+        data: './config/*.{yml,json}',
         layoutdir: './layouts',
         layoutext: '.hbs',
         layout: 'default'

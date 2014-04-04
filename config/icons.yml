@@ -1,0 +1,8 @@
+- device: iphone
+  size: 60x60
+- device: ipad
+  size: 76x76
+- device: iphone@2x
+  size: 120x120
+- device: ipad@2x
+  size: 152x152
