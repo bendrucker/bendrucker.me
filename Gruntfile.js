@@ -11,6 +11,7 @@ module.exports = function (grunt) {
         ],
         partials: './partials/*.hbs',
         data: './config/*.{yml,json}',
+        helpers: './helpers/*.js',
         layoutdir: './layouts',
         layoutext: '.hbs',
         layout: 'default'
