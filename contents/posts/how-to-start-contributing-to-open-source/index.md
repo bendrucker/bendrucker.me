@@ -39,6 +39,6 @@ Don't waste time actively looking for a project to contribute to. Until you're r
 
 Once you've started to feel comfortable with a project, you should [watch](https://help.github.com/articles/watching-repositories) the GitHub repository. As a watcher, you'll receive notifications for every new issue (not just the ones that mention you). If you see a question you know you can answer, feel free to jump in and help. But if you're not confident in your answer, just make sure to note that. There's no sense in sending a newcomer down the wrong path if they are asking a genuinely difficult question. Most of the time, though, you'll be able to add value as a user with a solid understanding of the documentation. You don't need to be an expert to link people to the right section of the docs. 
 
-## Conclusion
+## Software is Made by Humans
 
 Above all, remember that your fellow contributors are human. Yes, [even TJ Holowaychuk](http://www.quora.com/TJ-Holowaychuk-1/How-is-TJ-Holowaychuk-so-insanely-productive). Be friendly, clear, and respectful and you'll get the same in return. It's more fun building things together. 
