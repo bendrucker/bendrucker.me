@@ -3,7 +3,7 @@
     "url": "http://bendrucker.me",
     "name": "Ben Drucker",
     "owner": "Ben Drucker",
-    "description": "Founder of Valet.io. Photographer, coder, designer, fitness geek. Trying to make things people love."
+    "description": "Programmer, photographer, designer, fitness geek. Trying to make things people love."
   },
   "plugins": [
     "wintersmith-stylus",
