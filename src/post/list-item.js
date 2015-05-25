@@ -10,7 +10,10 @@ export default class PostListItem extends BaseElement {
         this.html('h2.post-headline', post.title),
         this.html('p', date.format(post.date))
       ]),
-      this.html('h3.post-subtitle', post.subtitle)
+      this.html('h3.post-subtitle', post.subtitle),
+      this.html('ul.post-tags', post.tags.map((tag) => {
+        return this.html('li.post-category', tag)
+      }))
     ]))
   }
 }
