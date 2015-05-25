@@ -2,7 +2,7 @@
 title: "Entrepreneur Interviews: Greg Skloot"
 subtitle: I chat with Greg Skloot, now founder of Attendware, about how he turned Northeastern's entrepreneurship club into a powerhouse.
 date: 2013-04-24
-categories: Startups, Education
+tags: Startups, Education
 series: Entrepreneur Interviews
 template: post.jade
 ---

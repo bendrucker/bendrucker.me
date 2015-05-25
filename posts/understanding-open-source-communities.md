@@ -2,7 +2,7 @@
 title: Understanding Open Source Communities
 subtitle: There is no "open source community"
 date: 2014-05-23
-categories: Software, Open Source
+tags: Software, Open Source
 template: post.jade
 ---
 

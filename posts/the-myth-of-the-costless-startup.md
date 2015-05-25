@@ -2,7 +2,7 @@
 title: The Myth of the Costless Startup
 subtitle: Early capital matters to student startups as much as any other
 date: 2013-07-08
-categories: Startups
+tags: Startups
 template: post.jade
 ---
 

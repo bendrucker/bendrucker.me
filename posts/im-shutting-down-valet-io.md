@@ -2,7 +2,7 @@
 title: I'm Shutting Down Valet.io Today
 subtitle: Two years after founding my first company it's time to move on
 date: 2015-05-05
-categories: Business, Startups
+tags: Business, Startups
 template: post.jade
 ---
 

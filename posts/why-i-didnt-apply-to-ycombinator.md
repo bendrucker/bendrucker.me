@@ -1,7 +1,7 @@
 ---
 title: Why I Didn’t Apply to Y Combinator
 date: 2013-10-25
-categories: Startups
+tags: Startups
 template: post.jade
 ---
 

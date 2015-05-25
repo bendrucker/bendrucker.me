@@ -2,7 +2,7 @@
 title: Collaborating Asynchronously to Get More Done
 subtitle: How applying a software design principle made work meaningful again
 date: 2013-11-06
-categories: Productivity, Code
+tags: Productivity, Code
 template: post.jade
 ---
 

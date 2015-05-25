@@ -2,7 +2,7 @@
 title: How Citi Bike Salvaged a Botched Launch
 subtitle: Why you might want to reconsider "launching"
 date: 2013-10-08
-categories: Startups
+tags: Startups
 template: post.jade
 ---
 

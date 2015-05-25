@@ -1,7 +1,7 @@
 ---
 title: When No One's Looking
 date: 2013-10-07
-categories: Reflections
+tags: Reflections
 template: post.jade
 ---
 

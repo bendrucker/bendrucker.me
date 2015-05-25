@@ -2,7 +2,7 @@
 title: In Defense of Knowing Less
 subtitle: Learn and do more by letting go of your impulse to know everything
 date: 2013-11-13
-categories: Productivity, Reflections
+tags: Productivity, Reflections
 template: post.jade
 ---
 

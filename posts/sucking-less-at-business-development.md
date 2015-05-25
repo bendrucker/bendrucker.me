@@ -2,7 +2,7 @@
 title: Sucking Less at Business Development
 subtitle: How I'm re-engineering my relationship habits
 date: 2014-01-15
-categories: Business, Startups
+tags: Business, Startups
 template: post.jade
 ---
 

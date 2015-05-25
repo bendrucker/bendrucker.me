@@ -2,7 +2,7 @@
 title: "Entrepreneur Interview: Jack McDermott"
 subtitle: I talk with Jack McDermott about Rough Draft Ventures and building companies that fulfill real needs. 
 date: 2013-04-01
-categories: Startups, Education
+tags: Startups, Education
 series: Entrepreneur Interviews
 template: post.jade
 ---

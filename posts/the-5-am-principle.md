@@ -2,7 +2,7 @@
 title: The 5 a.m. Principle
 subtitle: Getting up early makes me more creative, but you don’t need to wake up early to take advantage
 date: 2013-10-14
-categories: Productivity
+tags: Productivity
 template: post.jade
 ---
 

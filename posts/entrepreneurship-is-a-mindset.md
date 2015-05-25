@@ -2,7 +2,7 @@
 title: Entrepreneurship is a Mindset
 subtitle: The intro to my brief but very worthwhile discussion series with student entrepreneurs. 
 date: 2013-03-18
-categories: Startups, Education
+tags: Startups, Education
 series: Entrepreneur Interviews
 template: post.jade
 ---

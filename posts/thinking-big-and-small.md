@@ -2,7 +2,7 @@
 title: Thinking Big and Small
 subtitle: Put productivity tools to work for you, not the other way around.
 date: 2013-05-26
-categories: Productivity
+tags: Productivity
 template: post.jade
 ---
 

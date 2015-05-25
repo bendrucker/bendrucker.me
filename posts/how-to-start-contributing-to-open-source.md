@@ -2,7 +2,7 @@
 title: How to Start Contributing to Open Source
 subtitle: Open source lets you give back and learn more. The hardest part is getting started.
 date: 2014-02-19
-categories: Software, Open Source
+tags: Software, Open Source
 template: post.jade
 ---
 
