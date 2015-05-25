@@ -1,7 +1,7 @@
 'use strict'
 
 import BaseElement from 'base-element'
-import ListItem from './list-item'
+import ListItem from './item'
 
 export default class PostList extends BaseElement {
   render (posts) {

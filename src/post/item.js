@@ -1,7 +1,7 @@
 'use strict'
 
 import BaseElement from 'base-element'
-import * as date from '../date'
+import * as date from './date'
 
 export default class PostListItem extends BaseElement {
   render (post) {
