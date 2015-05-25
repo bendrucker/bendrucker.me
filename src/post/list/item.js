@@ -5,7 +5,7 @@ import * as date from '../date'
 
 export default class PostListItem extends BaseElement {
   render (post) {
-    return this.afterRender(this.html('a', {href: post.path}, [
+    return this.afterRender(this.html('a', {href: post.href}, [
       this.html('.post-title', [
         this.html('h2.post-headline', post.title),
         this.html('p', date.format(post.date))
