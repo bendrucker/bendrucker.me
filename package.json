@@ -1,5 +1,9 @@
 {
   "dependencies": {
-    "base-element": "~2.2.0"
+    "base-element": "~2.2.0",
+    "months": "^1.0.0"
+  },
+  "devDependencies": {
+    "babel": "^5.4.7"
   }
 }
