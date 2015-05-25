@@ -1,9 +1,20 @@
 {
   "dependencies": {
     "base-element": "~2.2.0",
-    "months": "^1.0.0"
+    "bluebird": "~2.9.26",
+    "glob": "~5.0.9",
+    "gray-matter": "~2.0.0",
+    "map-obj": "~1.0.1",
+    "months": "^1.0.0",
+    "mothership": "~0.3.0",
+    "remarkable": "~1.6.0",
+    "remove-ext": "~1.0.0"
   },
   "devDependencies": {
     "babel": "^5.4.7"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bendrucker/bendrucker.me.git"
+  },
 }
