@@ -12,7 +12,7 @@ import mapObject from 'map-obj'
 
 Promise.promisifyAll(fs)
 
-Promise.promisify(mothership)(__dirname, Boolean)
+export default Promise.promisify(mothership)(__dirname, Boolean)
   .get('path')
   .then(dirname)
   .then((cwd) => {

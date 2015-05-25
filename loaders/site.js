@@ -3,6 +3,6 @@
 import ghUrl from 'github-url-from-git'
 import pkg from '../package.json'
 
-export default const site = {
+export default {
   repo: ghUrl(pkg.repository.url)
 }
