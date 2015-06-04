@@ -2,7 +2,7 @@
 
 var BaseElement = require('base-element')
 var Headshot require('./headshot')
-var Twitter require('./twitter')
+var Twitter require('base-twitter-link')
 
 function Header (el) {
   BaseElement.call(this, el)
