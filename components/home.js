@@ -1,16 +1,20 @@
 'use strict'
 
-import BaseElement from 'base-element'
-import Header from './header'
-import Footer from './footer'
-import PostList from './post/list'
+var BaseElement = require ('base-element')
+var Header = require('./header')
+var Footer = require('./footer')
+var PostList = require('./post/list')
 
-export default class Home extends BaseElement {
-  render ({profile, posts, site}) {
-    return this.afterRender(this.html('div', [
-      new Header().render(profile),
-      new PostList().render(posts),
-      new Footer().render({profile, site})
-    ]))
-  }
+module.exports = Home
+
+function Home (el) {
+  BaseElement.call(this, el)
+}
+Home.prototype = Object.create(BaseElement.prototype)
+Home.prototype.render = function () {
+  return this.afterRender(this.html('div', [
+    new Header().render(profile),
+    new PostList().render(posts),
+    new Footer().render({profile: profile, site: site})
+  ]))
 }

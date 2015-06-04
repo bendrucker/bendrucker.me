@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "ap": "~0.2.0",
-    "base-element": "~2.2.0",
+    "base-element": "~3.0.1",
     "bluebird": "~2.9.26",
     "github-url-from-git": "~1.4.0",
     "glob": "~5.0.9",
@@ -11,6 +11,7 @@
     "months": "^1.0.0",
     "mothership": "~0.3.0",
     "output-file": "~1.1.1",
+    "pff": "~1.0.0",
     "remarkable": "~1.6.0",
     "remove-ext": "~1.0.0"
   },
