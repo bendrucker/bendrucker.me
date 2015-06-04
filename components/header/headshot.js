@@ -2,6 +2,8 @@
 
 var BaseElement = require('base-element')
 
+module.exports = Headshot
+
 function Headshot (el) {
   BaseElement.call(this, el)
 }

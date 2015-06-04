@@ -14,7 +14,8 @@
     "output-file": "~1.1.1",
     "pff": "~1.0.0",
     "remarkable": "~1.6.0",
-    "remove-ext": "~1.0.0"
+    "remove-ext": "~1.0.0",
+    "xtend": "~4.0.0"
   },
   "devDependencies": {
     "babel": "^5.4.7"

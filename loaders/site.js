@@ -1,8 +1,6 @@
 'use strict'
 
-import ghUrl from 'github-url-from-git'
-import pkg from '../package.json'
+var gh = require('github-url-from-git')
+var pkg = require('../package.json')
 
-export default {
-  repo: ghUrl(pkg.repository.url)
-}
+exports.repo = gh(pkg.repository.url)

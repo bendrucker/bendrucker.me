@@ -11,7 +11,10 @@ function Home (el) {
   BaseElement.call(this, el)
 }
 Home.prototype = Object.create(BaseElement.prototype)
-Home.prototype.render = function () {
+Home.prototype.render = function (data) {
+  var profile = data.profile
+  var posts = data.posts
+  var site = data.site
   return this.afterRender(this.html('div', [
     new Header().render(profile),
     new PostList().render(posts),

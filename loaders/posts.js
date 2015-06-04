@@ -1,27 +1,28 @@
 'use strict'
 
-import Promise from 'bluebird'
-import glob from 'glob'
-import mothership from 'mothership'
-import {resolve, dirname} from 'path'
-import fs from 'fs'
-import removeExt from 'remove-ext'
-import matter from 'gray-matter'
-import remarkable from 'remarkable'
-import mapObject from 'map-obj'
+var Promise = require('bluebird')
+var glob = Promise.promisify(require('glob'))
+var mothership = Promise.promisify(require('mothership'))
+var path = require('path')
+var fs = Promise.promisifyAll(require('fs'))
+var removeExt = require('remove-ext')
+var matter = require('gray-matter')
+var remarkable = require('remarkable')
+var mapObject = require('map-obj')
+var extend = require('xtend')
 
 Promise.promisifyAll(fs)
 
-export default Promise.promisify(mothership)(__dirname, Boolean)
+module.exports = mothership(__dirname, Boolean)
   .get('path')
-  .then(dirname)
-  .then((cwd) => {
+  .then(path.dirname)
+  .then(function (cwd) {
     return Promise.promisify(glob)('posts/*.md', {cwd})
-      .map((path) => {
+      .map(function (path) {
         return fs.readFileAsync(path).call('toString')
-          .then((raw) => {
-            const parsed = matter(raw)
-            return Object.assign({
+          .then(function (raw) {
+            var parsed = matter(raw)
+            return extend({
               markdown: parsed.content.trim(),
               href: '/' + removeExt(path)
             }, parse(parsed.data))
@@ -29,14 +30,14 @@ export default Promise.promisify(mothership)(__dirname, Boolean)
       })
   })
 
-const parsers = Object.assign(Object.create(null), {
+var parsers = extend(Object.create(null), {
   tags: function (string) {
     return (string || '').split(', ')
   }
 })
 
 function parse (metadata) {
-  return mapObject(metadata, (key, value) => {
+  return mapObject(metadata, function (key, value) {
     return [key, (parsers[key] || identity)(value)]
   })
 }

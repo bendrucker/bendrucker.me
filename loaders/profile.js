@@ -1,3 +1,3 @@
 'use strict'
 
-export {default} from '../data/profile.json'
+module.exports = require('../data/profile.json')

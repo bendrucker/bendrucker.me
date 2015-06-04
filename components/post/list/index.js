@@ -3,6 +3,8 @@
 var BaseElement = require('base-element')
 var ListItem = require('./item')
 
+module.exports = PostList
+
 function PostList (el) {
   BaseElement.call(this, el)
 }
