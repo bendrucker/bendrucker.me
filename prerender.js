@@ -1,28 +1,31 @@
 'use strict'
 
-import Promise from 'bluebird'
-import outputFile from 'output-file'
-const writeFileAsync = Promise.promisify(outputFile)
-import {posts, profile, site} from './loaders'
-import {html as prettyHtml} from 'js-beautify'
-import {partial, partialRight} from 'ap'
+var Promise = require('bluebird')
+var writeFileAsync = Promise.promisify(require('output-file'))
+var loaders = require('./loaders')
+var prettyHtml = require('js-beautify').html
+var ap = require('ap')
+var handlebars = require('handlebars')
+var fs = require('fs')
+var template = handlebars.compile(fs.readFileSync(__dirname + '/index.hbs').toString())
 
-export function render () {
-  return Promise.join(
-    renderHome()
-  )
-  .return(null)
+var formatHtml = ap.partialRight(prettyHtml, {
+  indent_size: 2,
+  end_with_newline: true
+})
+
+exports.render = function () {
+  return Promise.props(loaders)
+    .then(function (data) {
+      return renderHome(data)
+    })
 }
 
-import Home from './components/home'
-function renderHome () {
-  return Promise.props({posts, profile, site})
-    .then((data) => {
-      return new Home().toString(data)
-    })
-    .then(partialRight(prettyHtml, {
-      indent_size: 2,
-      end_with_newline: true
-    }))
-    .then(partial(writeFileAsync, './dist/index.html'))
+var Home = require('./components/home')
+function renderHome (data) {
+  var html = new Home().toString(data)
+  return writeFileAsync(__dirname + '/dist/index.html', formatHtml(template({
+    content: html,
+    title: data.profile.name
+  })))
 }

@@ -7,6 +7,7 @@
     "github-url-from-git": "~1.4.0",
     "glob": "~5.0.9",
     "gray-matter": "~2.0.0",
+    "handlebars": "~3.0.3",
     "js-beautify": "~1.5.6",
     "map-obj": "~1.0.1",
     "months": "^1.0.0",
@@ -15,10 +16,11 @@
     "pff": "~1.0.0",
     "remarkable": "~1.6.0",
     "remove-ext": "~1.0.0",
+    "sort-on": "~1.2.0",
     "xtend": "~4.0.0"
   },
-  "devDependencies": {
-    "babel": "^5.4.7"
+  "scripts": {
+    "prerender": "node -e \"require('./prerender').render()\""
   },
   "repository": {
     "type": "git",
