@@ -12,6 +12,7 @@
     "map-obj": "~1.0.1",
     "months": "^1.0.0",
     "mothership": "~0.3.0",
+    "object-pick": "~0.1.1",
     "output-file": "~1.1.1",
     "pff": "~1.0.0",
     "remarkable": "~1.6.0",

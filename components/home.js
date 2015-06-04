@@ -1,8 +1,8 @@
 'use strict'
 
 var BaseElement = require ('base-element')
-var Header = require('./header')
-var Footer = require('./footer')
+var extend = require('xtend')
+var Page = require('./page')
 var PostList = require('./post/list')
 
 module.exports = Home
@@ -12,12 +12,7 @@ function Home (el) {
 }
 Home.prototype = Object.create(BaseElement.prototype)
 Home.prototype.render = function (data) {
-  var profile = data.profile
-  var posts = data.posts
-  var site = data.site
-  return this.afterRender(this.html('div', [
-    new Header().render(profile),
-    new PostList().render(posts),
-    new Footer().render({profile: profile, site: site})
-  ]))
+  return this.afterRender(new Page().render(extend(data, {
+    content: new PostList().render(data.posts)
+  })))
 }
