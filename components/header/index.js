@@ -1,26 +1,27 @@
 'use strict'
 
-var BaseElement = require('base-element')
-var Headshot = require('./headshot')
-var Twitter = require('base-twitter-link')
+var createElement = require('base-element')
+var createHeadshot = require('./headshot')
+var createTwitter = require('base-twitter-link')
 
-module.exports = Header
-
-function Header (el) {
-  BaseElement.call(this, el)
-}
-Header.prototype = Object.create(BaseElement.prototype)
-Header.prototype.render = function (profile) {
-  return this.afterRender(this.html('header.page-header',[
-    this.html('.content-wrap', [
-      new Headshot().render(profile.headshot),
-      this.html('.about-me', [
-        this.html('h1', [
-          profile.name,
-          new Twitter().render(profile.twitter)
-        ]),
-        this.html('h2', profile.tagline)
-      ])
-    ])
-  ]))
+module.exports = function (element) {
+  var element = createElement(element)
+  return {
+    render: function renderHeader (profile) {
+      return element.render(function () {
+        return element.html('header.page-header', [
+          element.html('.content-wrap', [
+            createHeadshot().render(profile.headshot),
+            element.html('.about-me', [
+              element.html('h1', [
+                profile.name,
+                createTwitter().render(profile.twitter)
+              ]),
+              element.html('h2', profile.tagline)
+            ])
+          ])
+        ])
+      })
+    }
+  }
 }
