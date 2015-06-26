@@ -21,10 +21,14 @@
     "xtend": "~4.0.0"
   },
   "scripts": {
-    "prerender": "node -e \"require('./prerender').render()\""
+    "prerender": "node -e \"require('./prerender').render()\"",
+    "test": "tape components/**/*.spec.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/bendrucker/bendrucker.me.git"
+  },
+  "devDependencies": {
+    "tape": "~4.0.0"
   }
 }
