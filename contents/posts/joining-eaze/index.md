@@ -8,7 +8,7 @@ template: post.jade
 
 After [shutting down Valet.io](http://www.bendrucker.me/posts/im-shutting-down-valet-io/) and taking a brief vacation, I spent all of June looking for a new adventure that would build on what I learned as a solo technical founder. Any lingering disappointment in Valet's outcome was quickly overwhelmed by the contagious enthusiasm radiating from all the teams I met with. One opportunity and team stood out as particularly unique: [Eaze](https://www.eazeup.com). I'm very proud to be officially joining as an engineer and will be heading San Francisco later this month.
 
-And yes, I am joining the ["Uber for weed."](http://techcrunch.com/2015/04/13/eaze-10m). Here's why:
+And yes, I am joining the ["Uber for weed."](http://techcrunch.com/2015/04/13/eaze-10m) Here's why:
 
 ## Big Business, Bigger Growth
 
