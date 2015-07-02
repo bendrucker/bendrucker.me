@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>The Future is Service-Oriented - Ben Drucker
+    </title>
+    <link rel="alternate" href="http://bendrucker.me/feed.xml" type="application/rss+xml" title="Programmer, photographer, designer, fitness geek. Trying to make things people love.">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="60x60" href="/images/touch-icons/iphone.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/images/touch-icons/ipad.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/images/touch-icons/iphone@2x.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/images/touch-icons/ipad@2x.png">
+    <script>
+      (function() {
+        var config = {
+          kitId: 'urs6cvc',
+          scriptTimeout: 3000
+        };
+        var h=document.getElementsByTagName("html")[0];h.className+=" wf-loading";var t=setTimeout(function(){h.className=h.className.replace(/(\s|^)wf-loading(\s|$)/g," ");h.className+=" wf-inactive"},config.scriptTimeout);var tk=document.createElement("script"),d=false;tk.src='//use.typekit.net/'+config.kitId+'.js';tk.type="text/javascript";tk.async="true";tk.onload=tk.onreadystatechange=function(){var a=this.readyState;if(d||a&&a!="complete"&&a!="loaded")return;d=true;clearTimeout(t);try{Typekit.load(config)}catch(b){}};var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(tk,s)
+      })();
+    </script>
+  </head>
+  <body class="single-post">
+    <header class="page-header">
+      <div class="content-wrap"><a href="/">
+          <div class="my-headshot"></div></a>
+        <div class="about-me">
+          <h1>Ben Drucker <a href="http://twitter.com/bendrucker" target="_blank" rel="me">@bendrucker</a></h1>
+          <h2>Programmer, photographer, designer, and fitness geek.</h2>
+        </div>
+      </div>
+    </header>
+    <div id="content">
+      <div class="content-wrap">
+        <article itemscope itemtype="http://schema.org/BlogPosting" class="post">
+          <header class="post-header">
+            <div class="post-title">
+              <h1 itemprop="name headline" class="post-headline">The Future is Service-Oriented</h1>
+              <h2 itemprop="description" class="post-subtitle">It’s easier than ever to build distributed applications—start now</h2>
+            </div>
+          </header>
+          <div class="post-body"><p>It’s pretty easy to be the programmer-hipster and dismiss any new web technology as unfit for “real” work. But there’s something happening right now that I’m pretty excited about, and I think you should be too: building distributed applications is becoming accessible to hacks like&nbsp;me.</p>
+
+<p>I have no formal computer science education. I’m a generalist if there ever was one—I write backend code, front end code, and do design and ops when necessary. And even though Rails is in theory the perfect choice for someone like me, it never felt like the right way to build applications. I wasn’t using views and ended up writing a half dozen background workers just to prevent applications from crumbling under load. When I switched to Node.js in order to work entirely in Javascript, I tried (and failed) on multiple occasions to create a lightweight Rails-like environment for new projects. <span class="caps">MVC</span> was the only thing I&nbsp;knew.</p>
+
+<p>I only understood how misguided my attempts to stuff modern applications into a Rails-style structure when I started working on the architecture for <a href="http://valet.io">Valet.io</a>. We needed to expose most of our data in realtime via WebSockets. Trying to glue WebSockets functionality onto Express quickly fell apart. Handling <span class="caps">HTTP</span> requests and managing WebSockets clients don’t really have much in common—especially since our WebSockets API is designed to be consumed by browsers and our (unreleased) REST API is intended for server-side access. I had been trying to bake two server-side applications into one. Only when I split them into three services: an internal API, a WebSockets API, and an HTTP API, did I really progress on the application itself instead of forcing a framework to do something for which it was never&nbsp;intended.</p>
+
+<p>Service-oriented architecture design is by no means new. Amazon’s <a href="http://apievangelist.com/2012/01/12/the-secret-to-amazons-success-internal-apis/">religious adherence to product-oriented architecture</a> birthed Amazon Web Services and enabled Amazon to grow into one of the world’s largest retailers. What has changed in recent years is 1) the proportion of non-enterprise web applications that could benefit significantly from <span class="caps">SOA</span> has grown dramatically and 2) the components for running, managing, and linking services have gotten dramatically cheaper, better, and easier to&nbsp;use.</p>
+
+<p>While you as an individual developer or member of a small team are by no means Amazon, think of how many applications you’re really writing when you build a “single” app. Does your application run in the browser on something like Angular or Ember and transact with a back end <span class="caps">API</span>? Well there’s two applications. Have to request data on a scheduled interval? That’s another. An application that has a discrete front end, multiple end-user protocols, and uses a few external APIs ir probably composed of no fewer than half a dozen&nbsp;services.</p>
+
+<p>You could probably successfully mash all that into a single application, but that doesn’t mean that’s the best choice, even if you’re the solo developer on the project. Say you bake your payments <span class="caps">API</span> calls into your main app. What happens if you want to switch payment processors? If your payments logic is in its own service, another developer can work exclusively on that service, deploy it when ready, and never touch the main codebase. New services can be written in any language, so you can choose to optimize for performance or development speed on a service level rather than on an application&nbsp;level.</p>
+
+<p>Most startups start out expecting to need a total rewrite once they get any kind of serious traction. No design pattern will change the need for rewrites, but distributing functionality across well-contained services will allow you to repair individual bottlenecks as you discover them. Shoving a functional but hard-to-maintain product into the wild will hurt growth in the long run for anything but a very early <span class="caps">MVP</span>. A little advanced planning and ops will prevent a lot of time wasted in critical stages of product&nbsp;growth.</p>
+
+<p>The tools that support this kind of architecture have advanced far enough in recent years that a developer with almost no low-level knowledge, normally content to let Heroku work its magic, can build distributed applications. ZeroMQ, an open-source messaging library, links the components of your application together. Docker, the container engine from DotCloud, lets you configure Linux containers and deploy them anywhere. You can spin up an exact copy of your production environment on your&nbsp;laptop.</p>
+
+<p>Exposing this kind of power to inexperienced developers isn’t without costs. I know I’ve fumbled around quite a bit and let technical optimizations consume entire days that were supposed to be spent writing new features. But some amount of application design is healthy. An informed choice to build a traditional Rails app is fine if you’re building a product that uses technology (e-commerce, simple SaaS app, etc.) rather than a technology company. But if you’re building a modern web application where speed and flexibility are paramount—the future is service-oriented, and the time to start learning and building is&nbsp;now.</p></div>
+        </article>
+      </div>
+      <div class="share-buttons">
+        <div class="content-wrap">
+          <p itemprop="datePublished" class="post-date">Oct 21 2013</p><a href="https://twitter.com/intent/tweet?text=&quot;The Future is Service-Oriented&quot;&amp;url=http%3A%2F%2Fbendrucker.me%2Fposts%2Fthe-future-is-service-oriented%2F&amp;via=bendrucker" class="tweet-btn btn">Like It? Tweet It! <i class="icon-twitter"></i></a><a href="http://eepurl.com/H8UKv" target="_blank" class="email-btn btn">Get Posts by Email <i class="icon-mail"></i></a>
+          <div data-title="The Future is Service-Oriented" class="centup"></div>
+          <script src="https://www.centup.org/button.js"></script>
+        </div>
+      </div>
+    </div>
+    <footer class="page-footer">
+      <div class="content-wrap">
+        <p class="copyright">&copy; 2015 Ben Drucker</p><a href="https://github.com/bendrucker/bendrucker.me" title="bendrucker.me's Wintersmith generator source on GitHub">
+          <p class="source">Source <i class="icon-github"></i></p></a>
+      </div>
+    </footer>
+    <script>
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-37287457-1']);
+      _gaq.push(['_trackPageview']);
+      
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+  </body>
+</html>

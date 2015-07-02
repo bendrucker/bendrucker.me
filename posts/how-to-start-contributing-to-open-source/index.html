@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>How to Start Contributing to Open Source - Ben Drucker
+    </title>
+    <link rel="alternate" href="http://bendrucker.me/feed.xml" type="application/rss+xml" title="Programmer, photographer, designer, fitness geek. Trying to make things people love.">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="60x60" href="/images/touch-icons/iphone.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/images/touch-icons/ipad.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/images/touch-icons/iphone@2x.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/images/touch-icons/ipad@2x.png">
+    <script>
+      (function() {
+        var config = {
+          kitId: 'urs6cvc',
+          scriptTimeout: 3000
+        };
+        var h=document.getElementsByTagName("html")[0];h.className+=" wf-loading";var t=setTimeout(function(){h.className=h.className.replace(/(\s|^)wf-loading(\s|$)/g," ");h.className+=" wf-inactive"},config.scriptTimeout);var tk=document.createElement("script"),d=false;tk.src='//use.typekit.net/'+config.kitId+'.js';tk.type="text/javascript";tk.async="true";tk.onload=tk.onreadystatechange=function(){var a=this.readyState;if(d||a&&a!="complete"&&a!="loaded")return;d=true;clearTimeout(t);try{Typekit.load(config)}catch(b){}};var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(tk,s)
+      })();
+    </script>
+  </head>
+  <body class="single-post">
+    <header class="page-header">
+      <div class="content-wrap"><a href="/">
+          <div class="my-headshot"></div></a>
+        <div class="about-me">
+          <h1>Ben Drucker <a href="http://twitter.com/bendrucker" target="_blank" rel="me">@bendrucker</a></h1>
+          <h2>Programmer, photographer, designer, and fitness geek.</h2>
+        </div>
+      </div>
+    </header>
+    <div id="content">
+      <div class="content-wrap">
+        <article itemscope itemtype="http://schema.org/BlogPosting" class="post">
+          <header class="post-header">
+            <div class="post-title">
+              <h1 itemprop="name headline" class="post-headline">How to Start Contributing to Open Source</h1>
+              <h2 itemprop="description" class="post-subtitle">Open source lets you give back and learn more. The hardest part is getting started.</h2>
+            </div>
+          </header>
+          <div class="post-body"><p>Even while starting a company, I devote a lot of time to open source software projects. I contribute to a few bigger projects (including <a href="http://bookshelfjs.org">Bookshelf</a> and <a href="http://knexjs.org">Knex</a> one of two collaborators helping <a href="https://github.com/tgriesser">the author</a>) and spend time on a handful of small projects of my own. It&#8217;s something new developers always want to ask me about. At this point GitHub has all but replaced the resume. Not only is every commit available for anyone to see, but also every issue, pull request, and comment (more on how to dissect GitHub as an employer in a future&nbsp;post). </p>
+
+<p>Most of these questions from new developers are prefaced with: &#8220;open source is intimidating. I don&#8217;t know where to start.&#8221; It&#8217;s a chicken and egg problem. Learning to write high quality code is the obvious fix, but open source contributions are also one of the best ways to improve your abilities as a developer. Here are a few guiding principles for cutting through the intimidation and getting started in the open source&nbsp;community:</p>
+
+<h2 id="5rulesforgettingstartedinopensource">5 Rules for Getting Started in Open&nbsp;Source</h2>
+
+<h3 id="readtherules">Read The&nbsp;Rules</h3>
+
+<p>Most repositories have contribution guidelines (*<span class="caps">CONTRIBUTING</span>.MD*), a readme that outlines expectations, or both. Read them! They&#8217;re usually short and direct. Projects with a high volume of incoming issues and pull requests tend to be especially strict. Violating the contribution guidelines sends a bad message to the maintainer—if you couldn&#8217;t be bothered to spend two minutes reading the guidelines, chances are your request won&#8217;t be well thought out&nbsp;either. </p>
+
+<h3 id="askdonttell">Ask, Don&#8217;t&nbsp;Tell</h3>
+
+<p>While it&#8217;s increasingly common for companies to allow employees to devote work hours to open source projects, most maintainers are spending their leisure time to support a free product. The worst way to approach someone who is giving you their time and energy without direct compensation is to be accusatory or act entitled. If you&#8217;re inexperienced, there&#8217;s no need to hide it. No one will ever snap at you for: &#8220;I think this might be a bug but I&#8217;m new to <em>Project</em> so I might just be doing something&nbsp;wrong.&#8221;</p>
+
+<h3 id="documentdocumentdocument">Document, Document,&nbsp;Document</h3>
+
+<p><span class="dquo">&#8220;</span>I&#8217;m having trouble with <em>Feature/Method</em>. According to the docs (*link to the relevant section*) I would expect <em>Expectation</em>. Instead I&#8217;m seeing <em>Result</em>. Here&#8217;s what I&#8217;m doing: <em>Sample Code</em>.&#8221;</p>
+
+<p>Make it easy for someone to help you. Use proper <a href="https://help.github.com/articles/github-flavored-markdown#syntax-highlighting">GitHub Flavored Markdown</a>, especially <a href="https://help.github.com/articles/github-flavored-markdown#syntax-highlighting">syntax highlighting</a>. Include links to the relevant lines in your own project. Don&#8217;t make a veteran contributor work harder than they need to: they&#8217;re already helping you for&nbsp;free. </p>
+
+<p>Managing a project for a diverse group of &#8220;customers&#8221; is exceptionally difficult. There&#8217;s a huge difference between building a project for yourself and building one that tens of thousands of people will depend on. It&#8217;s generally much easier to add new behaviors as an end user than to strip out defaults (<a href="https://github.com/tgriesser/bookshelf/issues/241#issuecomment-35385630">example</a>). If you think a particular feature should be part of the core library, come prepared&nbsp;with:</p>
+
+<p>1) A fully functional implementation that you patched in in your own application(s);
+2) A convincing argument for why your addition belongs in the library rather than in &#8220;<a href="https://github.com/joyent/node/wiki/node-core-vs-userland">userland</a>,&#8221; left to individual developers to implement as they&nbsp;choose. </p>
+
+<h3 id="fixyourownproblems">Fix Your Own&nbsp;Problems</h3>
+
+<p>Don&#8217;t waste time actively looking for a project to contribute to. Until you&#8217;re ready to release and support your own community projects, build whatever you&#8217;d like. When you encounter a missing feature, a bug, or documentation that could use improvement in a dependency, treat it like a bug in your own application. Fix it right away, while it&#8217;s still fresh in your mind. If you do eventually evolve into a contributor, you&#8217;ll already know the project well and have an understanding of what areas need&nbsp;attention. </p>
+
+<h3 id="watchandcontribute">Watch and&nbsp;Contribute</h3>
+
+<p>Once you&#8217;ve started to feel comfortable with a project, you should <a href="https://help.github.com/articles/watching-repositories">watch</a> the GitHub repository. As a watcher, you&#8217;ll receive notifications for every new issue (not just the ones that mention you). If you see a question you know you can answer, feel free to jump in and help. But if you&#8217;re not confident in your answer, just make sure to note that. There&#8217;s no sense in sending a newcomer down the wrong path if they are asking a genuinely difficult question. Most of the time, though, you&#8217;ll be able to add value as a user with a solid understanding of the documentation. You don&#8217;t need to be an expert to link people to the right section of the&nbsp;docs. </p>
+
+<h2 id="softwareismadebyhumans">Software is Made by&nbsp;Humans</h2>
+
+<p>Above all, remember that your fellow contributors are human. Yes, <a href="http://www.quora.com/TJ-Holowaychuk-1/How-is-TJ-Holowaychuk-so-insanely-productive">even <span class="caps">TJ</span> Holowaychuk</a>. Be friendly, clear, and respectful and you&#8217;ll get the same in return. It&#8217;s more fun building things&nbsp;together. </p></div>
+        </article>
+      </div>
+      <div class="share-buttons">
+        <div class="content-wrap">
+          <p itemprop="datePublished" class="post-date">Feb 19 2014</p><a href="https://twitter.com/intent/tweet?text=&quot;How to Start Contributing to Open Source&quot;&amp;url=http%3A%2F%2Fbendrucker.me%2Fposts%2Fhow-to-start-contributing-to-open-source%2F&amp;via=bendrucker" class="tweet-btn btn">Like It? Tweet It! <i class="icon-twitter"></i></a><a href="http://eepurl.com/H8UKv" target="_blank" class="email-btn btn">Get Posts by Email <i class="icon-mail"></i></a>
+          <div data-title="How to Start Contributing to Open Source" class="centup"></div>
+          <script src="https://www.centup.org/button.js"></script>
+        </div>
+      </div>
+    </div>
+    <footer class="page-footer">
+      <div class="content-wrap">
+        <p class="copyright">&copy; 2015 Ben Drucker</p><a href="https://github.com/bendrucker/bendrucker.me" title="bendrucker.me's Wintersmith generator source on GitHub">
+          <p class="source">Source <i class="icon-github"></i></p></a>
+      </div>
+    </footer>
+    <script>
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-37287457-1']);
+      _gaq.push(['_trackPageview']);
+      
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+  </body>
+</html>

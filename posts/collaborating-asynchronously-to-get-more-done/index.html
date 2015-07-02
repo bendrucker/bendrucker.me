@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Collaborating Asynchronously to Get More Done - Ben Drucker
+    </title>
+    <link rel="alternate" href="http://bendrucker.me/feed.xml" type="application/rss+xml" title="Programmer, photographer, designer, fitness geek. Trying to make things people love.">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="60x60" href="/images/touch-icons/iphone.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/images/touch-icons/ipad.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/images/touch-icons/iphone@2x.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/images/touch-icons/ipad@2x.png">
+    <script>
+      (function() {
+        var config = {
+          kitId: 'urs6cvc',
+          scriptTimeout: 3000
+        };
+        var h=document.getElementsByTagName("html")[0];h.className+=" wf-loading";var t=setTimeout(function(){h.className=h.className.replace(/(\s|^)wf-loading(\s|$)/g," ");h.className+=" wf-inactive"},config.scriptTimeout);var tk=document.createElement("script"),d=false;tk.src='//use.typekit.net/'+config.kitId+'.js';tk.type="text/javascript";tk.async="true";tk.onload=tk.onreadystatechange=function(){var a=this.readyState;if(d||a&&a!="complete"&&a!="loaded")return;d=true;clearTimeout(t);try{Typekit.load(config)}catch(b){}};var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(tk,s)
+      })();
+    </script>
+  </head>
+  <body class="single-post">
+    <header class="page-header">
+      <div class="content-wrap"><a href="/">
+          <div class="my-headshot"></div></a>
+        <div class="about-me">
+          <h1>Ben Drucker <a href="http://twitter.com/bendrucker" target="_blank" rel="me">@bendrucker</a></h1>
+          <h2>Programmer, photographer, designer, and fitness geek.</h2>
+        </div>
+      </div>
+    </header>
+    <div id="content">
+      <div class="content-wrap">
+        <article itemscope itemtype="http://schema.org/BlogPosting" class="post">
+          <header class="post-header">
+            <div class="post-title">
+              <h1 itemprop="name headline" class="post-headline">Collaborating Asynchronously to Get More Done</h1>
+              <h2 itemprop="description" class="post-subtitle">How applying a software design principle made work meaningful again</h2>
+            </div>
+          </header>
+          <div class="post-body"><p>I&#8217;ve been thinking a lot lately about remote work and building a distributed team. Not having a class or work schedule is a new experience for me. Without any clue how to cope with that, I ended up adopting a nine-to-five-style routine, despite total freedom to do otherwise. That became a serious bottleneck for a team that hails from four cities and three time zones, so I started from scratch in search of a better way to&nbsp;work.</p>
+
+<p>Tim Ferris&#8217;s <a href="http://amzn.com/B002WE46UW">The Four Hour Workweek</a> emphasizes blocking—using long chunks of interrupted time for important tasks to minimize the costly mental inefficiency of switching from one task to another. The term <em>blocking</em> caught my eye, as it has an similar definition in software development. Blocking, in programming, refers to operations that prevent anything else from executing until they finish. It usually comes with a negative connotation, for the same reason it&#8217;s so important for <em>mental</em> computation. More on that&nbsp;later. </p>
+
+<p>Programming as a metaphor for collaborative work came up again in <a href="http://amzn.com/B00C0ALZ0W">Remote</a>, written by Jason and David of 37signals, a pioneer of the software as a service industry and the creator of Ruby on Rails. Remote prescribes asynchronous communication as the key to replacing the feeling of &#8220;business&#8221; with a steady stream of accomplished work. <strong>That was it.</strong> I already understood how to teach a computer how to work efficiently—all I had to do was adopt the same practices for myself. This isn&#8217;t just for geeks—these habits are for <em>everyone</em>, programmer or non-programmer, remote worker or nine to five corporate&nbsp;employee.</p>
+
+<h2 id="programmingconceptsfornonprogrammers">Programming Concepts for&nbsp;Non-Programmers</h2>
+
+<p><strong>Seasoned developers, please skip ahead.</strong> In order for the programming metaphor to make a shred of sense, I want to offer a quick primer on synchronous versus asynchronous computing. Synchronous patterns (per the prefix) are predictable and chronological. If you execute operations <em>A</em> and <em>B</em>, <em>A</em> will run to completion before <em>B</em> can start. While this makes it easy to understand the flow of operations in your program, it also introduces a serious bottleneck (_blocking_). When <em>A</em> runs, it blocks the rest of the program from proceeding. Let&#8217;s add some detail about what <em>A</em> and <em>B</em> actually do:
+* <em>B</em>: a very simple, nearly instantaneous (10 milliseconds) operation
+* <em>A</em>: a complex and length query to a different server for information on a database (1&nbsp;second)</p>
+
+<p><em>B</em>, while itself imperceptibly fast, takes a full 1.01 seconds to return, since it had to wait for <em>A</em> to finish before it could&nbsp;run. </p>
+
+<p>How serious of a problem can synchronous architecture pose? <a href="http://talkingpointsmemo.com/cafe/a-programmer-s-perspective-on-healthcare-gov-and-aca-marketplaces">Just look at Healthcare.gov</a>. If <em>A</em> occasionally fails completely or sometimes takes ten seconds instead of one, the entire system implodes, no matter how robust <em>B</em> is in isolation. Like our brains, web applications don&#8217;t receive simple sets of instructions that require one component. They have multiple pieces that handle different kinds of information and operations, all of which have to work together. And like our brains, the components that process information are more numerous and complex than the the ones that simply perceive it and pass it along to the right&nbsp;destination.</p>
+
+<p>Asynchronous patterns (non-blocking) are a good deal more complicated, but <em>scale</em> much more smoothly. Asynchronous design allows <em>A</em> and <em>B</em> to run simultaneously, while introducing a challenge of its own: unless we specifically tell <em>B</em> to wait for <em>A</em>, <em>B</em> will not know about the results of <em>A</em>. If you make every operation wait for the previous one, you&#8217;ve just constructed a synchronous system with more overhead. To reap the benefits of asynchronous design, you need to embrace the fact that the order in which you farm out tasks is not necessarily the order in which they will&nbsp;finish. </p>
+
+<h2 id="asynchronousintherealworld">Asynchronous in the Real&nbsp;World</h2>
+
+<p><strong>Programmers, you can rejoin us here.</strong> As powerful as asynchronous design may seem, computers have constraints too. We can&#8217;t just press the asynchronous button and magically run 1,000 different operations in parallel. Building that level of parallelism on a computer is no easy task, and our brains are certainly not capable of it. Node.js, a popular framework for building web applications, actually mirrors our brains quite nicely. Node.js won&#8217;t automatically run any operation in parallel. Calculating Pi to 100 digits, for example, would block and force the program to wait. Node.js gives the developer asynchronous superpowers without the usual complexity because it manages asynchronous <em>I/O</em>, (input/output). Node runs your application in one thread and handles I/O in one or more others. So while your app is still synchronous and ticks along line by line, retrieving data from a database, receiving a request from a user&#8217;s browser, or saving a file to a disk doesn&#8217;t make the program wait. This is called the <em>event loop</em>.</p>
+
+<p>The event loop, per its name, is essentially looping through a list of all the pending I/O requests your application made, checking each to see if it&#8217;s finished, and handing the result back to the app when it finds a completed&nbsp;request. </p>
+
+<h2 id="asynchronousproductivity">Asynchronous&nbsp;Productivity</h2>
+
+<p>What does all this technical jargon mean when it comes to working effectively and getting things&nbsp;done? </p>
+
+<p>Software implementations like Node and our brains are unified by a single overarching principle of work: <strong>multitasking is impossible</strong>. Working on multiple things at once requires some sort of external device to separate the work and queue it until it can be processed. Interleaving disparate tasks without that external structure is difficult for a computer, let alone a human. Unlike a computer, we <em>want</em> to block as much as possible. The brain is a machine designed to execute one task at a time and incurs steep costs each time it switches to a different&nbsp;task. </p>
+
+<p>Constant communication between members of a team breaks the blocking model. How do you preserve your blocks without moving to some far-off location without the distractions of Internet or phone? Enforce an asynchronous communication policy wherever possible. The dreaded email, when used properly, is the fundamental unit of asynchronous messaging. It sits in a queue and the expected response time is indefinite, though usually within twenty four hours. A project management tool like <a href="http://asana.com">Asana</a> is a more advanced queue, but still fundamentally follows the same asynchronous&nbsp;pattern.</p>
+
+<p>Phone calls and meetings are inherently synchronous. Phone calls block all other work until they are complete. Meetings are even more costly—you might spend just as much time traveling and waiting as you do engaged in discussion. While most people could consciously cut down on unnecessary phone calls and meetings, not all communication can or should happen asynchronously. Just as a programmer carefully polices costly synchronous operations, you should set aggressively short meeting and call times, carefully define expectations in advance, and save blocking communication for critical&nbsp;contacts. </p>
+
+<p>These techniques will fall flat if you try to hide from the inherent tradeoffs of asynchronous design (responses are not immediate and order is not guaranteed). Don&#8217;t just acknowledge them—embrace&nbsp;them. </p>
+
+<p>No tool will cure you of the temptation to work synchronously. For me, asynchronous email means checking no more than twice a day and anticipating a <em>minimum</em> response time of 12 hours for any email I send. All of a sudden the much maligned email became my second (behind Asana) favorite way to communicate for&nbsp;work. </p>
+
+<p>The key is to limit each mode of communication to strictly asynchronous or synchronous at all times. I&#8217;m so fanatical about preserving that line that I disabled voicemail (asynchronous) on my phone entirely—call your carrier if you want to do the&nbsp;same.</p>
+
+<p>A pleasant side effect of separating synchronous communication (calls and meetings) is that you&#8217;ll be able to easily defer communication that isn&#8217;t important enough to block work—shift it to an asynchronous channel. Taking a day off becomes infinitely more enjoyable when the majority of your communication is asynchronous. You can actually take time off, not just thumb your phone from somewhere that&#8217;s not your office. You can build your schedule around family, travel, or whatever real-life, blocking pursuits are important to&nbsp;you. </p>
+
+<p>Unless you&#8217;re in sales, you&#8217;re not getting paid to communicate.  You&#8217;re getting paid to get work done, and you have more freedom than you realize when it comes to defining where and when that work happens. You&#8217;re not Node—don&#8217;t try to work as if you have its event loop to manage your communication. If you spend your day looping back to your inbox every five minutes, 5 o&#8217;clock will roll around and you&#8217;ll have accomplished little. Instead, dramatically lengthen the time between loops and use the savings for longer blocks of work. You&#8217;ll accomplish more while working&nbsp;less. </p></div>
+        </article>
+      </div>
+      <div class="share-buttons">
+        <div class="content-wrap">
+          <p itemprop="datePublished" class="post-date">Nov 06 2013</p><a href="https://twitter.com/intent/tweet?text=&quot;Collaborating Asynchronously to Get More Done&quot;&amp;url=http%3A%2F%2Fbendrucker.me%2Fposts%2Fcollaborating-asynchronously-to-get-more-done%2F&amp;via=bendrucker" class="tweet-btn btn">Like It? Tweet It! <i class="icon-twitter"></i></a><a href="http://eepurl.com/H8UKv" target="_blank" class="email-btn btn">Get Posts by Email <i class="icon-mail"></i></a>
+          <div data-title="Collaborating Asynchronously to Get More Done" class="centup"></div>
+          <script src="https://www.centup.org/button.js"></script>
+        </div>
+      </div>
+    </div>
+    <footer class="page-footer">
+      <div class="content-wrap">
+        <p class="copyright">&copy; 2015 Ben Drucker</p><a href="https://github.com/bendrucker/bendrucker.me" title="bendrucker.me's Wintersmith generator source on GitHub">
+          <p class="source">Source <i class="icon-github"></i></p></a>
+      </div>
+    </footer>
+    <script>
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-37287457-1']);
+      _gaq.push(['_trackPageview']);
+      
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+  </body>
+</html>
