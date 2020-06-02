@@ -4,7 +4,7 @@
     "moment": "2.x",
     "typogr": "0.5.x",
     "wintersmith-stylus": "git://github.com/bendrucker/wintersmith-stylus.git",
-    "lodash": "~2.0.0",
+    "lodash": "~4.17.15",
     "wintersmith-showdown": "git://github.com/lhagan/wintersmith-showdown.git"
   },
   "repository": "none",
