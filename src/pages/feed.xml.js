@@ -25,7 +25,7 @@ export async function GET() {
     },
     author: {
       name: SITE.author,
-      email: 'ben@bendrucker.me',
+      email: 'bvdrucker@gmail.com',
       link: SITE.url,
     },
   });
@@ -42,7 +42,7 @@ export async function GET() {
       content: `<p>${post.data.subtitle || ''}</p>`, // Basic content - could be enhanced with rendered content
       author: [{
         name: SITE.author,
-        email: 'ben@bendrucker.me',
+        email: 'bvdrucker@gmail.com',
         link: SITE.url,
       }],
       date: new Date(post.data.publishDate),
