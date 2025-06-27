@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+Disallow: /css/
+Disallow: /fonts/
+Disallow: /.git/
+Disallow: /node_modules/
+
+# Allow search engines to access feed
+Allow: /feed.xml
+
+# Sitemap location
+Sitemap: https://www.bendrucker.me/sitemap.txt
+
+# Crawl delay (optional - helps prevent overwhelming the server)
+Crawl-delay: 1
+
+# Special directives for AI/ML crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: CCBot
+Allow: /

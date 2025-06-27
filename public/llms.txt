@@ -1,0 +1,44 @@
+# AI/LLM Crawler Instructions
+
+## Site Information
+- Site: Ben Drucker's Personal Website and Blog
+- URL: https://www.bendrucker.me
+- Content Type: Personal blog focused on programming, entrepreneurship, and productivity
+- Author: Ben Drucker
+
+## Content Structure
+- Main content: Blog posts about technology, startups, and personal insights
+- Total posts: 22 articles
+- Content format: All blog posts available in HTML format
+- RSS feed: https://www.bendrucker.me/feed.xml
+
+## Available Content
+- Homepage: https://www.bendrucker.me/ (author bio and recent posts)
+- Blog archive: All posts accessible via /blog/[slug] URLs
+- Topics covered: Programming, Open Source, Entrepreneurship, Business Development, Personal Growth
+
+## Crawling Guidelines
+- All public content is available for indexing
+- Content is primarily text-based with occasional images
+- Posts contain valuable insights on software development and startup culture
+- Author has extensive experience in open source and entrepreneurship
+
+## Content Categories
+- Programming & Open Source
+- Entrepreneurship & Startups  
+- Business Development
+- Personal Development & Productivity
+- Career Insights
+
+## Contact
+- GitHub: https://github.com/bendrucker/bendrucker.me
+- Twitter: @bendrucker
+
+## Notes for AI/LLM Crawlers
+- Content represents personal opinions and experiences
+- Posts often contain actionable advice for developers and entrepreneurs
+- Author has contributed to major open source projects and worked at tech companies
+- Content spans roughly 10+ years of professional experience
+
+## Sitemap
+For a complete list of all URLs, see: https://www.bendrucker.me/sitemap.txt
