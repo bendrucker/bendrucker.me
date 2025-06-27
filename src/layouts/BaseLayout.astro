@@ -37,13 +37,18 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
     <!-- RSS -->
     <link rel="alternate" href="/feed.xml" type="application/rss+xml" title={SITE.description} />
     
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
     <!-- Styles -->
     <link rel="stylesheet" href="/css/main.css" />
     
     <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    
+  
     <!-- Google Analytics 4 -->
     <script async src={`https://www.googletagmanager.com/gtag/js?id=${SITE.googleAnalyticsId}`}></script>
     <script define:vars={{ gaId: SITE.googleAnalyticsId }}>
@@ -51,17 +56,6 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', gaId);
-    </script>
-    
-    <!-- Typekit -->
-    <script>
-      (function() {
-        var config = {
-          kitId: 'urs6cvc',
-          scriptTimeout: 3000
-        };
-        var h=document.getElementsByTagName("html")[0];h.className+=" wf-loading";var t=setTimeout(function(){h.className=h.className.replace(/(\s|^)wf-loading(\s|$)/g," ");h.className+=" wf-inactive"},config.scriptTimeout);var tk=document.createElement("script"),d=false;tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.type="text/javascript";tk.async="true";tk.onload=tk.onreadystatechange=function(){var a=this.readyState;if(d||a&&a!="complete"&&a!="loaded")return;d=true;clearTimeout(t);try{Typekit.load(config)}catch(b){}};var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(tk,s)
-      })();
     </script>
   </head>
   <body>
