@@ -48,6 +48,15 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
     <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  
+    <!-- Google Analytics 4 -->
+    <script async src={`https://www.googletagmanager.com/gtag/js?id=${SITE.googleAnalyticsId}`}></script>
+    <script define:vars={{ gaId: SITE.googleAnalyticsId }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', gaId);
+    </script>
   </head>
   <body>
     <header class="page-header">
@@ -76,19 +85,5 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
         </a>
       </div>
     </footer>
-    
-    <!-- Google Analytics (Legacy) - Consider upgrading to GA4 -->
-    <script>
-      // Legacy GA code preserved - recommend upgrading to GA4 for modern tracking
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-37287457-1']);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = 'https://ssl.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
   </body>
 </html>

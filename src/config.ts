@@ -7,4 +7,5 @@ export const SITE = {
   twitter: '@bendrucker',
   twitterUrl: 'https://twitter.com/bendrucker',
   github: 'https://github.com/bendrucker/bendrucker.me',
+  googleAnalyticsId: 'G-GDY00493QG',
 } as const;
