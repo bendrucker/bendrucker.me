@@ -128,16 +128,16 @@ audio:not([controls]),
 .content-wrap {
   max-width: 42em;
   margin: 0 auto;
-  padding: 0.5em 1em;
+  padding: 0.1em 1em;
 }
 @media (min-width: 479px) {
   .content-wrap {
-    padding: 1em;
+    padding: 0.75em 1em;
   }
 }
 body {
   font-family: 'Inter', sans-serif;
-  font-weight: 400;
+  font-weight: 300;
   font-size: 16px;
 }
 h1,
@@ -164,7 +164,7 @@ em {
   font-style: italic;
 }
 strong {
-  font-weight: 700;
+  font-weight: 600;
 }
 @font-face {
   font-family: 'icomoon';
@@ -246,6 +246,7 @@ strong {
   background-color: #f4f4f4;
   border-bottom: 1px solid #e8e8e8;
   border-bottom: 1px solid #e8e8e8;
+  padding: 0.25em 0;
 }
 .page-header .content-wrap {
   zoom: 1;
@@ -281,8 +282,8 @@ strong {
   margin: 0 auto;
 }
 .about-me h1 {
-  font-weight: 700;
-  margin-bottom: 0.25em;
+  font-weight: 500;
+  margin-bottom: 0.05em;
   font-size: 1.75em;
   color: #434855;
 }
@@ -292,10 +293,11 @@ strong {
   font-size: 0.65em;
 }
 .about-me h2 {
-  font-size: 1em;
+  font-size: 0.9em;
   font-weight: 300;
-  line-height: 1.25em;
+  line-height: 1em;
   color: #9d9d9d;
+  margin-bottom: 0.3em;
 }
 @media (min-width: 479px) {
   .page-header .my-headshot {
@@ -366,6 +368,7 @@ strong {
 }
 .primary-nav {
   text-align: center;
+  padding: 0.25em 0;
 }
 @media (min-width: 479px) {
   .primary-nav {
@@ -454,13 +457,13 @@ strong {
   display: block;
   width: 50%;
   max-width: 21em;
-  margin: 0 auto;
+  margin: 0.25em auto 0;
   border-bottom: 2px solid #e8e8e8;
 }
 .posts .post {
   display: block;
-  padding-bottom: 0.5em;
-  margin: 0.5em 0;
+  padding: 0.1em 0;
+  margin: 0;
   border-bottom: 2px solid #e8e8e8;
 }
 .posts .post:last-child {
@@ -468,12 +471,14 @@ strong {
 }
 .posts .post-title {
   font-size: 1em;
-  margin-bottom: 0.25em;
+  margin-bottom: 0.15em;
+  line-height: 1.1em;
 }
 .posts .post-headline {
   font-size: 1.25em;
   display: inline;
   margin-right: 0.25em;
+  font-weight: 600;
 }
 .posts .post-date {
   display: inline;
@@ -481,14 +486,15 @@ strong {
 }
 .posts .post-subtitle {
   font-style: normal;
-  font-size: 1em;
+  font-size: 0.8em;
   margin: 0;
+  line-height: 1em;
 }
 .post-tags {
   display: none;
   font-size: 0.6em;
   margin: 0.5em 0;
-  padding: 0.5em 0;
+  padding: 0.75em 0;
 }
 .post-tags ul {
   zoom: 1;
@@ -504,7 +510,8 @@ strong {
 .post-tags li {
   float: left;
   margin-right: 0.5em;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 0.75em;
   padding: 0.5em 1em;
   border-radius: 10em;
   text-transform: uppercase;
@@ -516,7 +523,6 @@ strong {
   background: #347ebd;
   color: #fff;
   text-shadow: 0 1px 0 rgba(0,0,0,0.5);
-  font-weight: 900;
 }
 @media (min-width: 479px) {
   .posts {
@@ -532,76 +538,102 @@ strong {
   }
 }
 .post-title {
-  margin-top: 0.75em;
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+  font-weight: 700;
+  font-size: 2em;
 }
 .post-headline {
-  margin-bottom: 0.1em;
-  font-weight: 900;
+  margin-bottom: 0.2em;
+  font-weight: 600;
   color: #2b2927;
 }
 .post-subtitle {
   color: #413e3b;
   font-style: italic;
-  font-size: 1.2em;
+  font-size: 1em;
+  font-weight: 300;
+  margin-bottom: 0.8em;
+  display: block;
 }
 .post-date {
   font-size: 0.8em;
   color: #9d9d9d;
+  font-weight: 300;
+  margin-bottom: 1.5em;
 }
-.post-body {
-  padding: 1em 0;
+.post-categories {
+  margin-bottom: 0.25em;
 }
-.post-body h1,
-.post-body h2,
-.post-body h3,
-.post-body h4,
-.post-body h5,
-.post-body h6 {
-  margin: 0.5em 0;
+.post-category {
+  display: inline-block;
+  background: #dae9f5;
+  color: #347ebd;
+  padding: 0.5em 1em;
+  margin: 0 0.5em 0.5em 0;
+  border-radius: 10em;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 #fff;
 }
-.post-body h2 {
-  font-weight: 900;
+.post-header .post-categories .post-category {
+  font-size: 0.75em;
 }
-.post-body h3,
-.post-body h4,
-.post-body h5,
-.post-body h6 {
-  font-weight: 700;
+.post-content {
+  padding: 1.5em 0;
 }
-.post-body p {
+.post-content h1,
+.post-content h2,
+.post-content h3,
+.post-content h4,
+.post-content h5,
+.post-content h6 {
+  margin: 1em 0 0.5em;
+}
+.post-content h2 {
+  font-weight: 400;
+  font-size: 1.3em;
+}
+.post-content h3,
+.post-content h4,
+.post-content h5,
+.post-content h6 {
+  font-weight: 500;
+}
+.post-content p {
   font-size: 1.1em;
-  line-height: 1.5em;
-  padding-bottom: 0.75em;
+  line-height: 1.6em;
+  padding-bottom: 1em;
   -webkit-hyphens: auto;
   -moz-hyphens: auto;
   -ms-hyphens: auto;
   hyphens: auto;
 }
-.post-body p:last-child {
+.post-content p:last-child {
   padding: 0;
 }
-.post-body blockquote {
+.post-content blockquote {
   font-style: italic;
   margin: 1em 0;
 }
 @media (min-width: 479px) {
-  .post-body blockquote {
+  .post-content blockquote {
     border-left: 0.5em solid #6ba5d6;
     padding-left: 1.5em;
   }
 }
-.post-body hr {
+.post-content hr {
   width: 50%;
   outline: none;
   border: 1px solid #e8e8e8;
   margin-bottom: 1.5em;
 }
-.post-body img {
+.post-content img {
   display: block;
   margin: 0 auto;
   max-width: 100%;
 }
-.post-body sup {
+.post-content sup {
   vertical-align: super;
   font-size: 0.83em;
 }
