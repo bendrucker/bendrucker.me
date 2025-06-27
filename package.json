@@ -1,14 +1,17 @@
 {
-  "dependencies": {
-    "wintersmith": "~2.0.10",
-    "moment": "2.x",
-    "typogr": "0.5.x",
-    "wintersmith-stylus": "git://github.com/bendrucker/wintersmith-stylus.git",
-    "lodash": "~4.17.15",
-    "wintersmith-showdown": "git://github.com/lhagan/wintersmith-showdown.git"
-  },
-  "repository": "none",
+  "name": "bendrucker.me",
+  "type": "module",
+  "version": "1.0.0",
   "scripts": {
-    "build": "wintersmith build"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/alpinejs": "^0.4.8",
+    "@types/alpinejs": "^3.13.11",
+    "alpinejs": "^3.14.9",
+    "astro": "^5.10.1"
   }
 }

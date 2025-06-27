@@ -1,0 +1,100 @@
+---
+import { SITE } from '../config';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  canonicalURL?: string;
+}
+
+const { title = SITE.title, description = SITE.description, canonicalURL = Astro.url.href } = Astro.props;
+const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>{siteTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:site_name" content={SITE.name} />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content={SITE.twitter} />
+    <meta name="twitter:title" content={siteTitle} />
+    <meta name="twitter:description" content={description} />
+    
+    <!-- RSS -->
+    <link rel="alternate" href="/feed.xml" type="application/rss+xml" title={SITE.description} />
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/main.css" />
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    
+    <!-- Typekit -->
+    <script>
+      (function() {
+        var config = {
+          kitId: 'urs6cvc',
+          scriptTimeout: 3000
+        };
+        var h=document.getElementsByTagName("html")[0];h.className+=" wf-loading";var t=setTimeout(function(){h.className=h.className.replace(/(\s|^)wf-loading(\s|$)/g," ");h.className+=" wf-inactive"},config.scriptTimeout);var tk=document.createElement("script"),d=false;tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.type="text/javascript";tk.async="true";tk.onload=tk.onreadystatechange=function(){var a=this.readyState;if(d||a&&a!="complete"&&a!="loaded")return;d=true;clearTimeout(t);try{Typekit.load(config)}catch(b){}};var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(tk,s)
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="page-header">
+      <div class="content-wrap">
+        <a href="/">
+          <div class="my-headshot"></div>
+        </a>
+        <div class="about-me">
+          <h1>{SITE.name} <a href={SITE.twitterUrl} target="_blank" rel="me">{SITE.twitter}</a></h1>
+          <h2>{SITE.description}</h2>
+        </div>
+      </div>
+    </header>
+    
+    <div id="content">
+      <div class="content-wrap">
+        <slot />
+      </div>
+    </div>
+    
+    <footer class="page-footer">
+      <div class="content-wrap">
+        <p class="copyright">&copy; {new Date().getFullYear()} {SITE.author}</p>
+        <a href={SITE.github} title="bendrucker.me's source on GitHub">
+          <p class="source">Source <i class="icon-github"></i></p>
+        </a>
+      </div>
+    </footer>
+    
+    <!-- Google Analytics (Legacy) - Consider upgrading to GA4 -->
+    <script>
+      // Legacy GA code preserved - recommend upgrading to GA4 for modern tracking
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-37287457-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = 'https://ssl.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+  </body>
+</html>

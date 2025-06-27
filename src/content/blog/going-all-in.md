@@ -1,0 +1,22 @@
+---
+title: Going All In
+subtitle: I’m leaving school and depending on my company’s success. And that still scares me.
+publishDate: 2013-07-30
+categories: Startups, Education
+---
+
+Dropping out. It’s the perennial young entrepreneur’s dream—the glory of getting accepted to Y Combinator, raising millions, and gracing the front page of TechCrunch. You join the ranks of Bill Gates, Mark Zuckerberg, Jack Dorsey, and David Karp. That’s how I imagined it too. But now that it’s here, leaving school doesn’t feel like this at all. It’s strangely lonely.
+
+Instead of returning to Columbia this fall, I’ll be running [Valet.io](http://valet.io) full time ninety blocks south of Morningside Heights. I’m not leaving school to attend a prestigious accelerator or pursue a big VC check. I’m leaving because this company matters to me like nothing I’ve ever worked on before and I can’t bear to see it quietly die of neglect. I’m leaving because this company is profitable and I want it to be wildly profitable. I’m leaving because I’ve seen how our products have the potential to improve fundraising, and I’d be kicking myself forever if I had to watch someone else execute on my vision.
+
+But as excited as I am to make this leap, I’d be lying if I said I wasn’t scared. If this company doesn’t grow the way I hope, it’s not investors I have to answer to—only myself. For the first time in my life, I’m paying my own rent. I’ll only have enough money to buy groceries at the end of the week if the company earns enough to pay me. That’s something that most of the world experiences everyday. For the first time in nineteen years, I will too.
+
+I owe a lot to my co-founders, [Ben](http://twitter.com/benldonald) and [Jake](http://twitter.com/jakesilberg). I wouldn’t be here if not for their hard work. But they’ll be returning to Harvard in the fall. If there’s one thing I’ve learned from this process, it’s that you have to respect that other people may have very different aspirations and priorities. Taking time off from school right now was the right decision for me, but not for them. And I’ve come to fully respect their decision to have a traditional undergraduate experience and continue as part-time members of the team. But the idea of coming into work alone three weeks from today is still undeniably frightening.
+
+But more than anyone, I owe thanks to my parents, and especially my dad. Watching the look on their faces when I told them I wanted to leave school was almost unbearable. They saved their whole life so that I could go through four years of college without worrying about money. My dad did everything in his power so that I could attend Columbia, his alma mater. That was what seventeen-year-old me had so desperately wanted. Hearing me loudly vocalize my frustrations with Columbia was devastating. I’m sorry—I wish I could have been more mature. Thank you for supporting me.
+
+My parents helped me realize something important. I’m nineteen years old. I was a very different person two years ago, and while I think I’m maturing, I’ll be a very different person two years from now. Maybe I’ll be prepping for my Bloomberg feature on how I took over the fundraising world. But maybe this company will flounder, and that’s okay. I’m not permanently dropping out. I can always go back to school. There’s no shame in failing if you give up everything to chase success and luck just isn’t on your side.
+
+> “Most things are not as risky as they seem.” -Sam Altman
+
+My friend Alexis stresses above all: [make something people love](http://www.hyperink.com/Make-Something-People-Love-Lessons-From-A-Startup-Guy-b1478). Know why you’re getting up each morning. Work hard, even when no one is looking. While big checks and press features will always be exciting, startups are businesses just like any other, and businesses are built on profit, not hype. The biggest thing we did right this summer at Valet.io was being laser-focused on making something that real customers wanted to pay for. I hope other young entrepreneurs will consider this path in the future, as unglamorous as its first few steps might be. If you’re doing all of that and school is in your way, I promise that your friends and family will support you if you choose to leave.
