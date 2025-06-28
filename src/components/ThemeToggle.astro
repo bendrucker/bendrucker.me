@@ -16,7 +16,7 @@
     border: 1px solid var(--border-color);
     border-radius: 20px;
     padding: 0;
-    transition: all 0.3s ease;
+    transition: width 0.3s ease;
     width: 40px;
     height: 40px;
     overflow: hidden;
@@ -35,7 +35,7 @@
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     position: relative;
   }
 
@@ -78,14 +78,13 @@
     border-radius: 0;
   }
 
-  /* Enhanced sliding animation during transitions */
-  .theme-control.transitioning .theme-option {
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  /* Ensure smooth reordering animation */
+  /* Synchronized animation during transitions */
   .theme-control.transitioning {
     pointer-events: none;
+  }
+  
+  .theme-control.transitioning .theme-option {
+    transition: all 0.3s ease;
   }
 </style>
 
@@ -117,20 +116,16 @@
         
         this.transitioning = true;
         
-        // Keep expanded briefly to show the sliding animation
-        setTimeout(() => {
-          this.setTheme(newTheme);
-        }, 50);
+        // Change theme immediately so reordering happens
+        this.setTheme(newTheme);
         
-        // Then collapse after theme changes (so new order is set)
-        setTimeout(() => {
-          this.expanded = false;
-        }, 200);
+        // Start collapse immediately - let CSS handle the sync
+        this.expanded = false;
         
-        // Clear transitioning state
+        // Clear transitioning state after animation completes
         setTimeout(() => {
           this.transitioning = false;
-        }, 600);
+        }, 300);
       }
     }"
     @mouseenter="!transitioning && (expanded = true)"
