@@ -1,5 +1,18 @@
 ---
 // ThemePicker.astro - Simple segmented control
+
+interface ThemeButtonData {
+  theme: 'auto' | 'light' | 'dark';
+  icon: string;
+}
+
+const themes: ThemeButtonData[] = [
+  { theme: 'light', icon: '🌞' },
+  { theme: 'auto', icon: '✨' },
+  { theme: 'dark', icon: '🌚' }
+];
+
+const titleCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 ---
 
 <style>
@@ -126,32 +139,16 @@
     :class="{ expanded: expanded, transitioning: transitioning }"
     :data-active-theme="theme"
   >
-    <button 
-      class="theme-option light"
-      :class="{ active: theme === 'light' }"
-      @click="handleThemeChange('light')"
-      title="Light"
-      aria-label="Light"
-    >
-      🌞
-    </button>
-    <button 
-      class="theme-option auto"
-      :class="{ active: theme === 'auto' }"
-      @click="handleThemeChange('auto')"
-      title="Auto"
-      aria-label="Auto"
-    >
-      ✨
-    </button>
-    <button 
-      class="theme-option dark"
-      :class="{ active: theme === 'dark' }"
-      @click="handleThemeChange('dark')"
-      title="Dark"
-      aria-label="Dark"
-    >
-      🌚
-    </button>
+    {themes.map(({ theme: themeType, icon }) => (
+      <button 
+        class={`theme-option ${themeType}`}
+        :class={`{ active: theme === '${themeType}' }`}
+        @click={`handleThemeChange('${themeType}')`}
+        title={titleCase(themeType)}
+        aria-label={titleCase(themeType)}
+      >
+        {icon}
+      </button>
+    ))}
   </div>
 </div>
