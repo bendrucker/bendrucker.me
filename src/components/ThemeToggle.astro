@@ -1,0 +1,135 @@
+---
+// ThemeToggle.astro - Simple segmented control
+---
+
+<style>
+  .theme-control-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .theme-control {
+    display: flex;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2px;
+    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+  }
+
+  .theme-control.expanded {
+    width: 120px;
+  }
+
+  .theme-option {
+    flex: 1;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .theme-control:not(.expanded) .theme-option:not(.active) {
+    display: none;
+  }
+
+  .theme-control:not(.expanded) .theme-option.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+    border-radius: 18px;
+    width: 100%;
+  }
+
+  .theme-control.expanded .theme-option {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+  }
+
+  .theme-control.expanded .theme-option:hover {
+    background: var(--border-color);
+  }
+
+  .theme-control.expanded .theme-option:first-child {
+    border-radius: 18px 0 0 18px;
+  }
+
+  .theme-control.expanded .theme-option:last-child {
+    border-radius: 0 18px 18px 0;
+  }
+
+  .theme-control.expanded .theme-option:nth-child(2) {
+    border-radius: 0;
+  }
+
+  /* Smooth transitions during theme changes */
+  .theme-control.transitioning .theme-option {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+</style>
+
+<div class="theme-control-container">
+  <div 
+    class="theme-control"
+    x-data="{ 
+      expanded: false,
+      transitioning: false,
+      handleThemeChange(newTheme) {
+        if (this.theme === newTheme) return;
+        
+        // Start transition animation
+        this.transitioning = true;
+        
+        // Collapse after a brief delay to show the sliding animation
+        setTimeout(() => {
+          this.expanded = false;
+        }, 100);
+        
+        // Change theme after collapse animation
+        setTimeout(() => {
+          this.setTheme(newTheme);
+          this.transitioning = false;
+        }, 400);
+      }
+    }"
+    @mouseenter="!transitioning && (expanded = true)"
+    @mouseleave="!transitioning && (expanded = false)"
+    :class="{ expanded: expanded, transitioning: transitioning }"
+  >
+    <button 
+      class="theme-option"
+      :class="{ active: theme === 'light' }"
+      @click="handleThemeChange('light')"
+      title="Light mode"
+    >
+      🌞
+    </button>
+    <button 
+      class="theme-option"
+      :class="{ active: theme === 'dark' }"
+      @click="handleThemeChange('dark')"
+      title="Dark mode"
+    >
+      🌚
+    </button>
+    <button 
+      class="theme-option"
+      :class="{ active: theme === 'auto' }"
+      @click="handleThemeChange('auto')"
+      title="Auto mode"
+    >
+      ✨
+    </button>
+  </div>
+</div>
