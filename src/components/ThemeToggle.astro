@@ -15,7 +15,7 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 2px;
+    padding: 0;
     transition: all 0.3s ease;
     width: 40px;
     height: 40px;
@@ -35,7 +35,7 @@
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
   }
 
@@ -47,8 +47,13 @@
     opacity: 1;
     pointer-events: auto;
     transform: scale(1);
-    border-radius: 18px;
+    border-radius: 20px;
     width: 100%;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
   }
 
   .theme-control.expanded .theme-option {
@@ -62,20 +67,25 @@
   }
 
   .theme-control.expanded .theme-option:first-child {
-    border-radius: 18px 0 0 18px;
+    border-radius: 20px 0 0 20px;
   }
 
   .theme-control.expanded .theme-option:last-child {
-    border-radius: 0 18px 18px 0;
+    border-radius: 0 20px 20px 0;
   }
 
   .theme-control.expanded .theme-option:nth-child(2) {
     border-radius: 0;
   }
 
-  /* Smooth transitions during theme changes */
+  /* Enhanced sliding animation during transitions */
   .theme-control.transitioning .theme-option {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Ensure smooth reordering animation */
+  .theme-control.transitioning {
+    pointer-events: none;
   }
 </style>
 
@@ -85,51 +95,57 @@
     x-data="{ 
       expanded: false,
       transitioning: false,
+      getOrderedOptions() {
+        const options = [
+          { key: 'light', emoji: '🌞', title: 'Light mode' },
+          { key: 'dark', emoji: '🌚', title: 'Dark mode' },
+          { key: 'auto', emoji: '✨', title: 'Auto mode' }
+        ];
+        
+        // Find active option and move to center
+        const activeIndex = options.findIndex(opt => opt.key === this.theme);
+        if (activeIndex === -1) return options;
+        
+        const active = options[activeIndex];
+        const others = options.filter(opt => opt.key !== this.theme);
+        
+        // Return with active in center
+        return [others[0], active, others[1]];
+      },
       handleThemeChange(newTheme) {
         if (this.theme === newTheme) return;
         
-        // Start transition animation
         this.transitioning = true;
         
-        // Collapse after a brief delay to show the sliding animation
-        setTimeout(() => {
-          this.expanded = false;
-        }, 100);
-        
-        // Change theme after collapse animation
+        // Keep expanded briefly to show the sliding animation
         setTimeout(() => {
           this.setTheme(newTheme);
+        }, 50);
+        
+        // Then collapse after theme changes (so new order is set)
+        setTimeout(() => {
+          this.expanded = false;
+        }, 200);
+        
+        // Clear transitioning state
+        setTimeout(() => {
           this.transitioning = false;
-        }, 400);
+        }, 600);
       }
     }"
     @mouseenter="!transitioning && (expanded = true)"
     @mouseleave="!transitioning && (expanded = false)"
     :class="{ expanded: expanded, transitioning: transitioning }"
   >
-    <button 
-      class="theme-option"
-      :class="{ active: theme === 'light' }"
-      @click="handleThemeChange('light')"
-      title="Light mode"
-    >
-      🌞
-    </button>
-    <button 
-      class="theme-option"
-      :class="{ active: theme === 'dark' }"
-      @click="handleThemeChange('dark')"
-      title="Dark mode"
-    >
-      🌚
-    </button>
-    <button 
-      class="theme-option"
-      :class="{ active: theme === 'auto' }"
-      @click="handleThemeChange('auto')"
-      title="Auto mode"
-    >
-      ✨
-    </button>
+    <template x-for="(option, index) in getOrderedOptions()" :key="option.key">
+      <button 
+        class="theme-option"
+        :class="{ active: theme === option.key }"
+        @click="handleThemeChange(option.key)"
+        :title="option.title"
+        x-text="option.emoji"
+      >
+      </button>
+    </template>
   </div>
 </div>
