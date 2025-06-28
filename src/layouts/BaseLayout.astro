@@ -1,6 +1,7 @@
 ---
 import { SITE } from '../config';
 import '../styles/main.css';
+import ThemePicker from '../components/ThemePicker.astro';
 
 export interface Props {
   title?: string;
@@ -13,7 +14,7 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" x-data="themeManager" :data-theme="theme">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
@@ -48,6 +49,57 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   
+    <!-- Dark Mode Theme Manager -->
+    <script>
+      document.addEventListener('alpine:init', () => {
+        Alpine.data('themeManager', () => ({
+          theme: 'auto',
+          
+          init() {
+            // Get saved theme or default to auto
+            this.theme = localStorage.getItem('theme') || 'auto';
+            this.updateTheme();
+          },
+          
+          updateTheme() {
+            if (this.theme === 'auto') {
+              // Remove data-theme to let CSS media query handle it
+              document.documentElement.removeAttribute('data-theme');
+            } else {
+              // Set explicit theme
+              document.documentElement.setAttribute('data-theme', this.theme);
+            }
+          },
+          
+          setTheme(newTheme) {
+            this.theme = newTheme;
+            localStorage.setItem('theme', this.theme);
+            this.updateTheme();
+          },
+          
+          toggleTheme() {
+            if (this.theme === 'light') {
+              this.theme = 'dark';
+            } else if (this.theme === 'dark') {
+              this.theme = 'auto';
+            } else {
+              this.theme = 'light';
+            }
+            
+            localStorage.setItem('theme', this.theme);
+            this.updateTheme();
+          },
+          
+          getCurrentTheme() {
+            if (this.theme === 'auto') {
+              return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            return this.theme;
+          }
+        }));
+      });
+    </script>
+
     <!-- Google Analytics 4 -->
     <script async src={`https://www.googletagmanager.com/gtag/js?id=${SITE.googleAnalyticsId}`}></script>
     <script define:vars={{ gaId: SITE.googleAnalyticsId }}>
@@ -79,8 +131,9 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
     <footer class="page-footer">
       <div class="content-wrap">
         <p class="copyright">&copy; {new Date().getFullYear()} {SITE.author}</p>
-        <a href={SITE.github} title="bendrucker.me's source on GitHub">
-          <p class="source">Source <i class="icon-github"></i></p>
+        <ThemePicker />
+        <a href={SITE.github} title="bendrucker.me's source on GitHub" class="source-link">
+          <i class="icon-github"></i>
         </a>
       </div>
     </footer>
