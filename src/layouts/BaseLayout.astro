@@ -1,7 +1,7 @@
 ---
 import { SITE } from '../config';
 import '../styles/main.css';
-import ThemeToggle from '../components/ThemeToggle.astro';
+import ThemePicker from '../components/ThemePicker.astro';
 
 export interface Props {
   title?: string;
@@ -131,7 +131,7 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
     <footer class="page-footer">
       <div class="content-wrap">
         <p class="copyright">&copy; {new Date().getFullYear()} {SITE.author}</p>
-        <ThemeToggle />
+        <ThemePicker />
         <a href={SITE.github} title="bendrucker.me's source on GitHub" class="source-link">
           <i class="icon-github"></i>
         </a>
