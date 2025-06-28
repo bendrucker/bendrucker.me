@@ -131,13 +131,11 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
     <footer class="page-footer">
       <div class="content-wrap">
         <p class="copyright">&copy; {new Date().getFullYear()} {SITE.author}</p>
+        <ThemeToggle />
         <a href={SITE.github} title="bendrucker.me's source on GitHub" class="source-link">
           <i class="icon-github"></i>
         </a>
       </div>
-      
-      <!-- Centered theme control -->
-      <ThemeToggle />
     </footer>
   </body>
 </html>

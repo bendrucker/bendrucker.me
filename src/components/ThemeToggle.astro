@@ -11,12 +11,13 @@
     --theme-font-size: 1rem;
     --theme-border-width: 1px;
   }
+
   
   .theme-control-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    flex: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .theme-control {
@@ -53,6 +54,13 @@
     transform: translateX(0);
   }
 
+  /* Custom focus styling for accessibility */
+  .theme-option:focus-visible {
+    outline: 2px solid var(--text-link);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
   /* Active item is always visible and centered when collapsed */
   .theme-control:not(.expanded) .theme-option.active {
     opacity: 1;
@@ -66,12 +74,12 @@
     opacity: 1;
   }
   
-  .theme-control.expanded .theme-option.dark {
+  .theme-control.expanded .theme-option.auto {
     left: var(--theme-control-size);
     opacity: 1;
   }
   
-  .theme-control.expanded .theme-option.auto {
+  .theme-control.expanded .theme-option.dark {
     left: calc(var(--theme-control-size) * 2);
     opacity: 1;
   }
@@ -122,28 +130,28 @@
       class="theme-option light"
       :class="{ active: theme === 'light' }"
       @click="handleThemeChange('light')"
-      title="Light mode"
-      aria-label="Light mode"
+      title="Light"
+      aria-label="Light"
     >
       🌞
-    </button>
-    <button 
-      class="theme-option dark"
-      :class="{ active: theme === 'dark' }"
-      @click="handleThemeChange('dark')"
-      title="Dark mode"
-      aria-label="Dark mode"
-    >
-      🌚
     </button>
     <button 
       class="theme-option auto"
       :class="{ active: theme === 'auto' }"
       @click="handleThemeChange('auto')"
-      title="Auto mode"
-      aria-label="Auto mode"
+      title="Auto"
+      aria-label="Auto"
     >
       ✨
+    </button>
+    <button 
+      class="theme-option dark"
+      :class="{ active: theme === 'dark' }"
+      @click="handleThemeChange('dark')"
+      title="Dark"
+      aria-label="Dark"
+    >
+      🌚
     </button>
   </div>
 </div>

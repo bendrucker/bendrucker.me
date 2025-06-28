@@ -403,21 +403,17 @@ strong {
   padding: 0.5em 0;
 }
 .page-footer .content-wrap {
-  zoom: 1;
-}
-.page-footer .content-wrap:before,
-.page-footer .content-wrap:after {
-  content: "";
-  display: table;
-}
-.page-footer .content-wrap:after {
-  clear: both;
+  display: flex;
+  align-items: center;
+  min-height: 3.5em;
 }
 .page-footer .copyright {
-  float: left;
+  flex: 1;
+  margin: 0;
 }
 .page-footer .source-link {
-  float: right;
+  flex: 1;
+  text-align: right;
   color: var(--text-muted);
   font-size: 1.2em;
   transition: color 0.2s ease;
