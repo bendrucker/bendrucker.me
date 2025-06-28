@@ -3,6 +3,15 @@
 ---
 
 <style>
+  :root {
+    --theme-animation-duration: 300ms;
+    --theme-control-size: 2.5rem;
+    --theme-control-expanded-width: calc(var(--theme-control-size) * 3);
+    --theme-border-radius: calc(var(--theme-control-size) / 2);
+    --theme-font-size: 1rem;
+    --theme-border-width: 1px;
+  }
+  
   .theme-control-container {
     position: absolute;
     top: 50%;
@@ -12,79 +21,75 @@
 
   .theme-control {
     display: flex;
+    align-items: center;
+    justify-content: center;
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    padding: 0;
-    transition: width 0.3s ease;
-    width: 40px;
-    height: 40px;
+    border: var(--theme-border-width) solid var(--border-color);
+    border-radius: var(--theme-border-radius);
+    width: var(--theme-control-size);
+    height: var(--theme-control-size);
     overflow: hidden;
+    transition: width var(--theme-animation-duration) ease;
+    position: relative;
   }
 
   .theme-control.expanded {
-    width: 120px;
+    width: var(--theme-control-expanded-width);
   }
 
   .theme-option {
-    flex: 1;
+    position: absolute;
+    width: var(--theme-control-size);
+    height: var(--theme-control-size);
     border: none;
     background: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    position: relative;
+    font-size: var(--theme-font-size);
+    transition: all var(--theme-animation-duration) ease;
+    opacity: 0;
+    transform: translateX(0);
   }
 
-  .theme-control:not(.expanded) .theme-option:not(.active) {
-    display: none;
-  }
-
+  /* Active item is always visible and centered when collapsed */
   .theme-control:not(.expanded) .theme-option.active {
     opacity: 1;
-    pointer-events: auto;
-    transform: scale(1);
-    border-radius: 20px;
-    width: 100%;
-    position: absolute;
     left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
+    z-index: 10;
   }
 
-  .theme-control.expanded .theme-option {
+  /* When expanded, all items are visible in fixed positions */
+  .theme-control.expanded .theme-option.light {
+    left: 0;
     opacity: 1;
-    pointer-events: auto;
-    transform: scale(1);
+  }
+  
+  .theme-control.expanded .theme-option.dark {
+    left: var(--theme-control-size);
+    opacity: 1;
+  }
+  
+  .theme-control.expanded .theme-option.auto {
+    left: calc(var(--theme-control-size) * 2);
+    opacity: 1;
+  }
+
+  /* Hide non-active items when collapsed */
+  .theme-control:not(.expanded) .theme-option:not(.active) {
+    left: 0;
+    opacity: 0;
   }
 
   .theme-control.expanded .theme-option:hover {
     background: var(--border-color);
+    border-radius: 50%;
   }
 
-  .theme-control.expanded .theme-option:first-child {
-    border-radius: 20px 0 0 20px;
-  }
-
-  .theme-control.expanded .theme-option:last-child {
-    border-radius: 0 20px 20px 0;
-  }
-
-  .theme-control.expanded .theme-option:nth-child(2) {
-    border-radius: 0;
-  }
-
-  /* Synchronized animation during transitions */
+  /* Prevent hover effects during transition */
   .theme-control.transitioning {
     pointer-events: none;
-  }
-  
-  .theme-control.transitioning .theme-option {
-    transition: all 0.3s ease;
   }
 </style>
 
@@ -94,53 +99,51 @@
     x-data="{ 
       expanded: false,
       transitioning: false,
-      getOrderedOptions() {
-        const options = [
-          { key: 'light', emoji: '🌞', title: 'Light mode' },
-          { key: 'dark', emoji: '🌚', title: 'Dark mode' },
-          { key: 'auto', emoji: '✨', title: 'Auto mode' }
-        ];
-        
-        // Find active option and move to center
-        const activeIndex = options.findIndex(opt => opt.key === this.theme);
-        if (activeIndex === -1) return options;
-        
-        const active = options[activeIndex];
-        const others = options.filter(opt => opt.key !== this.theme);
-        
-        // Return with active in center
-        return [others[0], active, others[1]];
-      },
       handleThemeChange(newTheme) {
         if (this.theme === newTheme) return;
         
         this.transitioning = true;
-        
-        // Change theme immediately so reordering happens
-        this.setTheme(newTheme);
-        
-        // Start collapse immediately - let CSS handle the sync
         this.expanded = false;
         
-        // Clear transitioning state after animation completes
+        // Wait for collapse animation to complete before changing theme
+        const duration = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--theme-animation-duration'));
         setTimeout(() => {
+          this.setTheme(newTheme);
           this.transitioning = false;
-        }, 300);
+        }, duration);
       }
     }"
     @mouseenter="!transitioning && (expanded = true)"
     @mouseleave="!transitioning && (expanded = false)"
     :class="{ expanded: expanded, transitioning: transitioning }"
+    :data-active-theme="theme"
   >
-    <template x-for="(option, index) in getOrderedOptions()" :key="option.key">
-      <button 
-        class="theme-option"
-        :class="{ active: theme === option.key }"
-        @click="handleThemeChange(option.key)"
-        :title="option.title"
-        x-text="option.emoji"
-      >
-      </button>
-    </template>
+    <button 
+      class="theme-option light"
+      :class="{ active: theme === 'light' }"
+      @click="handleThemeChange('light')"
+      title="Light mode"
+      aria-label="Light mode"
+    >
+      🌞
+    </button>
+    <button 
+      class="theme-option dark"
+      :class="{ active: theme === 'dark' }"
+      @click="handleThemeChange('dark')"
+      title="Dark mode"
+      aria-label="Dark mode"
+    >
+      🌚
+    </button>
+    <button 
+      class="theme-option auto"
+      :class="{ active: theme === 'auto' }"
+      @click="handleThemeChange('auto')"
+      title="Auto mode"
+      aria-label="Auto mode"
+    >
+      ✨
+    </button>
   </div>
 </div>

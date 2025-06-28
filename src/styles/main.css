@@ -142,8 +142,8 @@ audio:not([controls]),
   --shadow-color: rgba(49,118,176,0.5);
 }
 
+/* Dark mode colors - explicit dark theme */
 [data-theme="dark"] {
-  /* Dark mode colors */
   --bg-color: #1e1e1e;
   --text-color: #e5e5e5;
   --text-muted: #a0a0a0;
@@ -158,9 +158,9 @@ audio:not([controls]),
   --shadow-color: rgba(109,179,242,0.3);
 }
 
+/* Dark mode colors - auto theme with dark preference */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    /* Auto dark mode colors */
     --bg-color: #1e1e1e;
     --text-color: #e5e5e5;
     --text-muted: #a0a0a0;
@@ -300,7 +300,6 @@ strong {
   background-color: var(--bg-secondary);
   transition: background-color 0.3s ease;
   border-bottom: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
   padding: 0.25em 0;
 }
 .page-header .content-wrap {
@@ -395,7 +394,7 @@ strong {
   }
 }
 .page-footer {
-  background: var(--code-bg);
+  background: var(--bg-secondary);
   transition: background-color 0.3s ease;
   border-top: 2px solid var(--border-color);
   margin-top: 1em;
