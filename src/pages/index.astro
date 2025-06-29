@@ -113,7 +113,7 @@ const sortedPosts = allPosts.sort((a, b) =>
     color: var(--bg-color);
     text-shadow: 0 1px 0 rgba(0,0,0,0.3);
   }
-  @media (min-width: 479px) {
+  @media (min-width: var(--breakpoint-mobile)) {
     .posts {
       font-size: 1.25em;
     }
@@ -121,7 +121,7 @@ const sortedPosts = allPosts.sort((a, b) =>
       display: block;
     }
   }
-  @media (min-width: 1279px) {
+  @media (min-width: var(--breakpoint-desktop)) {
     .posts {
       font-size: 1.5em;
     }

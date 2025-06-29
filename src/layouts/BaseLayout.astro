@@ -184,7 +184,7 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
         color: var(--text-muted);
         margin-bottom: 0.3em;
       }
-      @media (min-width: 479px) {
+      @media (min-width: var(--breakpoint-mobile)) {
         .page-header .my-headshot {
           float: left;
           margin-right: 1em;
@@ -199,7 +199,7 @@ const siteTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
           font-size: 1em;
         }
       }
-      @media (max-width: 479px) {
+      @media (max-width: calc(var(--breakpoint-mobile) - 1px)) {
         .single-post.page-header .content-wrap {
           padding-top: 0.5em;
           padding-bottom: 0.5em;

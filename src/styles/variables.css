@@ -1,4 +1,9 @@
 :root {
+  /* Breakpoints */
+  --breakpoint-mobile: 480px;   /* iPhone landscape */
+  --breakpoint-tablet: 768px;   /* iPad portrait */
+  --breakpoint-desktop: 1280px; /* Standard widescreen */
+  
   /* Light mode colors */
   --bg-color: #fff;
   --text-color: #2b2927;
