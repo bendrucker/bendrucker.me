@@ -56,3 +56,113 @@ const jsonLd = {
     </div>
   </article>
 </BaseLayout>
+
+<style>
+  .post-title {
+    margin-top: 1em;
+    margin-bottom: 0.3em;
+    font-weight: 700;
+    font-size: 2em;
+  }
+  .post-headline {
+    margin-bottom: 0.2em;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  .post-subtitle {
+    color: var(--text-color);
+    font-style: italic;
+    font-size: 1em;
+    font-weight: 300;
+    margin-bottom: 0.8em;
+    display: block;
+  }
+  .post-date {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    font-weight: 300;
+    margin-bottom: 1.5em;
+  }
+  .post-categories {
+    margin-bottom: 0.25em;
+  }
+  .post-category {
+    display: inline-block;
+    background: var(--highlight-bg);
+    color: var(--text-link);
+    padding: 0.5em 1em;
+    margin: 0 0.5em 0.5em 0;
+    border-radius: 10em;
+    font-weight: 600;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 var(--bg-color);
+    transition: background-color 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
+  }
+  .post-header .post-categories .post-category {
+    font-size: 0.75em;
+  }
+  .post-content {
+    padding: 1.5em 0;
+  }
+  .post-content h1,
+  .post-content h2,
+  .post-content h3,
+  .post-content h4,
+  .post-content h5,
+  .post-content h6 {
+    margin: 1em 0 0.5em;
+  }
+  .post-content h2 {
+    font-weight: 400;
+    font-size: 1.3em;
+  }
+  .post-content h3,
+  .post-content h4,
+  .post-content h5,
+  .post-content h6 {
+    font-weight: 500;
+  }
+  .post-content p {
+    font-size: 1.1em;
+    line-height: 1.6em;
+    padding-bottom: 1em;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphens: auto;
+  }
+  .post-content p:last-child {
+    padding: 0;
+  }
+  .post-content blockquote {
+    font-style: italic;
+    margin: 1em 0;
+  }
+  @media (min-width: var(--breakpoint-mobile)) {
+    .post-content blockquote {
+      border-left: 0.5em solid #6ba5d6;
+      padding-left: 1.5em;
+    }
+  }
+  .post-content hr {
+    width: 50%;
+    outline: none;
+    border: 1px solid #e8e8e8;
+    margin-bottom: 1.5em;
+  }
+  .post-content img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+  .post-content sup {
+    vertical-align: super;
+    font-size: 0.83em;
+  }
+  .footnotes ol {
+    list-style: decimal inside;
+  }
+  .footnotes li {
+    font-size: 0.8em;
+  }
+</style>
