@@ -1,0 +1,49 @@
+:root {
+  /* Light mode colors */
+  --bg-color: #fff;
+  --text-color: #2b2927;
+  --text-muted: #9d9d9d;
+  --text-link: #3176b0;
+  --bg-secondary: #f4f4f4;
+  --border-color: #e8e8e8;
+  --btn-bg: #bbb;
+  --btn-text: #222;
+  --code-bg: #f4f4f4;
+  --highlight-bg: #dae9f5;
+  --highlight-bg-hover: #c4dbef;
+  --shadow-color: rgba(49,118,176,0.5);
+}
+
+/* Dark mode colors - explicit dark theme */
+[data-theme="dark"] {
+  --bg-color: #1e1e1e;
+  --text-color: #e5e5e5;
+  --text-muted: #a0a0a0;
+  --text-link: #6db3f2;
+  --bg-secondary: #2d2d2d;
+  --border-color: #404040;
+  --btn-bg: #555;
+  --btn-text: #e5e5e5;
+  --code-bg: #2d2d2d;
+  --highlight-bg: #2d3a4f;
+  --highlight-bg-hover: #3d4a5f;
+  --shadow-color: rgba(109,179,242,0.3);
+}
+
+/* Dark mode colors - auto theme with dark preference */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-color: #1e1e1e;
+    --text-color: #e5e5e5;
+    --text-muted: #a0a0a0;
+    --text-link: #6db3f2;
+    --bg-secondary: #2d2d2d;
+    --border-color: #404040;
+    --btn-bg: #555;
+    --btn-text: #e5e5e5;
+    --code-bg: #2d2d2d;
+    --highlight-bg: #2d3a4f;
+    --highlight-bg-hover: #3d4a5f;
+    --shadow-color: rgba(109,179,242,0.3);
+  }
+}

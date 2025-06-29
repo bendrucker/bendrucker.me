@@ -42,3 +42,88 @@ const sortedPosts = allPosts.sort((a, b) =>
     })}
   </div>
 </BaseLayout>
+
+<style>
+  .posts .post {
+    display: block;
+    padding: 0.1em 0;
+    margin: 0 0 1em 0;
+    border-bottom: 2px solid var(--border-color);
+  }
+  .posts {
+    font-size: 1em;
+    padding-top: 1em;
+  }
+  .posts .post:last-child {
+    border: none;
+  }
+  .posts .post-title {
+    font-size: 1em;
+    margin-bottom: 0.15em;
+    line-height: 1.1em;
+  }
+  .posts .post-headline {
+    font-size: 1.25em;
+    display: inline;
+    margin-right: 0.25em;
+    font-weight: 600;
+  }
+  .posts .post-date {
+    display: inline;
+    white-space: nowrap;
+    color: var(--text-muted);
+  }
+  .posts .post-subtitle {
+    font-style: normal;
+    font-size: 0.8em;
+    margin: 0;
+    line-height: 1em;
+  }
+  .post-tags {
+    display: none;
+    font-size: 0.6em;
+    margin: 0.5em 0;
+    padding: 0.75em 0;
+  }
+  .post-tags ul {
+    zoom: 1;
+  }
+  .post-tags ul:before,
+  .post-tags ul:after {
+    content: "";
+    display: table;
+  }
+  .post-tags ul:after {
+    clear: both;
+  }
+  .post-tags li {
+    float: left;
+    margin-right: 0.5em;
+    font-weight: 600;
+    font-size: 0.75em;
+    padding: 0.5em 1em;
+    border-radius: 10em;
+    text-transform: uppercase;
+    background: var(--highlight-bg);
+    color: var(--text-link);
+    text-shadow: 0 1px 0 var(--bg-color);
+  }
+  .post-tags li.post-series {
+    background: var(--text-link);
+    color: var(--bg-color);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.3);
+  }
+  @media (min-width: 479px) {
+    .posts {
+      font-size: 1.25em;
+    }
+    .post-tags {
+      display: block;
+    }
+  }
+  @media (min-width: 1279px) {
+    .posts {
+      font-size: 1.5em;
+    }
+  }
+</style>
