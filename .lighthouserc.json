@@ -5,8 +5,7 @@
       "url": ["http://localhost:4321/", "http://localhost:4321/blog/how-to-start-contributing-to-open-source/"]
     },
     "upload": {
-      "target": "filesystem",
-      "outputDir": ".lighthouseci"
+      "target": "temporary-public-storage"
     }
   }
 }
