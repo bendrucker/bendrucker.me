@@ -83,7 +83,10 @@ jobs:
       
       - name: Generate job summary
         if: always()
-        run: npx --no-install post-summary --report-filename .lighthouseci/manifest.json
+        run: |
+          # Get the first representative run JSON report from manifest
+          REPORT=$(node -e "const m=require('./.lighthouseci/manifest.json'); const r=m.find(e=>e.isRepresentativeRun); console.log(r?.jsonPath?.replace(process.cwd()+'/', '') || m[0].jsonPath.replace(process.cwd()+'/', ''))")
+          npx --no-install post-summary --report-filename "$REPORT"
       
       - name: Upload Lighthouse results
         if: always()
