@@ -97,9 +97,10 @@ jobs:
           " >> $GITHUB_STEP_SUMMARY
       
       - name: Upload Lighthouse results
-        if: always() && hashFiles('.lighthouseci/**') != ''
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-results
           path: .lighthouseci/
           retention-days: ${{ github.event_name == 'pull_request' && 1 || 0 }}
+          if-no-files-found: ignore
