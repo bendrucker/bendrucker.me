@@ -83,7 +83,7 @@ jobs:
       
       - name: Generate job summary
         if: always()
-        run: npx --no-install lhci-gha post-summary --report-filename .lighthouseci/manifest.json
+        run: npx --no-install post-summary --report-filename .lighthouseci/manifest.json
       
       - name: Upload Lighthouse results
         if: always()
