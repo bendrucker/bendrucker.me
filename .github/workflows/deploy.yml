@@ -83,14 +83,7 @@ jobs:
       
       - name: Generate job summary
         if: always()
-        run: |
-          # Find the first JSON report
-          REPORT=$(find .lighthouseci -name '*.json' | head -1)
-          if [ -n "$REPORT" ]; then
-            npx --no-install lhci-gha post-summary --report-filename "$REPORT"
-          else
-            echo "No Lighthouse reports found"
-          fi
+        run: npx --no-install lhci-gha post-summary --report-filename .lighthouseci/manifest.json
       
       - name: Upload Lighthouse results
         if: always()
