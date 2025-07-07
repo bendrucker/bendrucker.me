@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Build site
         uses: withastro/action@v3
 
@@ -48,45 +48,45 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build site
         run: npm run build
-      
+
       - name: Start preview server
         run: npm run preview &
         env:
           HOST: 0.0.0.0
           PORT: 4321
-      
+
       - name: Wait for server
         uses: iFaxity/wait-on-action@v1
         with:
           resource: http://localhost:4321
           timeout: 30000
-      
+
       - name: Run Lighthouse CI
         run: npm run lighthouse
-      
-      - name: Generate job summary  
+
+      - name: Generate job summary
         if: always()
         run: |
           if [ -f .lighthouseci/manifest.json ]; then
             cat << 'EOF' >> $GITHUB_STEP_SUMMARY
           ## Lighthouse Performance Results
-          
+
           | URL | Performance | Accessibility | Best Practices | SEO |
           |-----|-------------|---------------|----------------|-----|
           EOF
-            
+
             node -pe "
               require('./.lighthouseci/manifest.json')
                 .filter(r => r.isRepresentativeRun)
@@ -97,7 +97,7 @@ jobs:
                 }).join('\\n')
             " >> $GITHUB_STEP_SUMMARY
           fi
-      
+
       - name: Upload Lighthouse results
         if: always()
         uses: actions/upload-artifact@v4
@@ -105,3 +105,4 @@ jobs:
           name: lighthouse-results
           path: .lighthouseci
           retention-days: ${{ github.event_name == 'pull_request' && 1 || 0 }}
+          include-hidden-files: true
