@@ -76,31 +76,32 @@ jobs:
       - name: Run Lighthouse CI
         run: npm run lighthouse
       
-      - name: Generate job summary
-        if: always() && hashFiles('.lighthouseci/manifest.json') != ''
+      - name: Generate job summary  
+        if: always()
         run: |
-          cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+          if [ -f .lighthouseci/manifest.json ]; then
+            cat << 'EOF' >> $GITHUB_STEP_SUMMARY
           ## Lighthouse Performance Results
           
           | URL | Performance | Accessibility | Best Practices | SEO |
           |-----|-------------|---------------|----------------|-----|
           EOF
-          
-          node -pe "
-            require('./.lighthouseci/manifest.json')
-              .filter(r => r.isRepresentativeRun)
-              .map(r => {
-                const s = r.summary;
-                const url = r.url.replace('http://localhost:4321', '') || '/';
-                return \`| \${url} | \${Math.round(s.performance*100)}% | \${Math.round(s.accessibility*100)}% | \${Math.round(s['best-practices']*100)}% | \${Math.round(s.seo*100)}% |\`;
-              }).join('\\n')
-          " >> $GITHUB_STEP_SUMMARY
+            
+            node -pe "
+              require('./.lighthouseci/manifest.json')
+                .filter(r => r.isRepresentativeRun)
+                .map(r => {
+                  const s = r.summary;
+                  const url = r.url.replace('http://localhost:4321', '') || '/';
+                  return \`| \${url} | \${Math.round(s.performance*100)}% | \${Math.round(s.accessibility*100)}% | \${Math.round(s['best-practices']*100)}% | \${Math.round(s.seo*100)}% |\`;
+                }).join('\\n')
+            " >> $GITHUB_STEP_SUMMARY
+          fi
       
       - name: Upload Lighthouse results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-results
-          path: .lighthouseci/
+          path: .lighthouseci
           retention-days: ${{ github.event_name == 'pull_request' && 1 || 0 }}
-          if-no-files-found: ignore
