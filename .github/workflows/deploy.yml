@@ -61,18 +61,6 @@ jobs:
       - name: Build site
         run: npm run build
 
-      - name: Start preview server
-        run: npm run preview &
-        env:
-          HOST: 0.0.0.0
-          PORT: 4321
-
-      - name: Wait for server
-        uses: iFaxity/wait-on-action@v1
-        with:
-          resource: http://localhost:4321
-          timeout: 30000
-
       - name: Run Lighthouse CI
         run: npm run lighthouse
         env:
@@ -94,7 +82,7 @@ jobs:
                 .filter(r => r.isRepresentativeRun)
                 .map(r => {
                   const s = r.summary;
-                  const url = r.url.replace('http://localhost:4321', '') || '/';
+                  const url = r.url || '/';
                   return \`| \${url} | \${Math.round(s.performance*100)}% | \${Math.round(s.accessibility*100)}% | \${Math.round(s['best-practices']*100)}% | \${Math.round(s.seo*100)}% |\`;
                 }).join('\\n')
             " >> $GITHUB_STEP_SUMMARY
