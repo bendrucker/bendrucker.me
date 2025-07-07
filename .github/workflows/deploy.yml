@@ -84,9 +84,23 @@ jobs:
       - name: Generate job summary
         if: always()
         run: |
-          # Get the first representative run JSON report from manifest
-          REPORT=$(node -e "const m=require('./.lighthouseci/manifest.json'); const r=m.find(e=>e.isRepresentativeRun); console.log(r?.jsonPath?.replace(process.cwd()+'/', '') || m[0].jsonPath.replace(process.cwd()+'/', ''))")
-          npx --no-install post-summary --report-filename "$REPORT"
+          echo "## Lighthouse Performance Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | Performance | Accessibility | Best Practices | SEO |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|-------------|---------------|----------------|-----|" >> $GITHUB_STEP_SUMMARY
+          node -e "
+            const manifest = require('./.lighthouseci/manifest.json');
+            const representative = manifest.filter(r => r.isRepresentativeRun);
+            representative.forEach(run => {
+              const scores = run.summary;
+              const perf = Math.round(scores.performance * 100);
+              const a11y = Math.round(scores.accessibility * 100);
+              const bp = Math.round(scores['best-practices'] * 100);
+              const seo = Math.round(scores.seo * 100);
+              const url = run.url.replace('http://localhost:4321', '');
+              console.log(\`| \${url || '/'} | \${perf}% | \${a11y}% | \${bp}% | \${seo}% |\`);
+            });
+          " >> $GITHUB_STEP_SUMMARY
       
       - name: Upload Lighthouse results
         if: always()

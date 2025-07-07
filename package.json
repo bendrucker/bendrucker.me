@@ -17,7 +17,6 @@
     "feed": "^5.1.0"
   },
   "devDependencies": {
-    "@lhci/cli": "^0.15.1",
-    "lhci-gha": "^1.4.0"
+    "@lhci/cli": "^0.15.1"
   }
 }
