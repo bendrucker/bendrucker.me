@@ -87,7 +87,7 @@ jobs:
           # Find the first JSON report
           REPORT=$(find .lighthouseci -name '*.json' | head -1)
           if [ -n "$REPORT" ]; then
-            npx --yes lhci-gha post-summary --report-filename "$REPORT"
+            npx --no-install lhci-gha post-summary --report-filename "$REPORT"
           else
             echo "No Lighthouse reports found"
           fi
