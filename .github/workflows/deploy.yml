@@ -66,32 +66,3 @@ jobs:
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 
-      - name: Generate job summary
-        if: always()
-        run: |
-          if [ -f .lighthouseci/manifest.json ]; then
-            cat << 'EOF' >> $GITHUB_STEP_SUMMARY
-          ## Lighthouse Performance Results
-
-          | URL | Performance | Accessibility | Best Practices | SEO |
-          |-----|-------------|---------------|----------------|-----|
-          EOF
-
-            node -pe "
-              require('./.lighthouseci/manifest.json')
-                .filter(r => r.isRepresentativeRun)
-                .map(r => {
-                  const s = r.summary;
-                  const url = r.url || '/';
-                  return \`| \${url} | \${Math.round(s.performance*100)}% | \${Math.round(s.accessibility*100)}% | \${Math.round(s['best-practices']*100)}% | \${Math.round(s.seo*100)}% |\`;
-                }).join('\\n')
-            " >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Upload Lighthouse results
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: lighthouse-results
-          path: .lighthouseci
-          retention-days: 1
