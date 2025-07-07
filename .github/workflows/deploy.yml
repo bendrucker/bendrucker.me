@@ -7,10 +7,7 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+# Global permissions removed - set at job level instead
 
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'pages' }}
@@ -19,6 +16,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,7 +34,61 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build site
+        run: npm run build
+      
+      - name: Start preview server
+        run: npm run preview &
+        env:
+          HOST: 0.0.0.0
+          PORT: 4321
+      
+      - name: Wait for server
+        uses: iFaxity/wait-on-action@v1
+        with:
+          resource: http://localhost:4321
+          timeout: 30000
+      
+      - name: Run Lighthouse CI
+        run: npm run lighthouse
+        env:
+          LHCI_COLLECT_URL: http://localhost:4321
+      
+      - name: Generate job summary
+        if: always()
+        run: npx --yes @bahmutov/lhci-gha/post-summary
+      
+      - name: Upload Lighthouse results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/
+          retention-days: ${{ github.event_name == 'pull_request' && 1 || 0 }}
