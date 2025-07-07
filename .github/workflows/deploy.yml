@@ -18,8 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: write
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +45,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,32 +75,29 @@ jobs:
       
       - name: Run Lighthouse CI
         run: npm run lighthouse
-        env:
-          LHCI_COLLECT_URL: http://localhost:4321
       
       - name: Generate job summary
-        if: always()
+        if: always() && hashFiles('.lighthouseci/manifest.json') != ''
         run: |
-          echo "## Lighthouse Performance Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| URL | Performance | Accessibility | Best Practices | SEO |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|-------------|---------------|----------------|-----|" >> $GITHUB_STEP_SUMMARY
-          node -e "
-            const manifest = require('./.lighthouseci/manifest.json');
-            const representative = manifest.filter(r => r.isRepresentativeRun);
-            representative.forEach(run => {
-              const scores = run.summary;
-              const perf = Math.round(scores.performance * 100);
-              const a11y = Math.round(scores.accessibility * 100);
-              const bp = Math.round(scores['best-practices'] * 100);
-              const seo = Math.round(scores.seo * 100);
-              const url = run.url.replace('http://localhost:4321', '');
-              console.log(\`| \${url || '/'} | \${perf}% | \${a11y}% | \${bp}% | \${seo}% |\`);
-            });
+          cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+          ## Lighthouse Performance Results
+          
+          | URL | Performance | Accessibility | Best Practices | SEO |
+          |-----|-------------|---------------|----------------|-----|
+          EOF
+          
+          node -pe "
+            require('./.lighthouseci/manifest.json')
+              .filter(r => r.isRepresentativeRun)
+              .map(r => {
+                const s = r.summary;
+                const url = r.url.replace('http://localhost:4321', '') || '/';
+                return \`| \${url} | \${Math.round(s.performance*100)}% | \${Math.round(s.accessibility*100)}% | \${Math.round(s['best-practices']*100)}% | \${Math.round(s.seo*100)}% |\`;
+              }).join('\\n')
           " >> $GITHUB_STEP_SUMMARY
       
       - name: Upload Lighthouse results
-        if: always()
+        if: always() && hashFiles('.lighthouseci/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-results
