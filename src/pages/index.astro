@@ -1,45 +1,67 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Socials from "@/components/Socials.astro";
+import LinkButton from "@/components/LinkButton.astro";
+import Card from "@/components/Card.astro";
+import Hr from "@/components/Hr.astro";
+import getSortedPosts from "@/utils/getSortedPosts";
+import IconRss from "@/assets/icons/IconRss.svg";
+import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
+import { SITE } from "@/config";
+import { SOCIALS } from "@/constants";
 
-const allPosts = await getCollection('blog');
-const sortedPosts = allPosts.sort((a, b) => 
-  new Date(b.data.publishDate).getTime() - new Date(a.data.publishDate).getTime()
-);
+const posts = await getCollection("blog");
+
+const sortedPosts = getSortedPosts(posts);
+const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
+const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
 ---
 
-<BaseLayout>
-  <div class="posts">
-    {sortedPosts.map((post) => {
-      const formattedDate = new Date(post.data.publishDate).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      });
-      
-      return (
-        <a href={`/blog/${post.slug}/`} title={post.data.title} class="post">
-          <div class="post-title">
-            <h2 class="post-headline">{post.data.title}</h2>
-            <p class="post-date">{formattedDate}</p>
-          </div>
-          {post.data.subtitle && (
-            <h3 class="post-subtitle">{post.data.subtitle}</h3>
-          )}
-          <div class="post-tags">
-            <ul>
-              {post.data.series && (
-                <li class="post-series">{post.data.series}</li>
-              )}
-              {post.data.categories && 
-                post.data.categories.split(', ').map((category) => (
-                  <li class="post-category">{category}</li>
-                ))
-              }
-            </ul>
-          </div>
-        </a>
-      );
-    })}
-  </div>
-</BaseLayout>
+<Layout>
+  <Header />
+  <main id="main-content" data-layout="index">
+    <section id="hero" class="pt-8 pb-6 text-center">
+      <img
+        src="/images/ben-drucker-sq.png"
+        srcset="/images/ben-drucker-sq.png 1x, /images/ben-drucker-sq@2x.png 2x"
+        alt="Ben Drucker"
+        class="w-32 h-32 rounded-lg mx-auto mb-6"
+      />
+      <p>
+        <LinkButton href="https://github.com/bendrucker" class="underline decoration-dashed underline-offset-4">Programmer</LinkButton>, <LinkButton href="https://www.strava.com/athletes/5723594" class="underline decoration-dashed underline-offset-4">cyclist</LinkButton>, and photographer, living in San Francisco.
+      </p>
+    </section>
 
+    {
+      featuredPosts.length > 0 && (
+        <>
+          <section id="featured" class="pt-12 pb-6">
+            <h2 class="text-2xl font-semibold tracking-wide">Featured</h2>
+            <ul>
+              {featuredPosts.map(data => (
+                <Card variant="h3" {...data} />
+              ))}
+            </ul>
+          </section>
+          {recentPosts.length > 0 && <Hr />}
+        </>
+      )
+    }
+
+
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const indexLayout = (document.querySelector("#main-content") as HTMLElement)
+      ?.dataset?.layout;
+    if (indexLayout) {
+      sessionStorage.setItem("backUrl", "/");
+    }
+  });
+</script>
