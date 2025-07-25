@@ -1,12 +1,12 @@
 # Claude Project Documentation
 
-This is a personal website and blog built with modern web technologies, migrated from a 10-year-old Wintersmith setup to Astro + Alpine.js.
+This is a personal website and blog built with modern web technologies, migrated from a 10-year-old Wintersmith setup to Astro.
 
 ## 🏗️ Architecture Overview
 
 ### Tech Stack
 - **Framework**: [Astro](https://astro.build) - Static site generator with component-based architecture
-- **Interactivity**: [Alpine.js](https://alpinejs.dev) - Lightweight JavaScript framework for progressive enhancement
+- **Styling**: [TailwindCSS](https://tailwindcss.com) - Utility-first CSS framework
 - **Styling**: CSS (compiled from original Stylus) with modern web standards
 - **Content**: Markdown files with frontmatter, managed through Astro content collections
 - **Deployment**: GitHub Actions → GitHub Pages
@@ -40,7 +40,7 @@ This is a personal website and blog built with modern web technologies, migrated
 │   └── pages/
 │       ├── index.astro         # Home page with post listing
 │       └── blog/[...slug].astro # Dynamic blog post routes
-├── astro.config.mjs     # Astro configuration with Alpine.js
+├── astro.config.ts      # Astro configuration
 ├── package.json         # Dependencies and scripts
 └── tsconfig.json        # TypeScript configuration
 ```
@@ -124,23 +124,8 @@ git push origin master  # Triggers GitHub Actions workflow
 
 ## 🔮 Future Enhancements
 
-### Alpine.js Integration
-Ready for dynamic features:
-```html
-<!-- Dark mode toggle -->
-<div x-data="{ dark: localStorage.getItem('theme') === 'dark' }">
-  <button @click="dark = !dark; localStorage.setItem('theme', dark ? 'dark' : 'light')">
-    Toggle Theme
-  </button>
-</div>
-
-<!-- Dynamic content loading -->
-<div x-data="{ posts: [], loading: true }" x-init="loadGitHubActivity()">
-  <template x-for="post in posts">
-    <div x-text="post.title"></div>
-  </template>
-</div>
-```
+### Dynamic Features
+Ready for future interactivity with vanilla JavaScript or modern web APIs.
 
 ### Planned Features (GitHub Issues)
 - RSS feed generation (#13)
@@ -183,7 +168,7 @@ Ready for dynamic features:
 
 ### Performance Characteristics
 - **Static HTML**: Pre-rendered at build time
-- **Minimal JS**: Only Alpine.js (15kb) for interactivity
+- **Minimal JS**: Vanilla JavaScript for essential interactivity
 - **CSS**: Single file, optimized loading
 - **Images**: Served from CDN (GitHub Pages)
 
