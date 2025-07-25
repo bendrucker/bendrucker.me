@@ -24,11 +24,12 @@ This is a personal website and blog built with modern web technologies, migrated
 ```
 /
 ├── .github/workflows/     # GitHub Actions (deploy.yml, claude.yml)
-├── public/               # Static assets served directly
-│   ├── css/main.css     # Compiled stylesheet from Stylus
+├── static/               # Source static assets (copied to public/ during build)
 │   ├── images/          # Blog images and site assets
 │   ├── fonts/           # Icon fonts (icomoon)
+│   ├── assets/          # Theme assets
 │   └── favicon.*        # Site icons
+├── public/               # Build output directory (auto-generated, not in git)
 ├── src/
 │   ├── config.ts        # Centralized site configuration
 │   ├── content/
@@ -89,13 +90,52 @@ npm run preview  # Preview built site
   categories: Technology, Programming
   ---
   ```
-- **Images**: Place in `public/images/` and reference as `/images/filename`
+- **Images**: Place in `static/images/` and reference as `/images/filename` (copied to public/ during build)
 
 ### Code Standards
 - **TypeScript**: Strict mode enabled, proper interfaces
 - **Components**: Astro components with type-safe props
 - **Imports**: Use absolute imports from `src/`
 - **Config**: Import from `src/config.ts` for consistency
+
+## 🔄 Theme Updates
+
+This site is built on the [AstroPaper](https://github.com/satnaing/astro-paper) theme. Since Astro themes are template repositories (not packages), updates require manual integration.
+
+### Upstream Remote Setup
+```bash
+git remote add upstream https://github.com/satnaing/astro-paper.git
+```
+
+### Getting Updates from Upstream
+1. **Fetch upstream changes**:
+   ```bash
+   git fetch upstream
+   ```
+
+2. **Review changes**:
+   ```bash
+   git log HEAD..upstream/main --oneline
+   git diff HEAD..upstream/main
+   ```
+
+3. **Merge selective changes**:
+   ```bash
+   # Cherry-pick specific commits
+   git cherry-pick <commit-hash>
+   
+   # Or create merge commit
+   git merge upstream/main
+   ```
+
+4. **Resolve conflicts**: Manually merge conflicts, prioritizing local customizations
+5. **Test thoroughly**: Run `npm run dev` and `npm run build` to ensure compatibility
+6. **Update dependencies**: Check if theme updates require package.json changes
+
+### Customization Strategy
+- **Preserve**: Local content in `content/`, custom config in `src/config.ts`
+- **Review carefully**: Changes to layouts, components, and styling
+- **Document**: Track significant customizations for future reference
 
 ## 🚀 Deployment
 
@@ -112,15 +152,16 @@ git push origin master  # Triggers GitHub Actions workflow
 ## 🎨 Styling & Assets
 
 ### CSS Architecture
-- **Single file**: `public/css/main.css` (compiled from Stylus)
+- **Styling**: TailwindCSS with utility-first approach
 - **Variables**: CSS custom properties for theming
 - **Responsive**: Mobile-first breakpoints
-- **Icons**: Icomoon font icons
+- **Icons**: SVG icons in src/assets/icons/ and icomoon font icons
 
 ### Asset Organization
-- **Images**: `public/images/` for site assets
-- **Fonts**: `public/fonts/` for icon fonts
-- **Blog assets**: Can be in `public/images/` or content collections
+- **Images**: `static/images/` for site assets (copied to public/ during build)
+- **Fonts**: `static/fonts/` for icon fonts (copied to public/ during build)
+- **Blog assets**: Can be in `static/images/` or content collections
+- **Build output**: `public/` directory is auto-generated and excluded from git
 
 ## 🔮 Future Enhancements
 
@@ -147,7 +188,7 @@ Ready for future interactivity with vanilla JavaScript or modern web APIs.
 1. Create `content/blog/post-slug.md`
 2. Add frontmatter with required fields
 3. Write content in Markdown
-4. Add images to `public/images/` if needed
+4. Add images to `static/images/` if needed
 5. Test with `npm run dev`
 
 ### Updating Site Configuration
@@ -156,8 +197,9 @@ Ready for future interactivity with vanilla JavaScript or modern web APIs.
 3. Rebuild to see changes
 
 ### Styling Changes
-1. Edit `public/css/main.css` directly
-2. Or modify original Stylus and recompile (scripts preserved in issue #16)
+1. Edit TailwindCSS classes in components
+2. Modify global styles in `src/styles/` directory
+3. Static assets go in `static/` directory
 
 ### SEO Improvements
 - Meta tags: Edit `BaseLayout.astro`

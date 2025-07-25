@@ -77,7 +77,12 @@ categories: Technology, Programming
 Your post content here...
 ```
 
+## 🙏 Acknowledgments
+
+This site is built on the [AstroPaper](https://github.com/satnaing/astro-paper) theme by [Sat Naing](https://github.com/satnaing). AstroPaper provided an excellent foundation with modern Astro features, TypeScript support, and a clean, performant design.
+
 ## 🔗 Links
 
 - [Astro Documentation](https://docs.astro.build)
+- [AstroPaper Theme](https://github.com/satnaing/astro-paper)
 - [Migration Documentation](./MIGRATION.md)

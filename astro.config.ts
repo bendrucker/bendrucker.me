@@ -10,6 +10,26 @@ import {
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/utils/markdown/transformers/fileName.js";
 import { SITE } from "./src/config";
+import { copyFileSync, mkdirSync, readdirSync, statSync } from "fs";
+import { join } from "path";
+
+function copyStaticFiles(src: string, dest: string) {
+  try {
+    mkdirSync(dest, { recursive: true });
+    for (const item of readdirSync(src)) {
+      const srcPath = join(src, item);
+      const destPath = join(dest, item);
+      
+      if (statSync(srcPath).isDirectory()) {
+        copyStaticFiles(srcPath, destPath);
+      } else {
+        copyFileSync(srcPath, destPath);
+      }
+    }
+  } catch {
+    // Ignore if static directory doesn't exist
+  }
+}
 
 // https://astro.build/config
 export default defineConfig({
@@ -42,7 +62,13 @@ export default defineConfig({
     // @ts-ignore
     // This will be fixed in Astro 6 with Vite 7 support
     // See: https://github.com/withastro/astro/issues/14030
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      {
+        name: 'copy-static-files',
+        buildStart: () => copyStaticFiles('static', 'public')
+      }
+    ],
     optimizeDeps: {
       exclude: ["@resvg/resvg-js"],
     },
