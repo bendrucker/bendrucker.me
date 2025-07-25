@@ -14,30 +14,6 @@ import { SITE } from "./src/config";
 // https://astro.build/config
 export default defineConfig({
   site: SITE.website,
-  redirects: {
-    "/blog/joining-eaze": "/posts/joining-eaze",
-    "/blog/im-shutting-down-valet-io": "/posts/im-shutting-down-valet-io",
-    "/blog/understanding-open-source-communities": "/posts/understanding-open-source-communities",
-    "/blog/six-months-as-a-dropout": "/posts/six-months-as-a-dropout",
-    "/blog/how-to-start-contributing-to-open-source": "/posts/how-to-start-contributing-to-open-source",
-    "/blog/sucking-less-at-business-development": "/posts/sucking-less-at-business-development",
-    "/blog/the-open-default-principle": "/posts/the-open-default-principle",
-    "/blog/in-defense-of-knowing-less": "/posts/in-defense-of-knowing-less",
-    "/blog/collaborating-asynchronously-to-get-more-done": "/posts/collaborating-asynchronously-to-get-more-done",
-    "/blog/why-i-didnt-apply-to-ycombinator": "/posts/why-i-didnt-apply-to-ycombinator",
-    "/blog/the-future-is-service-oriented": "/posts/the-future-is-service-oriented",
-    "/blog/the-5-am-principle": "/posts/the-5-am-principle",
-    "/blog/how-citi-bike-salvaged-a-botched-launch": "/posts/how-citi-bike-salvaged-a-botched-launch",
-    "/blog/when-no-ones-looking": "/posts/when-no-ones-looking",
-    "/blog/5-reasons-my-company-will-fail": "/posts/5-reasons-my-company-will-fail",
-    "/blog/going-all-in": "/posts/going-all-in",
-    "/blog/the-myth-of-the-costless-startup": "/posts/the-myth-of-the-costless-startup",
-    "/blog/thinking-big-and-small": "/posts/thinking-big-and-small",
-    "/blog/entrepreneur-interviews-greg-skloot": "/posts/entrepreneur-interviews-greg-skloot",
-    "/blog/entrepreneur-interviews-dan-shipper": "/posts/entrepreneur-interviews-dan-shipper",
-    "/blog/entrepreneur-interviews-jack-mcdermott": "/posts/entrepreneur-interviews-jack-mcdermott",
-    "/blog/entrepreneurship-is-a-mindset": "/posts/entrepreneurship-is-a-mindset",
-  },
   integrations: [
     sitemap({
       filter: page => SITE.showArchives || !page.endsWith("/archives"),
