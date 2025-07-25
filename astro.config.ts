@@ -8,7 +8,7 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
-import { transformerFileName } from "./src/utils/transformers/fileName";
+import { transformerFileName } from "./src/utils/transformers/fileName.js";
 import { SITE } from "./src/config";
 
 // https://astro.build/config
