@@ -1,13 +1,13 @@
 # bendrucker.me
 
-Personal website and blog built with [Astro](https://astro.build) and [Alpine.js](https://alpinejs.dev).
+Personal website and blog built with [Astro](https://astro.build).
 
 🌐 **Live Site**: [www.bendrucker.me](https://www.bendrucker.me)
 
 ## 🚀 Tech Stack
 
 - **Framework**: Astro (static site generation)
-- **Interactivity**: Alpine.js
+- **Styling**: TailwindCSS
 - **Styling**: CSS (compiled from Stylus)
 - **Content**: Markdown with frontmatter
 - **Deployment**: GitHub Actions → GitHub Pages
@@ -77,8 +77,12 @@ categories: Technology, Programming
 Your post content here...
 ```
 
+## 🙏 Acknowledgments
+
+This site is built on the [AstroPaper](https://github.com/satnaing/astro-paper) theme by [Sat Naing](https://github.com/satnaing). AstroPaper provided an excellent foundation with modern Astro features, TypeScript support, and a clean, performant design.
+
 ## 🔗 Links
 
 - [Astro Documentation](https://docs.astro.build)
-- [Alpine.js Documentation](https://alpinejs.dev)
+- [AstroPaper Theme](https://github.com/satnaing/astro-paper)
 - [Migration Documentation](./MIGRATION.md)

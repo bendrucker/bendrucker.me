@@ -1,11 +1,23 @@
 export const SITE = {
-  name: 'Ben Drucker',
-  title: 'Ben Drucker',
-  description: 'Programmer, photographer, cyclist.',
-  url: 'https://www.bendrucker.me',
-  author: 'Ben Drucker',
-  twitter: '@bendrucker',
-  twitterUrl: 'https://twitter.com/bendrucker',
-  github: 'https://github.com/bendrucker/bendrucker.me',
-  googleAnalyticsId: 'G-GDY00493QG',
+  website: "https://www.bendrucker.me/",
+  author: "Ben Drucker",
+  profile: "https://www.bendrucker.me/",
+  desc: "Programmer, photographer, cyclist.",
+  title: "Ben Drucker",
+  ogImage: "ben-drucker-sq.png",
+  lightAndDarkMode: true,
+  postPerIndex: 4,
+  postPerPage: 10,
+  scheduledPostMargin: 15 * 60 * 1000, // 15 minutes
+  showArchives: true,
+  showBackButton: true, // show back button in post detail
+  editPost: {
+    enabled: true,
+    text: "Edit page",
+    url: "https://github.com/bendrucker/bendrucker.me/edit/master/",
+  },
+  dynamicOgImage: false,
+  dir: "ltr", // "rtl" | "auto"
+  lang: "en", // html lang code. Set this empty and default will be "en"
+  timezone: "America/New_York", // Default global timezone (IANA format) https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 } as const;
