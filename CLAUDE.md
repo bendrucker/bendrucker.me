@@ -54,7 +54,7 @@ Centralized configuration object with:
 - Author information
 - Used throughout layouts for consistency
 
-### Content Collections (`src/content/`)
+### Content Collections (`content/`)
 - **Blog posts**: Type-safe markdown with frontmatter schema
 - **Schema validation**: Zod-based validation for post metadata
 - **Asset management**: Images stored in content/blog/assets/
@@ -79,7 +79,7 @@ npm run preview  # Preview built site
 ```
 
 ### Content Management
-- **Adding posts**: Create `.md` files in `src/content/blog/`
+- **Adding posts**: Create `.md` files in `content/blog/`
 - **Frontmatter format**:
   ```yaml
   ---
@@ -144,7 +144,7 @@ Ready for future interactivity with vanilla JavaScript or modern web APIs.
 ## 🐛 Common Tasks
 
 ### Adding a New Blog Post
-1. Create `src/content/blog/post-slug.md`
+1. Create `content/blog/post-slug.md`
 2. Add frontmatter with required fields
 3. Write content in Markdown
 4. Add images to `public/images/` if needed

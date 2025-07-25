@@ -1,7 +1,7 @@
 import satori from "satori";
 // import { html } from "satori-html";
 import { SITE } from "@/config";
-import loadGoogleFonts from "../loadGoogleFont";
+import loadGoogleFonts from "../fonts";
 
 // const markup = html`<div
 //       style={{
