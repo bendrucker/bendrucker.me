@@ -15,7 +15,7 @@ export const getUniqueTags = (posts: CollectionEntry<"blog">[]) =>
   posts
     .filter(postFilter)
     .flatMap(post => post.data.tags)
-    .map(tag => ({ tag: slugifyStr(tag), tagName: tag }))
+    .map((tag): Tag => ({ tag: slugifyStr(tag), tagName: tag }))
     .filter(
       (value, index, self) =>
         self.findIndex(tag => tag.tag === value.tag) === index
