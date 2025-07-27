@@ -9,10 +9,12 @@ resource "cloudflare_workers_script" "this" {
   module     = true
 }
 
-resource "cloudflare_workers_route" "apex" {
-  zone_id     = data.cloudflare_zone.this.id
-  pattern     = "bendrucker.me/*"
-  script_name = cloudflare_workers_script.this.name
+resource "cloudflare_record" "apex_redirect" {
+  zone_id = data.cloudflare_zone.this.id
+  name    = "bendrucker.me"
+  content = "www.bendrucker.me"
+  type    = "CNAME"
+  proxied = true
 }
 
 resource "cloudflare_workers_route" "www" {
