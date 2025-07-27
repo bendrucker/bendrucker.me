@@ -5,10 +5,8 @@ data "cloudflare_zone" "this" {
 resource "cloudflare_workers_script" "this" {
   account_id = var.cloudflare_account_id
   name       = "bendrucker-me"
-  
-  # TODO: Remove this placeholder when deploying via GitHub Actions
-  content = "export default { fetch: () => new Response('TODO: Deploy via GitHub Actions') }"
-  module  = true
+  content    = file("${path.module}/../worker.js")
+  module     = true
 }
 
 resource "cloudflare_workers_route" "apex" {
