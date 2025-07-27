@@ -1,11 +1,11 @@
-output "pages_project_name" {
-  value = cloudflare_pages_project.bendrucker_me.name
+output "worker_script_name" {
+  value = cloudflare_workers_script.bendrucker_me.name
 }
 
-output "pages_subdomain" {
-  value = cloudflare_pages_project.bendrucker_me.subdomain
+output "zone_id" {
+  value = data.cloudflare_zone.bendrucker_me.id
 }
 
-output "pages_domains" {
-  value = cloudflare_pages_project.bendrucker_me.domains
+output "zone_name" {
+  value = data.cloudflare_zone.bendrucker_me.name
 }
