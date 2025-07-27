@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to Cloudflare Pages
+    name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -31,12 +31,12 @@ jobs:
       - name: "🚀 Build"
         run: npm run build
 
-      - name: "🌐 Deploy to Cloudflare Pages"
+      - name: "🌐 Deploy to Cloudflare Workers"
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=bendrucker-me
+          command: deploy --assets dist
 
   lighthouse:
     runs-on: ubuntu-latest
