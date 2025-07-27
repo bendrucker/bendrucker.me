@@ -46,7 +46,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   cloudflare:
-    if: github.event_name == 'push' && contains(fromJson('["main", "master"]'), github.ref_name)
+    if: github.event_name == 'push'
     needs: build
     name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
