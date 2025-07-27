@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy
 
 on:
   push:
@@ -7,10 +7,15 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'pages' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  deployments: write
 
 jobs:
   build:
@@ -24,7 +29,7 @@ jobs:
       - name: Build site
         uses: withastro/action@v4
 
-  deploy:
+  pages:
     if: github.event_name == 'push' && contains(fromJson('["main", "master"]'), github.ref_name)
     environment:
       name: github-pages
@@ -40,6 +45,38 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+  cloudflare:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == 'master')
+    name: Deploy to Cloudflare Workers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: "☁️ Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "📦 Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: "📦 Install dependencies"
+        run: npm ci
+
+      - name: "🚀 Build"
+        run: npm run build
+
+      - name: "🌐 Deploy to Cloudflare Workers"
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --assets dist
+
   lighthouse:
     runs-on: ubuntu-latest
     permissions:
@@ -51,7 +88,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
