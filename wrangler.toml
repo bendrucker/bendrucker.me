@@ -1,6 +1,0 @@
-name = "bendrucker-me"
-main = "worker.js"
-compatibility_date = "2024-07-27"
-
-[assets]
-directory = "dist"
