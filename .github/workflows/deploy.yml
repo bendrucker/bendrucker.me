@@ -46,7 +46,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   cloudflare:
-    if: github.event_name == 'push'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == 'master')
     name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
     timeout-minutes: 10
