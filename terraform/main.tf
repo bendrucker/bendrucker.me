@@ -1,22 +1,3 @@
-terraform {
-  required_providers {
-    cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "~> 4.0"
-    }
-  }
-}
-
-variable "cloudflare_account_id" {
-  type        = string
-  description = "Cloudflare account ID"
-}
-
-variable "cloudflare_zone_id" {
-  type        = string
-  description = "Cloudflare zone ID for bendrucker.me"
-}
-
 data "cloudflare_zone" "bendrucker_me" {
   zone_id = var.cloudflare_zone_id
 }
