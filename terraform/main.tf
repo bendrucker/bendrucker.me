@@ -5,8 +5,6 @@ data "cloudflare_zone" "this" {
 resource "cloudflare_workers_script" "this" {
   account_id = var.cloudflare_account_id
   name       = "bendrucker-me"
-  content    = file("${path.module}/../worker.js")
-  module     = true
 }
 
 resource "cloudflare_workers_route" "apex" {
