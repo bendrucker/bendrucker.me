@@ -29,7 +29,7 @@ jobs:
       - name: Build site
         uses: withastro/action@v4
 
-  deploy/pages:
+  pages:
     if: github.event_name == 'push' && contains(fromJson('["main", "master"]'), github.ref_name)
     environment:
       name: github-pages
@@ -45,7 +45,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  deploy/cloudflare:
+  cloudflare:
     if: github.event_name == 'push' && contains(fromJson('["main", "master"]'), github.ref_name)
     needs: build
     name: Deploy to Cloudflare Workers
