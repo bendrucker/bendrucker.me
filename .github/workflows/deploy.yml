@@ -19,22 +19,17 @@ jobs:
       - name: "☁️ Checkout repository"
         uses: actions/checkout@v4
 
-      - name: "📦 Install pnpm"
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.11.1
-
       - name: "📦 Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: "npm"
 
       - name: "📦 Install dependencies"
-        run: pnpm install
+        run: npm ci
 
       - name: "🚀 Build"
-        run: pnpm run build
+        run: npm run build
 
       - name: "🌐 Deploy to Cloudflare Pages"
         uses: cloudflare/wrangler-action@v3
@@ -51,25 +46,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: "📦 Install pnpm"
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.11.1
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Build site
-        run: pnpm run build
+        run: npm run build
 
       - name: Run Lighthouse CI
-        run: pnpm run lighthouse
+        run: npm run lighthouse
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 

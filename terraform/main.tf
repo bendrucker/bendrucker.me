@@ -41,7 +41,7 @@ resource "cloudflare_pages_project" "bendrucker_me" {
   }
 
   build_config {
-    build_command       = "pnpm run build"
+    build_command       = "npm run build"
     destination_dir     = "dist"
     root_dir            = ""
     web_analytics_tag   = ""
