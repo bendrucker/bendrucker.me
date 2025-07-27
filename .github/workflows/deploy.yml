@@ -47,7 +47,6 @@ jobs:
 
   cloudflare:
     if: github.event_name == 'push'
-    needs: build
     name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
     timeout-minutes: 10
