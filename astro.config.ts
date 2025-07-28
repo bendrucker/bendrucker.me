@@ -71,6 +71,14 @@ export default defineConfig({
         buildStart: () => copyStaticFiles('static', 'public')
       }
     ],
+    ssr: {
+      external: [
+        "node:fs",
+        "node:path", 
+        "node:url",
+        "node:fs/promises"
+      ]
+    }
   },
   image: {
     responsiveStyles: true,
