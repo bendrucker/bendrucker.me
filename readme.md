@@ -8,28 +8,31 @@ Personal website and blog built with [Astro](https://astro.build).
 
 - **Framework**: Astro (static site generation)
 - **Styling**: TailwindCSS
-- **Styling**: CSS (compiled from Stylus)
-- **Content**: Markdown with frontmatter
+- **Content**: Markdown with frontmatter (content collections)
+- **Image Generation**: Dynamic OG images and RSS feed
 - **Deployment**: GitHub Actions → GitHub Pages
 
 ## 📁 Project Structure
 
 ```text
 /
-├── public/              # Static assets (images, fonts, CSS)
+├── static/             # Source static assets (copied to public/ during build)
+├── public/             # Build output directory for static assets
+├── dist/               # Production build output
 ├── src/
 │   ├── content/
-│   │   └── blog/       # Blog posts (Markdown)
-│   ├── layouts/        # Astro layout components
-│   ├── pages/          # Routes (.astro files)
-│   └── config.ts       # Site configuration
-├── .github/workflows/  # GitHub Actions for deployment
+│   │   └── blog/      # Blog posts (Markdown with content collections)
+│   ├── layouts/       # Astro layout components
+│   ├── pages/         # Routes (.astro files)
+│   ├── components/    # Reusable Astro components
+│   └── config.ts      # Site configuration
+├── .github/workflows/ # GitHub Actions for deployment
 └── package.json
 ```
 
-- **Content Collections**: Blog posts are managed through Astro's content collections
-- **Layouts**: Reusable page layouts with proper SEO and meta tags
-- **Static Assets**: Images, fonts, and compiled CSS in `public/`
+- **Content Collections**: Blog posts managed through Astro's type-safe content collections
+- **Static Assets**: Source files in `static/`, build output in `public/`
+- **Components**: Reusable Astro components with proper TypeScript typing
 
 ## 🧞 Commands
 
@@ -56,7 +59,7 @@ The site is built with modern web standards and includes:
 
 ## 🚀 Deployment
 
-The site automatically deploys to GitHub Pages when changes are pushed to the main branch. The deployment process:
+The site automatically deploys to GitHub Pages when changes are pushed to the master branch. The deployment process:
 
 1. **Build**: Astro generates static files in `./dist/`
 2. **Deploy**: GitHub Actions uploads to GitHub Pages
