@@ -104,30 +104,6 @@ jobs:
             --field environment_url="${{ steps.wrangler.outputs.deployment-url }}" \
             --field description="$DESCRIPTION"
 
-  cleanup:
-    if: github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    permissions:
-      deployments: write
-    steps:
-      - name: "🧹 Mark PR deployment as inactive"
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          ENVIRONMENT="pr-${{ github.event.number }}"
-          
-          # Get all deployments for this environment
-          DEPLOYMENTS=$(gh api repos/${{ github.repository }}/deployments \
-            --field environment="$ENVIRONMENT" \
-            --jq '.[].id')
-          
-          # Mark each deployment as inactive
-          for DEPLOYMENT_ID in $DEPLOYMENTS; do
-            gh api repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses \
-              --method POST \
-              --field state=inactive \
-              --field description="PR closed - environment destroyed"
-          done
 
   lighthouse:
     runs-on: ubuntu-latest
