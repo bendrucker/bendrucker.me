@@ -1,5 +1,4 @@
 import { Resvg, initWasm } from "@resvg/resvg-wasm";
-// @ts-ignore - WASM import
 import wasmUrl from "@resvg/resvg-wasm/index_bg.wasm?url";
 import { type CollectionEntry } from "astro:content";
 import postOgImage from "./templates/post";
