@@ -62,7 +62,7 @@ jobs:
           step: start
           token: ${{ github.token }}
           env: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'production' }}
-          desc: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch && 'Production deployment to Cloudflare Workers' || format('Preview deployment for PR #{0}', github.event.number) }}
+          desc: ${{ github.event_name == 'pull_request' && format('Preview deployment for PR #{0}', github.event.number) || 'Production deployment to Cloudflare Workers' }}
 
       - name: "🌐 Deploy to Cloudflare Workers"
         id: wrangler
