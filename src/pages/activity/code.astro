@@ -3,8 +3,26 @@ import Layout from "@/layouts/Layout.astro";
 import Main from "@/layouts/Main.astro";
 import { SITE } from "@/config";
 
+interface Activity {
+  type: string;
+  title: string;
+  number?: number;
+  url?: string;
+  createdAt: Date;
+  state: string;
+}
+
+interface Repository {
+  name: string;
+  owner: string;
+  description: string;
+  url: string;
+  lastActivity: Date;
+  activities: Activity[];
+}
+
 // Mock data for GitHub activity
-const mockRepositories = [
+const mockRepositories: Repository[] = [
   {
     name: "claude-code",
     owner: "bendrucker",
@@ -73,6 +91,7 @@ const mockRepositories = [
       {
         type: "repo_created",
         title: "Initial repository setup",
+        url: "https://github.com/bendrucker/terraform-modules",
         createdAt: new Date("2024-01-23"),
         state: "created"
       }
@@ -112,10 +131,9 @@ const formatDate = (date: Date) => {
 ---
 
 <Layout title={`Code Activity | ${SITE.title}`} description="Recent GitHub activity and contributions">
-  <Main>
-    <section class="pb-6 pt-12">
+  <Main pageTitle="Code Activity" pageDesc="Recent GitHub activity and contributions">
+    <section class="pb-6">
       <div class="mx-auto max-w-3xl px-4">
-        <h1 class="text-3xl font-bold text-skin-accent mb-8">Code Activity</h1>
         
         <div class="space-y-8">
           {mockRepositories.map((repo) => (
