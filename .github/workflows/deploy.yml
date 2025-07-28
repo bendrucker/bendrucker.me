@@ -46,7 +46,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   cloudflare:
-    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
+    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/' + github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
     name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
     timeout-minutes: 10
