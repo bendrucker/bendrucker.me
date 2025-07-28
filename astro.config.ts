@@ -1,6 +1,7 @@
 import { defineConfig, envField } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
+import cloudflare from "@astrojs/cloudflare";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
 import {
@@ -34,9 +35,10 @@ function copyStaticFiles(src: string, dest: string) {
 // https://astro.build/config
 export default defineConfig({
   site: SITE.website,
-  redirects: {
-    "/blog/[...slug]": "/posts/[...slug]"
-  },
+  output: "server",
+  adapter: cloudflare({
+    imageService: "compile",
+  }),
   integrations: [
     sitemap({
       filter: page => SITE.showArchives || !page.endsWith("/archives"),
@@ -69,9 +71,6 @@ export default defineConfig({
         buildStart: () => copyStaticFiles('static', 'public')
       }
     ],
-    optimizeDeps: {
-      exclude: ["@resvg/resvg-js"],
-    },
   },
   image: {
     responsiveStyles: true,

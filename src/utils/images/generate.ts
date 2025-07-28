@@ -1,9 +1,16 @@
-import { Resvg } from "@resvg/resvg-js";
+import { Resvg, initWasm } from "@resvg/resvg-wasm";
+import wasmUrl from "@resvg/resvg-wasm/index_bg.wasm?url";
 import { type CollectionEntry } from "astro:content";
 import postOgImage from "./templates/post";
 import siteOgImage from "./templates/site";
 
-function svgBufferToPngBuffer(svg: string) {
+let wasmInitialized = false;
+
+async function svgBufferToPngBuffer(svg: string) {
+  if (!wasmInitialized) {
+    await initWasm(fetch(wasmUrl));
+    wasmInitialized = true;
+  }
   const resvg = new Resvg(svg);
   const pngData = resvg.render();
   return pngData.asPng();
@@ -11,10 +18,10 @@ function svgBufferToPngBuffer(svg: string) {
 
 export async function generateOgImageForPost(post: CollectionEntry<"blog">) {
   const svg = await postOgImage(post);
-  return svgBufferToPngBuffer(svg);
+  return await svgBufferToPngBuffer(svg);
 }
 
 export async function generateOgImageForSite() {
   const svg = await siteOgImage();
-  return svgBufferToPngBuffer(svg);
+  return await svgBufferToPngBuffer(svg);
 }

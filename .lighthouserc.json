@@ -2,8 +2,9 @@
   "ci": {
     "collect": {
       "numberOfRuns": 3,
-      "staticDistDir": "./dist",
-      "url": ["/"]
+      "startServerCommand": "npx wrangler dev --port 8787 --local",
+      "startServerReadyPattern": "Ready on",
+      "url": ["http://localhost:8787/"]
     },
     "upload": {
       "target": "temporary-public-storage"
