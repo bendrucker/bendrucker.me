@@ -71,7 +71,6 @@ jobs:
             --field environment="$ENVIRONMENT" \
             --field production_environment="$PRODUCTION" \
             --field transient_environment="$TRANSIENT" \
-            --raw-field required_contexts='[]' \
             --field auto_merge=false \
             --jq '.id')
           
