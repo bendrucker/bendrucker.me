@@ -77,7 +77,6 @@ export default defineConfig({
         "node:path", 
         "node:url",
         "node:fs/promises",
-        "fs",
         "path"
       ]
     }
