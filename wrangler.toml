@@ -4,6 +4,7 @@ compatibility_date = "2024-07-27"
 
 [assets]
 directory = "dist"
+binding = "ASSETS"
 
 [[routes]]
 pattern = "www.bendrucker.me"
