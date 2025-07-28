@@ -11,7 +11,8 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "lint": "eslint .",
-    "lighthouse": "lhci autorun"
+    "lighthouse": "lhci autorun",
+    "types:generate": "wrangler types generate"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.0",
@@ -19,6 +20,7 @@
     "@astrojs/sitemap": "^3.4.1",
     "@resvg/resvg-wasm": "^2.6.2",
     "@tailwindcss/vite": "^4.1.11",
+    "@types/node": "^24.1.0",
     "astro": "^5.12.3",
     "dayjs": "^1.11.13",
     "lodash.kebabcase": "^4.1.1",
