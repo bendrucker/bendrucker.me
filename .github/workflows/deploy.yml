@@ -46,7 +46,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   cloudflare:
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == 'master')
+    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/' + github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
     name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -75,7 +75,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --assets dist
+          command: deploy --assets dist ${{ github.event_name == 'pull_request' && format('--name bendrucker-me-pr-{0}', github.event.number) || '' }}
+          gitHubToken: ${{ github.token }}
 
   lighthouse:
     runs-on: ubuntu-latest
