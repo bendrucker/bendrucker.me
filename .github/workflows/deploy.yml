@@ -56,10 +56,12 @@ jobs:
       - name: "🌐 Upload Cloudflare Workers version"
         if: github.event_name == 'pull_request'
         uses: cloudflare/wrangler-action@v3
+        env:
+          PR_MESSAGE: "Preview for PR #${{ github.event.number }}: ${{ github.event.pull_request.html_url }}"
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: versions upload --tag PR-${{ github.event.number }} --message "Preview for PR #${{ github.event.number }}: ${{ github.event.pull_request.html_url }}"
+          command: versions upload --tag PR-${{ github.event.number }} --message "$PR_MESSAGE"
           gitHubToken: ${{ github.token }}
 
       - name: "🌐 Deploy to Cloudflare Workers"
