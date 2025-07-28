@@ -4,6 +4,8 @@ import { getPath } from "@/utils/posts/path";
 import { generateOgImageForPost } from "@/utils/images/generate";
 import { SITE } from "@/config";
 
+export const prerender = true;
+
 export async function getStaticPaths() {
   if (!SITE.dynamicOgImage) {
     return [];
