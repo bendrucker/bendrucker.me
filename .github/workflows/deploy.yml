@@ -53,6 +53,9 @@ jobs:
       - name: "🚀 Build"
         run: npm run build
 
+      - name: "📋 Copy assets ignore file"
+        run: cp .assetsignore dist/
+
       - name: "🌐 Upload Cloudflare Workers version"
         if: github.event_name == 'pull_request'
         uses: cloudflare/wrangler-action@v3
@@ -89,6 +92,9 @@ jobs:
 
       - name: Build site
         run: npm run build
+
+      - name: Copy assets ignore file
+        run: cp .assetsignore dist/
 
       - name: Run Lighthouse CI
         run: npm run lighthouse
