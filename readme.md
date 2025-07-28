@@ -10,7 +10,7 @@ Personal website and blog built with [Astro](https://astro.build).
 - **Styling**: TailwindCSS
 - **Content**: Markdown with frontmatter (content collections)
 - **Image Generation**: Dynamic OG images and RSS feed
-- **Deployment**: GitHub Actions → GitHub Pages
+- **Deployment**: GitHub Actions → Cloudflare Workers
 
 ## 📁 Project Structure
 
@@ -59,10 +59,10 @@ The site is built with modern web standards and includes:
 
 ## 🚀 Deployment
 
-The site automatically deploys to GitHub Pages when changes are pushed to the master branch. The deployment process:
+The site automatically deploys to Cloudflare Workers when changes are pushed to the master branch. The deployment process:
 
 1. **Build**: Astro generates static files in `./dist/`
-2. **Deploy**: GitHub Actions uploads to GitHub Pages
+2. **Deploy**: GitHub Actions deploys to Cloudflare Workers
 3. **Live**: Available at [www.bendrucker.me](https://www.bendrucker.me)
 
 ## 📝 Adding Content
@@ -88,4 +88,3 @@ This site is built on the [AstroPaper](https://github.com/satnaing/astro-paper) 
 
 - [Astro Documentation](https://docs.astro.build)
 - [AstroPaper Theme](https://github.com/satnaing/astro-paper)
-- [Migration Documentation](./MIGRATION.md)
