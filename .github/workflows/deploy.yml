@@ -75,7 +75,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --assets dist
+          command: deploy --assets dist ${{ github.event_name == 'pull_request' && format('--name bendrucker-me-pr-{0}', github.event.number) || '' }}
 
   lighthouse:
     runs-on: ubuntu-latest
