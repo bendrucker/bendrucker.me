@@ -1,0 +1,182 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Main from "@/layouts/Main.astro";
+import { SITE } from "@/config";
+
+// Mock data for GitHub activity
+const mockRepositories = [
+  {
+    name: "claude-code",
+    owner: "bendrucker",
+    description: "AI-powered CLI for software development",
+    url: "https://github.com/bendrucker/claude-code",
+    lastActivity: new Date("2024-01-28"),
+    activities: [
+      {
+        type: "pr_merged",
+        title: "Add support for TypeScript configuration",
+        number: 42,
+        url: "https://github.com/bendrucker/claude-code/pull/42",
+        createdAt: new Date("2024-01-28"),
+        state: "merged"
+      },
+      {
+        type: "issue_commented",
+        title: "Feature request: Add dark mode support",
+        number: 38,
+        url: "https://github.com/bendrucker/claude-code/issues/38",
+        createdAt: new Date("2024-01-27"),
+        state: "open"
+      },
+      {
+        type: "pr_updated",
+        title: "Fix memory leak in file watcher",
+        number: 41,
+        url: "https://github.com/bendrucker/claude-code/pull/41",
+        createdAt: new Date("2024-01-26"),
+        state: "open"
+      }
+    ]
+  },
+  {
+    name: "astro-blog",
+    owner: "bendrucker",
+    description: "Personal blog built with Astro",
+    url: "https://github.com/bendrucker/astro-blog",
+    lastActivity: new Date("2024-01-25"),
+    activities: [
+      {
+        type: "issue_opened",
+        title: "Add RSS feed generation",
+        number: 13,
+        url: "https://github.com/bendrucker/astro-blog/issues/13",
+        createdAt: new Date("2024-01-25"),
+        state: "open"
+      },
+      {
+        type: "pr_merged",
+        title: "Update dependencies to latest versions",
+        number: 12,
+        url: "https://github.com/bendrucker/astro-blog/pull/12",
+        createdAt: new Date("2024-01-24"),
+        state: "merged"
+      }
+    ]
+  },
+  {
+    name: "terraform-modules",
+    owner: "bendrucker",
+    description: "Reusable Terraform modules for AWS infrastructure",
+    url: "https://github.com/bendrucker/terraform-modules",
+    lastActivity: new Date("2024-01-23"),
+    activities: [
+      {
+        type: "repo_created",
+        title: "Initial repository setup",
+        createdAt: new Date("2024-01-23"),
+        state: "created"
+      }
+    ]
+  }
+];
+
+const getActivityTypeLabel = (type: string) => {
+  switch (type) {
+    case "pr_merged": return "PR Merged";
+    case "pr_updated": return "PR Updated";
+    case "issue_opened": return "Issue Opened";
+    case "issue_commented": return "Issue Commented";
+    case "repo_created": return "Repository Created";
+    default: return type;
+  }
+};
+
+const getActivityTypeColor = (type: string) => {
+  switch (type) {
+    case "pr_merged": return "text-green-600 bg-green-50";
+    case "pr_updated": return "text-blue-600 bg-blue-50";
+    case "issue_opened": return "text-red-600 bg-red-50";
+    case "issue_commented": return "text-yellow-600 bg-yellow-50";
+    case "repo_created": return "text-purple-600 bg-purple-50";
+    default: return "text-gray-600 bg-gray-50";
+  }
+};
+
+const formatDate = (date: Date) => {
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+};
+---
+
+<Layout title={`Code Activity | ${SITE.title}`} description="Recent GitHub activity and contributions">
+  <Main>
+    <section class="pb-6 pt-12">
+      <div class="mx-auto max-w-3xl px-4">
+        <h1 class="text-3xl font-bold text-skin-accent mb-8">Code Activity</h1>
+        
+        <div class="space-y-8">
+          {mockRepositories.map((repo) => (
+            <div class="border border-skin-line rounded-lg p-6 bg-skin-fill">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h2 class="text-xl font-semibold text-skin-accent mb-2">
+                    <a 
+                      href={repo.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="hover:text-skin-accent/80 transition-colors"
+                    >
+                      {repo.owner}/{repo.name}
+                    </a>
+                  </h2>
+                  <p class="text-skin-base text-sm">{repo.description}</p>
+                </div>
+                <div class="text-sm text-skin-muted">
+                  Last activity: {formatDate(repo.lastActivity)}
+                </div>
+              </div>
+              
+              <div class="space-y-3">
+                {repo.activities.map((activity) => (
+                  <div class="flex items-start gap-3 p-3 rounded-md bg-skin-card">
+                    <span class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getActivityTypeColor(activity.type)}`}>
+                      {getActivityTypeLabel(activity.type)}
+                    </span>
+                    
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                          {activity.url ? (
+                            <a 
+                              href={activity.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              class="text-skin-accent hover:text-skin-accent/80 transition-colors font-medium"
+                            >
+                              {activity.title}
+                            </a>
+                          ) : (
+                            <span class="text-skin-accent font-medium">{activity.title}</span>
+                          )}
+                          {activity.number && (
+                            <span class="text-skin-muted ml-2">#{activity.number}</span>
+                          )}
+                        </div>
+                        <time class="text-sm text-skin-muted ml-4 flex-shrink-0">
+                          {formatDate(activity.createdAt)}
+                        </time>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </Main>
+</Layout>
