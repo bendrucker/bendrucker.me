@@ -75,6 +75,11 @@ jobs:
             --field auto_merge=false \
             --jq '.id')
           
+          if [ -z "$DEPLOYMENT_ID" ]; then
+            echo "Error: Failed to create deployment"
+            exit 1
+          fi
+          
           echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
       - name: "🌐 Deploy to Cloudflare Workers"
