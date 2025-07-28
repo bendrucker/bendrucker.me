@@ -8,3 +8,6 @@ directory = "dist"
 [[routes]]
 pattern = "www.bendrucker.me"
 custom_domain = true
+
+[observability.logs]
+enabled = true
