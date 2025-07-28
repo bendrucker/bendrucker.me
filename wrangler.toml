@@ -6,5 +6,5 @@ compatibility_date = "2024-07-27"
 directory = "dist"
 
 [[routes]]
-pattern = "www.bendrucker.me/*"
+pattern = "www.bendrucker.me"
 custom_domain = true
