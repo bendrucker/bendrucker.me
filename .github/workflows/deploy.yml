@@ -56,22 +56,50 @@ jobs:
       - name: "📋 Copy assets ignore file"
         run: cp .assetsignore dist/
 
-      - name: "🌐 Upload Cloudflare Workers version"
-        if: github.event_name == 'pull_request'
+      - name: "🌐 Deploy to Cloudflare Workers"
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: versions upload --tag PR-${{ github.event.number }} --message "Preview for PR ${{ github.event.number }} - ${{ github.event.pull_request.html_url }}"
+          command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}"', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
           gitHubToken: ${{ github.token }}
 
-      - name: "🌐 Deploy to Cloudflare Workers"
-        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
-        uses: cloudflare/wrangler-action@v3
+      - name: "📍 Create deployment status"
+        uses: actions/github-script@v7
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          gitHubToken: ${{ github.token }}
+          script: |
+            const deploymentUrl = '${{ steps.deploy.outputs.deployment-url }}';
+            
+            if (deploymentUrl) {
+              const isProduction = github.event_name === 'push' && '${{ github.ref_name }}' === '${{ github.event.repository.default_branch }}';
+              const environment = isProduction ? 'production' : 'preview';
+              const description = isProduction 
+                ? 'Production deployment to Cloudflare Workers'
+                : `Preview deployment for PR #${{ github.event.number }}`;
+              
+              // Create deployment
+              const deployment = await github.rest.repos.createDeployment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: context.sha,
+                environment: environment,
+                production_environment: isProduction,
+                transient_environment: !isProduction,
+                required_contexts: [],
+                auto_merge: false
+              });
+              
+              // Create deployment status
+              await github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: deployment.data.id,
+                state: 'success',
+                environment_url: deploymentUrl,
+                description: description
+              });
+            }
 
   lighthouse:
     runs-on: ubuntu-latest
