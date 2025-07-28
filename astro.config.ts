@@ -36,7 +36,9 @@ function copyStaticFiles(src: string, dest: string) {
 export default defineConfig({
   site: SITE.website,
   output: "server",
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    imageService: "compile",
+  }),
   redirects: {
     "/blog/[...slug]": "/posts/[...slug]"
   },
@@ -72,6 +74,14 @@ export default defineConfig({
         buildStart: () => copyStaticFiles('static', 'public')
       }
     ],
+    ssr: {
+      external: ["@resvg/resvg-js"],
+    },
+    build: {
+      rollupOptions: {
+        external: ["@resvg/resvg-js"],
+      },
+    },
     optimizeDeps: {
       exclude: ["@resvg/resvg-js"],
     },
