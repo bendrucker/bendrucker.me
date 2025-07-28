@@ -58,6 +58,8 @@ jobs:
 
       - name: "📍 Create deployment"
         id: create-deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           ENVIRONMENT=${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'production' }}
           PRODUCTION=${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
@@ -76,7 +78,7 @@ jobs:
           echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
       - name: "🌐 Deploy to Cloudflare Workers"
-        id: deploy
+        id: wrangler
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -86,14 +88,16 @@ jobs:
 
       - name: "📍 Update deployment status"
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          STATE=${{ steps.deploy.outcome == 'success' && 'success' || 'failure' }}
+          STATE=${{ steps.wrangler.outcome == 'success' && 'success' || 'failure' }}
           DESCRIPTION="${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch && 'Production deployment to Cloudflare Workers' || format('Preview deployment for PR #{0}', github.event.number) }}"
           
           gh api repos/${{ github.repository }}/deployments/${{ steps.create-deployment.outputs.deployment-id }}/statuses \
             --method POST \
             --field state="$STATE" \
-            --field environment_url="${{ steps.deploy.outputs.deployment-url }}" \
+            --field environment_url="${{ steps.wrangler.outputs.deployment-url }}" \
             --field description="$DESCRIPTION"
 
   lighthouse:
