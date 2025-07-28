@@ -9,7 +9,7 @@ This is a personal website and blog built with modern web technologies, migrated
 - **Styling**: [TailwindCSS](https://tailwindcss.com) - Utility-first CSS framework
 - **Styling**: CSS (compiled from original Stylus) with modern web standards
 - **Content**: Markdown files with frontmatter, managed through Astro content collections
-- **Deployment**: GitHub Actions → GitHub Pages
+- **Deployment**: GitHub Actions → Cloudflare Workers
 - **Domain**: www.bendrucker.me
 
 ### Key Design Principles
@@ -141,7 +141,7 @@ git remote add upstream https://github.com/satnaing/astro-paper.git
 
 ### Automatic Deployment
 - **Trigger**: Push to `master` branch
-- **Process**: GitHub Actions builds and deploys to GitHub Pages
+- **Process**: GitHub Actions builds and deploys to Cloudflare Workers
 - **URL**: Automatically available at www.bendrucker.me
 
 ### Manual Deployment
