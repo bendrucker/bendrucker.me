@@ -19,9 +19,8 @@ jobs:
           
           # Get all deployments for this environment
           DEPLOYMENTS=$(gh api repos/${{ github.repository }}/deployments \
-            --field environment="$ENVIRONMENT" \
-            --field ref="${{ github.event.pull_request.head.sha }}" \
-            --jq '.[].id')
+            --method GET \
+            --jq '.[] | select(.environment == "'"$ENVIRONMENT"'") | .id')
           
           # Mark each deployment as inactive
           for DEPLOYMENT_ID in $DEPLOYMENTS; do
