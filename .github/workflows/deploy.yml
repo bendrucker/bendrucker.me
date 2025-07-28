@@ -13,8 +13,6 @@ concurrency:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
   deployments: write
 
 jobs:
@@ -29,21 +27,6 @@ jobs:
       - name: Build site
         uses: withastro/action@v4
 
-  pages:
-    if: github.event_name == 'push' && contains(fromJson('["main", "master"]'), github.ref_name)
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
 
   cloudflare:
     if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/' + github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
