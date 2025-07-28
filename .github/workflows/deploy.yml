@@ -56,6 +56,25 @@ jobs:
       - name: "📋 Copy assets ignore file"
         run: cp .assetsignore dist/
 
+      - name: "📍 Create deployment"
+        id: create-deployment
+        run: |
+          ENVIRONMENT=${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
+          PRODUCTION=${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
+          TRANSIENT=${{ github.event_name == 'pull_request' }}
+          
+          DEPLOYMENT_ID=$(gh api repos/${{ github.repository }}/deployments \
+            --method POST \
+            --field ref=${{ github.sha }} \
+            --field environment="$ENVIRONMENT" \
+            --field production_environment="$PRODUCTION" \
+            --field transient_environment="$TRANSIENT" \
+            --field required_contexts='[]' \
+            --field auto_merge=false \
+            --jq '.id')
+          
+          echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+
       - name: "🌐 Deploy to Cloudflare Workers"
         id: deploy
         uses: cloudflare/wrangler-action@v3
@@ -65,41 +84,17 @@ jobs:
           command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}"', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
           gitHubToken: ${{ github.token }}
 
-      - name: "📍 Create deployment status"
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const deploymentUrl = '${{ steps.deploy.outputs.deployment-url }}';
-            
-            if (deploymentUrl) {
-              const isProduction = github.event_name === 'push' && '${{ github.ref_name }}' === '${{ github.event.repository.default_branch }}';
-              const environment = isProduction ? 'production' : 'preview';
-              const description = isProduction 
-                ? 'Production deployment to Cloudflare Workers'
-                : `Preview deployment for PR #${{ github.event.number }}`;
-              
-              // Create deployment
-              const deployment = await github.rest.repos.createDeployment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: context.sha,
-                environment: environment,
-                production_environment: isProduction,
-                transient_environment: !isProduction,
-                required_contexts: [],
-                auto_merge: false
-              });
-              
-              // Create deployment status
-              await github.rest.repos.createDeploymentStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                deployment_id: deployment.data.id,
-                state: 'success',
-                environment_url: deploymentUrl,
-                description: description
-              });
-            }
+      - name: "📍 Update deployment status"
+        if: always()
+        run: |
+          STATE=${{ steps.deploy.outcome == 'success' && 'success' || 'failure' }}
+          DESCRIPTION="${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch && 'Production deployment to Cloudflare Workers' || format('Preview deployment for PR #{0}', github.event.number) }}"
+          
+          gh api repos/${{ github.repository }}/deployments/${{ steps.create-deployment.outputs.deployment-id }}/statuses \
+            --method POST \
+            --field state="$STATE" \
+            --field environment_url="${{ steps.deploy.outputs.deployment-url }}" \
+            --field description="$DESCRIPTION"
 
   lighthouse:
     runs-on: ubuntu-latest
