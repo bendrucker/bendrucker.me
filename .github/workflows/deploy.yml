@@ -71,6 +71,7 @@ jobs:
             --field environment="$ENVIRONMENT" \
             --field production_environment="$PRODUCTION" \
             --field transient_environment="$TRANSIENT" \
+            --field required_contexts[] \
             --field auto_merge=false \
             --jq '.id')
           
@@ -91,7 +92,7 @@ jobs:
           gitHubToken: ${{ github.token }}
 
       - name: "📍 Update deployment status"
-        if: always()
+        if: always() && steps.create-deployment.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
