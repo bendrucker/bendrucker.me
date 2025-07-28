@@ -39,9 +39,6 @@ export default defineConfig({
   adapter: cloudflare({
     imageService: "compile",
   }),
-  redirects: {
-    "/blog/[...slug]": "/posts/[...slug]"
-  },
   integrations: [
     sitemap({
       filter: page => SITE.showArchives || !page.endsWith("/archives"),
