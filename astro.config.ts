@@ -11,8 +11,8 @@ import {
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/utils/markdown/transformers/fileName.js";
 import { SITE } from "./src/config";
-import { copyFileSync, mkdirSync, readdirSync, statSync } from "fs";
-import { join } from "path";
+import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 
 function copyStaticFiles(src: string, dest: string) {
   try {
@@ -20,7 +20,7 @@ function copyStaticFiles(src: string, dest: string) {
     for (const item of readdirSync(src)) {
       const srcPath = join(src, item);
       const destPath = join(dest, item);
-      
+
       if (statSync(srcPath).isDirectory()) {
         copyStaticFiles(srcPath, destPath);
       } else {
@@ -74,7 +74,7 @@ export default defineConfig({
     ssr: {
       external: [
         "node:fs",
-        "node:path", 
+        "node:path",
         "node:url",
         "node:fs/promises"
       ]
