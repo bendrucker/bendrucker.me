@@ -212,7 +212,7 @@ Ready for future interactivity with vanilla JavaScript or modern web APIs.
 - **Static HTML**: Pre-rendered at build time
 - **Minimal JS**: Vanilla JavaScript for essential interactivity
 - **CSS**: Single file, optimized loading
-- **Images**: Served from CDN (GitHub Pages)
+- **Images**: Served from CDN (Cloudflare Workers)
 
 ### SEO Features
 - **Meta tags**: Complete Open Graph and Twitter Cards
