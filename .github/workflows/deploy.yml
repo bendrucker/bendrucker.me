@@ -71,7 +71,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: ${{ github.event_name == 'pull_request' && format('versions upload --config wrangler.toml --config workers/github/wrangler.toml --tag PR-{0} --message "Preview for PR {0} - {1}" --compatibility-date 2024-09-23 --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy --config wrangler.toml --config workers/github/wrangler.toml' }}
+          command: ${{ github.event_name == 'pull_request' && format('versions upload --config wrangler.toml --config workers/github/wrangler.toml --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy --config wrangler.toml --config workers/github/wrangler.toml' }}
           gitHubToken: ${{ github.token }}
 
       - name: "🔗 Extract alias URL"
