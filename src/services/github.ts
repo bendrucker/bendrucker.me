@@ -54,15 +54,66 @@ export interface RepositoryContribution {
 }
 
 export interface ContributionsCollection {
-  pullRequestContributions: {
-    nodes: PullRequestContribution[]
-  }
-  pullRequestReviewContributions: {
-    nodes: PullRequestReviewContribution[]
-  }
-  issueContributions: {
-    nodes: IssueContribution[]
-  }
+  pullRequestContributionsByRepository: Array<{
+    repository: {
+      name: string
+      owner: { login: string }
+      description: string | null
+      url: string
+      createdAt: string
+    }
+    contributions: {
+      nodes: Array<{
+        occurredAt: string
+        pullRequest: {
+          number: number
+          title: string
+          url: string
+        }
+      }>
+    }
+  }>
+  pullRequestReviewContributionsByRepository: Array<{
+    repository: {
+      name: string
+      owner: { login: string }
+      description: string | null
+      url: string
+      createdAt: string
+    }
+    contributions: {
+      nodes: Array<{
+        occurredAt: string
+        pullRequest: {
+          number: number
+          title: string
+          url: string
+        }
+        pullRequestReview: {
+          url: string
+        }
+      }>
+    }
+  }>
+  issueContributionsByRepository: Array<{
+    repository: {
+      name: string
+      owner: { login: string }
+      description: string | null
+      url: string
+      createdAt: string
+    }
+    contributions: {
+      nodes: Array<{
+        occurredAt: string
+        issue: {
+          number: number
+          title: string
+          url: string
+        }
+      }>
+    }
+  }>
   repositoryContributions: {
     nodes: RepositoryContribution[]
   }
@@ -81,7 +132,6 @@ export interface RepoActivity {
   url: string
   lastActivity: Date
   activitySummary: ActivitySummary
-  isNew?: boolean
   createdAt?: Date
 }
 
@@ -89,63 +139,69 @@ const GITHUB_GRAPHQL_QUERY = `
   query GetUserContributions($username: String!, $from: DateTime!, $to: DateTime!) {
     user(login: $username) {
       contributionsCollection(from: $from, to: $to) {
-        pullRequestContributions(first: 100) {
-          nodes {
-            repository {
-              name
-              owner {
-                login
-              }
-              description
-              url
-              createdAt
+        pullRequestContributionsByRepository(maxRepositories: 100) {
+          repository {
+            name
+            owner {
+              login
             }
-            occurredAt
-            pullRequest {
-              number
-              title
-              url
+            description
+            url
+            createdAt
+          }
+          contributions(first: 100) {
+            nodes {
+              occurredAt
+              pullRequest {
+                number
+                title
+                url
+              }
             }
           }
         }
-        pullRequestReviewContributions(first: 100) {
-          nodes {
-            repository {
-              name
-              owner {
-                login
+        pullRequestReviewContributionsByRepository(maxRepositories: 100) {
+          repository {
+            name
+            owner {
+              login
+            }
+            description
+            url
+            createdAt
+          }
+          contributions(first: 100) {
+            nodes {
+              occurredAt
+              pullRequest {
+                number
+                title
+                url
               }
-              description
-              url
-              createdAt
-            }
-            occurredAt
-            pullRequest {
-              number
-              title
-              url
-            }
-            pullRequestReview {
-              url
+              pullRequestReview {
+                url
+              }
             }
           }
         }
-        issueContributions(first: 100) {
-          nodes {
-            repository {
-              name
-              owner {
-                login
-              }
-              description
-              url
-              createdAt
+        issueContributionsByRepository(maxRepositories: 100) {
+          repository {
+            name
+            owner {
+              login
             }
-            occurredAt
-            issue {
-              number
-              title
-              url
+            description
+            url
+            createdAt
+          }
+          contributions(first: 100) {
+            nodes {
+              occurredAt
+              issue {
+                number
+                title
+                url
+              }
             }
           }
         }
@@ -225,22 +281,112 @@ export async function fetchGitHubActivity(token: string): Promise<RepoActivity[]
 
 function aggregateActivityByRepository(contributions: ContributionsCollection): RepoActivity[] {
   const repoMap = new Map<string, RepoActivity>()
-  const oneMonthAgo = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000))
 
-  // Process all contribution types
-  const allContributions = [
-    ...contributions.pullRequestContributions.nodes,
-    ...contributions.pullRequestReviewContributions.nodes,
-    ...contributions.issueContributions.nodes,
-    ...contributions.repositoryContributions.nodes
-  ]
-
-  // Initialize repositories
-  allContributions.forEach(contribution => {
-    const repoKey = `${contribution.repository.owner.login}/${contribution.repository.name}`
+  // Process PR contributions
+  contributions.pullRequestContributionsByRepository.forEach(repoContrib => {
+    const repoKey = `${repoContrib.repository.owner.login}/${repoContrib.repository.name}`
+    const createdAt = new Date(repoContrib.repository.createdAt)
     
     if (!repoMap.has(repoKey)) {
-      const createdAt = new Date(contribution.repository.createdAt)
+      repoMap.set(repoKey, {
+        name: repoContrib.repository.name,
+        owner: repoContrib.repository.owner.login,
+        description: repoContrib.repository.description || '',
+        url: repoContrib.repository.url,
+        lastActivity: new Date(0),
+        activitySummary: {
+          prCount: 0,
+          reviewCount: 0,
+          issueCount: 0
+        },
+        createdAt
+      })
+    }
+    
+    const repo = repoMap.get(repoKey)!
+    repo.activitySummary.prCount += repoContrib.contributions.nodes.length
+    
+    // Update last activity
+    repoContrib.contributions.nodes.forEach(contrib => {
+      const contributionDate = new Date(contrib.occurredAt)
+      if (contributionDate > repo.lastActivity) {
+        repo.lastActivity = contributionDate
+      }
+    })
+  })
+
+  // Process PR review contributions
+  contributions.pullRequestReviewContributionsByRepository.forEach(repoContrib => {
+    const repoKey = `${repoContrib.repository.owner.login}/${repoContrib.repository.name}`
+    const createdAt = new Date(repoContrib.repository.createdAt)
+    
+    if (!repoMap.has(repoKey)) {
+      repoMap.set(repoKey, {
+        name: repoContrib.repository.name,
+        owner: repoContrib.repository.owner.login,
+        description: repoContrib.repository.description || '',
+        url: repoContrib.repository.url,
+        lastActivity: new Date(0),
+        activitySummary: {
+          prCount: 0,
+          reviewCount: 0,
+          issueCount: 0
+        },
+        createdAt
+      })
+    }
+    
+    const repo = repoMap.get(repoKey)!
+    repo.activitySummary.reviewCount += repoContrib.contributions.nodes.length
+    
+    // Update last activity
+    repoContrib.contributions.nodes.forEach(contrib => {
+      const contributionDate = new Date(contrib.occurredAt)
+      if (contributionDate > repo.lastActivity) {
+        repo.lastActivity = contributionDate
+      }
+    })
+  })
+
+  // Process issue contributions
+  contributions.issueContributionsByRepository.forEach(repoContrib => {
+    const repoKey = `${repoContrib.repository.owner.login}/${repoContrib.repository.name}`
+    const createdAt = new Date(repoContrib.repository.createdAt)
+    
+    if (!repoMap.has(repoKey)) {
+      repoMap.set(repoKey, {
+        name: repoContrib.repository.name,
+        owner: repoContrib.repository.owner.login,
+        description: repoContrib.repository.description || '',
+        url: repoContrib.repository.url,
+        lastActivity: new Date(0),
+        activitySummary: {
+          prCount: 0,
+          reviewCount: 0,
+          issueCount: 0
+        },
+        createdAt
+      })
+    }
+    
+    const repo = repoMap.get(repoKey)!
+    repo.activitySummary.issueCount += repoContrib.contributions.nodes.length
+    
+    // Update last activity
+    repoContrib.contributions.nodes.forEach(contrib => {
+      const contributionDate = new Date(contrib.occurredAt)
+      if (contributionDate > repo.lastActivity) {
+        repo.lastActivity = contributionDate
+      }
+    })
+  })
+
+  // Process repository contributions (new repositories)
+  contributions.repositoryContributions.nodes.forEach(contribution => {
+    const repoKey = `${contribution.repository.owner.login}/${contribution.repository.name}`
+    const createdAt = new Date(contribution.repository.createdAt)
+    
+    if (!repoMap.has(repoKey)) {
       repoMap.set(repoKey, {
         name: contribution.repository.name,
         owner: contribution.repository.owner.login,
@@ -252,36 +398,9 @@ function aggregateActivityByRepository(contributions: ContributionsCollection): 
           reviewCount: 0,
           issueCount: 0
         },
-        isNew: createdAt > oneMonthAgo,
         createdAt
       })
-    } else {
-      // Update last activity if this contribution is more recent
-      const repo = repoMap.get(repoKey)!
-      const contributionDate = new Date(contribution.occurredAt)
-      if (contributionDate > repo.lastActivity) {
-        repo.lastActivity = contributionDate
-      }
     }
-  })
-
-  // Count contributions by type
-  contributions.pullRequestContributions.nodes.forEach(contribution => {
-    const repoKey = `${contribution.repository.owner.login}/${contribution.repository.name}`
-    const repo = repoMap.get(repoKey)!
-    repo.activitySummary.prCount++
-  })
-
-  contributions.pullRequestReviewContributions.nodes.forEach(contribution => {
-    const repoKey = `${contribution.repository.owner.login}/${contribution.repository.name}`
-    const repo = repoMap.get(repoKey)!
-    repo.activitySummary.reviewCount++
-  })
-
-  contributions.issueContributions.nodes.forEach(contribution => {
-    const repoKey = `${contribution.repository.owner.login}/${contribution.repository.name}`
-    const repo = repoMap.get(repoKey)!
-    repo.activitySummary.issueCount++
   })
 
   // Convert to array and sort by last activity (most recent first)

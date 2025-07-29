@@ -43,6 +43,12 @@ const getRepoDisplayName = (repo: RepoActivity) => {
   return repo.owner === SITE.githubUsername ? repo.name : `${repo.owner}/${repo.name}`;
 };
 
+const isRepoNew = (repo: RepoActivity) => {
+  if (!repo.createdAt) return false;
+  const oneMonthAgo = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000));
+  return repo.createdAt > oneMonthAgo;
+};
+
 const formatDate = (date: Date) => {
   return date.toLocaleDateString("en-US", {
     month: "short",
@@ -100,7 +106,7 @@ const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue')
                           {getRepoDisplayName(repo)}
                         </a>
                       </h2>
-                      {repo.isNew && (
+                      {isRepoNew(repo) && (
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           New
                         </span>
@@ -156,7 +162,7 @@ const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue')
                           <span>{repo.activitySummary.issueCount}</span>
                         </a>
                       )}
-                      {repo.activitySummary.prCount === 0 && repo.activitySummary.reviewCount === 0 && repo.activitySummary.issueCount === 0 && !repo.isNew && (
+                      {repo.activitySummary.prCount === 0 && repo.activitySummary.reviewCount === 0 && repo.activitySummary.issueCount === 0 && !isRepoNew(repo) && (
                         <span class="text-skin-muted/60">No recent activity</span>
                       )}
                     </div>
