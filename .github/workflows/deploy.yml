@@ -78,7 +78,7 @@ jobs:
         id: extract-url
         if: github.event_name == 'pull_request'
         run: |
-          ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | grep -o "Version Preview Alias URL: https://[^[:space:]]*" | sed 's/Version Preview Alias URL: //' | xargs)
+          ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
           echo "alias-url=$ALIAS_URL" >> $GITHUB_OUTPUT
 
       - name: "📍 Finish deployment"
