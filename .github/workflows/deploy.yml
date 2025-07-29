@@ -74,6 +74,13 @@ jobs:
           command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}" --compatibility-date 2024-09-23 --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
           gitHubToken: ${{ github.token }}
 
+      - name: "🔗 Extract alias URL"
+        id: extract-url
+        if: github.event_name == 'pull_request'
+        run: |
+          ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | grep -o "Version Preview Alias URL: https://[^[:space:]]*" | sed 's/Version Preview Alias URL: //' | xargs)
+          echo "alias-url=$ALIAS_URL" >> $GITHUB_OUTPUT
+
       - name: "📍 Finish deployment"
         if: always() && steps.deployment.outcome == 'success'
         uses: bobheadxi/deployments@v1
@@ -84,7 +91,7 @@ jobs:
           status: ${{ steps.wrangler.outcome }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ steps.wrangler.outputs.deployment-url }}
+          env_url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || steps.wrangler.outputs.deployment-url }}
 
 
   lighthouse:
