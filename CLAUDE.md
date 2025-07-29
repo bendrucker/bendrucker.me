@@ -161,6 +161,43 @@ git push origin master  # Triggers GitHub Actions workflow
 - **Responsive**: Mobile-first breakpoints
 - **Icons**: SVG icons in src/assets/icons/ and icomoon font icons
 
+### Theme System
+This project uses a custom CSS theme system defined in `src/styles/global.css`. **Important**: Do NOT use `skin-*` classes - they don't exist in this project.
+
+#### Available Theme Colors
+- `--background`: Main background color
+- `--foreground`: Primary text color
+- `--accent`: Accent/brand color (blue in light, orange in dark)
+- `--muted`: Secondary/muted content color
+- `--border`: Border and divider color
+
+#### Tailwind Integration
+Theme colors are exposed as Tailwind utility classes through the `@theme inline` configuration:
+
+**✅ CORRECT Usage:**
+```css
+bg-background     /* Background color */
+text-foreground   /* Primary text */
+bg-accent         /* Accent background */
+text-accent       /* Accent text */
+bg-muted          /* Muted background */
+text-muted        /* Muted text */
+border-border     /* Border color */
+```
+
+**❌ INCORRECT Usage:**
+```css
+bg-skin-accent    /* Does NOT exist */
+text-skin-base    /* Does NOT exist */
+bg-skin-fill      /* Does NOT exist */
+```
+
+#### Dark Mode Support
+- Light mode: Default theme colors
+- Dark mode: Activated via `data-theme="dark"` attribute
+- Custom variant: `@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *))`
+- Use standard TailwindCSS `dark:` prefix for dark mode variants
+
 ### Asset Organization
 - **Images**: `static/images/` for site assets (copied to public/ during build)
 - **Fonts**: `static/fonts/` for icon fonts (copied to public/ during build)
@@ -201,9 +238,10 @@ Ready for future interactivity with vanilla JavaScript or modern web APIs.
 3. Rebuild to see changes
 
 ### Styling Changes
-1. Edit TailwindCSS classes in components
-2. Modify global styles in `src/styles/` directory
-3. Static assets go in `static/` directory
+1. **TailwindCSS classes**: Use project-specific theme classes (`bg-background`, `text-foreground`, `bg-accent`, `text-muted`, `border-border`)
+2. **Global styles**: Modify `src/styles/global.css` for theme variables and base styles
+3. **Static assets**: Place in `static/` directory (copied to public/ during build)
+4. **Theme consistency**: Always check existing components for established patterns before adding new styles
 
 ### SEO Improvements
 - Meta tags: Edit `BaseLayout.astro`

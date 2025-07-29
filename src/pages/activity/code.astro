@@ -120,6 +120,18 @@ const sortedYears = Object.keys(repositoriesByYear)
   .map(Number)
   .sort((a, b) => b - a);
 
+// Extract unique languages and ownership types for filtering
+const allLanguages = Array.from(new Set(
+  repositories
+    .map(repo => repo.primaryLanguage?.name)
+    .filter(Boolean)
+)).sort();
+
+const ownershipTypes = [
+  { key: 'personal', label: 'Personal', filter: (repo: RepoActivity) => repo.owner === SITE.githubUsername },
+  { key: 'organization', label: 'Organization', filter: (repo: RepoActivity) => repo.owner !== SITE.githubUsername }
+];
+
 ---
 
 <Layout title={`Activity: Code | ${SITE.title}`} description="My public GitHub activity over the last year.">
@@ -135,19 +147,105 @@ const sortedYears = Object.keys(repositoriesByYear)
             </div>
           </div>
         ) : (
-          sortedYears.map((year) => (
-            <div class="mb-8">
-              {/* Year Header (only for non-current year) */}
-              {year !== new Date().getFullYear() && (
-                <div class="border-b border-skin-line mb-4">
-                  <h2 class="text-2xl font-bold text-skin-accent py-3">{year}</h2>
-                </div>
-              )}
+          <div 
+            x-data="{
+              activeFilter: 'all',
+              isFiltering: false,
+              init() {
+                this.$nextTick(() => {
+                  // Add CSS for fade transitions
+                  const style = document.createElement('style');
+                  style.textContent = '.repositories-container { transition: opacity 0.15s ease; } .repositories-container.filtering { opacity: 0.3; }';
+                  document.head.appendChild(style);
+                });
+              },
+              shouldShowRepo(repo) {
+                if (this.activeFilter === 'all') return true;
+                if (this.activeFilter.startsWith('language:')) {
+                  const lang = this.activeFilter.split(':')[1];
+                  return repo.language === lang;
+                }
+                if (this.activeFilter.startsWith('ownership:')) {
+                  const owner = this.activeFilter.split(':')[1];
+                  return repo.ownership === owner;
+                }
+                return true;
+              },
+              shouldShowYear(year, repos) {
+                return repos.some(repo => this.shouldShowRepo(repo));
+              },
+              setFilter(newFilter) {
+                // If clicking the same filter, toggle it off (reset to 'all')
+                if (newFilter === this.activeFilter) {
+                  newFilter = 'all';
+                }
+                
+                if (newFilter === this.activeFilter) return;
+                
+                this.isFiltering = true;
+                setTimeout(() => {
+                  this.activeFilter = newFilter;
+                  setTimeout(() => {
+                    this.isFiltering = false;
+                  }, 50);
+                }, 150);
+              }
+            }"
+          >
+            {/* Filter Pills */}
+            <div class="mb-6 space-y-3">
+              <div class="flex flex-wrap gap-2">
+                {allLanguages.map((language) => (
+                  <button 
+                    @click={`setFilter('language:${language}')`}
+                    class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200"
+                    :class={`activeFilter === 'language:${language}' ? 'bg-accent text-background' : 'bg-muted text-foreground border border-border'`}
+                  >
+                    {language}
+                  </button>
+                ))}
+                {ownershipTypes.map((type) => (
+                  <button 
+                    @click={`setFilter('ownership:${type.key}')`}
+                    class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200"
+                    :class={`activeFilter === 'ownership:${type.key}' ? 'bg-accent text-background' : 'bg-muted text-foreground border border-border'`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              {/* Repositories for this year */}
-              <div class="space-y-3">
-                {repositoriesByYear[year].map((repo) => (
-                  <div class="border border-skin-line rounded-lg px-3 pt-3 pb-1 bg-skin-fill">
+            {/* Repository List */}
+            <div 
+              :class="isFiltering ? 'repositories-container filtering' : 'repositories-container'"
+              class="space-y-8"
+            >
+              {sortedYears.map((year) => (
+                <div 
+                  x-show={`shouldShowYear(${year}, ${JSON.stringify(repositoriesByYear[year].map(repo => ({
+                    language: repo.primaryLanguage?.name || 'none',
+                    ownership: repo.owner === SITE.githubUsername ? 'personal' : 'organization'
+                  })))})`}
+                  class="year-section"
+                >
+                  {/* Year Header (only for non-current year) */}
+                  {year !== new Date().getFullYear() && (
+                    <div class="border-b border-skin-line mb-4">
+                      <h2 class="text-2xl font-bold text-skin-accent py-3">{year}</h2>
+                    </div>
+                  )}
+
+                  {/* Repositories for this year */}
+                  <div class="space-y-3">
+                    {repositoriesByYear[year].map((repo) => (
+                      <div 
+                        x-show={`shouldShowRepo({
+                          language: '${repo.primaryLanguage?.name || 'none'}',
+                          ownership: '${repo.owner === SITE.githubUsername ? 'personal' : 'organization'}'
+                        })`}
+                        class="repository-item border border-skin-line rounded-lg px-3 pt-3 pb-1 bg-skin-fill"
+                      >
                     <div class="flex items-start justify-between mb-3">
                       <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
@@ -244,14 +342,18 @@ const sortedYears = Object.keys(repositoriesByYear)
                       <div class="text-sm text-skin-muted flex-shrink-0">
                         <div class="text-sm text-gray-500 flex-shrink-0">{formatDate(repo.lastActivity)}</div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
+              ))}
             </div>
-          ))
+          </div>
         )}
       </div>
     </section>
   </Main>
 </Layout>
+
+<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer is:inline></script>
