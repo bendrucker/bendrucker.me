@@ -71,7 +71,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}"', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
+          command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}" --compatibility-date 2024-09-23 --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
           gitHubToken: ${{ github.token }}
 
       - name: "📍 Finish deployment"
@@ -84,7 +84,7 @@ jobs:
           status: ${{ steps.wrangler.outcome }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ steps.wrangler.outputs.deployment-url }}
+          env_url: ${{ github.event_name == 'pull_request' && format('https://pr-{0}.bendrucker.me', github.event.number) || steps.wrangler.outputs.deployment-url }}
 
 
   lighthouse:
