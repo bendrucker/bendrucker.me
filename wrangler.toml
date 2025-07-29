@@ -10,8 +10,8 @@ binding = "ASSETS"
 # Shared KV namespace for both main site and GitHub activity worker
 [[kv_namespaces]]
 binding = "ACTIVITY_KV"
-namespace_name = "github"
-preview_namespace_name = "github-preview"
+id = "fa47de77b5c94c938cc68c94c6a247a9"
+preview_id = "e8f3338afa2645669d60e88f16876007"
 
 [[routes]]
 pattern = "www.bendrucker.me"
@@ -27,8 +27,8 @@ main = "workers/github-activity.ts"
 
 [[env.github-activity.kv_namespaces]]
 binding = "ACTIVITY_KV"
-namespace_name = "github"
-preview_namespace_name = "github-preview"
+id = "fa47de77b5c94c938cc68c94c6a247a9"
+preview_id = "e8f3338afa2645669d60e88f16876007"
 
 # GitHub token should be set via: wrangler secret put GITHUB_TOKEN --env github-activity
 # [env.github-activity.vars]
