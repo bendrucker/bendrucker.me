@@ -10,5 +10,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "types": ["node"],
+    "noImplicitAny": true
   }
 }
