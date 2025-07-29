@@ -8,9 +8,9 @@ directory = "dist"
 binding = "ASSETS"
 
 # Shared KV namespace for both main site and GitHub activity worker
-kv_namespaces = [
-  { binding = "ACTIVITY_KV", id = "your-kv-namespace-id" }
-]
+[[kv_namespaces]]
+binding = "ACTIVITY_KV"
+id = "your-kv-namespace-id"
 
 [[routes]]
 pattern = "www.bendrucker.me"
