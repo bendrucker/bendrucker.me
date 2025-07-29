@@ -55,31 +55,15 @@ jobs:
       - name: "📋 Copy assets ignore file"
         run: cp .assetsignore dist/
 
-      - name: "📍 Create deployment"
-        id: create-deployment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REF: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
-          ENVIRONMENT: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'production' }}
-          PRODUCTION: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
-          TRANSIENT: ${{ github.event_name == 'pull_request' }}
-        run: |
-          DEPLOYMENT_ID=$(gh api repos/${{ github.repository }}/deployments \
-            --method POST \
-            --field ref="$REF" \
-            --field environment="$ENVIRONMENT" \
-            --field production_environment="$PRODUCTION" \
-            --field transient_environment="$TRANSIENT" \
-            --field required_contexts[] \
-            --field auto_merge=false \
-            --jq '.id')
-
-          if [ -z "$DEPLOYMENT_ID" ]; then
-            echo "Error: Failed to create deployment"
-            exit 1
-          fi
-
-          echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+      - name: "📍 Start deployment"
+        id: deployment
+        uses: bobheadxi/deployments@v1
+        with:
+          step: start
+          token: ${{ github.token }}
+          ref: ${{ github.head_ref || github.ref_name }}
+          env: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'production' }}
+          desc: ${{ github.event_name == 'pull_request' && format('Preview deployment for PR {0}', github.event.number) || 'Production deployment to Cloudflare Workers' }}
 
       - name: "🌐 Deploy to Cloudflare Workers"
         id: wrangler
@@ -87,22 +71,27 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}"', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
+          command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}" --compatibility-date 2024-09-23 --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
           gitHubToken: ${{ github.token }}
 
-      - name: "📍 Update deployment status"
-        if: always() && steps.create-deployment.outcome == 'success'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: "🔗 Extract alias URL"
+        id: extract-url
+        if: github.event_name == 'pull_request'
         run: |
-          STATE=${{ steps.wrangler.outcome == 'success' && 'success' || 'failure' }}
-          DESCRIPTION="${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch && 'Production deployment to Cloudflare Workers' || format('Preview deployment for PR #{0}', github.event.number) }}"
+          ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
+          echo "alias-url=$ALIAS_URL" >> $GITHUB_OUTPUT
 
-          gh api repos/${{ github.repository }}/deployments/${{ steps.create-deployment.outputs.deployment-id }}/statuses \
-            --method POST \
-            --field state="$STATE" \
-            --field environment_url="${{ steps.wrangler.outputs.deployment-url }}" \
-            --field description="$DESCRIPTION"
+      - name: "📍 Finish deployment"
+        if: always() && steps.deployment.outcome == 'success'
+        uses: bobheadxi/deployments@v1
+        with:
+          step: finish
+          token: ${{ github.token }}
+          ref: ${{ github.head_ref || github.ref_name }}
+          status: ${{ steps.wrangler.outcome }}
+          env: ${{ steps.deployment.outputs.env }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          env_url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || steps.wrangler.outputs.deployment-url }}
 
 
   lighthouse:

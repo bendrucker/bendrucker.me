@@ -12,22 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "🧹 Mark PR deployment as inactive"
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          ENVIRONMENT="pr-${{ github.event.number }}"
-          
-          # Get all deployments for this environment
-          DEPLOYMENTS=$(gh api repos/${{ github.repository }}/deployments \
-            --method GET \
-            --field environment="$ENVIRONMENT" \
-            --field ref="${{ github.event.pull_request.head.ref }}" \
-            --jq '.[].id')
-          
-          # Mark each deployment as inactive
-          for DEPLOYMENT_ID in $DEPLOYMENTS; do
-            gh api repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses \
-              --method POST \
-              --field state=inactive \
-              --field description="PR closed - environment destroyed"
-          done
+        uses: bobheadxi/deployments@v1
+        with:
+          step: deactivate-env
+          token: ${{ github.token }}
+          ref: ${{ github.head_ref || github.ref_name }}
+          env: pr-${{ github.event.number }}
