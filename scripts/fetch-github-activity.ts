@@ -26,6 +26,7 @@ async function main() {
     console.log('📡 Fetching GitHub activity data...')
     const activityData = await fetchGitHubActivity(token)
     
+    
     // Write to a local JSON file for development
     const outputPath = join(process.cwd(), 'tmp', 'github-activity.json')
     writeFileSync(outputPath, JSON.stringify(activityData, null, 2))

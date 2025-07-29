@@ -5,6 +5,14 @@ import Layout from "../../layouts/Layout.astro";
 import Main from "../../layouts/Main.astro";
 import { SITE } from "../../config";
 import type { RepoActivity } from "../../services/github";
+import CircleDot from "@/assets/icons/circle-dot.svg";
+import GitPullRequest from "@/assets/icons/git-pull-request.svg";
+import Star from "@/assets/icons/star.svg";
+import Checklist from "@/assets/icons/checklist.svg";
+import GitMerge from "@/assets/icons/git-merge.svg";
+
+// Type declaration for Cloudflare Workers KV
+declare const ACTIVITY_KV: KVNamespace | undefined;
 
 // Load activity data
 let repositories: RepoActivity[] = [];
@@ -24,7 +32,7 @@ try {
   } else {
     // Development: try to load from local file
     const localDataPath = join(process.cwd(), 'tmp', 'github-activity.json');
-    
+
     if (existsSync(localDataPath)) {
       const localData = JSON.parse(readFileSync(localDataPath, 'utf-8')) as RepoActivity[];
       repositories = localData.map(repo => ({
@@ -34,19 +42,17 @@ try {
       }));
     }
   }
-} catch (error) {
-  console.error('Failed to load activity data:', error);
+} catch {
+  // Failed to load activity data - fallback to empty array
   repositories = [];
 }
 
-const getRepoDisplayName = (repo: RepoActivity) => {
-  return repo.owner === SITE.githubUsername ? repo.name : `${repo.owner}/${repo.name}`;
-};
+
 
 const isRepoNew = (repo: RepoActivity) => {
   if (!repo.createdAt) return false;
-  const oneMonthAgo = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000));
-  return repo.createdAt > oneMonthAgo;
+  const threeMonthsAgo = new Date(Date.now() - (90 * 24 * 60 * 60 * 1000));
+  return repo.createdAt > threeMonthsAgo;
 };
 
 const formatDate = (date: Date) => {
@@ -56,125 +62,195 @@ const formatDate = (date: Date) => {
   });
 };
 
-const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue') => {
+const formatStarCount = (count: number) => {
+  if (count < 1000) {
+    return count.toString();
+  }
+
+  const thousands = Math.floor(count / 100) / 10;
+  return `${thousands}k`;
+};
+
+const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue' | 'merge') => {
   const baseUrl = 'https://github.com/search';
   const repoQuery = `repo:${repo.owner}/${repo.name}`;
-  
+
+  // Add time filter - 1 year ago to match our activity data range
+  const oneYearAgo = new Date(Date.now() - (365 * 24 * 60 * 60 * 1000));
+  const timeFilter = `created:>${oneYearAgo.toISOString().split('T')[0]}`;
+
   let query = '';
+  let searchType = '';
+
   switch (type) {
     case 'pr':
-      query = `${repoQuery} is:pr author:${SITE.githubUsername}`;
+      query = `${repoQuery} is:pr is:merged author:${SITE.githubUsername} ${timeFilter}`;
+      searchType = 'pullrequests';
       break;
     case 'review':
-      query = `${repoQuery} is:pr reviewed-by:${SITE.githubUsername}`;
+      query = `${repoQuery} is:pr is:merged reviewed-by:${SITE.githubUsername} ${timeFilter}`;
+      searchType = 'pullrequests';
       break;
     case 'issue':
-      query = `${repoQuery} is:issue involves:${SITE.githubUsername}`;
+      query = `${repoQuery} is:issue involves:${SITE.githubUsername} updated:>${oneYearAgo.toISOString().split('T')[0]}`;
+      searchType = 'issues';
+      break;
+    case 'merge':
+      // Only show for user's own repos: all merged PRs not authored by them or bots
+      query = `${repoQuery} is:pr is:merged -author:${SITE.githubUsername} -author:app/dependabot -author:app/renovate merged:>${oneYearAgo.toISOString().split('T')[0]}`;
+      searchType = 'pullrequests';
       break;
   }
-  
-  return `${baseUrl}?q=${encodeURIComponent(query)}&type=issues`;
+
+  return `${baseUrl}?q=${encodeURIComponent(query)}&type=${searchType}&s=created&o=desc`;
 };
+
+// Group repositories by year
+const repositoriesByYear = repositories.reduce((acc, repo) => {
+  const year = repo.lastActivity.getFullYear();
+  if (!acc[year]) {
+    acc[year] = [];
+  }
+  acc[year].push(repo);
+  return acc;
+}, {} as Record<number, RepoActivity[]>);
+
+// Sort years in descending order
+const sortedYears = Object.keys(repositoriesByYear)
+  .map(Number)
+  .sort((a, b) => b - a);
+
 ---
 
-<Layout title={`Code Activity | ${SITE.title}`} description="Recent GitHub activity and contributions">
-  <Main pageTitle="Code Activity" pageDesc="Recent GitHub activity and contributions">
-    <section class="pb-6">
-      <div class="mx-auto max-w-3xl px-4">
-        <div class="space-y-6">
-          {repositories.length === 0 ? (
-            <div class="text-center py-12 space-y-4">
-              <p class="text-skin-muted">No activity data available.</p>
-              <div class="text-sm text-skin-muted space-y-2">
-                <p><strong>Development:</strong> Run <code class="bg-skin-card px-2 py-1 rounded">npm run fetch-activity</code> to load GitHub data locally.</p>
-                <p><strong>Production:</strong> Data is automatically updated every 6 hours via GitHub worker.</p>
+<Layout title={`Activity: Code | ${SITE.title}`} description="My public GitHub activity over the last year.">
+  <Main pageTitle="Activity: Code" pageDesc="This page summarizes my GitHub activity over the last year. It is an index of recent software projects I am working on in public.">
+    <section>
+      <div class="mx-auto">
+        {repositories.length === 0 ? (
+          <div class="text-center py-8 space-y-3">
+            <p class="text-skin-muted">No activity data available.</p>
+            <div class="text-sm text-skin-muted space-y-2">
+              <p><strong>Development:</strong> Run <code class="bg-skin-card px-2 py-1 rounded">npm run fetch-activity</code> to load GitHub data locally.</p>
+              <p><strong>Production:</strong> Data is automatically updated every 6 hours via GitHub worker.</p>
+            </div>
+          </div>
+        ) : (
+          sortedYears.map((year) => (
+            <div class="mb-8">
+              {/* Year Header (only for non-current year) */}
+              {year !== new Date().getFullYear() && (
+                <div class="border-b border-skin-line mb-4">
+                  <h2 class="text-2xl font-bold text-skin-accent py-3">{year}</h2>
+                </div>
+              )}
+
+              {/* Repositories for this year */}
+              <div class="space-y-3">
+                {repositoriesByYear[year].map((repo) => (
+                  <div class="border border-skin-line rounded-lg px-3 pt-3 pb-1 bg-skin-fill">
+                    <div class="flex items-start justify-between mb-3">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                          <h3 class="text-lg font-semibold text-skin-accent">
+                            <a
+                              href={repo.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="hover:text-skin-accent/80 transition-colors"
+                            >
+                              {repo.owner === SITE.githubUsername
+                                ? repo.name
+                                : <><span class="text-gray-600 font-normal">{repo.owner}/</span>{repo.name}</>}
+                            </a>
+                          </h3>
+                          {repo.primaryLanguage && (
+                            <span
+                              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border border-skin-line"
+                              style={`background-color: ${repo.primaryLanguage.color}20; color: ${repo.primaryLanguage.color}`}
+                            >
+                              <span class="text-[0.75rem] leading-none">{repo.primaryLanguage.name}</span>
+                            </span>
+                          )}
+                          {isRepoNew(repo) && (
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-skin-line bg-green-500/20 text-green-600">
+                              <span class="text-[0.75rem] leading-none">New!</span>
+                            </span>
+                          )}
+                        </div>
+                        <p class="text-skin-base text-sm mb-2">{repo.description}</p>
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                          {repo.activitySummary.prCount > 0 && (
+                            <a
+                              href={getGitHubSearchUrl(repo, 'pr')}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
+                              title="Pull requests authored"
+                            >
+                              <GitPullRequest class="w-4 h-4" aria-label="Pull requests" />
+                              <span>{repo.activitySummary.prCount}</span>
+                            </a>
+                          )}
+                          {repo.activitySummary.reviewCount > 0 && (
+                            <a
+                              href={getGitHubSearchUrl(repo, 'review')}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
+                              title="Pull request reviews submitted"
+                            >
+                              <Checklist class="w-4 h-4" aria-label="Reviews" />
+                              <span>{repo.activitySummary.reviewCount}</span>
+                            </a>
+                          )}
+                          {repo.activitySummary.mergeCount > 0 && (
+                            <a
+                              href={getGitHubSearchUrl(repo, 'merge')}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
+                              title="Pull requests merged"
+                            >
+                              <GitMerge class="w-4 h-4" aria-label="Merges" />
+                              <span>{repo.activitySummary.mergeCount}</span>
+                            </a>
+                          )}
+                          {repo.activitySummary.issueCount > 0 && (
+                            <a
+                              href={getGitHubSearchUrl(repo, 'issue')}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
+                              title="Issues opened or commented"
+                            >
+                              <CircleDot class="w-4 h-4" aria-label="Issues" />
+                              <span>{repo.activitySummary.issueCount}</span>
+                            </a>
+                          )}
+                          {repo.stargazerCount > 0 && (
+                            <a
+                              href={`${repo.url}/stargazers`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
+                              title="GitHub stars"
+                            >
+                              <Star class="w-4 h-4" aria-label="Stars" />
+                              <span>{formatStarCount(repo.stargazerCount)}</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div class="text-sm text-skin-muted flex-shrink-0">
+                        <div class="text-sm text-gray-500 flex-shrink-0">{formatDate(repo.lastActivity)}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ) : (
-            repositories.map((repo) => (
-              <div class="border border-skin-line rounded-lg p-6 bg-skin-fill">
-                <div class="flex items-start justify-between mb-4">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-2">
-                      <h2 class="text-xl font-semibold text-skin-accent">
-                        <a 
-                          href={repo.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          class="hover:text-skin-accent/80 transition-colors"
-                        >
-                          {getRepoDisplayName(repo)}
-                        </a>
-                      </h2>
-                      {isRepoNew(repo) && (
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          New
-                        </span>
-                      )}
-                    </div>
-                    <p class="text-skin-base text-sm mb-3">{repo.description}</p>
-                    
-                    <div class="flex items-center gap-3 text-sm text-skin-muted">
-                      {repo.activitySummary.prCount > 0 && (
-                        <a 
-                          href={getGitHubSearchUrl(repo, 'pr')} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          class="flex items-center gap-1 hover:text-skin-accent transition-colors"
-                          title="Pull requests authored"
-                        >
-                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16" aria-label="Pull requests">
-                            <path d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/>
-                            <path fill-rule="evenodd" d="M3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.251 2.251 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z"/>
-                          </svg>
-                          <span>{repo.activitySummary.prCount}</span>
-                        </a>
-                      )}
-                      {repo.activitySummary.reviewCount > 0 && (
-                        <a 
-                          href={getGitHubSearchUrl(repo, 'review')} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          class="flex items-center gap-1 hover:text-skin-accent transition-colors"
-                          title="Pull request reviews submitted"
-                        >
-                          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Reviews">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4" />
-                            <path d="M15 19l2 2l4 -4" />
-                          </svg>
-                          <span>{repo.activitySummary.reviewCount}</span>
-                        </a>
-                      )}
-                      {repo.activitySummary.issueCount > 0 && (
-                        <a 
-                          href={getGitHubSearchUrl(repo, 'issue')} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          class="flex items-center gap-1 hover:text-skin-accent transition-colors"
-                          title="Issues opened or commented"
-                        >
-                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16" aria-label="Issues">
-                            <path d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
-                            <path fill-rule="evenodd" d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z"/>
-                          </svg>
-                          <span>{repo.activitySummary.issueCount}</span>
-                        </a>
-                      )}
-                      {repo.activitySummary.prCount === 0 && repo.activitySummary.reviewCount === 0 && repo.activitySummary.issueCount === 0 && !isRepoNew(repo) && (
-                        <span class="text-skin-muted/60">No recent activity</span>
-                      )}
-                    </div>
-                  </div>
-                  <div class="text-sm text-skin-muted flex-shrink-0">
-                    {formatDate(repo.lastActivity)}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+          ))
+        )}
       </div>
     </section>
   </Main>
