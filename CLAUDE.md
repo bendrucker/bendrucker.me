@@ -74,10 +74,14 @@ Centralized configuration object with:
 
 ### Commands
 ```bash
-npm run dev      # Development server (localhost:4321)
-npm run build    # Production build
-npm run preview  # Preview built site
+npm run dev           # Development server (localhost:4321)
+npm run build         # Production build
+npm run preview       # Preview built site
+npm run fetch-activity # Fetch GitHub activity data for local development
+npx wrangler types    # Generate TypeScript types after wrangler.toml changes
 ```
+
+**Important**: After updating `wrangler.toml`, always run `npx wrangler types` to regenerate TypeScript definitions.
 
 ### Content Management
 - **Adding posts**: Create `.md` files in `content/blog/`

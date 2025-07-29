@@ -1,0 +1,167 @@
+---
+import { readFileSync, existsSync } from 'fs'
+import { join } from 'path'
+import Layout from '../../layouts/Layout.astro'
+import Main from '../../layouts/Main.astro'
+import { SITE } from '../../config'
+import type { RepoActivity } from '../../services/github'
+
+// Function to get GitHub search URLs
+const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue') => {
+  const baseUrl = 'https://github.com/search'
+  const repoQuery = `repo:${repo.owner}/${repo.name}`
+  
+  let query = ''
+  switch (type) {
+    case 'pr':
+      query = `${repoQuery} is:pr author:${SITE.githubUsername}`
+      break
+    case 'review':
+      query = `${repoQuery} is:pr reviewed-by:${SITE.githubUsername}`
+      break
+    case 'issue':
+      query = `${repoQuery} is:issue involves:${SITE.githubUsername}`
+      break
+  }
+  
+  return `${baseUrl}?q=${encodeURIComponent(query)}&type=issues`
+}
+
+// Load activity data
+let repositories: RepoActivity[] = []
+
+try {
+  // Check if we're in a Cloudflare Workers environment
+  if (typeof ACTIVITY_KV !== 'undefined') {
+    // Production: read from KV storage
+    const kvData = await ACTIVITY_KV.get('github-activity', 'json') as RepoActivity[] | null
+    if (kvData) {
+      repositories = kvData.map(repo => ({
+        ...repo,
+        lastActivity: new Date(repo.lastActivity),
+        createdAt: repo.createdAt ? new Date(repo.createdAt) : undefined
+      }))
+    }
+  } else {
+    // Development: try to load from local file
+    const localDataPath = join(process.cwd(), 'tmp', 'github-activity.json')
+    
+    if (existsSync(localDataPath)) {
+      const localData = JSON.parse(readFileSync(localDataPath, 'utf-8')) as RepoActivity[]
+      repositories = localData.map(repo => ({
+        ...repo,
+        lastActivity: new Date(repo.lastActivity),
+        createdAt: repo.createdAt ? new Date(repo.createdAt) : undefined
+      }))
+    }
+  }
+} catch (error) {
+  console.error('Failed to load activity data:', error)
+  repositories = []
+}
+
+const formatDate = (date: Date) => {
+  const now = new Date()
+  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  
+  if (diffInDays === 0) return 'Today'
+  if (diffInDays === 1) return 'Yesterday'
+  if (diffInDays < 7) return `${diffInDays} days ago`
+  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
+  
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+---
+
+<Layout title="Code Activity" description="GitHub activity and contributions">
+  <Main pageTitle="Code Activity" pageDesc="My recent GitHub activity and contributions">
+    <div class="space-y-6">
+      {repositories.length === 0 ? (
+        <div class="text-center py-12 space-y-4">
+          <p class="text-skin-muted">No activity data available.</p>
+          <div class="text-sm text-skin-muted space-y-2">
+            <p><strong>Development:</strong> Run <code class="bg-skin-card px-2 py-1 rounded">npm run fetch-activity</code> to load GitHub data locally.</p>
+            <p><strong>Production:</strong> Data is automatically updated every 6 hours via GitHub worker.</p>
+          </div>
+        </div>
+      ) : (
+        repositories.map((repo) => (
+          <div class="border border-skin-line rounded-lg p-6 space-y-4">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-lg font-medium">
+                    <a 
+                      href={repo.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="text-skin-accent hover:underline"
+                    >
+                      {repo.owner === SITE.githubUsername ? repo.name : `${repo.owner}/${repo.name}`}
+                    </a>
+                  </h3>
+                  {repo.isNew && (
+                    <span class="px-2 py-1 text-xs font-medium bg-skin-accent text-skin-inverted rounded-full">
+                      New
+                    </span>
+                  )}
+                </div>
+                {repo.description && (
+                  <p class="text-skin-muted mt-1">{repo.description}</p>
+                )}
+              </div>
+              <span class="text-sm text-skin-muted whitespace-nowrap ml-4">
+                {formatDate(repo.lastActivity)}
+              </span>
+            </div>
+            
+            <div class="flex items-center gap-6">
+              {repo.activitySummary.prCount > 0 && (
+                <a 
+                  href={getGitHubSearchUrl(repo, 'pr')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-2 text-skin-muted hover:text-skin-accent transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/>
+                  </svg>
+                  <span class="font-medium">{repo.activitySummary.prCount}</span>
+                </a>
+              )}
+              
+              {repo.activitySummary.reviewCount > 0 && (
+                <a 
+                  href={getGitHubSearchUrl(repo, 'review')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-2 text-skin-muted hover:text-skin-accent transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M10.561 8.073a6.005 6.005 0 0 1 3.432 5.142.75.75 0 1 1-1.498.07 4.5 4.5 0 0 0-8.99 0 .75.75 0 0 1-1.498-.07 6.004 6.004 0 0 1 3.431-5.142 3.999 3.999 0 1 1 5.123 0ZM10.5 5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"/>
+                  </svg>
+                  <span class="font-medium">{repo.activitySummary.reviewCount}</span>
+                </a>
+              )}
+              
+              {repo.activitySummary.issueCount > 0 && (
+                <a 
+                  href={getGitHubSearchUrl(repo, 'issue')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-2 text-skin-muted hover:text-skin-accent transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/>
+                    <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0Z"/>
+                  </svg>
+                  <span class="font-medium">{repo.activitySummary.issueCount}</span>
+                </a>
+              )}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </Main>
+</Layout>
