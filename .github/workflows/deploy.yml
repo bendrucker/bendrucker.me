@@ -84,7 +84,7 @@ jobs:
           status: ${{ steps.wrangler.outcome }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ github.event_name == 'pull_request' && format('https://pr-{0}.bendrucker.me', github.event.number) || steps.wrangler.outputs.deployment-url }}
+          env_url: ${{ steps.wrangler.outputs.deployment-url }}
 
 
   lighthouse:
