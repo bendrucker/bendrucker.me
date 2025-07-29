@@ -16,4 +16,5 @@ jobs:
         with:
           step: deactivate-env
           token: ${{ github.token }}
+          ref: ${{ github.head_ref || github.ref_name }}
           env: pr-${{ github.event.number }}
