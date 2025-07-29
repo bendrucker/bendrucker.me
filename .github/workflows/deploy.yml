@@ -65,20 +65,29 @@ jobs:
           env: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'production' }}
           desc: ${{ github.event_name == 'pull_request' && format('Preview deployment for PR {0}', github.event.number) || 'Production deployment to Cloudflare Workers' }}
 
-      - name: "🌐 Deploy all workers to Cloudflare"
-        id: wrangler
+      - name: "🌐 Deploy main site to Cloudflare"
+        id: wrangler-main
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: ${{ github.event_name == 'pull_request' && format('versions upload --config wrangler.toml --config workers/github/wrangler.toml --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy --config wrangler.toml --config workers/github/wrangler.toml' }}
+          command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
+          gitHubToken: ${{ github.token }}
+
+      - name: "🌐 Deploy GitHub activity worker"
+        id: wrangler-github
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: ${{ github.event_name == 'pull_request' && format('versions upload --config workers/github/wrangler.toml --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy --config workers/github/wrangler.toml' }}
           gitHubToken: ${{ github.token }}
 
       - name: "🔗 Extract alias URL"
         id: extract-url
         if: github.event_name == 'pull_request'
         run: |
-          ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
+          ALIAS_URL=$(echo "${{ steps.wrangler-main.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
           echo "alias-url=$ALIAS_URL" >> $GITHUB_OUTPUT
 
       - name: "📍 Finish deployment"
@@ -88,10 +97,10 @@ jobs:
           step: finish
           token: ${{ github.token }}
           ref: ${{ github.head_ref || github.ref_name }}
-          status: ${{ steps.wrangler.outcome }}
+          status: ${{ steps.wrangler-main.outcome == 'success' && steps.wrangler-github.outcome == 'success' && 'success' || 'failure' }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || steps.wrangler.outputs.deployment-url }}
+          env_url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || steps.wrangler-main.outputs.deployment-url }}
 
 
   lighthouse:
