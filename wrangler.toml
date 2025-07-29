@@ -7,9 +7,9 @@ compatibility_flags = ["nodejs_compat"]
 directory = "dist"
 binding = "ASSETS"
 
-# Shared KV namespace for both main site and GitHub activity worker
+# KV namespace for GitHub activity data (shared with github-activity worker)
 [[kv_namespaces]]
-binding = "ACTIVITY_KV"
+binding = "GITHUB_KV"
 id = "fa47de77b5c94c938cc68c94c6a247a9"
 preview_id = "e8f3338afa2645669d60e88f16876007"
 
@@ -19,21 +19,3 @@ custom_domain = true
 
 [observability.logs]
 enabled = true
-
-# GitHub Activity Worker Configuration (separate worker for cron jobs)
-[env.github-activity]
-name = "github-activity-worker"
-main = "workers/github-activity.ts"
-
-[[env.github-activity.kv_namespaces]]
-binding = "ACTIVITY_KV"
-id = "fa47de77b5c94c938cc68c94c6a247a9"
-preview_id = "e8f3338afa2645669d60e88f16876007"
-
-# GitHub token should be set via: wrangler secret put GITHUB_TOKEN --env github-activity
-# [env.github-activity.vars]
-# GITHUB_TOKEN = "configured-via-secrets"
-
-# Cron trigger to update activity data every 6 hours
-[[env.github-activity.triggers.crons]]
-cron = "0 */6 * * *"

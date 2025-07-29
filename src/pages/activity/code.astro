@@ -12,16 +12,16 @@ import Checklist from "@/assets/icons/checklist.svg";
 import GitMerge from "@/assets/icons/git-merge.svg";
 
 // Type declaration for Cloudflare Workers KV
-declare const ACTIVITY_KV: KVNamespace | undefined;
+declare const GITHUB_KV: KVNamespace | undefined;
 
 // Load activity data
 let repositories: RepoActivity[] = [];
 
 try {
   // Check if we're in a Cloudflare Workers environment
-  if (typeof ACTIVITY_KV !== 'undefined') {
+  if (typeof GITHUB_KV !== 'undefined') {
     // Production: read from KV storage
-    const kvData = await ACTIVITY_KV.get('github-activity', 'json') as RepoActivity[] | null;
+    const kvData = await GITHUB_KV.get('activity', 'json') as RepoActivity[] | null;
     if (kvData) {
       repositories = kvData.map(repo => ({
         ...repo,
@@ -356,4 +356,8 @@ const ownershipTypes = [
   </Main>
 </Layout>
 
-<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer is:inline></script>
+<script>
+import Alpine from 'alpinejs'
+Alpine.start()
+</script>
+

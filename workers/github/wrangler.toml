@@ -1,0 +1,15 @@
+name = "github"
+main = "main.ts"
+compatibility_date = "2025-07-28"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "fa47de77b5c94c938cc68c94c6a247a9"
+preview_id = "e8f3338afa2645669d60e88f16876007"
+
+[observability.logs]
+enabled = true
+
+[triggers]
+crons = ["0 */6 * * *"]
