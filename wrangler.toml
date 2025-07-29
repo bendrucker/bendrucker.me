@@ -7,9 +7,30 @@ compatibility_flags = ["nodejs_compat"]
 directory = "dist"
 binding = "ASSETS"
 
+# Shared KV namespace for both main site and GitHub activity worker
+kv_namespaces = [
+  { binding = "ACTIVITY_KV", id = "your-kv-namespace-id" }
+]
+
 [[routes]]
 pattern = "www.bendrucker.me"
 custom_domain = true
 
 [observability.logs]
 enabled = true
+
+# GitHub Activity Worker Configuration (separate worker for cron jobs)
+[env.github-activity]
+name = "github-activity-worker"
+main = "workers/github-activity.ts"
+
+[env.github-activity.kv_namespaces]
+binding = "ACTIVITY_KV"
+id = "your-kv-namespace-id"  # Same KV namespace
+
+[env.github-activity.vars]
+GITHUB_TOKEN = "your-github-token"
+
+# Cron trigger to update activity data every 6 hours
+[[env.github-activity.triggers.crons]]
+cron = "0 */6 * * *"
