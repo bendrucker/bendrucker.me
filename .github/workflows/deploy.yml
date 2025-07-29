@@ -61,6 +61,7 @@ jobs:
         with:
           step: start
           token: ${{ github.token }}
+          ref: ${{ github.head_ref || github.ref_name }}
           env: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'production' }}
           desc: ${{ github.event_name == 'pull_request' && format('Preview deployment for PR {0}', github.event.number) || 'Production deployment to Cloudflare Workers' }}
 
