@@ -80,6 +80,7 @@ jobs:
         with:
           step: finish
           token: ${{ github.token }}
+          ref: ${{ github.head_ref || github.ref_name }}
           status: ${{ steps.wrangler.outcome }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
