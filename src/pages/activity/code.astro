@@ -12,15 +12,15 @@ import Star from "@/assets/icons/star.svg";
 import Checklist from "@/assets/icons/checklist.svg";
 import GitMerge from "@/assets/icons/git-merge.svg";
 
-// Type declaration for Cloudflare Workers KV
-declare const GITHUB_KV: KVNamespace | undefined;
-
 // Load activity data
 let repositories: RepoActivity[] = [];
-const isDev = typeof GITHUB_KV === 'undefined';
+let isDev = false;
 
 try {
-  if (typeof GITHUB_KV !== 'undefined') {
+  // Access KV through Astro.locals.runtime.env (correct pattern)
+  const { GITHUB_KV } = Astro.locals.runtime.env;
+  
+  if (GITHUB_KV) {
     // Production: read from KV storage
     const kvData = await GITHUB_KV.get('activity', 'json') as RepoActivity[] | null;
     if (kvData) {
@@ -32,6 +32,7 @@ try {
     }
   } else {
     // Development: try to load from local file
+    isDev = true;
     const localDataPath = join(process.cwd(), 'tmp', 'github-activity.json');
     if (existsSync(localDataPath)) {
       const localData = JSON.parse(readFileSync(localDataPath, 'utf-8')) as RepoActivity[];
