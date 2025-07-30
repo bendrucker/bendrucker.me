@@ -41,6 +41,7 @@
     "@lhci/cli": "^0.15.1",
     "@shikijs/transformers": "^3.7.0",
     "@tailwindcss/typography": "^0.5.16",
+    "@tsconfig/node22": "^22.0.2",
     "@types/lodash.kebabcase": "^4.1.9",
     "@typescript-eslint/parser": "^8.36.0",
     "eslint": "^9.32.0",
