@@ -8,7 +8,9 @@
     "deploy": "wrangler deploy",
     "types:generate": "wrangler types"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@workspace/github": "file:../../packages/github"
+  },
   "devDependencies": {
     "@types/node": "^24.1.0",
     "typescript": "^5.8.3",
