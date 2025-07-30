@@ -9,7 +9,6 @@
     "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
-    "@octokit/graphql-schema": "^15.26.0",
     "@octokit/rest": "^22.0.0",
     "@workspace/logger": "*"
   },
