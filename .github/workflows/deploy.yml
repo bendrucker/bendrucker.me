@@ -98,6 +98,14 @@ jobs:
           ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
           echo "alias-url=$ALIAS_URL" >> $GITHUB_OUTPUT
 
+      - name: "🔗 Extract deployment URL"
+        id: extract-deployment-url
+        if: github.event_name == 'push' && matrix.path == '.'
+        run: |
+          # Extract the custom domain from deployment-url and format as proper URL
+          DEPLOYMENT_URL=$(echo "${{ steps.wrangler.outputs.deployment-url }}" | sed 's/ (custom domain)//' | sed 's/^/https:\/\//')
+          echo "formatted-url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+
       - name: "📍 Finish deployment"
         if: always() && steps.deployment.outcome == 'success'
         uses: bobheadxi/deployments@v1
@@ -108,7 +116,7 @@ jobs:
           status: ${{ steps.wrangler.outcome == 'success' && 'success' || 'failure' }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ github.event_name == 'pull_request' && matrix.path == '.' && steps.extract-url.outputs.alias-url || steps.wrangler.outputs.deployment-url }}
+          env_url: ${{ github.event_name == 'pull_request' && matrix.path == '.' && steps.extract-url.outputs.alias-url || (matrix.path == '.' && steps.extract-deployment-url.outputs.formatted-url || steps.wrangler.outputs.deployment-url) }}
 
 
   lighthouse:
