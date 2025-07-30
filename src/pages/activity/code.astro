@@ -1,0 +1,229 @@
+---
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import { formatDistanceToNowStrict, isToday, isYesterday, format } from 'date-fns';
+import Layout from "../../layouts/Layout.astro";
+import Main from "../../layouts/Main.astro";
+import { SITE } from "../../config";
+import type { RepoActivity } from "../../services/github";
+import CircleDot from "@/assets/icons/circle-dot.svg";
+import GitPullRequest from "@/assets/icons/git-pull-request.svg";
+import Star from "@/assets/icons/star.svg";
+import Checklist from "@/assets/icons/checklist.svg";
+import GitMerge from "@/assets/icons/git-merge.svg";
+
+// Type declaration for Cloudflare Workers KV
+declare const GITHUB_KV: KVNamespace | undefined;
+
+// Load activity data
+let repositories: RepoActivity[] = [];
+const isDev = typeof GITHUB_KV === 'undefined';
+
+try {
+  if (typeof GITHUB_KV !== 'undefined') {
+    // Production: read from KV storage
+    const kvData = await GITHUB_KV.get('activity', 'json') as RepoActivity[] | null;
+    if (kvData) {
+      repositories = kvData.map(repo => ({
+        ...repo,
+        lastActivity: new Date(repo.lastActivity),
+        createdAt: repo.createdAt ? new Date(repo.createdAt) : undefined
+      }));
+    }
+  } else {
+    // Development: try to load from local file
+    const localDataPath = join(process.cwd(), 'tmp', 'github-activity.json');
+    if (existsSync(localDataPath)) {
+      const localData = JSON.parse(readFileSync(localDataPath, 'utf-8')) as RepoActivity[];
+      repositories = localData.map(repo => ({
+        ...repo,
+        lastActivity: new Date(repo.lastActivity),
+        createdAt: repo.createdAt ? new Date(repo.createdAt) : undefined
+      }));
+    }
+  }
+} catch {
+  // Silently fail and show empty state
+  repositories = [];
+}
+
+const isRepoNew = (repo: RepoActivity) => {
+  if (!repo.createdAt) return false;
+  const threeMonthsAgo = new Date(Date.now() - (90 * 24 * 60 * 60 * 1000));
+  return repo.createdAt > threeMonthsAgo;
+};
+
+const formatDate = (date: Date) => {
+  // If today, show relative time
+  if (isToday(date)) {
+    return formatDistanceToNowStrict(date, { addSuffix: true });
+  }
+  
+  // If yesterday, show "Yesterday"
+  if (isYesterday(date)) {
+    return 'Yesterday';
+  }
+  
+  // Otherwise, show date
+  return format(date, 'MMM d');
+};
+
+const formatStarCount = (count: number) => {
+  if (count < 1000) return count.toString();
+  const thousands = Math.floor(count / 100) / 10;
+  return `${thousands}k`;
+};
+
+const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue' | 'merge') => {
+  const baseUrl = 'https://github.com/search';
+  const repoQuery = `repo:${repo.owner}/${repo.name}`;
+  const oneYearAgo = new Date(Date.now() - (365 * 24 * 60 * 60 * 1000));
+  const timeFilter = `created:>${oneYearAgo.toISOString().split('T')[0]}`;
+
+  let query = '';
+  let searchType = '';
+
+  switch (type) {
+    case 'pr':
+      query = `${repoQuery} is:pr is:merged author:${SITE.githubUsername} ${timeFilter}`;
+      searchType = 'pullrequests';
+      break;
+    case 'review':
+      query = `${repoQuery} is:pr is:merged reviewed-by:${SITE.githubUsername} ${timeFilter}`;
+      searchType = 'pullrequests';
+      break;
+    case 'issue':
+      query = `${repoQuery} is:issue involves:${SITE.githubUsername} updated:>${oneYearAgo.toISOString().split('T')[0]}`;
+      searchType = 'issues';
+      break;
+    case 'merge':
+      query = `${repoQuery} is:pr is:merged -author:${SITE.githubUsername} -author:app/dependabot -author:app/renovate merged:>${oneYearAgo.toISOString().split('T')[0]}`;
+      searchType = 'pullrequests';
+      break;
+  }
+
+  return `${baseUrl}?q=${encodeURIComponent(query)}&type=${searchType}&s=created&o=desc`;
+};
+
+// Group repositories by year
+const repositoriesByYear = repositories.reduce((acc, repo) => {
+  const year = repo.lastActivity.getFullYear();
+  if (!acc[year]) acc[year] = [];
+  acc[year].push(repo);
+  return acc;
+}, {} as Record<number, RepoActivity[]>);
+
+const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b - a);
+---
+
+<Layout title={`Activity: Code | ${SITE.title}`} description="My public GitHub activity over the last year.">
+  <Main pageTitle="Activity: Code" pageDesc="This page summarizes my GitHub activity over the last year. It is an index of recent software projects I am working on in public.">
+    <section>
+      {repositories.length === 0 ? (
+        <div class="text-center py-8">
+          {isDev ? (
+            <div class="bg-muted border border-border rounded-lg p-4 text-sm">
+              <p class="font-medium mb-2">Development Mode</p>
+              <p>Run <code class="bg-background px-2 py-1 rounded border">npm run fetch-activity</code> to load GitHub data locally.</p>
+            </div>
+          ) : (
+            <p class="text-muted">No recent activity data available.</p>
+          )}
+        </div>
+      ) : (
+        <div class="space-y-8">
+          {sortedYears.map((year) => (
+            <div>
+              {year !== new Date().getFullYear() && (
+                <div class="border-b border-border mb-4">
+                  <h2 class="text-2xl font-bold text-accent py-3">{year}</h2>
+                </div>
+              )}
+              
+              <div class="space-y-3">
+                {repositoriesByYear[year].map((repo) => (
+                  <div class="border border-border rounded-lg p-4 sm:p-6 bg-background">
+                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                      <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 class="text-lg font-semibold">
+                            <a href={repo.url} target="_blank" rel="noopener noreferrer" class="text-foreground hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors">
+                              {repo.owner === SITE.githubUsername ? repo.name : (
+                                <><span class="text-foreground/60 font-normal">{repo.owner}/</span>{repo.name}</>
+                              )}
+                            </a>
+                          </h3>
+                          {repo.primaryLanguage && (
+                            <span 
+                              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border border-border"
+                              style={`background-color: ${repo.primaryLanguage.color}20; color: ${repo.primaryLanguage.color}`}
+                            >
+                              {repo.primaryLanguage.name}
+                            </span>
+                          )}
+                          {isRepoNew(repo) && (
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 bg-green-500/20 text-green-600">
+                              New!
+                            </span>
+                          )}
+                        </div>
+                        <p class="text-foreground text-sm mb-3">{repo.description}</p>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-foreground/70">
+                          {repo.activitySummary.prCount > 0 && (
+                            <a href={getGitHubSearchUrl(repo, 'pr')} target="_blank" rel="noopener noreferrer" 
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               title="Pull requests authored">
+                              <GitPullRequest class="w-4 h-4 flex-shrink-0" />
+                              <span>{repo.activitySummary.prCount}</span>
+                            </a>
+                          )}
+                          {repo.activitySummary.reviewCount > 0 && (
+                            <a href={getGitHubSearchUrl(repo, 'review')} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               title="Pull request reviews submitted">
+                              <Checklist class="w-4 h-4 flex-shrink-0" />
+                              <span>{repo.activitySummary.reviewCount}</span>
+                            </a>
+                          )}
+                          {repo.activitySummary.mergeCount > 0 && (
+                            <a href={getGitHubSearchUrl(repo, 'merge')} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               title="Pull requests merged">
+                              <GitMerge class="w-4 h-4 flex-shrink-0" />
+                              <span>{repo.activitySummary.mergeCount}</span>
+                            </a>
+                          )}
+                          {repo.activitySummary.issueCount > 0 && (
+                            <a href={getGitHubSearchUrl(repo, 'issue')} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               title="Issues opened or commented">
+                              <CircleDot class="w-4 h-4 flex-shrink-0" />
+                              <span>{repo.activitySummary.issueCount}</span>
+                            </a>
+                          )}
+                          {repo.stargazerCount > 0 && (
+                            <a href={`${repo.url}/stargazers`} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               title="GitHub stars">
+                              <Star class="w-4 h-4 flex-shrink-0" />
+                              <span>{formatStarCount(repo.stargazerCount)}</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div class="text-sm text-foreground/60 flex-shrink-0 sm:text-right">
+                        <time datetime={repo.lastActivity.toISOString()}>
+                          {formatDate(repo.lastActivity)}
+                        </time>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  </Main>
+</Layout>

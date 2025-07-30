@@ -74,10 +74,37 @@ Centralized configuration object with:
 
 ### Commands
 ```bash
-npm run dev      # Development server (localhost:4321)
-npm run build    # Production build
-npm run preview  # Preview built site
+npm run dev           # Development server (localhost:4321)
+npm run build         # Production build
+npm run preview       # Preview built site
+npm run fetch-activity # Fetch GitHub activity data for local development
+npx wrangler types    # Generate TypeScript types after wrangler.toml changes
 ```
+
+**Important**: After updating `wrangler.toml`, always run `npx wrangler types` to regenerate TypeScript definitions.
+
+### Testing Cron Triggers Locally
+The GitHub worker includes scheduled functions that can be tested in preview mode without affecting production:
+
+1. **Start the GitHub worker in development mode with scheduled event testing enabled**:
+   ```bash
+   cd workers/github
+   npx wrangler dev --test-scheduled
+   ```
+
+2. **Trigger the scheduled function manually**:
+   ```bash
+   curl "http://localhost:8787/__scheduled?cron=0+*/6+*+*+*"
+   ```
+   This simulates the cron trigger that runs every 6 hours in production.
+
+3. **Verify the results**:
+   - Check console output for successful GitHub API fetch and KV storage
+   - The worker logs will show repository count and execution time
+   - Data is stored in the preview KV namespace (`preview_id` in `wrangler.toml`)
+   - Test the `/activity` endpoint: `curl http://localhost:8787/activity`
+
+**Note**: This testing approach uses the preview KV namespace, ensuring production data remains untouched during development and testing.
 
 ### Content Management
 - **Adding posts**: Create `.md` files in `content/blog/`
@@ -139,14 +166,40 @@ git remote add upstream https://github.com/satnaing/astro-paper.git
 
 ## 🚀 Deployment
 
+### Multi-Worker Architecture
+This project uses a **two-worker setup** on Cloudflare:
+
+1. **Main Site Worker** (`wrangler.toml`)
+   - Serves the static site at www.bendrucker.me
+   - Reads GitHub activity data from KV storage
+   - Deployed from project root
+
+2. **GitHub Activity Worker** (`workers/github/wrangler.toml`)
+   - Separate worker for background data fetching
+   - Runs cron job every 6 hours (`0 */6 * * *`)
+   - Fetches GitHub API data and stores in shared KV namespace
+   - Deployed from `workers/github/` directory
+
+### KV Storage Configuration
+Both workers share the same KV namespace for GitHub data:
+- **Production**: `fa47de77b5c94c938cc68c94c6a247a9` (binding: `GITHUB_KV`)
+- **Preview**: `e8f3338afa2645669d60e88f16876007` (binding: `GITHUB_KV`)
+
+Future platforms will have dedicated KV namespaces (e.g., `STRAVA_KV`, `LINKEDIN_KV`)
+
 ### Automatic Deployment
 - **Trigger**: Push to `master` branch
-- **Process**: GitHub Actions builds and deploys to Cloudflare Workers
-- **URL**: Automatically available at www.bendrucker.me
+- **Process**: GitHub Actions builds and deploys both workers
+- **Main Site**: www.bendrucker.me
+- **GitHub Worker**: github.bvdrucker.workers.dev (background only)
 
 ### Manual Deployment
 ```bash
-git push origin master  # Triggers GitHub Actions workflow
+# Deploy main site
+npm run build && npx wrangler deploy
+
+# Deploy GitHub activity worker
+npx wrangler deploy --config workers/github/wrangler.toml
 ```
 
 ## 🎨 Styling & Assets
@@ -156,6 +209,43 @@ git push origin master  # Triggers GitHub Actions workflow
 - **Variables**: CSS custom properties for theming
 - **Responsive**: Mobile-first breakpoints
 - **Icons**: SVG icons in src/assets/icons/ and icomoon font icons
+
+### Theme System
+This project uses a custom CSS theme system defined in `src/styles/global.css`. **Important**: Do NOT use `skin-*` classes - they don't exist in this project.
+
+#### Available Theme Colors
+- `--background`: Main background color
+- `--foreground`: Primary text color
+- `--accent`: Accent/brand color (blue in light, orange in dark)
+- `--muted`: Secondary/muted content color
+- `--border`: Border and divider color
+
+#### Tailwind Integration
+Theme colors are exposed as Tailwind utility classes through the `@theme inline` configuration:
+
+**✅ CORRECT Usage:**
+```css
+bg-background     /* Background color */
+text-foreground   /* Primary text */
+bg-accent         /* Accent background */
+text-accent       /* Accent text */
+bg-muted          /* Muted background */
+text-muted        /* Muted text */
+border-border     /* Border color */
+```
+
+**❌ INCORRECT Usage:**
+```css
+bg-skin-accent    /* Does NOT exist */
+text-skin-base    /* Does NOT exist */
+bg-skin-fill      /* Does NOT exist */
+```
+
+#### Dark Mode Support
+- Light mode: Default theme colors
+- Dark mode: Activated via `data-theme="dark"` attribute
+- Custom variant: `@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *))`
+- Use standard TailwindCSS `dark:` prefix for dark mode variants
 
 ### Asset Organization
 - **Images**: `static/images/` for site assets (copied to public/ during build)
@@ -197,9 +287,10 @@ Ready for future interactivity with vanilla JavaScript or modern web APIs.
 3. Rebuild to see changes
 
 ### Styling Changes
-1. Edit TailwindCSS classes in components
-2. Modify global styles in `src/styles/` directory
-3. Static assets go in `static/` directory
+1. **TailwindCSS classes**: Use project-specific theme classes (`bg-background`, `text-foreground`, `bg-accent`, `text-muted`, `border-border`)
+2. **Global styles**: Modify `src/styles/global.css` for theme variables and base styles
+3. **Static assets**: Place in `static/` directory (copied to public/ during build)
+4. **Theme consistency**: Always check existing components for established patterns before adding new styles
 
 ### SEO Improvements
 - Meta tags: Edit `BaseLayout.astro`
