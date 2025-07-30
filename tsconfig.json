@@ -11,7 +11,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@workspace/*": ["./packages/*"]
+      "@workspace/*": ["./packages/*"],
+      "@/*": ["./src/*"]
     },
     "jsx": "react-jsx",
     "jsxImportSource": "react",
