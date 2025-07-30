@@ -1,7 +1,13 @@
 {
-  "extends": "astro/tsconfigs/strict",
+  "extends": [
+    "./tsconfig.base.json",
+    "astro/tsconfigs/strict"
+  ],
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist", "public/pagefind"],
+  "references": [
+    { "path": "./packages/github" }
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
@@ -10,6 +16,5 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "types": ["node"],
-    "noImplicitAny": true
   }
 }

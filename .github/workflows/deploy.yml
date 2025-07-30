@@ -24,17 +24,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build site
-        uses: withastro/action@v4
+      - name: npm ci
+        run: npm ci
+
+      - name: Build
+        run: npm run build --workspaces && npm run build
 
 
   cloudflare:
+    name: ${{ matrix.name }}
     if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
       deployments: write
+    strategy:
+      matrix:
+        include:
+          - name: www
+            path: .
+          - name: github
+            path: workers/github
 
     steps:
       - name: "☁️ Checkout repository"
@@ -49,10 +60,15 @@ jobs:
       - name: "📦 Install dependencies"
         run: npm ci
 
-      - name: "🚀 Build"
+      - name: "🔧 Build shared packages"
+        run: npm run build --workspaces
+
+      - name: "🏗️ Build main site"
+        if: matrix.path == '.'
         run: npm run build
 
       - name: "📋 Copy assets ignore file"
+        if: matrix.path == '.'
         run: cp .assetsignore dist/
 
       - name: "📍 Start deployment"
@@ -62,32 +78,24 @@ jobs:
           step: start
           token: ${{ github.token }}
           ref: ${{ github.head_ref || github.ref_name }}
-          env: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'production' }}
-          desc: ${{ github.event_name == 'pull_request' && format('Preview deployment for PR {0}', github.event.number) || 'Production deployment to Cloudflare Workers' }}
+          env: ${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.number, matrix.name) || format('{0}-production', matrix.name) }}
+          desc: ${{ github.event_name == 'pull_request' && format('Preview deployment for PR {0} - {1}', github.event.number, matrix.name) || format('Production deployment for {0}', matrix.name) }}
 
-      - name: "🌐 Deploy main site to Cloudflare"
-        id: wrangler-main
+      - name: "🌐 Deploy to Cloudflare"
+        id: wrangler
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy' }}
-          gitHubToken: ${{ github.token }}
-
-      - name: "🌐 Deploy GitHub activity worker"
-        id: wrangler-github
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: ${{ github.event_name == 'pull_request' && format('versions upload --config workers/github/wrangler.toml --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}', github.event.number, github.event.pull_request.html_url) || 'deploy --config workers/github/wrangler.toml' }}
+          workingDirectory: ${{ matrix.path }}
+          command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}-{2}', github.event.number, github.event.pull_request.html_url, matrix.name) || 'deploy' }}
           gitHubToken: ${{ github.token }}
 
       - name: "🔗 Extract alias URL"
         id: extract-url
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && matrix.path == '.'
         run: |
-          ALIAS_URL=$(echo "${{ steps.wrangler-main.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
+          ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
           echo "alias-url=$ALIAS_URL" >> $GITHUB_OUTPUT
 
       - name: "📍 Finish deployment"
@@ -97,10 +105,10 @@ jobs:
           step: finish
           token: ${{ github.token }}
           ref: ${{ github.head_ref || github.ref_name }}
-          status: ${{ steps.wrangler-main.outcome == 'success' && steps.wrangler-github.outcome == 'success' && 'success' || 'failure' }}
+          status: ${{ steps.wrangler.outcome == 'success' && 'success' || 'failure' }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || steps.wrangler-main.outputs.deployment-url }}
+          env_url: ${{ github.event_name == 'pull_request' && matrix.path == '.' && steps.extract-url.outputs.alias-url || steps.wrangler.outputs.deployment-url }}
 
 
   lighthouse:
@@ -119,6 +127,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build workspace packages
+        run: npm run build --workspaces
 
       - name: Build site
         run: npm run build

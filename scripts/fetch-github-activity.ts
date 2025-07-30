@@ -3,7 +3,7 @@
 import { execSync } from 'child_process'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
-import { fetchGitHubActivity } from '../src/services/github'
+import { fetchGitHubActivityWithConfig } from '../src/services/github'
 
 async function main() {
   const startTime = Date.now()
@@ -24,7 +24,7 @@ async function main() {
     }
 
     console.log('📡 Fetching GitHub activity data...')
-    const activityData = await fetchGitHubActivity(token)
+    const activityData = await fetchGitHubActivityWithConfig(token)
     
     
     // Write to a local JSON file for development
