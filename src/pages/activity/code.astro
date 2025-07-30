@@ -1,6 +1,7 @@
 ---
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { formatDistanceToNowStrict, isToday, isYesterday, format } from 'date-fns';
 import Layout from "../../layouts/Layout.astro";
 import Main from "../../layouts/Main.astro";
 import { SITE } from "../../config";
@@ -41,8 +42,8 @@ try {
       }));
     }
   }
-} catch (error) {
-  console.error('Failed to load GitHub activity data:', error);
+} catch {
+  // Silently fail and show empty state
   repositories = [];
 }
 
@@ -53,10 +54,18 @@ const isRepoNew = (repo: RepoActivity) => {
 };
 
 const formatDate = (date: Date) => {
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric"
-  });
+  // If today, show relative time
+  if (isToday(date)) {
+    return formatDistanceToNowStrict(date, { addSuffix: true });
+  }
+  
+  // If yesterday, show "Yesterday"
+  if (isYesterday(date)) {
+    return 'Yesterday';
+  }
+  
+  // Otherwise, show date
+  return format(date, 'MMM d');
 };
 
 const formatStarCount = (count: number) => {
@@ -137,10 +146,10 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                       <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 class="text-lg font-semibold text-accent">
-                            <a href={repo.url} target="_blank" rel="noopener noreferrer" class="hover:text-accent/80 focus:text-accent/80 focus:outline-none focus:underline transition-colors">
+                          <h3 class="text-lg font-semibold">
+                            <a href={repo.url} target="_blank" rel="noopener noreferrer" class="text-foreground hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors">
                               {repo.owner === SITE.githubUsername ? repo.name : (
-                                <><span class="text-muted font-normal">{repo.owner}/</span>{repo.name}</>
+                                <><span class="text-foreground/60 font-normal">{repo.owner}/</span>{repo.name}</>
                               )}
                             </a>
                           </h3>
@@ -153,13 +162,13 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                             </span>
                           )}
                           {isRepoNew(repo) && (
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-border bg-accent/20 text-accent">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 bg-green-500/20 text-green-600">
                               New!
                             </span>
                           )}
                         </div>
                         <p class="text-foreground text-sm mb-3">{repo.description}</p>
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-foreground/70">
                           {repo.activitySummary.prCount > 0 && (
                             <a href={getGitHubSearchUrl(repo, 'pr')} target="_blank" rel="noopener noreferrer" 
                                class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
@@ -202,7 +211,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                           )}
                         </div>
                       </div>
-                      <div class="text-sm text-muted flex-shrink-0 sm:text-right">
+                      <div class="text-sm text-foreground/60 flex-shrink-0 sm:text-right">
                         <time datetime={repo.lastActivity.toISOString()}>
                           {formatDate(repo.lastActivity)}
                         </time>
