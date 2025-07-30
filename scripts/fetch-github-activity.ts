@@ -4,18 +4,19 @@ import { execSync } from 'child_process'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
 import { fetchGitHubActivityWithConfig } from '../src/services/github'
+import { logger } from '@workspace/logger'
 
 async function main() {
   const startTime = Date.now()
   
   try {
-    console.log('🔍 Getting GitHub token from gh CLI...')
+    logger.info('Getting GitHub token from gh CLI')
     
     // Get GitHub token from gh CLI
     let token: string
     try {
       token = execSync('gh auth token', { encoding: 'utf-8' }).trim()
-    } catch (error) {
+    } catch {
       throw new Error('Failed to get GitHub token. Run `gh auth login` first.')
     }
     
@@ -23,7 +24,7 @@ async function main() {
       throw new Error('No GitHub token found. Run `gh auth login` first.')
     }
 
-    console.log('📡 Fetching GitHub activity data...')
+    logger.info('Fetching GitHub activity data')
     const activityData = await fetchGitHubActivityWithConfig(token)
     
     
@@ -32,11 +33,14 @@ async function main() {
     writeFileSync(outputPath, JSON.stringify(activityData, null, 2))
     
     const duration = Date.now() - startTime
-    console.log(`✓ Fetched ${activityData.length} repositories (${duration}ms)`)
-    console.log(`✓ Data written to ${outputPath}`)
+    logger.info('GitHub activity fetch completed', {
+      repositoryCount: activityData.length,
+      durationMs: duration,
+      outputPath
+    })
     
     if (activityData.length === 0) {
-      console.log('\n⚠️  No repositories with activity found in the last 6 months')
+      logger.warn('No repositories with activity found in the last 6 months')
       return
     }
     
@@ -49,8 +53,7 @@ async function main() {
       issues: repo.activitySummary.issueCount
     }))
     
-    console.log('\n📊 Top 5 repositories by activity:')
-    console.table(summary)
+    logger.info('Top 5 repositories by activity', { summary })
     
     // Show totals
     const totals = activityData.reduce((acc, repo) => ({
@@ -59,10 +62,14 @@ async function main() {
       issues: acc.issues + repo.activitySummary.issueCount
     }), { prs: 0, reviews: 0, issues: 0 })
     
-    console.log(`\n📈 Total activity: ${totals.prs} PRs, ${totals.reviews} reviews, ${totals.issues} issues`)
+    logger.info('Total GitHub activity summary', {
+      totalPRs: totals.prs,
+      totalReviews: totals.reviews,
+      totalIssues: totals.issues
+    })
     
   } catch (error) {
-    console.error('❌ Error:', error instanceof Error ? error.message : error)
+    logger.error('Failed to fetch GitHub activity', { error: error instanceof Error ? error.message : error })
     process.exit(1)
   }
 }

@@ -1,4 +1,5 @@
 import { fetchGitHubActivity, type RepoActivity } from '@workspace/github'
+import { logger } from '@workspace/logger'
 
 interface Env {
   GITHUB_TOKEN: string
@@ -8,7 +9,7 @@ interface Env {
 async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
   const startTime = Date.now()
 
-  console.log('Fetching GitHub activity data...')
+  logger.info('Fetching GitHub activity data')
 
   if (!env.GITHUB_TOKEN) {
     throw new Error('GITHUB_TOKEN environment variable is required')
@@ -33,18 +34,19 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
     }
   )
 
-  console.log(`✓ Stored ${activityData.length} repositories in KV (${Date.now() - startTime}ms)`)
+  const durationMs = Date.now() - startTime
+  logger.info('Stored GitHub activity data', { repositoryCount: activityData.length, durationMs })
   return activityData
 }
 
 export default {
-  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
+  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     const startTime = Date.now()
 
     try {
       await updateGitHubActivity(env)
     } catch (error) {
-      console.error('✗ Failed to update GitHub activity:', error)
+      logger.error('Failed to update GitHub activity', { error })
 
       // Store error info in KV for debugging (with shorter TTL)
       try {
@@ -58,7 +60,7 @@ export default {
           { expirationTtl: 60 * 60 } // 1 hour
         )
       } catch (kvError) {
-        console.error('Failed to store error info:', kvError)
+        logger.error('Failed to store error info in KV', { error: kvError })
       }
 
       throw error

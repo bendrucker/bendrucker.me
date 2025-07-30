@@ -5,11 +5,7 @@
   ],
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist", "public/pagefind"],
-  "references": [
-    { "path": "./packages/github" }
-  ],
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
