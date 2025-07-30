@@ -9,7 +9,8 @@
     "types:generate": "wrangler types"
   },
   "dependencies": {
-    "@workspace/github": "*"
+    "@workspace/github": "*",
+    "@workspace/logger": "*"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",

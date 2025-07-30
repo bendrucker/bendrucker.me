@@ -1,3 +1,5 @@
+import { logger } from '@workspace/logger'
+
 export interface GitHubContribution {
   repository: {
     name: string
@@ -472,6 +474,14 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
 
   const now = new Date()
   const start = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000))
+  
+  logger.debug('Starting GitHub GraphQL request', {
+    username: config.username,
+    timeframe: {
+      from: start.toISOString(),
+      to: now.toISOString()
+    }
+  })
 
   const variables = {
     username: config.username,
@@ -497,12 +507,22 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
 
     if (!response.ok) {
       const errorText = await response.text()
+      logger.error('GitHub API request failed', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        username: config.username
+      })
       throw new Error(`GitHub API error (${response.status}): ${errorText}`)
     }
 
     const data: any = await response.json()
 
     if (data.errors) {
+      logger.error('GitHub GraphQL errors', {
+        errors: data.errors,
+        username: config.username
+      })
       throw new Error(`GraphQL errors: ${data.errors.map((e: any) => e.message).join(', ')}`)
     }
 
@@ -514,7 +534,20 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
     const issueSearch = data.data.search
     const mergedPRSearch = data.data.mergedPRs
 
-    return aggregateActivityByRepository(contributionsCollection, issueSearch, mergedPRSearch, config.username)
+    const result = aggregateActivityByRepository(contributionsCollection, issueSearch, mergedPRSearch, config.username)
+    
+    logger.info('GitHub activity processing completed', {
+      username: config.username,
+      repositoryCount: result.length,
+      totalActivity: result.reduce((acc, repo) => ({
+        prs: acc.prs + repo.activitySummary.prCount,
+        reviews: acc.reviews + repo.activitySummary.reviewCount,
+        issues: acc.issues + repo.activitySummary.issueCount,
+        merges: acc.merges + repo.activitySummary.mergeCount
+      }), { prs: 0, reviews: 0, issues: 0, merges: 0 })
+    })
+    
+    return result
   } catch (error) {
     if (error instanceof Error) {
       throw error

@@ -1,14 +1,17 @@
 {
-  "name": "@workspace/github",
+  "name": "@workspace/logger",
   "type": "module",
   "private": true,
+  "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "tsc --watch"
   },
   "dependencies": {
-    "@workspace/logger": "*"
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.1.1"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",
