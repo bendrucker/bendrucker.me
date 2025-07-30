@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 directory = "dist"
 binding = "ASSETS"
 
-# KV namespace for GitHub activity data (shared with github-activity worker)
+# KV namespace for GitHub activity data (shared with GitHub worker)
 [[kv_namespaces]]
 binding = "GITHUB_KV"
 id = "fa47de77b5c94c938cc68c94c6a247a9"

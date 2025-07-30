@@ -143,14 +143,40 @@ git remote add upstream https://github.com/satnaing/astro-paper.git
 
 ## 🚀 Deployment
 
+### Multi-Worker Architecture
+This project uses a **two-worker setup** on Cloudflare:
+
+1. **Main Site Worker** (`wrangler.toml`)
+   - Serves the static site at www.bendrucker.me
+   - Reads GitHub activity data from KV storage
+   - Deployed from project root
+
+2. **GitHub Activity Worker** (`workers/github/wrangler.toml`)
+   - Separate worker for background data fetching
+   - Runs cron job every 6 hours (`0 */6 * * *`)
+   - Fetches GitHub API data and stores in shared KV namespace
+   - Deployed from `workers/github/` directory
+
+### KV Storage Configuration
+Both workers share the same KV namespace for GitHub data:
+- **Production**: `fa47de77b5c94c938cc68c94c6a247a9` (binding: `GITHUB_KV`)
+- **Preview**: `e8f3338afa2645669d60e88f16876007` (binding: `GITHUB_KV`)
+
+Future platforms will have dedicated KV namespaces (e.g., `STRAVA_KV`, `LINKEDIN_KV`)
+
 ### Automatic Deployment
 - **Trigger**: Push to `master` branch
-- **Process**: GitHub Actions builds and deploys to Cloudflare Workers
-- **URL**: Automatically available at www.bendrucker.me
+- **Process**: GitHub Actions builds and deploys both workers
+- **Main Site**: www.bendrucker.me
+- **GitHub Worker**: github.bvdrucker.workers.dev (background only)
 
 ### Manual Deployment
 ```bash
-git push origin master  # Triggers GitHub Actions workflow
+# Deploy main site
+npm run build && npx wrangler deploy
+
+# Deploy GitHub activity worker
+npx wrangler deploy --config workers/github/wrangler.toml
 ```
 
 ## 🎨 Styling & Assets

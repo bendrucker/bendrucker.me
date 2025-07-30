@@ -16,9 +16,9 @@ declare const GITHUB_KV: KVNamespace | undefined;
 
 // Load activity data
 let repositories: RepoActivity[] = [];
+const isDev = typeof GITHUB_KV === 'undefined';
 
 try {
-  // Check if we're in a Cloudflare Workers environment
   if (typeof GITHUB_KV !== 'undefined') {
     // Production: read from KV storage
     const kvData = await GITHUB_KV.get('activity', 'json') as RepoActivity[] | null;
@@ -32,7 +32,6 @@ try {
   } else {
     // Development: try to load from local file
     const localDataPath = join(process.cwd(), 'tmp', 'github-activity.json');
-
     if (existsSync(localDataPath)) {
       const localData = JSON.parse(readFileSync(localDataPath, 'utf-8')) as RepoActivity[];
       repositories = localData.map(repo => ({
@@ -42,12 +41,10 @@ try {
       }));
     }
   }
-} catch {
-  // Failed to load activity data - fallback to empty array
+} catch (error) {
+  console.error('Failed to load GitHub activity data:', error);
   repositories = [];
 }
-
-
 
 const isRepoNew = (repo: RepoActivity) => {
   if (!repo.createdAt) return false;
@@ -63,10 +60,7 @@ const formatDate = (date: Date) => {
 };
 
 const formatStarCount = (count: number) => {
-  if (count < 1000) {
-    return count.toString();
-  }
-
+  if (count < 1000) return count.toString();
   const thousands = Math.floor(count / 100) / 10;
   return `${thousands}k`;
 };
@@ -74,8 +68,6 @@ const formatStarCount = (count: number) => {
 const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue' | 'merge') => {
   const baseUrl = 'https://github.com/search';
   const repoQuery = `repo:${repo.owner}/${repo.name}`;
-
-  // Add time filter - 1 year ago to match our activity data range
   const oneYearAgo = new Date(Date.now() - (365 * 24 * 60 * 60 * 1000));
   const timeFilter = `created:>${oneYearAgo.toISOString().split('T')[0]}`;
 
@@ -96,7 +88,6 @@ const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue' 
       searchType = 'issues';
       break;
     case 'merge':
-      // Only show for user's own repos: all merged PRs not authored by them or bots
       query = `${repoQuery} is:pr is:merged -author:${SITE.githubUsername} -author:app/dependabot -author:app/renovate merged:>${oneYearAgo.toISOString().split('T')[0]}`;
       searchType = 'pullrequests';
       break;
@@ -108,256 +99,115 @@ const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue' 
 // Group repositories by year
 const repositoriesByYear = repositories.reduce((acc, repo) => {
   const year = repo.lastActivity.getFullYear();
-  if (!acc[year]) {
-    acc[year] = [];
-  }
+  if (!acc[year]) acc[year] = [];
   acc[year].push(repo);
   return acc;
 }, {} as Record<number, RepoActivity[]>);
 
-// Sort years in descending order
-const sortedYears = Object.keys(repositoriesByYear)
-  .map(Number)
-  .sort((a, b) => b - a);
-
-// Extract unique languages and ownership types for filtering
-const allLanguages = Array.from(new Set(
-  repositories
-    .map(repo => repo.primaryLanguage?.name)
-    .filter(Boolean)
-)).sort();
-
-const ownershipTypes = [
-  { key: 'personal', label: 'Personal', filter: (repo: RepoActivity) => repo.owner === SITE.githubUsername },
-  { key: 'organization', label: 'Organization', filter: (repo: RepoActivity) => repo.owner !== SITE.githubUsername }
-];
-
+const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b - a);
 ---
 
 <Layout title={`Activity: Code | ${SITE.title}`} description="My public GitHub activity over the last year.">
   <Main pageTitle="Activity: Code" pageDesc="This page summarizes my GitHub activity over the last year. It is an index of recent software projects I am working on in public.">
     <section>
-      <div class="mx-auto">
-        {repositories.length === 0 ? (
-          <div class="text-center py-8 space-y-3">
-            <p class="text-skin-muted">No activity data available.</p>
-            <div class="text-sm text-skin-muted space-y-2">
-              <p><strong>Development:</strong> Run <code class="bg-skin-card px-2 py-1 rounded">npm run fetch-activity</code> to load GitHub data locally.</p>
-              <p><strong>Production:</strong> Data is automatically updated every 6 hours via GitHub worker.</p>
+      {repositories.length === 0 ? (
+        <div class="text-center py-8">
+          {isDev ? (
+            <div class="bg-muted border border-border rounded-lg p-4 text-sm">
+              <p class="font-medium mb-2">Development Mode</p>
+              <p>Run <code class="bg-background px-2 py-1 rounded border">npm run fetch-activity</code> to load GitHub data locally.</p>
             </div>
-          </div>
-        ) : (
-          <div 
-            x-data="{
-              activeFilter: 'all',
-              isFiltering: false,
-              init() {
-                this.$nextTick(() => {
-                  // Add CSS for fade transitions
-                  const style = document.createElement('style');
-                  style.textContent = '.repositories-container { transition: opacity 0.15s ease; } .repositories-container.filtering { opacity: 0.3; }';
-                  document.head.appendChild(style);
-                });
-              },
-              shouldShowRepo(repo) {
-                if (this.activeFilter === 'all') return true;
-                if (this.activeFilter.startsWith('language:')) {
-                  const lang = this.activeFilter.split(':')[1];
-                  return repo.language === lang;
-                }
-                if (this.activeFilter.startsWith('ownership:')) {
-                  const owner = this.activeFilter.split(':')[1];
-                  return repo.ownership === owner;
-                }
-                return true;
-              },
-              shouldShowYear(year, repos) {
-                return repos.some(repo => this.shouldShowRepo(repo));
-              },
-              setFilter(newFilter) {
-                // If clicking the same filter, toggle it off (reset to 'all')
-                if (newFilter === this.activeFilter) {
-                  newFilter = 'all';
-                }
-                
-                if (newFilter === this.activeFilter) return;
-                
-                this.isFiltering = true;
-                setTimeout(() => {
-                  this.activeFilter = newFilter;
-                  setTimeout(() => {
-                    this.isFiltering = false;
-                  }, 50);
-                }, 150);
-              }
-            }"
-          >
-            {/* Filter Pills */}
-            <div class="mb-6 space-y-3">
-              <div class="flex flex-wrap gap-2">
-                {allLanguages.map((language) => (
-                  <button 
-                    @click={`setFilter('language:${language}')`}
-                    class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200"
-                    :class={`activeFilter === 'language:${language}' ? 'bg-accent text-background' : 'bg-muted text-foreground border border-border'`}
-                  >
-                    {language}
-                  </button>
-                ))}
-                {ownershipTypes.map((type) => (
-                  <button 
-                    @click={`setFilter('ownership:${type.key}')`}
-                    class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200"
-                    :class={`activeFilter === 'ownership:${type.key}' ? 'bg-accent text-background' : 'bg-muted text-foreground border border-border'`}
-                  >
-                    {type.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Repository List */}
-            <div 
-              :class="isFiltering ? 'repositories-container filtering' : 'repositories-container'"
-              class="space-y-8"
-            >
-              {sortedYears.map((year) => (
-                <div 
-                  x-show={`shouldShowYear(${year}, ${JSON.stringify(repositoriesByYear[year].map(repo => ({
-                    language: repo.primaryLanguage?.name || 'none',
-                    ownership: repo.owner === SITE.githubUsername ? 'personal' : 'organization'
-                  })))})`}
-                  class="year-section"
-                >
-                  {/* Year Header (only for non-current year) */}
-                  {year !== new Date().getFullYear() && (
-                    <div class="border-b border-skin-line mb-4">
-                      <h2 class="text-2xl font-bold text-skin-accent py-3">{year}</h2>
-                    </div>
-                  )}
-
-                  {/* Repositories for this year */}
-                  <div class="space-y-3">
-                    {repositoriesByYear[year].map((repo) => (
-                      <div 
-                        x-show={`shouldShowRepo({
-                          language: '${repo.primaryLanguage?.name || 'none'}',
-                          ownership: '${repo.owner === SITE.githubUsername ? 'personal' : 'organization'}'
-                        })`}
-                        class="repository-item border border-skin-line rounded-lg px-3 pt-3 pb-1 bg-skin-fill"
-                      >
+          ) : (
+            <p class="text-muted-foreground">No recent activity data available.</p>
+          )}
+        </div>
+      ) : (
+        <div class="space-y-8">
+          {sortedYears.map((year) => (
+            <div>
+              {year !== new Date().getFullYear() && (
+                <div class="border-b border-border mb-4">
+                  <h2 class="text-2xl font-bold text-accent py-3">{year}</h2>
+                </div>
+              )}
+              
+              <div class="space-y-3">
+                {repositoriesByYear[year].map((repo) => (
+                  <div class="border border-border rounded-lg p-4 bg-background">
                     <div class="flex items-start justify-between mb-3">
                       <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
-                          <h3 class="text-lg font-semibold text-skin-accent">
-                            <a
-                              href={repo.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="hover:text-skin-accent/80 transition-colors"
-                            >
-                              {repo.owner === SITE.githubUsername
-                                ? repo.name
-                                : <><span class="text-gray-600 font-normal">{repo.owner}/</span>{repo.name}</>}
+                          <h3 class="text-lg font-semibold text-accent">
+                            <a href={repo.url} target="_blank" rel="noopener noreferrer" class="hover:text-accent/80 transition-colors">
+                              {repo.owner === SITE.githubUsername ? repo.name : (
+                                <><span class="text-muted-foreground font-normal">{repo.owner}/</span>{repo.name}</>
+                              )}
                             </a>
                           </h3>
                           {repo.primaryLanguage && (
-                            <span
-                              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border border-skin-line"
+                            <span 
+                              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border border-border"
                               style={`background-color: ${repo.primaryLanguage.color}20; color: ${repo.primaryLanguage.color}`}
                             >
-                              <span class="text-[0.75rem] leading-none">{repo.primaryLanguage.name}</span>
+                              {repo.primaryLanguage.name}
                             </span>
                           )}
                           {isRepoNew(repo) && (
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-skin-line bg-green-500/20 text-green-600">
-                              <span class="text-[0.75rem] leading-none">New!</span>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-border bg-green-500/20 text-green-600">
+                              New!
                             </span>
                           )}
                         </div>
-                        <p class="text-skin-base text-sm mb-2">{repo.description}</p>
-                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                        <p class="text-foreground text-sm mb-2">{repo.description}</p>
+                        <div class="flex items-center gap-4 text-sm text-muted-foreground">
                           {repo.activitySummary.prCount > 0 && (
-                            <a
-                              href={getGitHubSearchUrl(repo, 'pr')}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
-                              title="Pull requests authored"
-                            >
-                              <GitPullRequest class="w-4 h-4" aria-label="Pull requests" />
+                            <a href={getGitHubSearchUrl(repo, 'pr')} target="_blank" rel="noopener noreferrer" 
+                               class="flex items-center gap-1 hover:text-accent transition-colors" title="Pull requests authored">
+                              <GitPullRequest class="w-4 h-4" />
                               <span>{repo.activitySummary.prCount}</span>
                             </a>
                           )}
                           {repo.activitySummary.reviewCount > 0 && (
-                            <a
-                              href={getGitHubSearchUrl(repo, 'review')}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
-                              title="Pull request reviews submitted"
-                            >
-                              <Checklist class="w-4 h-4" aria-label="Reviews" />
+                            <a href={getGitHubSearchUrl(repo, 'review')} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent transition-colors" title="Pull request reviews submitted">
+                              <Checklist class="w-4 h-4" />
                               <span>{repo.activitySummary.reviewCount}</span>
                             </a>
                           )}
                           {repo.activitySummary.mergeCount > 0 && (
-                            <a
-                              href={getGitHubSearchUrl(repo, 'merge')}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
-                              title="Pull requests merged"
-                            >
-                              <GitMerge class="w-4 h-4" aria-label="Merges" />
+                            <a href={getGitHubSearchUrl(repo, 'merge')} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent transition-colors" title="Pull requests merged">
+                              <GitMerge class="w-4 h-4" />
                               <span>{repo.activitySummary.mergeCount}</span>
                             </a>
                           )}
                           {repo.activitySummary.issueCount > 0 && (
-                            <a
-                              href={getGitHubSearchUrl(repo, 'issue')}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
-                              title="Issues opened or commented"
-                            >
-                              <CircleDot class="w-4 h-4" aria-label="Issues" />
+                            <a href={getGitHubSearchUrl(repo, 'issue')} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent transition-colors" title="Issues opened or commented">
+                              <CircleDot class="w-4 h-4" />
                               <span>{repo.activitySummary.issueCount}</span>
                             </a>
                           )}
                           {repo.stargazerCount > 0 && (
-                            <a
-                              href={`${repo.url}/stargazers`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="flex items-center gap-1 hover:text-skin-accent transition-colors"
-                              title="GitHub stars"
-                            >
-                              <Star class="w-4 h-4" aria-label="Stars" />
+                            <a href={`${repo.url}/stargazers`} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent transition-colors" title="GitHub stars">
+                              <Star class="w-4 h-4" />
                               <span>{formatStarCount(repo.stargazerCount)}</span>
                             </a>
                           )}
                         </div>
                       </div>
-                      <div class="text-sm text-skin-muted flex-shrink-0">
-                        <div class="text-sm text-gray-500 flex-shrink-0">{formatDate(repo.lastActivity)}</div>
+                      <div class="text-sm text-muted-foreground flex-shrink-0">
+                        {formatDate(repo.lastActivity)}
                       </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              ))}
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   </Main>
 </Layout>
-
-<script>
-import Alpine from 'alpinejs'
-Alpine.start()
-</script>
-

@@ -2,7 +2,7 @@ import { fetchGitHubActivity, type RepoActivity } from '../../src/services/githu
 
 interface Env {
   GITHUB_TOKEN: string
-  KV: KVNamespace
+  GITHUB_KV: KVNamespace
 }
 
 async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
@@ -17,7 +17,7 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
   const activityData = await fetchGitHubActivity(env.GITHUB_TOKEN)
 
   // Store in KV with TTL of 7 days (longer than cron interval for resilience)
-  await env.KV.put(
+  await env.GITHUB_KV.put(
     'activity',
     JSON.stringify(activityData),
     {
@@ -41,7 +41,7 @@ export default {
     if (url.pathname === '/activity' && request.method === 'GET') {
       try {
         // Try to get cached data from KV
-        const cachedData = await env.KV.get('activity', 'json')
+        const cachedData = await env.GITHUB_KV.get('activity', 'json')
 
         if (cachedData) {
           return new Response(JSON.stringify(cachedData), {
@@ -82,7 +82,7 @@ export default {
 
       // Store error info in KV for debugging (with shorter TTL)
       try {
-        await env.KV.put(
+        await env.GITHUB_KV.put(
           'activity-error',
           JSON.stringify({
             error: error instanceof Error ? error.message : 'Unknown error',
