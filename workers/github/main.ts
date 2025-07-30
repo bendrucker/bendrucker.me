@@ -1,4 +1,4 @@
-import { fetchGitHubActivity, type RepoActivity } from '@bendrucker/github'
+import { fetchGitHubActivity, type RepoActivity } from '../../packages/github'
 
 interface Env {
   GITHUB_TOKEN: string

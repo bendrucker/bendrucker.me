@@ -1,7 +1,7 @@
-import { fetchGitHubActivity } from '@bendrucker/github'
+import { fetchGitHubActivity } from '../../packages/github'
 import { SITE } from '../config'
 
-export * from '@bendrucker/github'
+export * from '../../packages/github'
 
 export function fetchGitHubActivityWithConfig(token: string) {
   return fetchGitHubActivity(token, {

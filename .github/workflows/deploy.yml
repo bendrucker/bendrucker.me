@@ -24,11 +24,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build site
-        uses: withastro/action@v4
+      - name: npm ci
+        run: npm ci --workspaces
+
+      - name: Build
+        run: npm run build --workspaces
 
 
   cloudflare:
+    name: ${{ matrix.name }}
     if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10

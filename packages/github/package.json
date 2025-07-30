@@ -1,13 +1,10 @@
 {
-  "name": "@bendrucker/github",
-  "version": "1.0.0",
   "type": "module",
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch"
+    "build": "tsc"
   },
   "dependencies": {},
   "devDependencies": {
