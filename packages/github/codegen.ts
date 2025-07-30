@@ -1,7 +1,8 @@
 import type { CodegenConfig } from '@graphql-codegen/cli'
+import { resolve } from 'path'
 
 const config: CodegenConfig = {
-  schema: '../../node_modules/@octokit/graphql-schema/schema.graphql',
+  schema: resolve(__dirname, '../../node_modules/@octokit/graphql-schema/schema.graphql'),
   documents: ['src/queries/**/*.graphql'],
   generates: {
     './src/gql/': {
