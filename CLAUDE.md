@@ -83,6 +83,29 @@ npx wrangler types    # Generate TypeScript types after wrangler.toml changes
 
 **Important**: After updating `wrangler.toml`, always run `npx wrangler types` to regenerate TypeScript definitions.
 
+### Testing Cron Triggers Locally
+The GitHub worker includes scheduled functions that can be tested in preview mode without affecting production:
+
+1. **Start the GitHub worker in development mode with scheduled event testing enabled**:
+   ```bash
+   cd workers/github
+   npx wrangler dev --test-scheduled
+   ```
+
+2. **Trigger the scheduled function manually**:
+   ```bash
+   curl "http://localhost:8787/__scheduled?cron=0+*/6+*+*+*"
+   ```
+   This simulates the cron trigger that runs every 6 hours in production.
+
+3. **Verify the results**:
+   - Check console output for successful GitHub API fetch and KV storage
+   - The worker logs will show repository count and execution time
+   - Data is stored in the preview KV namespace (`preview_id` in `wrangler.toml`)
+   - Test the `/activity` endpoint: `curl http://localhost:8787/activity`
+
+**Note**: This testing approach uses the preview KV namespace, ensuring production data remains untouched during development and testing.
+
 ### Content Management
 - **Adding posts**: Create `.md` files in `content/blog/`
 - **Frontmatter format**:
