@@ -1,6 +1,6 @@
 import { graphql } from '@octokit/graphql'
 import { createTokenAuth } from '@octokit/auth-token'
-import type { 
+import type {
   Repository,
   ContributionsCollection,
   User,
@@ -10,31 +10,31 @@ import { logger } from '@workspace/logger'
 
 // Our business logic types
 export interface ActivitySummary {
-  prCount: number
-  reviewCount: number
-  issueCount: number
-  mergeCount: number
-  hasMergedPRs: boolean
+  prCount: number;
+  reviewCount: number;
+  issueCount: number;
+  mergeCount: number;
+  hasMergedPRs: boolean;
 }
 
 export interface RepoActivity {
-  name: string
-  owner: string
-  description: string
-  url: string
-  lastActivity: Date
-  activitySummary: ActivitySummary
-  createdAt?: Date
+  name: string;
+  owner: string;
+  description: string;
+  url: string;
+  lastActivity: Date;
+  activitySummary: ActivitySummary;
+  createdAt?: Date;
   primaryLanguage?: {
-    name: string
-    color: string
-  } | null
-  stargazerCount: number
+    name: string;
+    color: string;
+  } | null;
+  stargazerCount: number;
 }
 
 export interface GitHubConfig {
-  username: string
-  title: string
+  username: string;
+  title: string;
 }
 
 // Simple gql tag for syntax highlighting
@@ -172,7 +172,7 @@ query GetUserContributions($username: String!, $from: DateTime!, $to: DateTime!,
       }
     }
   }
-  
+
   # Search for PRs merged by the user (not authored by them)
   mergedPRs: search(query: $mergedPRSearchQuery, type: ISSUE, first: 100) {
     nodes {
@@ -245,7 +245,7 @@ function getOrCreateRepo(
 
 export async function fetchGitHubActivity(token: string, config: GitHubConfig): Promise<RepoActivity[]> {
   const auth = createTokenAuth(token)
-  
+
   const graphqlWithAuth = graphql.defaults({
     request: {
       hook: auth.hook,
@@ -262,17 +262,17 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
     username: config.username,
     timeframe: {
       from: start.toISOString(),
-      to: now.toISOString()
-    }
-  })
+      to: now.toISOString(),
+    },
+  });
 
   const variables = {
     username: config.username,
     from: start.toISOString(),
     to: now.toISOString(),
-    issueSearchQuery: `is:issue involves:${config.username} updated:>${start.toISOString().split('T')[0]}`,
-    mergedPRSearchQuery: `is:pr is:merged user:${config.username} -author:${config.username} -author:app/dependabot -author:app/renovate merged:>${start.toISOString().split('T')[0]}`
-  }
+    issueSearchQuery: `is:issue involves:${config.username} updated:>${start.toISOString().split("T")[0]}`,
+    mergedPRSearchQuery: `is:pr is:merged user:${config.username} -author:${config.username} -author:app/dependabot -author:app/renovate merged:>${start.toISOString().split("T")[0]}`,
+  };
 
   try {
     const data = await graphqlWithAuth(GET_USER_CONTRIBUTIONS_QUERY, variables) as GraphQLResponse
@@ -307,7 +307,7 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
       })
       throw error
     }
-    throw new Error('Unknown error occurred while fetching GitHub activity')
+    throw new Error("Unknown error occurred while fetching GitHub activity");
   }
 }
 
@@ -351,7 +351,7 @@ function aggregateActivityByRepository(
 
     const hasMergedPRs = repoContrib.contributions.nodes.some((contrib) => contrib?.pullRequest.merged)
     if (hasMergedPRs) {
-      repo.activitySummary.hasMergedPRs = true
+      repo.activitySummary.hasMergedPRs = true;
     }
 
     repoContrib.contributions.nodes.forEach((contrib) => {
@@ -412,7 +412,7 @@ function aggregateActivityByRepository(
       if (issueDate > repo.lastActivity) {
         repo.lastActivity = issueDate
       }
-    })
+    });
   }
 
   if (mergedPRSearch?.nodes && username) {
@@ -436,7 +436,7 @@ function aggregateActivityByRepository(
       if (prDate > repo.lastActivity) {
         repo.lastActivity = prDate
       }
-    })
+    });
   }
 
   return Array.from(repoMap.values())
@@ -459,5 +459,5 @@ function aggregateActivityByRepository(
 
       return repo.activitySummary.hasMergedPRs || repo.activitySummary.reviewCount > 0 || repo.activitySummary.mergeCount > 0
     })
-    .sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime())
+    .sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime());
 }

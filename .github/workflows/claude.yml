@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Claude Code
         uses: anthropics/claude-code-action@beta
         with:

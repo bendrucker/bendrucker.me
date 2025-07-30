@@ -52,7 +52,7 @@ All commands are run from the root of the project, from a terminal:
 The site is built with modern web standards and includes:
 
 - ✅ **SEO Optimized**: Meta tags, Open Graph, structured data
-- ✅ **Performance**: Static generation with minimal JavaScript  
+- ✅ **Performance**: Static generation with minimal JavaScript
 - ✅ **TypeScript**: Type-safe configuration and components
 - ✅ **Accessibility**: Semantic HTML and proper markup
 - ✅ **Responsive**: Mobile-first design approach

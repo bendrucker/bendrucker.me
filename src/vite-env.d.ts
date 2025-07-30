@@ -6,6 +6,8 @@ declare module "*.wasm?url" {
 }
 
 declare module "*.wasm?init" {
-  const initWasm: (module?: WebAssembly.Module) => Promise<WebAssembly.Instance>;
+  const initWasm: (
+    module?: WebAssembly.Module,
+  ) => Promise<WebAssembly.Instance>;
   export default initWasm;
 }

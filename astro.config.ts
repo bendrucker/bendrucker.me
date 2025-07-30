@@ -44,7 +44,7 @@ export default defineConfig({
   }),
   integrations: [
     sitemap({
-      filter: page => SITE.showArchives || !page.endsWith("/archives"),
+      filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
     }),
   ],
   markdown: {
@@ -70,18 +70,13 @@ export default defineConfig({
     plugins: [
       tailwindcss(),
       {
-        name: 'copy-static-files',
-        buildStart: () => copyStaticFiles('static', 'public')
-      }
+        name: "copy-static-files",
+        buildStart: () => copyStaticFiles("static", "public"),
+      },
     ],
     ssr: {
-      external: [
-        "node:fs",
-        "node:path",
-        "node:url",
-        "node:fs/promises"
-      ]
-    }
+      external: ["node:fs", "node:path", "node:url", "node:fs/promises"],
+    },
   },
   image: {
     responsiveStyles: true,
