@@ -1,237 +1,153 @@
+import { Octokit } from '@octokit/rest'
 import { logger } from '@workspace/logger'
 
-export interface GitHubContribution {
-  repository: {
+// Re-export Octokit types for convenience
+export type { 
+  RestEndpointMethodTypes
+} from '@octokit/rest'
+
+// GraphQL Response Types - properly typed based on the actual GitHub GraphQL schema
+interface Repository {
+  name: string
+  owner: { login: string }
+  description: string | null
+  url: string
+  createdAt: string
+  isFork: boolean
+  stargazerCount: number
+  primaryLanguage: {
     name: string
-    owner: {
-      login: string
-    }
-    description: string | null
-    url: string
-    createdAt: string
-    primaryLanguage: {
-      name: string
-      color: string
-    } | null
-  }
+    color: string
+  } | null
+}
+
+interface CommitContribution {
+  commitCount: number
   occurredAt: string
 }
 
-export interface PullRequestContribution extends GitHubContribution {
+interface CommitContributionsByRepository {
+  repository: Repository
+  contributions: {
+    totalCount: number
+    nodes: CommitContribution[]
+  }
+}
+
+interface PullRequest {
+  number: number
+  title: string
+  url: string
+  state: 'OPEN' | 'CLOSED' | 'MERGED'
+  merged: boolean
+}
+
+interface PullRequestContribution {
+  occurredAt: string
+  pullRequest: PullRequest
+}
+
+interface PullRequestContributionsByRepository {
+  repository: Repository
+  contributions: {
+    nodes: PullRequestContribution[]
+  }
+}
+
+interface PullRequestReview {
+  url: string
+}
+
+interface PullRequestReviewContribution {
+  occurredAt: string
   pullRequest: {
     number: number
     title: string
     url: string
-    state: 'OPEN' | 'CLOSED' | 'MERGED'
-    merged: boolean
-  }
-}
-
-export interface PullRequestReviewContribution extends GitHubContribution {
-  pullRequest: {
-    number: number
-    title: string
-    url: string
-  }
-  pullRequestReview: {
-    url: string
-  }
-}
-
-export interface IssueContribution extends GitHubContribution {
-  issue: {
-    number: number
-    title: string
-    url: string
-  }
-}
-
-export interface RepositoryContribution {
-  repository: {
-    name: string
-    owner: {
+    author: {
       login: string
+      __typename: 'User' | 'Bot'
     }
-    description: string | null
-    url: string
-    createdAt: string
-    isFork: boolean
-    stargazerCount: number
-    primaryLanguage: {
-      name: string
-      color: string
-    } | null
   }
+  pullRequestReview: PullRequestReview
+}
+
+interface PullRequestReviewContributionsByRepository {
+  repository: Repository
+  contributions: {
+    nodes: PullRequestReviewContribution[]
+  }
+}
+
+interface Issue {
+  number: number
+  title: string
+  url: string
+}
+
+interface IssueContribution {
+  occurredAt: string
+  issue: Issue
+}
+
+interface IssueContributionsByRepository {
+  repository: Repository
+  contributions: {
+    nodes: IssueContribution[]
+  }
+}
+
+interface RepositoryContribution {
+  repository: Repository
   occurredAt: string
 }
 
-export interface ContributionsCollection {
-  commitContributionsByRepository: Array<{
-    repository: {
-      name: string
-      owner: { login: string }
-      description: string | null
-      url: string
-      createdAt: string
-      isFork: boolean
-      stargazerCount: number
-      primaryLanguage: {
-        name: string
-        color: string
-      } | null
-    }
-    contributions: {
-      totalCount: number
-      nodes: Array<{
-        commitCount: number
-        occurredAt: string
-      }>
-    }
-  }>
-  pullRequestContributionsByRepository: Array<{
-    repository: {
-      name: string
-      owner: { login: string }
-      description: string | null
-      url: string
-      createdAt: string
-      isFork: boolean
-      stargazerCount: number
-      primaryLanguage: {
-        name: string
-        color: string
-      } | null
-    }
-    contributions: {
-      nodes: Array<{
-        occurredAt: string
-        pullRequest: {
-          number: number
-          title: string
-          url: string
-          state: 'OPEN' | 'CLOSED' | 'MERGED'
-          merged: boolean
-        }
-      }>
-    }
-  }>
-  pullRequestReviewContributionsByRepository: Array<{
-    repository: {
-      name: string
-      owner: { login: string }
-      description: string | null
-      url: string
-      createdAt: string
-      isFork: boolean
-      stargazerCount: number
-      primaryLanguage: {
-        name: string
-        color: string
-      } | null
-    }
-    contributions: {
-      nodes: Array<{
-        occurredAt: string
-        pullRequest: {
-          number: number
-          title: string
-          url: string
-          author: {
-            login: string
-            __typename: 'User' | 'Bot'
-          }
-        }
-        pullRequestReview: {
-          url: string
-        }
-      }>
-    }
-  }>
-  issueContributionsByRepository: Array<{
-    repository: {
-      name: string
-      owner: { login: string }
-      description: string | null
-      url: string
-      createdAt: string
-      isFork: boolean
-      stargazerCount: number
-      primaryLanguage: {
-        name: string
-        color: string
-      } | null
-    }
-    contributions: {
-      nodes: Array<{
-        occurredAt: string
-        issue: {
-          number: number
-          title: string
-          url: string
-        }
-      }>
-    }
-  }>
+interface ContributionsCollection {
+  commitContributionsByRepository: CommitContributionsByRepository[]
+  pullRequestContributionsByRepository: PullRequestContributionsByRepository[]
+  pullRequestReviewContributionsByRepository: PullRequestReviewContributionsByRepository[]
+  issueContributionsByRepository: IssueContributionsByRepository[]
   repositoryContributions: {
     nodes: RepositoryContribution[]
   }
 }
 
-export interface IssueSearchResponse {
-  search: {
-    nodes: Array<{
-      number: number
-      title: string
-      url: string
-      createdAt: string
-      repository: {
-        name: string
-        owner: { login: string }
-        description: string | null
-        url: string
-        createdAt: string
-        isFork: boolean
-        stargazerCount: number
-        primaryLanguage: {
-          name: string
-          color: string
-        } | null
-      }
-    }>
-  }
+interface SearchIssue {
+  number: number
+  title: string
+  url: string
+  createdAt: string
+  repository: Repository
 }
 
-export interface MergedPRSearchResponse {
-  mergedPRs: {
-    nodes: Array<{
-      number: number
-      title: string
-      url: string
-      createdAt: string
-      merged: boolean
-      mergedBy: {
-        login: string
-      }
-      author: {
-        login: string
-      }
-      repository: {
-        name: string
-        owner: { login: string }
-        description: string | null
-        url: string
-        createdAt: string
-        isFork: boolean
-        stargazerCount: number
-        primaryLanguage: {
-          name: string
-          color: string
-        } | null
-      }
-    }>
-  }
+interface IssueSearchResponse {
+  nodes: SearchIssue[]
 }
 
+interface MergedPullRequest {
+  number: number
+  title: string
+  url: string
+  createdAt: string
+  merged: boolean
+  mergedBy: { login: string }
+  author: { login: string }
+  repository: Repository
+}
+
+interface MergedPRSearchResponse {
+  nodes: MergedPullRequest[]
+}
+
+interface GitHubGraphQLResponse {
+  user: {
+    contributionsCollection: ContributionsCollection
+  }
+  search: IssueSearchResponse
+  mergedPRs: MergedPRSearchResponse
+}
+
+// Simplified interfaces that match our specific needs
 export interface ActivitySummary {
   prCount: number
   reviewCount: number
@@ -260,6 +176,7 @@ export interface GitHubConfig {
   title: string
 }
 
+// GitHub GraphQL query for comprehensive contribution data
 const GITHUB_GRAPHQL_QUERY = `
   query GetUserContributions($username: String!, $from: DateTime!, $to: DateTime!, $issueSearchQuery: String!, $mergedPRSearchQuery: String!) {
     user(login: $username) {
@@ -267,18 +184,13 @@ const GITHUB_GRAPHQL_QUERY = `
         commitContributionsByRepository(maxRepositories: 100) {
           repository {
             name
-            owner {
-              login
-            }
+            owner { login }
             description
             url
             createdAt
             isFork
             stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            primaryLanguage { name color }
           }
           contributions(first: 100) {
             totalCount
@@ -291,18 +203,13 @@ const GITHUB_GRAPHQL_QUERY = `
         pullRequestContributionsByRepository(maxRepositories: 100) {
           repository {
             name
-            owner {
-              login
-            }
+            owner { login }
             description
             url
             createdAt
             isFork
             stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            primaryLanguage { name color }
           }
           contributions(first: 100) {
             nodes {
@@ -320,18 +227,13 @@ const GITHUB_GRAPHQL_QUERY = `
         pullRequestReviewContributionsByRepository(maxRepositories: 100) {
           repository {
             name
-            owner {
-              login
-            }
+            owner { login }
             description
             url
             createdAt
             isFork
             stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            primaryLanguage { name color }
           }
           contributions(first: 100) {
             nodes {
@@ -340,32 +242,22 @@ const GITHUB_GRAPHQL_QUERY = `
                 number
                 title
                 url
-                author {
-                  login
-                  __typename
-                }
+                author { login __typename }
               }
-              pullRequestReview {
-                url
-              }
+              pullRequestReview { url }
             }
           }
         }
         issueContributionsByRepository(maxRepositories: 100) {
           repository {
             name
-            owner {
-              login
-            }
+            owner { login }
             description
             url
             createdAt
             isFork
             stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            primaryLanguage { name color }
           }
           contributions(first: 100) {
             nodes {
@@ -382,26 +274,18 @@ const GITHUB_GRAPHQL_QUERY = `
           nodes {
             repository {
               name
-              owner {
-                login
-              }
+              owner { login }
               description
               url
               createdAt
               isFork
               stargazerCount
-              primaryLanguage {
-                name
-                color
-              }
+              primaryLanguage { name color }
             }
             occurredAt
           }
         }
       }
-
-      # Search for issues where user is involved (commented, authored, assigned, etc)
-      # This excludes pull requests unlike issueComments
     }
 
     # Search for issues involving the user
@@ -414,18 +298,13 @@ const GITHUB_GRAPHQL_QUERY = `
           createdAt
           repository {
             name
-            owner {
-              login
-            }
+            owner { login }
             description
             url
             createdAt
             isFork
             stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            primaryLanguage { name color }
           }
         }
       }
@@ -440,26 +319,17 @@ const GITHUB_GRAPHQL_QUERY = `
           url
           createdAt
           merged
-          mergedBy {
-            login
-          }
-          author {
-            login
-          }
+          mergedBy { login }
+          author { login }
           repository {
             name
-            owner {
-              login
-            }
+            owner { login }
             description
             url
             createdAt
             isFork
             stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            primaryLanguage { name color }
           }
         }
       }
@@ -472,10 +342,16 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
     throw new Error('GitHub token is required')
   }
 
+  // Initialize Octokit client
+  const octokit = new Octokit({
+    auth: token,
+    userAgent: `${config.title} Activity Fetcher`,
+  })
+
   const now = new Date()
   const start = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000))
   
-  logger.debug('Starting GitHub GraphQL request', {
+  logger.debug('Starting GitHub GraphQL request via Octokit', {
     username: config.username,
     timeframe: {
       from: start.toISOString(),
@@ -492,47 +368,16 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
   }
 
   try {
-    const response = await fetch('https://api.github.com/graphql', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'User-Agent': `${config.title} Activity Fetcher`
-      },
-      body: JSON.stringify({
-        query: GITHUB_GRAPHQL_QUERY,
-        variables
-      })
-    })
+    // Use Octokit's graphql method instead of raw fetch
+    const data = await octokit.graphql<GitHubGraphQLResponse>(GITHUB_GRAPHQL_QUERY, variables)
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      logger.error('GitHub API request failed', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-        username: config.username
-      })
-      throw new Error(`GitHub API error (${response.status}): ${errorText}`)
-    }
-
-    const data: any = await response.json()
-
-    if (data.errors) {
-      logger.error('GitHub GraphQL errors', {
-        errors: data.errors,
-        username: config.username
-      })
-      throw new Error(`GraphQL errors: ${data.errors.map((e: any) => e.message).join(', ')}`)
-    }
-
-    if (!data.data?.user?.contributionsCollection) {
+    if (!data?.user?.contributionsCollection) {
       throw new Error('Invalid response structure from GitHub API')
     }
 
-    const contributionsCollection: ContributionsCollection = data.data.user.contributionsCollection
-    const issueSearch = data.data.search
-    const mergedPRSearch = data.data.mergedPRs
+    const contributionsCollection = data.user.contributionsCollection
+    const issueSearch = data.search
+    const mergedPRSearch = data.mergedPRs
 
     const result = aggregateActivityByRepository(contributionsCollection, issueSearch, mergedPRSearch, config.username)
     
@@ -550,13 +395,22 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
     return result
   } catch (error) {
     if (error instanceof Error) {
+      logger.error('GitHub API request failed via Octokit', {
+        error: error.message,
+        username: config.username
+      })
       throw error
     }
     throw new Error('Unknown error occurred while fetching GitHub activity')
   }
 }
 
-function aggregateActivityByRepository(contributions: ContributionsCollection, issueSearch?: IssueSearchResponse['search'], mergedPRSearch?: MergedPRSearchResponse['mergedPRs'], username?: string): RepoActivity[] {
+function aggregateActivityByRepository(
+  contributions: ContributionsCollection, 
+  issueSearch?: IssueSearchResponse, 
+  mergedPRSearch?: MergedPRSearchResponse, 
+  username?: string
+): RepoActivity[] {
   const repoMap = new Map<string, RepoActivity>()
 
   // Process commit contributions (direct pushes)
@@ -700,8 +554,6 @@ function aggregateActivityByRepository(contributions: ContributionsCollection, i
       }
     })
   })
-
-  // Skip issueContributionsByRepository to avoid double-counting with search results
 
   // Process repository contributions (new repositories)
   contributions.repositoryContributions.nodes.forEach(contribution => {
