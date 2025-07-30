@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "npm run types:generate && tsc --noEmit",
     "dev": "wrangler dev --test-scheduled",
     "deploy": "wrangler deploy",
     "types:generate": "wrangler types"
