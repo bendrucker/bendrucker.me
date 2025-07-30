@@ -1,4 +1,5 @@
 {
+  "name": "@workspace/github",
   "type": "module",
   "private": true,
   "main": "dist/index.js",

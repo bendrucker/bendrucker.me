@@ -1,5 +1,5 @@
 {
-  "name": "github-worker",
+  "name": "@workspace/github-worker",
   "type": "module",
   "private": true,
   "scripts": {

@@ -61,7 +61,7 @@ jobs:
         run: npm ci
 
       - name: "🔧 Build shared packages"
-        run: npm run build --workspace 'packages/**'
+        run: npm run build --workspace 'packages/*'
 
       - name: "📋 Copy assets ignore file"
         if: matrix.path == '.'
