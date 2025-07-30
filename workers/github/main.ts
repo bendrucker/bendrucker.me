@@ -40,7 +40,7 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
 }
 
 export default {
-  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
+  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     const startTime = Date.now()
 
     try {
