@@ -8,8 +8,7 @@
   ],
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run build:packages && npm run types:generate && astro check && astro build",
-    "build:packages": "npm run build --workspaces",
+    "build": "npm run types:generate && astro check && astro build",
     "preview": "astro preview",
     "sync": "astro sync",
     "astro": "astro",
