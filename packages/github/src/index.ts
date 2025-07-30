@@ -1,153 +1,13 @@
 import { Octokit } from '@octokit/rest'
 import { logger } from '@workspace/logger'
+import type { GetUserContributionsQuery, GetUserContributionsQueryVariables } from './gql/graphql'
 
 // Re-export Octokit types for convenience
 export type { 
   RestEndpointMethodTypes
 } from '@octokit/rest'
 
-// GraphQL Response Types - properly typed based on the actual GitHub GraphQL schema
-interface Repository {
-  name: string
-  owner: { login: string }
-  description: string | null
-  url: string
-  createdAt: string
-  isFork: boolean
-  stargazerCount: number
-  primaryLanguage: {
-    name: string
-    color: string
-  } | null
-}
-
-interface CommitContribution {
-  commitCount: number
-  occurredAt: string
-}
-
-interface CommitContributionsByRepository {
-  repository: Repository
-  contributions: {
-    totalCount: number
-    nodes: CommitContribution[]
-  }
-}
-
-interface PullRequest {
-  number: number
-  title: string
-  url: string
-  state: 'OPEN' | 'CLOSED' | 'MERGED'
-  merged: boolean
-}
-
-interface PullRequestContribution {
-  occurredAt: string
-  pullRequest: PullRequest
-}
-
-interface PullRequestContributionsByRepository {
-  repository: Repository
-  contributions: {
-    nodes: PullRequestContribution[]
-  }
-}
-
-interface PullRequestReview {
-  url: string
-}
-
-interface PullRequestReviewContribution {
-  occurredAt: string
-  pullRequest: {
-    number: number
-    title: string
-    url: string
-    author: {
-      login: string
-      __typename: 'User' | 'Bot'
-    }
-  }
-  pullRequestReview: PullRequestReview
-}
-
-interface PullRequestReviewContributionsByRepository {
-  repository: Repository
-  contributions: {
-    nodes: PullRequestReviewContribution[]
-  }
-}
-
-interface Issue {
-  number: number
-  title: string
-  url: string
-}
-
-interface IssueContribution {
-  occurredAt: string
-  issue: Issue
-}
-
-interface IssueContributionsByRepository {
-  repository: Repository
-  contributions: {
-    nodes: IssueContribution[]
-  }
-}
-
-interface RepositoryContribution {
-  repository: Repository
-  occurredAt: string
-}
-
-interface ContributionsCollection {
-  commitContributionsByRepository: CommitContributionsByRepository[]
-  pullRequestContributionsByRepository: PullRequestContributionsByRepository[]
-  pullRequestReviewContributionsByRepository: PullRequestReviewContributionsByRepository[]
-  issueContributionsByRepository: IssueContributionsByRepository[]
-  repositoryContributions: {
-    nodes: RepositoryContribution[]
-  }
-}
-
-interface SearchIssue {
-  number: number
-  title: string
-  url: string
-  createdAt: string
-  repository: Repository
-}
-
-interface IssueSearchResponse {
-  nodes: SearchIssue[]
-}
-
-interface MergedPullRequest {
-  number: number
-  title: string
-  url: string
-  createdAt: string
-  merged: boolean
-  mergedBy: { login: string }
-  author: { login: string }
-  repository: Repository
-}
-
-interface MergedPRSearchResponse {
-  nodes: MergedPullRequest[]
-}
-
-interface GitHubGraphQLResponse {
-  user: {
-    contributionsCollection: ContributionsCollection
-  }
-  search: IssueSearchResponse
-  mergedPRs: MergedPRSearchResponse
-}
-
-// Simplified interfaces that match our specific needs
+// Our business logic types
 export interface ActivitySummary {
   prCount: number
   reviewCount: number
@@ -176,8 +36,8 @@ export interface GitHubConfig {
   title: string
 }
 
-// GitHub GraphQL query for comprehensive contribution data
-const GITHUB_GRAPHQL_QUERY = `
+// GraphQL query string - types are generated from separate .graphql file
+const GET_USER_CONTRIBUTIONS_QUERY = `
   query GetUserContributions($username: String!, $from: DateTime!, $to: DateTime!, $issueSearchQuery: String!, $mergedPRSearchQuery: String!) {
     user(login: $username) {
       contributionsCollection(from: $from, to: $to) {
@@ -359,7 +219,7 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
     }
   })
 
-  const variables = {
+  const variables: GetUserContributionsQueryVariables = {
     username: config.username,
     from: start.toISOString(),
     to: now.toISOString(),
@@ -368,8 +228,8 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
   }
 
   try {
-    // Use Octokit's graphql method instead of raw fetch
-    const data = await octokit.graphql<GitHubGraphQLResponse>(GITHUB_GRAPHQL_QUERY, variables)
+    // Use Octokit's graphql method with typed query
+    const data = await octokit.graphql(GET_USER_CONTRIBUTIONS_QUERY, variables) as GetUserContributionsQuery
 
     if (!data?.user?.contributionsCollection) {
       throw new Error('Invalid response structure from GitHub API')
@@ -406,15 +266,15 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
 }
 
 function aggregateActivityByRepository(
-  contributions: ContributionsCollection, 
-  issueSearch?: IssueSearchResponse, 
-  mergedPRSearch?: MergedPRSearchResponse, 
+  contributions: NonNullable<GetUserContributionsQuery['user']>['contributionsCollection'], 
+  issueSearch?: GetUserContributionsQuery['search'], 
+  mergedPRSearch?: GetUserContributionsQuery['mergedPRs'], 
   username?: string
 ): RepoActivity[] {
   const repoMap = new Map<string, RepoActivity>()
 
   // Process commit contributions (direct pushes)
-  contributions.commitContributionsByRepository.forEach(repoContrib => {
+  contributions.commitContributionsByRepository.forEach((repoContrib) => {
     // Skip forked repositories
     if (repoContrib.repository.isFork) return
     
@@ -425,10 +285,12 @@ function aggregateActivityByRepository(
     
     // Get the most recent commit activity
     let lastCommitDate = new Date(0)
-    repoContrib.contributions.nodes.forEach(node => {
-      const nodeDate = new Date(node.occurredAt)
-      if (nodeDate > lastCommitDate) {
-        lastCommitDate = nodeDate
+    repoContrib.contributions.nodes?.forEach((node) => {
+      if (node) {
+        const nodeDate = new Date(node.occurredAt)
+        if (nodeDate > lastCommitDate) {
+          lastCommitDate = nodeDate
+        }
       }
     })
     
@@ -438,7 +300,10 @@ function aggregateActivityByRepository(
         owner: repoContrib.repository.owner.login,
         description: repoContrib.repository.description || '',
         url: repoContrib.repository.url,
-        primaryLanguage: repoContrib.repository.primaryLanguage,
+        primaryLanguage: repoContrib.repository.primaryLanguage ? {
+          name: repoContrib.repository.primaryLanguage.name,
+          color: repoContrib.repository.primaryLanguage.color || ''
+        } : null,
         stargazerCount: repoContrib.repository.stargazerCount,
         lastActivity: lastCommitDate,
         activitySummary: {
@@ -460,14 +325,14 @@ function aggregateActivityByRepository(
   })
 
   // Process PR contributions
-  contributions.pullRequestContributionsByRepository.forEach(repoContrib => {
+  contributions.pullRequestContributionsByRepository.forEach((repoContrib) => {
     // Skip forked repositories
     if (repoContrib.repository.isFork) return
 
     const repoKey = `${repoContrib.repository.owner.login}/${repoContrib.repository.name}`
     const createdAt = new Date(repoContrib.repository.createdAt)
 
-    if (repoContrib.contributions.nodes.length === 0) return
+    if (!repoContrib.contributions.nodes?.length) return
 
     if (!repoMap.has(repoKey)) {
       repoMap.set(repoKey, {
@@ -475,7 +340,10 @@ function aggregateActivityByRepository(
         owner: repoContrib.repository.owner.login,
         description: repoContrib.repository.description || '',
         url: repoContrib.repository.url,
-        primaryLanguage: repoContrib.repository.primaryLanguage,
+        primaryLanguage: repoContrib.repository.primaryLanguage ? {
+          name: repoContrib.repository.primaryLanguage.name,
+          color: repoContrib.repository.primaryLanguage.color || ''
+        } : null,
         stargazerCount: repoContrib.repository.stargazerCount,
         lastActivity: new Date(0),
         activitySummary: {
@@ -490,25 +358,27 @@ function aggregateActivityByRepository(
     }
 
     const repo = repoMap.get(repoKey)!
-    repo.activitySummary.prCount += repoContrib.contributions.nodes.length
+    repo.activitySummary.prCount += repoContrib.contributions.nodes.filter((n) => n !== null).length
 
     // Check for merged PRs
-    const hasMergedPRs = repoContrib.contributions.nodes.some(contrib => contrib.pullRequest.merged)
+    const hasMergedPRs = repoContrib.contributions.nodes.some((contrib) => contrib?.pullRequest.merged)
     if (hasMergedPRs) {
       repo.activitySummary.hasMergedPRs = true
     }
 
     // Update last activity
-    repoContrib.contributions.nodes.forEach(contrib => {
-      const contributionDate = new Date(contrib.occurredAt)
-      if (contributionDate > repo.lastActivity) {
-        repo.lastActivity = contributionDate
+    repoContrib.contributions.nodes.forEach((contrib) => {
+      if (contrib) {
+        const contributionDate = new Date(contrib.occurredAt)
+        if (contributionDate > repo.lastActivity) {
+          repo.lastActivity = contributionDate
+        }
       }
     })
   })
 
   // Process PR review contributions
-  contributions.pullRequestReviewContributionsByRepository.forEach(repoContrib => {
+  contributions.pullRequestReviewContributionsByRepository.forEach((repoContrib) => {
     // Skip forked repositories
     if (repoContrib.repository.isFork) return
 
@@ -516,10 +386,11 @@ function aggregateActivityByRepository(
     const createdAt = new Date(repoContrib.repository.createdAt)
 
     // Filter out self-reviews and bot PRs
-    const validReviews = repoContrib.contributions.nodes.filter(contrib =>
-      contrib.pullRequest.author.login !== username &&
-      contrib.pullRequest.author.__typename !== 'Bot'
-    )
+    const validReviews = repoContrib.contributions.nodes?.filter((contrib) =>
+      contrib &&
+      contrib.pullRequest.author?.login !== username &&
+      contrib.pullRequest.author?.__typename !== 'Bot'
+    ) || []
 
     if (validReviews.length === 0) return
 
@@ -529,7 +400,10 @@ function aggregateActivityByRepository(
         owner: repoContrib.repository.owner.login,
         description: repoContrib.repository.description || '',
         url: repoContrib.repository.url,
-        primaryLanguage: repoContrib.repository.primaryLanguage,
+        primaryLanguage: repoContrib.repository.primaryLanguage ? {
+          name: repoContrib.repository.primaryLanguage.name,
+          color: repoContrib.repository.primaryLanguage.color || ''
+        } : null,
         stargazerCount: repoContrib.repository.stargazerCount,
         lastActivity: new Date(0),
         activitySummary: {
@@ -547,16 +421,20 @@ function aggregateActivityByRepository(
     repo.activitySummary.reviewCount += validReviews.length
 
     // Update last activity (only from valid reviews)
-    validReviews.forEach(contrib => {
-      const contributionDate = new Date(contrib.occurredAt)
-      if (contributionDate > repo.lastActivity) {
-        repo.lastActivity = contributionDate
+    validReviews.forEach((contrib) => {
+      if (contrib) {
+        const contributionDate = new Date(contrib.occurredAt)
+        if (contributionDate > repo.lastActivity) {
+          repo.lastActivity = contributionDate
+        }
       }
     })
   })
 
   // Process repository contributions (new repositories)
-  contributions.repositoryContributions.nodes.forEach(contribution => {
+  contributions.repositoryContributions.nodes?.forEach((contribution) => {
+    if (!contribution) return
+    
     // Skip forked repositories
     if (contribution.repository.isFork) return
 
@@ -570,7 +448,10 @@ function aggregateActivityByRepository(
         owner: contribution.repository.owner.login,
         description: contribution.repository.description || '',
         url: contribution.repository.url,
-        primaryLanguage: contribution.repository.primaryLanguage,
+        primaryLanguage: contribution.repository.primaryLanguage ? {
+          name: contribution.repository.primaryLanguage.name,
+          color: contribution.repository.primaryLanguage.color || ''
+        } : null,
         lastActivity: contributionDate,
         activitySummary: {
           prCount: 0,
@@ -586,23 +467,29 @@ function aggregateActivityByRepository(
   })
 
   // Process issues from search (issues where user is involved)
-  if (issueSearch) {
-    issueSearch.nodes.forEach(issue => {
-      const issueDate = new Date(issue.createdAt)
+  if (issueSearch?.nodes) {
+    issueSearch.nodes.forEach(node => {
+      if (!node || node.__typename !== 'Issue') return
+      if (!node.repository || !node.number || !node.title || !node.url || !node.createdAt) return
+      
+      const issueDate = new Date(node.createdAt)
 
       // Skip forked repositories
-      if (issue.repository.isFork) return
+      if (node.repository.isFork) return
 
-      const repoKey = `${issue.repository.owner.login}/${issue.repository.name}`
-      const repoCreatedAt = new Date(issue.repository.createdAt)
+      const repoKey = `${node.repository.owner.login}/${node.repository.name}`
+      const repoCreatedAt = new Date(node.repository.createdAt)
 
       if (!repoMap.has(repoKey)) {
         repoMap.set(repoKey, {
-          name: issue.repository.name,
-          owner: issue.repository.owner.login,
-          description: issue.repository.description || '',
-          url: issue.repository.url,
-          primaryLanguage: issue.repository.primaryLanguage,
+          name: node.repository.name,
+          owner: node.repository.owner.login,
+          description: node.repository.description || '',
+          url: node.repository.url,
+          primaryLanguage: node.repository.primaryLanguage ? {
+            name: node.repository.primaryLanguage.name,
+            color: node.repository.primaryLanguage.color || ''
+          } : null,
           lastActivity: issueDate,
           activitySummary: {
             prCount: 0,
@@ -612,7 +499,7 @@ function aggregateActivityByRepository(
             hasMergedPRs: false
           },
           createdAt: repoCreatedAt,
-          stargazerCount: issue.repository.stargazerCount
+          stargazerCount: node.repository.stargazerCount
         })
       } else {
         const repo = repoMap.get(repoKey)!
@@ -627,32 +514,38 @@ function aggregateActivityByRepository(
   }
 
   // Process PRs merged by the user (only for repos they own)
-  if (mergedPRSearch && username) {
-    mergedPRSearch.nodes.forEach(pr => {
+  if (mergedPRSearch?.nodes && username) {
+    mergedPRSearch.nodes.forEach(node => {
+      if (!node || node.__typename !== 'PullRequest') return
+      if (!node.repository || !node.number || !node.title || !node.url || !node.createdAt) return
+      
       // Skip if not actually merged or merged by someone else
-      if (!pr.merged || pr.mergedBy.login !== username) return
+      if (!node.merged || node.mergedBy?.login !== username) return
       
       // Skip if authored by the user (already counted in PR contributions)
-      if (pr.author.login === username) return
+      if (node.author?.login === username) return
       
       // Skip forked repositories
-      if (pr.repository.isFork) return
+      if (node.repository.isFork) return
       
       // Only count merges for repos owned by the user
-      if (pr.repository.owner.login !== username) return
+      if (node.repository.owner.login !== username) return
       
-      const repoKey = `${pr.repository.owner.login}/${pr.repository.name}`
-      const repoCreatedAt = new Date(pr.repository.createdAt)
-      const prDate = new Date(pr.createdAt)
+      const repoKey = `${node.repository.owner.login}/${node.repository.name}`
+      const repoCreatedAt = new Date(node.repository.createdAt)
+      const prDate = new Date(node.createdAt)
       
       if (!repoMap.has(repoKey)) {
         repoMap.set(repoKey, {
-          name: pr.repository.name,
-          owner: pr.repository.owner.login,
-          description: pr.repository.description || '',
-          url: pr.repository.url,
-          primaryLanguage: pr.repository.primaryLanguage,
-          stargazerCount: pr.repository.stargazerCount,
+          name: node.repository.name,
+          owner: node.repository.owner.login,
+          description: node.repository.description || '',
+          url: node.repository.url,
+          primaryLanguage: node.repository.primaryLanguage ? {
+            name: node.repository.primaryLanguage.name,
+            color: node.repository.primaryLanguage.color || ''
+          } : null,
+          stargazerCount: node.repository.stargazerCount,
           lastActivity: prDate,
           activitySummary: {
             prCount: 0,

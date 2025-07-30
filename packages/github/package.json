@@ -2,10 +2,11 @@
   "name": "@workspace/github",
   "type": "module",
   "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
-    "build": "tsc --build"
+    "build": "npm run codegen && tsc --build",
+    "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
     "@octokit/graphql-schema": "^15.26.0",
@@ -13,6 +14,8 @@
     "@workspace/logger": "*"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/client-preset": "^4.8.3",
     "@types/node": "^24.1.0",
     "typescript": "^5.8.3"
   }
