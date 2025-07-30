@@ -1,4 +1,4 @@
-import { fetchGitHubActivity, type RepoActivity } from '../../src/services/github'
+import { fetchGitHubActivity, type RepoActivity } from '@bendrucker/github'
 
 interface Env {
   GITHUB_TOKEN: string
@@ -14,7 +14,10 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
     throw new Error('GITHUB_TOKEN environment variable is required')
   }
 
-  const activityData = await fetchGitHubActivity(env.GITHUB_TOKEN)
+  const activityData = await fetchGitHubActivity(env.GITHUB_TOKEN, {
+    username: 'bendrucker',
+    title: 'Ben Drucker'
+  })
 
   // Store in KV with TTL of 7 days (longer than cron interval for resilience)
   await env.GITHUB_KV.put(

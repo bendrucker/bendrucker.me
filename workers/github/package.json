@@ -1,0 +1,20 @@
+{
+  "name": "github-worker",
+  "type": "module", 
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev --test-scheduled",
+    "deploy": "wrangler deploy",
+    "types:generate": "wrangler types"
+  },
+  "dependencies": {
+    "@bendrucker/github": "*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250107.0",
+    "@types/node": "^24.1.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.26.0"
+  }
+}
