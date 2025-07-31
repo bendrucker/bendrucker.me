@@ -1,4 +1,4 @@
-import { graphql } from '@octokit/graphql'
+import { graphql, gql } from '@octokit/graphql'
 import { createTokenAuth } from '@octokit/auth-token'
 import type { 
   Repository,
@@ -36,8 +36,6 @@ export interface GitHubConfig {
   username: string
   title: string
 }
-
-const gql = (strings: TemplateStringsArray) => strings.raw[0]
 
 const GET_USER_CONTRIBUTIONS_QUERY = gql`
 query GetUserContributions($username: String!, $from: DateTime!, $to: DateTime!, $issueSearchQuery: String!, $mergedPRSearchQuery: String!) {
