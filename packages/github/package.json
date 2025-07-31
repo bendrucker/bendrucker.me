@@ -2,14 +2,14 @@
   "name": "@workspace/github",
   "type": "module",
   "private": true,
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "npm run codegen && tsc --build",
     "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
-    "@octokit/rest": "^22.0.0",
+    "@octokit/graphql": "^9.0.1",
     "@workspace/logger": "*"
   },
   "devDependencies": {

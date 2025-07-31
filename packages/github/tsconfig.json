@@ -4,7 +4,7 @@
     { "path": "../logger" }
   ],
   "compilerOptions": {
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "./dist"
   },
   "exclude": ["codegen.ts"]

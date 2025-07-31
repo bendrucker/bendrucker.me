@@ -1,11 +1,8 @@
-import { Octokit } from '@octokit/rest'
+import { graphql } from '@octokit/graphql' 
 import { logger } from '@workspace/logger'
 import type { GetUserContributionsQuery, GetUserContributionsQueryVariables } from './gql/graphql'
-
-// Re-export Octokit types for convenience
-export type { 
-  RestEndpointMethodTypes
-} from '@octokit/rest'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
 // Our business logic types
 export interface ActivitySummary {
@@ -36,176 +33,18 @@ export interface GitHubConfig {
   title: string
 }
 
-// GraphQL query string - types are generated from separate .graphql file
-const GET_USER_CONTRIBUTIONS_QUERY = `
-  query GetUserContributions($username: String!, $from: DateTime!, $to: DateTime!, $issueSearchQuery: String!, $mergedPRSearchQuery: String!) {
-    user(login: $username) {
-      contributionsCollection(from: $from, to: $to) {
-        commitContributionsByRepository(maxRepositories: 100) {
-          repository {
-            name
-            owner { login }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage { name color }
-          }
-          contributions(first: 100) {
-            totalCount
-            nodes {
-              commitCount
-              occurredAt
-            }
-          }
-        }
-        pullRequestContributionsByRepository(maxRepositories: 100) {
-          repository {
-            name
-            owner { login }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage { name color }
-          }
-          contributions(first: 100) {
-            nodes {
-              occurredAt
-              pullRequest {
-                number
-                title
-                url
-                state
-                merged
-              }
-            }
-          }
-        }
-        pullRequestReviewContributionsByRepository(maxRepositories: 100) {
-          repository {
-            name
-            owner { login }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage { name color }
-          }
-          contributions(first: 100) {
-            nodes {
-              occurredAt
-              pullRequest {
-                number
-                title
-                url
-                author { login __typename }
-              }
-              pullRequestReview { url }
-            }
-          }
-        }
-        issueContributionsByRepository(maxRepositories: 100) {
-          repository {
-            name
-            owner { login }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage { name color }
-          }
-          contributions(first: 100) {
-            nodes {
-              occurredAt
-              issue {
-                number
-                title
-                url
-              }
-            }
-          }
-        }
-        repositoryContributions(first: 100) {
-          nodes {
-            repository {
-              name
-              owner { login }
-              description
-              url
-              createdAt
-              isFork
-              stargazerCount
-              primaryLanguage { name color }
-            }
-            occurredAt
-          }
-        }
-      }
-    }
+// Load GraphQL query from file (used for both codegen and runtime)
+const GET_USER_CONTRIBUTIONS_QUERY = readFileSync(
+  resolve(__dirname, 'queries/getUserContributions.graphql'), 
+  'utf-8'
+)
 
-    # Search for issues involving the user
-    search(query: $issueSearchQuery, type: ISSUE, first: 100) {
-      nodes {
-        ... on Issue {
-          number
-          title
-          url
-          createdAt
-          repository {
-            name
-            owner { login }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage { name color }
-          }
-        }
-      }
-    }
-    
-    # Search for PRs merged by the user (not authored by them)
-    mergedPRs: search(query: $mergedPRSearchQuery, type: ISSUE, first: 100) {
-      nodes {
-        ... on PullRequest {
-          number
-          title
-          url
-          createdAt
-          merged
-          mergedBy { login }
-          author { login }
-          repository {
-            name
-            owner { login }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage { name color }
-          }
-        }
-      }
-    }
-  }
-`
-
-export async function fetchGitHubActivity(token: string, config: GitHubConfig): Promise<RepoActivity[]> {
-  if (!token) {
-    throw new Error('GitHub token is required')
-  }
-
-  // Initialize Octokit client
-  const octokit = new Octokit({
-    auth: token,
-    userAgent: `${config.title} Activity Fetcher`,
+export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoActivity[]> {
+  // GraphQL client relies on GITHUB_TOKEN environment variable
+  const graphqlWithAuth = graphql.defaults({
+    headers: {
+      'user-agent': `${config.title} Activity Fetcher`,
+    },
   })
 
   const now = new Date()
@@ -228,8 +67,8 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
   }
 
   try {
-    // Use Octokit's graphql method with typed query
-    const data = await octokit.graphql(GET_USER_CONTRIBUTIONS_QUERY, variables) as GetUserContributionsQuery
+    // Use @octokit/graphql with generated typed query document
+    const data = await graphqlWithAuth(GET_USER_CONTRIBUTIONS_QUERY, variables) as GetUserContributionsQuery
 
     if (!data?.user?.contributionsCollection) {
       throw new Error('Invalid response structure from GitHub API')
@@ -255,7 +94,7 @@ export async function fetchGitHubActivity(token: string, config: GitHubConfig): 
     return result
   } catch (error) {
     if (error instanceof Error) {
-      logger.error('GitHub API request failed via Octokit', {
+      logger.error('GitHub GraphQL API request failed', {
         error: error.message,
         username: config.username
       })
