@@ -1,4 +1,5 @@
 import { graphql } from '@octokit/graphql'
+import { createTokenAuth } from '@octokit/auth-token'
 import type { 
   Repository,
   ContributionsCollection,
@@ -38,20 +39,17 @@ export interface GitHubConfig {
   title: string
 }
 
-// Load GraphQL query from file (used for both codegen and runtime)
 const GET_USER_CONTRIBUTIONS_QUERY = readFileSync(
   resolve(__dirname, 'queries/getUserContributions.graphql'),
   'utf-8'
 )
 
-// GraphQL response types - using native Octokit schema types  
 interface GraphQLResponse {
   user: Pick<User, 'contributionsCollection'> | null
   search: SearchResultItemConnection | null
   mergedPRs: SearchResultItemConnection | null
 }
 
-// Helper function to create a repository activity entry
 function createRepoActivity(repository: Repository, initialActivity: Date = new Date(0)): RepoActivity {
   return {
     name: repository.name,
@@ -75,7 +73,6 @@ function createRepoActivity(repository: Repository, initialActivity: Date = new 
   }
 }
 
-// Helper function to get or create repository in map
 function getOrCreateRepo(
   repoMap: Map<string, RepoActivity>,
   repository: Repository,
@@ -90,9 +87,13 @@ function getOrCreateRepo(
   return repoMap.get(repoKey)!
 }
 
-export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoActivity[]> {
-  // GraphQL client relies on GITHUB_TOKEN environment variable
+export async function fetchGitHubActivity(token: string, config: GitHubConfig): Promise<RepoActivity[]> {
+  const auth = createTokenAuth(token)
+  
   const graphqlWithAuth = graphql.defaults({
+    request: {
+      hook: auth.hook,
+    },
     headers: {
       'user-agent': `${config.title} Activity Fetcher`,
     },
@@ -118,7 +119,6 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
   }
 
   try {
-    // Use @octokit/graphql with typed query document
     const data = await graphqlWithAuth(GET_USER_CONTRIBUTIONS_QUERY, variables) as GraphQLResponse
 
     if (!data?.user?.contributionsCollection) {
@@ -163,14 +163,11 @@ function aggregateActivityByRepository(
 ): RepoActivity[] {
   const repoMap = new Map<string, RepoActivity>()
 
-  // Process commit contributions (direct pushes)
   contributions.commitContributionsByRepository.forEach((repoContrib) => {
-    // Skip forked repositories
     if (repoContrib.repository.isFork) return
 
     if (repoContrib.contributions.totalCount === 0) return
 
-    // Get the most recent commit activity
     let lastCommitDate = new Date(0)
     repoContrib.contributions.nodes?.forEach((node) => {
       if (node) {
@@ -183,15 +180,12 @@ function aggregateActivityByRepository(
 
     const repo = getOrCreateRepo(repoMap, repoContrib.repository, lastCommitDate)
 
-    // Update last activity if commits are more recent
     if (lastCommitDate > repo.lastActivity) {
       repo.lastActivity = lastCommitDate
     }
   })
 
-  // Process PR contributions
   contributions.pullRequestContributionsByRepository.forEach((repoContrib) => {
-    // Skip forked repositories
     if (repoContrib.repository.isFork) return
 
     if (!repoContrib.contributions.nodes?.length) return
@@ -199,13 +193,11 @@ function aggregateActivityByRepository(
     const repo = getOrCreateRepo(repoMap, repoContrib.repository)
     repo.activitySummary.prCount += repoContrib.contributions.nodes.filter((n) => n !== null).length
 
-    // Check for merged PRs
     const hasMergedPRs = repoContrib.contributions.nodes.some((contrib) => contrib?.pullRequest.merged)
     if (hasMergedPRs) {
       repo.activitySummary.hasMergedPRs = true
     }
 
-    // Update last activity
     repoContrib.contributions.nodes.forEach((contrib) => {
       if (contrib) {
         const contributionDate = new Date(contrib.occurredAt)
@@ -216,12 +208,9 @@ function aggregateActivityByRepository(
     })
   })
 
-  // Process PR review contributions
   contributions.pullRequestReviewContributionsByRepository.forEach((repoContrib) => {
-    // Skip forked repositories
     if (repoContrib.repository.isFork) return
 
-    // Filter out self-reviews and bot PRs
     const validReviews = repoContrib.contributions.nodes?.filter((contrib) =>
       contrib &&
       contrib.pullRequest.author?.login !== username &&
@@ -233,7 +222,6 @@ function aggregateActivityByRepository(
     const repo = getOrCreateRepo(repoMap, repoContrib.repository)
     repo.activitySummary.reviewCount += validReviews.length
 
-    // Update last activity (only from valid reviews)
     validReviews.forEach((contrib) => {
       if (contrib) {
         const contributionDate = new Date(contrib.occurredAt)
@@ -244,18 +232,15 @@ function aggregateActivityByRepository(
     })
   })
 
-  // Process repository contributions (new repositories)
   contributions.repositoryContributions.nodes?.forEach((contribution) => {
     if (!contribution) return
 
-    // Skip forked repositories
     if (contribution.repository.isFork) return
 
     const contributionDate = new Date(contribution.occurredAt)
     getOrCreateRepo(repoMap, contribution.repository, contributionDate)
   })
 
-  // Process issues from search (issues where user is involved)
   if (issueSearch?.nodes) {
     issueSearch.nodes.forEach(node => {
       if (!node || node.__typename !== 'Issue') return
@@ -263,73 +248,59 @@ function aggregateActivityByRepository(
 
       const issueDate = new Date(node.createdAt)
 
-      // Skip forked repositories
-      if (node.repository.isFork) return
+        if (node.repository.isFork) return
 
       const repo = getOrCreateRepo(repoMap, node.repository, issueDate)
       repo.activitySummary.issueCount++
 
-      // Update last activity if this issue is more recent
       if (issueDate > repo.lastActivity) {
         repo.lastActivity = issueDate
       }
     })
   }
 
-  // Process PRs merged by the user (only for repos they own)
   if (mergedPRSearch?.nodes && username) {
     mergedPRSearch.nodes.forEach(node => {
       if (!node || node.__typename !== 'PullRequest') return
       if (!node.repository || !node.number || !node.title || !node.url || !node.createdAt) return
 
-      // Skip if not actually merged or merged by someone else
       if (!node.merged || node.mergedBy?.login !== username) return
 
-      // Skip if authored by the user (already counted in PR contributions)
       if (node.author?.login === username) return
 
-      // Skip forked repositories
-      if (node.repository.isFork) return
+        if (node.repository.isFork) return
 
-      // Only count merges for repos owned by the user
       if (node.repository.owner.login !== username) return
 
       const prDate = new Date(node.createdAt)
       const repo = getOrCreateRepo(repoMap, node.repository, prDate)
-      repo.activitySummary.mergeCount++ // Count merged PRs separately
+      repo.activitySummary.mergeCount++
       repo.activitySummary.hasMergedPRs = true
 
-      // Update last activity if this PR is more recent
       if (prDate > repo.lastActivity) {
         repo.lastActivity = prDate
       }
     })
   }
 
-  // Convert to array and apply filters
   return Array.from(repoMap.values())
     .filter(repo => {
-      // Always include repos where we have commit activity (direct pushes)
-      // These are detected by having a repo entry but no PR/review/issue/merge counts
       const hasOnlyCommits = repo.activitySummary.prCount === 0 &&
                              repo.activitySummary.reviewCount === 0 &&
                              repo.activitySummary.mergeCount === 0 &&
                              repo.activitySummary.issueCount === 0
       if (hasOnlyCommits) {
-        return true // Include repos with direct commits
+        return true
       }
 
-      // Filter out repositories with only issues (no PRs, reviews, or merges)
       if (repo.activitySummary.prCount === 0 && repo.activitySummary.reviewCount === 0 && repo.activitySummary.mergeCount === 0) {
         return false
       }
 
-      // If repository has PRs but no merged PRs and no reviews or merges, exclude it
       if (repo.activitySummary.prCount > 0 && !repo.activitySummary.hasMergedPRs && repo.activitySummary.reviewCount === 0 && repo.activitySummary.mergeCount === 0) {
         return false
       }
 
-      // Include repositories with merged PRs, reviews, or merges
       return repo.activitySummary.hasMergedPRs || repo.activitySummary.reviewCount > 0 || repo.activitySummary.mergeCount > 0
     })
     .sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime())
