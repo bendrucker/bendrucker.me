@@ -1,6 +1,5 @@
 import { graphql } from '@octokit/graphql' 
 import { logger } from '@workspace/logger'
-import type { GetUserContributionsQuery, GetUserContributionsQueryVariables } from './gql/graphql'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
@@ -39,8 +38,107 @@ const GET_USER_CONTRIBUTIONS_QUERY = readFileSync(
   'utf-8'
 )
 
+// GraphQL response types
+interface Repository {
+  name: string
+  owner: { login: string }
+  description: string | null
+  url: string
+  createdAt: string
+  isFork: boolean
+  stargazerCount: number
+  primaryLanguage: { name: string; color: string } | null
+}
+
+interface ContributionsCollection {
+  commitContributionsByRepository: Array<{
+    repository: Repository
+    contributions: {
+      totalCount: number
+      nodes: Array<{ commitCount: number; occurredAt: string } | null> | null
+    }
+  }>
+  pullRequestContributionsByRepository: Array<{
+    repository: Repository
+    contributions: {
+      nodes: Array<{
+        occurredAt: string
+        pullRequest: { number: number; title: string; url: string; state: string; merged: boolean }
+      } | null> | null
+    }
+  }>
+  pullRequestReviewContributionsByRepository: Array<{
+    repository: Repository
+    contributions: {
+      nodes: Array<{
+        occurredAt: string
+        pullRequest: {
+          number: number
+          title: string
+          url: string
+          author: { login: string; __typename: string } | null
+        }
+        pullRequestReview: { url: string }
+      } | null> | null
+    }
+  }>
+  issueContributionsByRepository: Array<{
+    repository: Repository
+    contributions: {
+      nodes: Array<{
+        occurredAt: string
+        issue: { number: number; title: string; url: string }
+      } | null> | null
+    }
+  }>
+  repositoryContributions: {
+    nodes: Array<{
+      repository: Repository
+      occurredAt: string
+    } | null> | null
+  }
+}
+
+interface GraphQLResponse {
+  user: {
+    contributionsCollection: ContributionsCollection
+  } | null
+  search: {
+    nodes: Array<{
+      __typename: string
+      number: number
+      title: string
+      url: string
+      createdAt: string
+      repository: Repository
+    } | null> | null
+  } | null
+  mergedPRs: {
+    nodes: Array<{
+      __typename: string
+      number: number
+      title: string
+      url: string
+      createdAt: string
+      merged: boolean
+      mergedBy: { login: string } | null
+      author: { login: string } | null
+      repository: Repository
+    } | null> | null
+  } | null
+}
+
+interface QueryVariables {
+  username: string
+  from: string
+  to: string
+  issueSearchQuery: string
+  mergedPRSearchQuery: string
+  [key: string]: string
+}
+
 // Helper function to create a repository activity entry
-function createRepoActivity(repository: any, initialActivity: Date = new Date(0)): RepoActivity {
+function createRepoActivity(repository: Repository, initialActivity: Date = new Date(0)): RepoActivity {
   return {
     name: repository.name,
     owner: repository.owner.login,
@@ -66,7 +164,7 @@ function createRepoActivity(repository: any, initialActivity: Date = new Date(0)
 // Helper function to get or create repository in map
 function getOrCreateRepo(
   repoMap: Map<string, RepoActivity>, 
-  repository: any, 
+  repository: Repository, 
   initialActivity?: Date
 ): RepoActivity {
   const repoKey = `${repository.owner.login}/${repository.name}`
@@ -97,7 +195,7 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
     }
   })
 
-  const variables: GetUserContributionsQueryVariables = {
+  const variables: QueryVariables = {
     username: config.username,
     from: start.toISOString(),
     to: now.toISOString(),
@@ -106,8 +204,8 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
   }
 
   try {
-    // Use @octokit/graphql with generated typed query document
-    const data = await graphqlWithAuth(GET_USER_CONTRIBUTIONS_QUERY, variables) as GetUserContributionsQuery
+    // Use @octokit/graphql with typed query document
+    const data = await graphqlWithAuth(GET_USER_CONTRIBUTIONS_QUERY, variables) as GraphQLResponse
 
     if (!data?.user?.contributionsCollection) {
       throw new Error('Invalid response structure from GitHub API')
@@ -144,9 +242,9 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
 }
 
 function aggregateActivityByRepository(
-  contributions: NonNullable<GetUserContributionsQuery['user']>['contributionsCollection'], 
-  issueSearch?: GetUserContributionsQuery['search'], 
-  mergedPRSearch?: GetUserContributionsQuery['mergedPRs'], 
+  contributions: ContributionsCollection, 
+  issueSearch?: GraphQLResponse['search'], 
+  mergedPRSearch?: GraphQLResponse['mergedPRs'], 
   username?: string
 ): RepoActivity[] {
   const repoMap = new Map<string, RepoActivity>()

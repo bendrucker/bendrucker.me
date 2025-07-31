@@ -5,16 +5,14 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npm run codegen && tsc --build",
-    "codegen": "graphql-codegen --config codegen.ts"
+    "build": "tsc --build"
   },
   "dependencies": {
     "@octokit/graphql": "^9.0.1",
+    "@octokit/graphql-schema": "^15.26.0",
     "@workspace/logger": "*"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "^5.0.7",
-    "@graphql-codegen/client-preset": "^4.8.3",
     "@types/node": "^24.1.0",
     "typescript": "^5.8.3"
   }
