@@ -9,7 +9,7 @@ tags:
 description: The intro to my brief but very worthwhile discussion series with student entrepreneurs.
 ---
 
-*"Entrepreneurship is a mindset, not a job title,"* quipped Jack Dorsey in front of a captivated audience earlier this month at the NYU Entrepreneurship Festival. This is hardly a novel insight—it was what came next that really struck me. He explained that entrepreneurship and startups weren't inextricably linked—*"You can be an entrepreneur in a school or anywhere else,"* he told us. The moment he mentioned schools, it clicked.
+_"Entrepreneurship is a mindset, not a job title,"_ quipped Jack Dorsey in front of a captivated audience earlier this month at the NYU Entrepreneurship Festival. This is hardly a novel insight—it was what came next that really struck me. He explained that entrepreneurship and startups weren't inextricably linked—_"You can be an entrepreneur in a school or anywhere else,"_ he told us. The moment he mentioned schools, it clicked.
 
 The more time I spend engaging with the New York City startup community, the more frustrated I become with Columbia and its failure to take advantage of the explosive growth of technology in New York City. Columbia may be one of the worst offenders, but this is a problem that has plagued virtually every major university. The most desirable job candidates are being snapped up by relatively small companies and courted for their ability to code, lead, and think critically about how to solve real problems. With rare exceptions, the best universities are ill-equipped to develop these skills.
 

@@ -12,7 +12,7 @@ The October 21st deadline for Y Combinator’s Winter 2014 class came and went, 
 
 The simple reason I chose not to apply for the winter class is that my company is far from ready. I need to solidify the team and release a significantly different second iteration of our product. Without making major progress on those two issues, I didn’t think we would be accepted. But why not just apply anyway? Surely I could sacrifice an hour even for a very slim chance of acceptance.
 
-The real reason I didn’t apply is that you give up far more than just that one hour to an application. I was fortunate to learn this lesson early from a drawn out and painful college admissions experience. My acceptance email from Columbia (off the wait list) came June 29, 2011, a full three months after everyone else opened their fat envelopes and bought their sweatshirts. It was not so much the feeling of helplessness that was so crushing, but the feeling of *hopefulness*.
+The real reason I didn’t apply is that you give up far more than just that one hour to an application. I was fortunate to learn this lesson early from a drawn out and painful college admissions experience. My acceptance email from Columbia (off the wait list) came June 29, 2011, a full three months after everyone else opened their fat envelopes and bought their sweatshirts. It was not so much the feeling of helplessness that was so crushing, but the feeling of _hopefulness_.
 
 ![Still the most exciting email I've ever received](/images/columbia-admissions-email.png)
 

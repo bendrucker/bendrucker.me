@@ -6,14 +6,6 @@ const currentUrlPath = Astro.url.pathname.replace(/\/+$/, "");
 // eg: /tags/tailwindcss => ['tags', 'tailwindcss']
 const breadcrumbList = currentUrlPath.split("/").slice(1);
 
-// Convert specific breadcrumb names to title case
-const toTitleCase = (str: string) => {
-  const titleCaseMap: Record<string, string> = {
-    'code': 'Code'
-  };
-  return titleCaseMap[str] || str;
-};
-
 // if breadcrumb is Home > Posts > 1 <etc>
 // replace Posts with Posts (page number)
 if (breadcrumbList[0] === "posts") {

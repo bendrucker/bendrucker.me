@@ -5,7 +5,7 @@ title: "About"
 
 ## 💻 Code
 
-You can find my programming projects on [GitHub](https://github.com/bendrucker). I work on a variety of open source projects, mainly in Go and JavaScript. You can also find a [recent code activity index](/activity/code) on this site, which shows repositories where I am contributing and a summary of contributions by type. 
+You can find my programming projects on [GitHub](https://github.com/bendrucker). I work on a variety of open source projects, mainly in Go and JavaScript. You can also find a [recent code activity index](/activity/code) on this site, which shows repositories where I am contributing and a summary of contributions by type.
 
 ## 🚴 Cycling
 
