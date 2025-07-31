@@ -37,7 +37,167 @@ export interface GitHubConfig {
   title: string
 }
 
-import GET_USER_CONTRIBUTIONS_QUERY from './queries/getUserContributions.graphql?raw'
+const gql = (strings: TemplateStringsArray) => strings.raw[0]
+
+const GET_USER_CONTRIBUTIONS_QUERY = gql`
+query GetUserContributions($username: String!, $from: DateTime!, $to: DateTime!, $issueSearchQuery: String!, $mergedPRSearchQuery: String!) {
+  user(login: $username) {
+    contributionsCollection(from: $from, to: $to) {
+      commitContributionsByRepository(maxRepositories: 100) {
+        repository {
+          name
+          owner { login }
+          description
+          url
+          createdAt
+          isFork
+          stargazerCount
+          primaryLanguage { name color }
+        }
+        contributions(first: 100) {
+          totalCount
+          nodes {
+            commitCount
+            occurredAt
+          }
+        }
+      }
+      pullRequestContributionsByRepository(maxRepositories: 100) {
+        repository {
+          name
+          owner { login }
+          description
+          url
+          createdAt
+          isFork
+          stargazerCount
+          primaryLanguage { name color }
+        }
+        contributions(first: 100) {
+          nodes {
+            occurredAt
+            pullRequest {
+              number
+              title
+              url
+              state
+              merged
+            }
+          }
+        }
+      }
+      pullRequestReviewContributionsByRepository(maxRepositories: 100) {
+        repository {
+          name
+          owner { login }
+          description
+          url
+          createdAt
+          isFork
+          stargazerCount
+          primaryLanguage { name color }
+        }
+        contributions(first: 100) {
+          nodes {
+            occurredAt
+            pullRequest {
+              number
+              title
+              url
+              author { login __typename }
+            }
+            pullRequestReview { url }
+          }
+        }
+      }
+      issueContributionsByRepository(maxRepositories: 100) {
+        repository {
+          name
+          owner { login }
+          description
+          url
+          createdAt
+          isFork
+          stargazerCount
+          primaryLanguage { name color }
+        }
+        contributions(first: 100) {
+          nodes {
+            occurredAt
+            issue {
+              number
+              title
+              url
+            }
+          }
+        }
+      }
+      repositoryContributions(first: 100) {
+        nodes {
+          repository {
+            name
+            owner { login }
+            description
+            url
+            createdAt
+            isFork
+            stargazerCount
+            primaryLanguage { name color }
+          }
+          occurredAt
+        }
+      }
+    }
+  }
+
+  # Search for issues involving the user
+  search(query: $issueSearchQuery, type: ISSUE, first: 100) {
+    nodes {
+      ... on Issue {
+        number
+        title
+        url
+        createdAt
+        repository {
+          name
+          owner { login }
+          description
+          url
+          createdAt
+          isFork
+          stargazerCount
+          primaryLanguage { name color }
+        }
+      }
+    }
+  }
+  
+  # Search for PRs merged by the user (not authored by them)
+  mergedPRs: search(query: $mergedPRSearchQuery, type: ISSUE, first: 100) {
+    nodes {
+      ... on PullRequest {
+        number
+        title
+        url
+        createdAt
+        merged
+        mergedBy { login }
+        author { login }
+        repository {
+          name
+          owner { login }
+          description
+          url
+          createdAt
+          isFork
+          stargazerCount
+          primaryLanguage { name color }
+        }
+      }
+    }
+  }
+}
+`
 
 interface GraphQLResponse {
   user: Pick<User, 'contributionsCollection'> | null
