@@ -8,7 +8,8 @@ import type {
 } from '@octokit/graphql-schema'
 import { logger } from '@workspace/logger'
 import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
 
 // Our business logic types
 export interface ActivitySummary {
@@ -38,6 +39,8 @@ export interface GitHubConfig {
   username: string
   title: string
 }
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const GET_USER_CONTRIBUTIONS_QUERY = readFileSync(
   resolve(__dirname, 'queries/getUserContributions.graphql'),
