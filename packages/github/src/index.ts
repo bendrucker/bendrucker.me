@@ -1,4 +1,8 @@
-import { graphql } from '@octokit/graphql' 
+import { graphql } from '@octokit/graphql'
+import type { 
+  Repository,
+  ContributionsCollection
+} from '@octokit/graphql-schema'
 import { logger } from '@workspace/logger'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
@@ -34,71 +38,11 @@ export interface GitHubConfig {
 
 // Load GraphQL query from file (used for both codegen and runtime)
 const GET_USER_CONTRIBUTIONS_QUERY = readFileSync(
-  resolve(__dirname, 'queries/getUserContributions.graphql'), 
+  resolve(__dirname, 'queries/getUserContributions.graphql'),
   'utf-8'
 )
 
-// GraphQL response types
-interface Repository {
-  name: string
-  owner: { login: string }
-  description: string | null
-  url: string
-  createdAt: string
-  isFork: boolean
-  stargazerCount: number
-  primaryLanguage: { name: string; color: string } | null
-}
-
-interface ContributionsCollection {
-  commitContributionsByRepository: Array<{
-    repository: Repository
-    contributions: {
-      totalCount: number
-      nodes: Array<{ commitCount: number; occurredAt: string } | null> | null
-    }
-  }>
-  pullRequestContributionsByRepository: Array<{
-    repository: Repository
-    contributions: {
-      nodes: Array<{
-        occurredAt: string
-        pullRequest: { number: number; title: string; url: string; state: string; merged: boolean }
-      } | null> | null
-    }
-  }>
-  pullRequestReviewContributionsByRepository: Array<{
-    repository: Repository
-    contributions: {
-      nodes: Array<{
-        occurredAt: string
-        pullRequest: {
-          number: number
-          title: string
-          url: string
-          author: { login: string; __typename: string } | null
-        }
-        pullRequestReview: { url: string }
-      } | null> | null
-    }
-  }>
-  issueContributionsByRepository: Array<{
-    repository: Repository
-    contributions: {
-      nodes: Array<{
-        occurredAt: string
-        issue: { number: number; title: string; url: string }
-      } | null> | null
-    }
-  }>
-  repositoryContributions: {
-    nodes: Array<{
-      repository: Repository
-      occurredAt: string
-    } | null> | null
-  }
-}
-
+// GraphQL response types - using native Octokit schema types
 interface GraphQLResponse {
   user: {
     contributionsCollection: ContributionsCollection
@@ -128,15 +72,6 @@ interface GraphQLResponse {
   } | null
 }
 
-interface QueryVariables {
-  username: string
-  from: string
-  to: string
-  issueSearchQuery: string
-  mergedPRSearchQuery: string
-  [key: string]: string
-}
-
 // Helper function to create a repository activity entry
 function createRepoActivity(repository: Repository, initialActivity: Date = new Date(0)): RepoActivity {
   return {
@@ -163,16 +98,16 @@ function createRepoActivity(repository: Repository, initialActivity: Date = new 
 
 // Helper function to get or create repository in map
 function getOrCreateRepo(
-  repoMap: Map<string, RepoActivity>, 
-  repository: Repository, 
+  repoMap: Map<string, RepoActivity>,
+  repository: Repository,
   initialActivity?: Date
 ): RepoActivity {
   const repoKey = `${repository.owner.login}/${repository.name}`
-  
+
   if (!repoMap.has(repoKey)) {
     repoMap.set(repoKey, createRepoActivity(repository, initialActivity))
   }
-  
+
   return repoMap.get(repoKey)!
 }
 
@@ -186,7 +121,7 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
 
   const now = new Date()
   const start = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000))
-  
+
   logger.debug('Starting GitHub GraphQL request via Octokit', {
     username: config.username,
     timeframe: {
@@ -195,7 +130,7 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
     }
   })
 
-  const variables: QueryVariables = {
+  const variables = {
     username: config.username,
     from: start.toISOString(),
     to: now.toISOString(),
@@ -216,7 +151,7 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
     const mergedPRSearch = data.mergedPRs
 
     const result = aggregateActivityByRepository(contributionsCollection, issueSearch, mergedPRSearch, config.username)
-    
+
     logger.info('GitHub activity processing completed', {
       username: config.username,
       repositoryCount: result.length,
@@ -227,7 +162,7 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
         merges: acc.merges + repo.activitySummary.mergeCount
       }), { prs: 0, reviews: 0, issues: 0, merges: 0 })
     })
-    
+
     return result
   } catch (error) {
     if (error instanceof Error) {
@@ -242,9 +177,9 @@ export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoAct
 }
 
 function aggregateActivityByRepository(
-  contributions: ContributionsCollection, 
-  issueSearch?: GraphQLResponse['search'], 
-  mergedPRSearch?: GraphQLResponse['mergedPRs'], 
+  contributions: ContributionsCollection,
+  issueSearch?: GraphQLResponse['search'],
+  mergedPRSearch?: GraphQLResponse['mergedPRs'],
   username?: string
 ): RepoActivity[] {
   const repoMap = new Map<string, RepoActivity>()
@@ -253,9 +188,9 @@ function aggregateActivityByRepository(
   contributions.commitContributionsByRepository.forEach((repoContrib) => {
     // Skip forked repositories
     if (repoContrib.repository.isFork) return
-    
+
     if (repoContrib.contributions.totalCount === 0) return
-    
+
     // Get the most recent commit activity
     let lastCommitDate = new Date(0)
     repoContrib.contributions.nodes?.forEach((node) => {
@@ -266,9 +201,9 @@ function aggregateActivityByRepository(
         }
       }
     })
-    
+
     const repo = getOrCreateRepo(repoMap, repoContrib.repository, lastCommitDate)
-    
+
     // Update last activity if commits are more recent
     if (lastCommitDate > repo.lastActivity) {
       repo.lastActivity = lastCommitDate
@@ -333,7 +268,7 @@ function aggregateActivityByRepository(
   // Process repository contributions (new repositories)
   contributions.repositoryContributions.nodes?.forEach((contribution) => {
     if (!contribution) return
-    
+
     // Skip forked repositories
     if (contribution.repository.isFork) return
 
@@ -346,7 +281,7 @@ function aggregateActivityByRepository(
     issueSearch.nodes.forEach(node => {
       if (!node || node.__typename !== 'Issue') return
       if (!node.repository || !node.number || !node.title || !node.url || !node.createdAt) return
-      
+
       const issueDate = new Date(node.createdAt)
 
       // Skip forked repositories
@@ -367,24 +302,24 @@ function aggregateActivityByRepository(
     mergedPRSearch.nodes.forEach(node => {
       if (!node || node.__typename !== 'PullRequest') return
       if (!node.repository || !node.number || !node.title || !node.url || !node.createdAt) return
-      
+
       // Skip if not actually merged or merged by someone else
       if (!node.merged || node.mergedBy?.login !== username) return
-      
+
       // Skip if authored by the user (already counted in PR contributions)
       if (node.author?.login === username) return
-      
+
       // Skip forked repositories
       if (node.repository.isFork) return
-      
+
       // Only count merges for repos owned by the user
       if (node.repository.owner.login !== username) return
-      
+
       const prDate = new Date(node.createdAt)
       const repo = getOrCreateRepo(repoMap, node.repository, prDate)
       repo.activitySummary.mergeCount++ // Count merged PRs separately
       repo.activitySummary.hasMergedPRs = true
-      
+
       // Update last activity if this PR is more recent
       if (prDate > repo.lastActivity) {
         repo.lastActivity = prDate
@@ -397,14 +332,14 @@ function aggregateActivityByRepository(
     .filter(repo => {
       // Always include repos where we have commit activity (direct pushes)
       // These are detected by having a repo entry but no PR/review/issue/merge counts
-      const hasOnlyCommits = repo.activitySummary.prCount === 0 && 
-                             repo.activitySummary.reviewCount === 0 && 
+      const hasOnlyCommits = repo.activitySummary.prCount === 0 &&
+                             repo.activitySummary.reviewCount === 0 &&
                              repo.activitySummary.mergeCount === 0 &&
                              repo.activitySummary.issueCount === 0
       if (hasOnlyCommits) {
         return true // Include repos with direct commits
       }
-      
+
       // Filter out repositories with only issues (no PRs, reviews, or merges)
       if (repo.activitySummary.prCount === 0 && repo.activitySummary.reviewCount === 0 && repo.activitySummary.mergeCount === 0) {
         return false
