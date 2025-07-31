@@ -7,9 +7,6 @@ import type {
   SearchResultItemConnection
 } from '@octokit/graphql-schema'
 import { logger } from '@workspace/logger'
-import { readFileSync } from 'fs'
-import { resolve, dirname } from 'path'
-import { fileURLToPath } from 'url'
 
 // Our business logic types
 export interface ActivitySummary {
@@ -40,12 +37,7 @@ export interface GitHubConfig {
   title: string
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-
-const GET_USER_CONTRIBUTIONS_QUERY = readFileSync(
-  resolve(__dirname, 'queries/getUserContributions.graphql'),
-  'utf-8'
-)
+import GET_USER_CONTRIBUTIONS_QUERY from './queries/getUserContributions.graphql?raw'
 
 interface GraphQLResponse {
   user: Pick<User, 'contributionsCollection'> | null
