@@ -1,7 +1,9 @@
 import { graphql } from '@octokit/graphql'
 import type { 
   Repository,
-  ContributionsCollection
+  ContributionsCollection,
+  User,
+  SearchResultItemConnection
 } from '@octokit/graphql-schema'
 import { logger } from '@workspace/logger'
 import { readFileSync } from 'fs'
@@ -42,34 +44,11 @@ const GET_USER_CONTRIBUTIONS_QUERY = readFileSync(
   'utf-8'
 )
 
-// GraphQL response types - using native Octokit schema types
+// GraphQL response types - using native Octokit schema types  
 interface GraphQLResponse {
-  user: {
-    contributionsCollection: ContributionsCollection
-  } | null
-  search: {
-    nodes: Array<{
-      __typename: string
-      number: number
-      title: string
-      url: string
-      createdAt: string
-      repository: Repository
-    } | null> | null
-  } | null
-  mergedPRs: {
-    nodes: Array<{
-      __typename: string
-      number: number
-      title: string
-      url: string
-      createdAt: string
-      merged: boolean
-      mergedBy: { login: string } | null
-      author: { login: string } | null
-      repository: Repository
-    } | null> | null
-  } | null
+  user: Pick<User, 'contributionsCollection'> | null
+  search: SearchResultItemConnection | null
+  mergedPRs: SearchResultItemConnection | null
 }
 
 // Helper function to create a repository activity entry
