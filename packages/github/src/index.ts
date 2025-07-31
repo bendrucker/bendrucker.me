@@ -39,6 +39,45 @@ const GET_USER_CONTRIBUTIONS_QUERY = readFileSync(
   'utf-8'
 )
 
+// Helper function to create a repository activity entry
+function createRepoActivity(repository: any, initialActivity: Date = new Date(0)): RepoActivity {
+  return {
+    name: repository.name,
+    owner: repository.owner.login,
+    description: repository.description || '',
+    url: repository.url,
+    primaryLanguage: repository.primaryLanguage ? {
+      name: repository.primaryLanguage.name,
+      color: repository.primaryLanguage.color || ''
+    } : null,
+    stargazerCount: repository.stargazerCount,
+    lastActivity: initialActivity,
+    activitySummary: {
+      prCount: 0,
+      reviewCount: 0,
+      issueCount: 0,
+      mergeCount: 0,
+      hasMergedPRs: false
+    },
+    createdAt: new Date(repository.createdAt)
+  }
+}
+
+// Helper function to get or create repository in map
+function getOrCreateRepo(
+  repoMap: Map<string, RepoActivity>, 
+  repository: any, 
+  initialActivity?: Date
+): RepoActivity {
+  const repoKey = `${repository.owner.login}/${repository.name}`
+  
+  if (!repoMap.has(repoKey)) {
+    repoMap.set(repoKey, createRepoActivity(repository, initialActivity))
+  }
+  
+  return repoMap.get(repoKey)!
+}
+
 export async function fetchGitHubActivity(config: GitHubConfig): Promise<RepoActivity[]> {
   // GraphQL client relies on GITHUB_TOKEN environment variable
   const graphqlWithAuth = graphql.defaults({
@@ -117,9 +156,6 @@ function aggregateActivityByRepository(
     // Skip forked repositories
     if (repoContrib.repository.isFork) return
     
-    const repoKey = `${repoContrib.repository.owner.login}/${repoContrib.repository.name}`
-    const createdAt = new Date(repoContrib.repository.createdAt)
-    
     if (repoContrib.contributions.totalCount === 0) return
     
     // Get the most recent commit activity
@@ -133,33 +169,11 @@ function aggregateActivityByRepository(
       }
     })
     
-    if (!repoMap.has(repoKey)) {
-      repoMap.set(repoKey, {
-        name: repoContrib.repository.name,
-        owner: repoContrib.repository.owner.login,
-        description: repoContrib.repository.description || '',
-        url: repoContrib.repository.url,
-        primaryLanguage: repoContrib.repository.primaryLanguage ? {
-          name: repoContrib.repository.primaryLanguage.name,
-          color: repoContrib.repository.primaryLanguage.color || ''
-        } : null,
-        stargazerCount: repoContrib.repository.stargazerCount,
-        lastActivity: lastCommitDate,
-        activitySummary: {
-          prCount: 0,
-          reviewCount: 0,
-          issueCount: 0,
-          mergeCount: 0,
-          hasMergedPRs: false
-        },
-        createdAt
-      })
-    } else {
-      // Update last activity if commits are more recent
-      const repo = repoMap.get(repoKey)!
-      if (lastCommitDate > repo.lastActivity) {
-        repo.lastActivity = lastCommitDate
-      }
+    const repo = getOrCreateRepo(repoMap, repoContrib.repository, lastCommitDate)
+    
+    // Update last activity if commits are more recent
+    if (lastCommitDate > repo.lastActivity) {
+      repo.lastActivity = lastCommitDate
     }
   })
 
@@ -168,35 +182,9 @@ function aggregateActivityByRepository(
     // Skip forked repositories
     if (repoContrib.repository.isFork) return
 
-    const repoKey = `${repoContrib.repository.owner.login}/${repoContrib.repository.name}`
-    const createdAt = new Date(repoContrib.repository.createdAt)
-
     if (!repoContrib.contributions.nodes?.length) return
 
-    if (!repoMap.has(repoKey)) {
-      repoMap.set(repoKey, {
-        name: repoContrib.repository.name,
-        owner: repoContrib.repository.owner.login,
-        description: repoContrib.repository.description || '',
-        url: repoContrib.repository.url,
-        primaryLanguage: repoContrib.repository.primaryLanguage ? {
-          name: repoContrib.repository.primaryLanguage.name,
-          color: repoContrib.repository.primaryLanguage.color || ''
-        } : null,
-        stargazerCount: repoContrib.repository.stargazerCount,
-        lastActivity: new Date(0),
-        activitySummary: {
-          prCount: 0,
-          reviewCount: 0,
-          issueCount: 0,
-          mergeCount: 0,
-          hasMergedPRs: false
-        },
-        createdAt
-      })
-    }
-
-    const repo = repoMap.get(repoKey)!
+    const repo = getOrCreateRepo(repoMap, repoContrib.repository)
     repo.activitySummary.prCount += repoContrib.contributions.nodes.filter((n) => n !== null).length
 
     // Check for merged PRs
@@ -221,9 +209,6 @@ function aggregateActivityByRepository(
     // Skip forked repositories
     if (repoContrib.repository.isFork) return
 
-    const repoKey = `${repoContrib.repository.owner.login}/${repoContrib.repository.name}`
-    const createdAt = new Date(repoContrib.repository.createdAt)
-
     // Filter out self-reviews and bot PRs
     const validReviews = repoContrib.contributions.nodes?.filter((contrib) =>
       contrib &&
@@ -233,30 +218,7 @@ function aggregateActivityByRepository(
 
     if (validReviews.length === 0) return
 
-    if (!repoMap.has(repoKey)) {
-      repoMap.set(repoKey, {
-        name: repoContrib.repository.name,
-        owner: repoContrib.repository.owner.login,
-        description: repoContrib.repository.description || '',
-        url: repoContrib.repository.url,
-        primaryLanguage: repoContrib.repository.primaryLanguage ? {
-          name: repoContrib.repository.primaryLanguage.name,
-          color: repoContrib.repository.primaryLanguage.color || ''
-        } : null,
-        stargazerCount: repoContrib.repository.stargazerCount,
-        lastActivity: new Date(0),
-        activitySummary: {
-          prCount: 0,
-          reviewCount: 0,
-          issueCount: 0,
-          mergeCount: 0,
-          hasMergedPRs: false
-        },
-        createdAt
-      })
-    }
-
-    const repo = repoMap.get(repoKey)!
+    const repo = getOrCreateRepo(repoMap, repoContrib.repository)
     repo.activitySummary.reviewCount += validReviews.length
 
     // Update last activity (only from valid reviews)
@@ -277,32 +239,8 @@ function aggregateActivityByRepository(
     // Skip forked repositories
     if (contribution.repository.isFork) return
 
-    const repoKey = `${contribution.repository.owner.login}/${contribution.repository.name}`
-    const createdAt = new Date(contribution.repository.createdAt)
     const contributionDate = new Date(contribution.occurredAt)
-
-    if (!repoMap.has(repoKey)) {
-      repoMap.set(repoKey, {
-        name: contribution.repository.name,
-        owner: contribution.repository.owner.login,
-        description: contribution.repository.description || '',
-        url: contribution.repository.url,
-        primaryLanguage: contribution.repository.primaryLanguage ? {
-          name: contribution.repository.primaryLanguage.name,
-          color: contribution.repository.primaryLanguage.color || ''
-        } : null,
-        lastActivity: contributionDate,
-        activitySummary: {
-          prCount: 0,
-          reviewCount: 0,
-          issueCount: 0,
-          mergeCount: 0,
-          hasMergedPRs: false
-        },
-        createdAt,
-        stargazerCount: contribution.repository.stargazerCount
-      })
-    }
+    getOrCreateRepo(repoMap, contribution.repository, contributionDate)
   })
 
   // Process issues from search (issues where user is involved)
@@ -316,38 +254,12 @@ function aggregateActivityByRepository(
       // Skip forked repositories
       if (node.repository.isFork) return
 
-      const repoKey = `${node.repository.owner.login}/${node.repository.name}`
-      const repoCreatedAt = new Date(node.repository.createdAt)
+      const repo = getOrCreateRepo(repoMap, node.repository, issueDate)
+      repo.activitySummary.issueCount++
 
-      if (!repoMap.has(repoKey)) {
-        repoMap.set(repoKey, {
-          name: node.repository.name,
-          owner: node.repository.owner.login,
-          description: node.repository.description || '',
-          url: node.repository.url,
-          primaryLanguage: node.repository.primaryLanguage ? {
-            name: node.repository.primaryLanguage.name,
-            color: node.repository.primaryLanguage.color || ''
-          } : null,
-          lastActivity: issueDate,
-          activitySummary: {
-            prCount: 0,
-            reviewCount: 0,
-            issueCount: 1,
-            mergeCount: 0,
-            hasMergedPRs: false
-          },
-          createdAt: repoCreatedAt,
-          stargazerCount: node.repository.stargazerCount
-        })
-      } else {
-        const repo = repoMap.get(repoKey)!
-        repo.activitySummary.issueCount++
-
-        // Update last activity if this issue is more recent
-        if (issueDate > repo.lastActivity) {
-          repo.lastActivity = issueDate
-        }
+      // Update last activity if this issue is more recent
+      if (issueDate > repo.lastActivity) {
+        repo.lastActivity = issueDate
       }
     })
   }
@@ -370,39 +282,14 @@ function aggregateActivityByRepository(
       // Only count merges for repos owned by the user
       if (node.repository.owner.login !== username) return
       
-      const repoKey = `${node.repository.owner.login}/${node.repository.name}`
-      const repoCreatedAt = new Date(node.repository.createdAt)
       const prDate = new Date(node.createdAt)
+      const repo = getOrCreateRepo(repoMap, node.repository, prDate)
+      repo.activitySummary.mergeCount++ // Count merged PRs separately
+      repo.activitySummary.hasMergedPRs = true
       
-      if (!repoMap.has(repoKey)) {
-        repoMap.set(repoKey, {
-          name: node.repository.name,
-          owner: node.repository.owner.login,
-          description: node.repository.description || '',
-          url: node.repository.url,
-          primaryLanguage: node.repository.primaryLanguage ? {
-            name: node.repository.primaryLanguage.name,
-            color: node.repository.primaryLanguage.color || ''
-          } : null,
-          stargazerCount: node.repository.stargazerCount,
-          lastActivity: prDate,
-          activitySummary: {
-            prCount: 0,
-            reviewCount: 0,
-            issueCount: 0,
-            mergeCount: 1, // Count merged PRs separately
-            hasMergedPRs: true
-          },
-          createdAt: repoCreatedAt
-        })
-      } else {
-        const repo = repoMap.get(repoKey)!
-        repo.activitySummary.mergeCount++ // Count merged PRs separately
-        
-        // Update last activity if this PR is more recent
-        if (prDate > repo.lastActivity) {
-          repo.lastActivity = prDate
-        }
+      // Update last activity if this PR is more recent
+      if (prDate > repo.lastActivity) {
+        repo.lastActivity = prDate
       }
     })
   }
