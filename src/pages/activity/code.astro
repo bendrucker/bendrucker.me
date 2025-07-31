@@ -69,6 +69,10 @@ const formatDate = (date: Date) => {
   return format(date, 'MMM d');
 };
 
+const formatFullDate = (date: Date) => {
+  return format(date, 'PPPp'); // Full localized date and time format
+};
+
 const formatStarCount = (count: number) => {
   if (count < 1000) return count.toString();
   const thousands = Math.floor(count / 100) / 10;
@@ -213,7 +217,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                         </div>
                       </div>
                       <div class="text-sm text-foreground/60 flex-shrink-0 sm:text-right">
-                        <time datetime={repo.lastActivity.toISOString()}>
+                        <time datetime={repo.lastActivity.toISOString()} title={formatFullDate(repo.lastActivity)}>
                           {formatDate(repo.lastActivity)}
                         </time>
                       </div>
