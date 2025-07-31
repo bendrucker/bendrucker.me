@@ -1,8 +1,8 @@
-import { fetchGitHubActivity } from '../../packages/github'
+import { fetchGitHubActivity } from '@workspace/github'
 import { SITE } from '../config'
 import { logger } from '@workspace/logger'
 
-export * from '../../packages/github'
+export * from '@workspace/github'
 
 export function fetchGitHubActivityWithConfig(token: string) {
   logger.debug('Calling GitHub service with site configuration', {

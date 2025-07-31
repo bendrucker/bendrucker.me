@@ -8,6 +8,9 @@
     "build": "tsc --build"
   },
   "dependencies": {
+    "@octokit/auth-token": "^6.0.0",
+    "@octokit/graphql": "^9.0.1",
+    "@octokit/graphql-schema": "^15.26.0",
     "@workspace/logger": "*"
   },
   "devDependencies": {
