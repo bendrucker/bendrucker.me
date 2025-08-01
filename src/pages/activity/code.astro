@@ -73,6 +73,10 @@ const formatFullDate = (date: Date) => {
   return format(date, 'PPPp'); // Full localized date and time format (e.g., 'April 29th, 2022 at 11:15 PM')
 };
 
+const formatCreatedDate = (date: Date) => {
+  return `Created ${format(date, 'PPP')}`; // e.g., 'Created June 1st, 2025'
+};
+
 const formatStarCount = (count: number) => {
   if (count < 1000) return count.toString();
   const thousands = Math.floor(count / 100) / 10;
@@ -166,8 +170,11 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                               {repo.primaryLanguage.name}
                             </span>
                           )}
-                          {isRepoNew(repo) && (
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 bg-green-500/20 text-green-600">
+                          {isRepoNew(repo) && repo.createdAt && (
+                            <span 
+                              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 bg-green-500/20 text-green-600"
+                              title={formatCreatedDate(repo.createdAt)}
+                            >
                               New!
                             </span>
                           )}
