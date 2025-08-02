@@ -41,6 +41,22 @@ export interface GitHubConfig {
 const gql = (strings: TemplateStringsArray) => strings.raw[0];
 
 const GET_USER_CONTRIBUTIONS_QUERY = gql`
+  fragment RepositoryInfo on Repository {
+    name
+    owner {
+      login
+    }
+    description
+    url
+    createdAt
+    isFork
+    stargazerCount
+    primaryLanguage {
+      name
+      color
+    }
+  }
+
   query GetUserContributions(
     $username: String!
     $from: DateTime!
@@ -52,19 +68,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
       contributionsCollection(from: $from, to: $to) {
         commitContributionsByRepository(maxRepositories: 100) {
           repository {
-            name
-            owner {
-              login
-            }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            ...RepositoryInfo
           }
           contributions(first: 100) {
             totalCount
@@ -76,19 +80,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
         }
         pullRequestContributionsByRepository(maxRepositories: 100) {
           repository {
-            name
-            owner {
-              login
-            }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            ...RepositoryInfo
           }
           contributions(first: 100) {
             nodes {
@@ -105,19 +97,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
         }
         pullRequestReviewContributionsByRepository(maxRepositories: 100) {
           repository {
-            name
-            owner {
-              login
-            }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            ...RepositoryInfo
           }
           contributions(first: 100) {
             nodes {
@@ -139,19 +119,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
         }
         issueContributionsByRepository(maxRepositories: 100) {
           repository {
-            name
-            owner {
-              login
-            }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            ...RepositoryInfo
           }
           contributions(first: 100) {
             nodes {
@@ -167,19 +135,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
         repositoryContributions(first: 100) {
           nodes {
             repository {
-              name
-              owner {
-                login
-              }
-              description
-              url
-              createdAt
-              isFork
-              stargazerCount
-              primaryLanguage {
-                name
-                color
-              }
+              ...RepositoryInfo
             }
             occurredAt
           }
@@ -196,19 +152,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
           url
           createdAt
           repository {
-            name
-            owner {
-              login
-            }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            ...RepositoryInfo
           }
         }
       }
@@ -230,19 +174,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
             login
           }
           repository {
-            name
-            owner {
-              login
-            }
-            description
-            url
-            createdAt
-            isFork
-            stargazerCount
-            primaryLanguage {
-              name
-              color
-            }
+            ...RepositoryInfo
           }
         }
       }
