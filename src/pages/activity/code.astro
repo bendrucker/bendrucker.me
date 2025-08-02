@@ -1,9 +1,9 @@
 ---
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { formatDistanceToNowStrict, isToday, isYesterday, format } from 'date-fns';
 import Layout from "../../layouts/Layout.astro";
 import Main from "../../layouts/Main.astro";
+import ClientTime from "../../components/ClientTime.astro";
 import { SITE } from "../../config";
 import type { RepoActivity } from "../../services/github";
 import CircleDot from "@/assets/icons/circle-dot.svg";
@@ -54,27 +54,8 @@ const isRepoNew = (repo: RepoActivity) => {
   return repo.createdAt > threeMonthsAgo;
 };
 
-const formatDate = (date: Date) => {
-  // If today, show relative time
-  if (isToday(date)) {
-    return formatDistanceToNowStrict(date, { addSuffix: true });
-  }
-
-  // If yesterday, show "Yesterday"
-  if (isYesterday(date)) {
-    return 'Yesterday';
-  }
-
-  // Otherwise, show date
-  return format(date, 'MMM d');
-};
-
-const formatFullDate = (date: Date) => {
-  return format(date, 'PPPp'); // Full localized date and time format (e.g., 'April 29th, 2022 at 11:15 PM')
-};
-
 const formatCreatedDate = (date: Date) => {
-  return `Created ${format(date, 'PPP')}`; // e.g., 'Created June 1st, 2025'
+  return `Created ${date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`; // e.g., 'Created June 1, 2025'
 };
 
 const formatStarCount = (count: number) => {
@@ -224,9 +205,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                         </div>
                       </div>
                       <div class="text-sm text-foreground/60 flex-shrink-0 sm:text-right">
-                        <time datetime={repo.lastActivity.toISOString()} title={formatFullDate(repo.lastActivity)}>
-                          {formatDate(repo.lastActivity)}
-                        </time>
+                        <ClientTime datetime={repo.lastActivity} showRelative={true} size="sm" />
                       </div>
                     </div>
                   </div>
