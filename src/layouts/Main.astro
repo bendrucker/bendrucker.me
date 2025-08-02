@@ -22,9 +22,14 @@ const backUrl = SITE.showBackButton ? Astro.url.pathname : "/";
 
 <Breadcrumb />
 <main
-  data-backUrl={backUrl}
   id="main-content"
   class="mx-auto w-full max-w-app px-4 pb-4"
+  x-data="{
+    init() {
+      sessionStorage.setItem('backUrl', this.$el.dataset.backurl);
+    }
+  }"
+  data-backUrl={backUrl}
 >
   {
     "titleTransition" in props ? (
@@ -42,13 +47,3 @@ const backUrl = SITE.showBackButton ? Astro.url.pathname : "/";
   <slot />
 </main>
 
-<script>
-  document.addEventListener("astro:page-load", () => {
-    const mainContent: HTMLElement | null =
-      document.querySelector("#main-content");
-    const backUrl = mainContent?.dataset?.backurl;
-    if (backUrl) {
-      sessionStorage.setItem("backUrl", backUrl);
-    }
-  });
-</script>
