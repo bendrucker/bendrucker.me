@@ -19,7 +19,7 @@ let isDev = false;
 try {
   // Access KV through Astro.locals.runtime.env (correct pattern)
   const { GITHUB_KV } = Astro.locals.runtime.env;
-  
+
   if (GITHUB_KV) {
     // Production: read from KV storage
     const kvData = await GITHUB_KV.get('activity', 'json') as RepoActivity[] | null;
@@ -59,12 +59,12 @@ const formatDate = (date: Date) => {
   if (isToday(date)) {
     return formatDistanceToNowStrict(date, { addSuffix: true });
   }
-  
+
   // If yesterday, show "Yesterday"
   if (isYesterday(date)) {
     return 'Yesterday';
   }
-  
+
   // Otherwise, show date
   return format(date, 'MMM d');
 };
@@ -98,7 +98,7 @@ const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue' 
       searchType = 'pullrequests';
       break;
     case 'review':
-      query = `${repoQuery} is:pr is:merged reviewed-by:${SITE.githubUsername} ${timeFilter}`;
+      query = `${repoQuery} is:pr reviewed-by:${SITE.githubUsername} ${timeFilter}`;
       searchType = 'pullrequests';
       break;
     case 'issue':
@@ -148,7 +148,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                   <h2 class="text-2xl font-bold text-accent py-3">{year}</h2>
                 </div>
               )}
-              
+
               <div class="space-y-3">
                 {repositoriesByYear[year].map((repo) => (
                   <div class="border border-border rounded-lg p-4 sm:p-6 bg-background">
@@ -163,7 +163,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                             </a>
                           </h3>
                           {repo.primaryLanguage && (
-                            <span 
+                            <span
                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border border-border"
                               style={`background-color: ${repo.primaryLanguage.color}20; color: ${repo.primaryLanguage.color}`}
                             >
@@ -171,7 +171,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                             </span>
                           )}
                           {isRepoNew(repo) && repo.createdAt && (
-                            <span 
+                            <span
                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 bg-green-500/20 text-green-600"
                               title={formatCreatedDate(repo.createdAt)}
                             >
@@ -182,8 +182,8 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                         <p class="text-foreground text-sm mb-3">{repo.description}</p>
                         <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-foreground/70">
                           {repo.activitySummary.prCount > 0 && (
-                            <a href={getGitHubSearchUrl(repo, 'pr')} target="_blank" rel="noopener noreferrer" 
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                            <a href={getGitHubSearchUrl(repo, 'pr')} target="_blank" rel="noopener noreferrer"
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
                                title="Pull requests authored">
                               <GitPullRequest class="w-4 h-4 flex-shrink-0" />
                               <span>{repo.activitySummary.prCount}</span>
@@ -191,7 +191,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                           )}
                           {repo.activitySummary.reviewCount > 0 && (
                             <a href={getGitHubSearchUrl(repo, 'review')} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
                                title="Pull request reviews submitted">
                               <Checklist class="w-4 h-4 flex-shrink-0" />
                               <span>{repo.activitySummary.reviewCount}</span>
@@ -199,7 +199,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                           )}
                           {repo.activitySummary.mergeCount > 0 && (
                             <a href={getGitHubSearchUrl(repo, 'merge')} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
                                title="Pull requests merged">
                               <GitMerge class="w-4 h-4 flex-shrink-0" />
                               <span>{repo.activitySummary.mergeCount}</span>
@@ -207,7 +207,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                           )}
                           {repo.activitySummary.issueCount > 0 && (
                             <a href={getGitHubSearchUrl(repo, 'issue')} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
                                title="Issues opened or commented">
                               <CircleDot class="w-4 h-4 flex-shrink-0" />
                               <span>{repo.activitySummary.issueCount}</span>
@@ -215,7 +215,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                           )}
                           {repo.stargazerCount > 0 && (
                             <a href={`${repo.url}/stargazers`} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors" 
+                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
                                title="GitHub stars">
                               <Star class="w-4 h-4 flex-shrink-0" />
                               <span>{formatStarCount(repo.stargazerCount)}</span>
