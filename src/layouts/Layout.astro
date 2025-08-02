@@ -132,16 +132,14 @@ const structuredData = {
 
     <ClientRouter />
 
-    <script is:inline src="/toggle-theme.js"></script>
+    <script>
+      import Alpine from 'alpinejs';
+      import persist from '@alpinejs/persist';
+      
+      Alpine.plugin(persist);
+      Alpine.start();
+    </script>
   </head>
-  
-  <script>
-    import Alpine from 'alpinejs';
-    import persist from '@alpinejs/persist';
-    
-    Alpine.plugin(persist);
-    Alpine.start();
-  </script>
   <body>
     <Header />
     <slot />
