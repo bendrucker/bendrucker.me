@@ -134,6 +134,14 @@ const structuredData = {
 
     <script is:inline src="/toggle-theme.js"></script>
   </head>
+  
+  <script>
+    import Alpine from 'alpinejs';
+    import persist from '@alpinejs/persist';
+    
+    Alpine.plugin(persist);
+    Alpine.start();
+  </script>
   <body>
     <Header />
     <slot />

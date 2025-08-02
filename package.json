@@ -20,12 +20,14 @@
     "fetch-activity": "tsx scripts/fetch-github-activity.ts"
   },
   "dependencies": {
+    "@alpinejs/persist": "^3.14.9",
     "@astrojs/cloudflare": "^12.6.0",
     "@astrojs/rss": "^4.0.12",
     "@astrojs/sitemap": "^3.4.2",
     "@resvg/resvg-wasm": "^2.6.2",
     "@tailwindcss/vite": "^4.1.11",
     "@types/node": "^24.1.0",
+    "alpinejs": "^3.14.9",
     "astro": "^5.12.8",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
