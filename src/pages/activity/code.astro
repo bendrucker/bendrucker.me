@@ -224,7 +224,7 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
                         </div>
                       </div>
                       <div class="text-sm text-foreground/60 flex-shrink-0 sm:text-right">
-                        <time datetime={repo.lastActivity.toISOString()} title={formatFullDate(repo.lastActivity)}>
+                        <time datetime={repo.lastActivity.toISOString()} title={formatFullDate(repo.lastActivity)} data-relative>
                           {formatDate(repo.lastActivity)}
                         </time>
                       </div>
