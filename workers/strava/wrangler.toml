@@ -4,9 +4,14 @@ compatibility_date = "2025-07-28"
 compatibility_flags = ["nodejs_compat"]
 
 [[kv_namespaces]]
-binding = "STRAVA_KV"
+binding = "KV"
 id = "96c63f7bcaea46f68d7250398eaa3fbd"
 preview_id = "142b7ebc47144adeaf8f10e1360265a1"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "strava"
+preview_bucket_name = "strava-preview"
 
 [vars]
 STRAVA_CLIENT_ID = "12215"
