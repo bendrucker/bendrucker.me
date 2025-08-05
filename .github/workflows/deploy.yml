@@ -31,6 +31,8 @@ jobs:
             path: .
           - name: github
             path: workers/github
+          - name: strava
+            path: workers/strava
 
     steps:
       - name: "☁️ Checkout repository"
