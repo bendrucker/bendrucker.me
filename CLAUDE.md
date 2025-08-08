@@ -20,6 +20,7 @@ This is a personal website and blog built with modern web technologies, migrated
 3. **Type Safe**: TypeScript throughout with strict configuration
 4. **Maintainable**: Centralized configuration, consistent patterns
 5. **Accessible**: Semantic HTML, proper markup structure
+6. **Structured Logging**: Use `@workspace/logger` for all logging in workers and packages
 
 ## 📁 Project Structure
 
@@ -188,18 +189,26 @@ git remote add upstream https://github.com/satnaing/astro-paper.git
 
 ### Multi-Worker Architecture
 
-This project uses a **two-worker setup** on Cloudflare:
+This project uses a **multi-worker setup** on Cloudflare:
 
 1. **Main Site Worker** (`wrangler.toml`)
    - Serves the static site at www.bendrucker.me
-   - Reads GitHub activity data from KV storage
+   - Reads activity data from KV storage
    - Deployed from project root
 
 2. **GitHub Activity Worker** (`workers/github/wrangler.toml`)
-   - Separate worker for background data fetching
-   - Runs cron job every 6 hours (`0 */6 * * *`)
-   - Fetches GitHub API data and stores in shared KV namespace
+   - Background data fetching for GitHub activity
+   - Runs cron job every hour (`0 * * * *`)
+   - Fetches GitHub API data and stores in KV namespace
    - Deployed from `workers/github/` directory
+
+3. **Strava Activity Worker** (`workers/strava/wrangler.toml`)
+   - Background data fetching for Strava activity
+   - Runs cron job every 6 hours (`0 */6 * * *`)
+   - OAuth2 flow with user validation (athlete ID: 5723594)
+   - Fetches Strava API data and stores in KV namespace
+   - Deployed from `workers/strava/` directory
+   - **Note**: Strava doesn't support PKCE in their OAuth implementation as of 2024
 
 ### KV Storage Configuration
 
@@ -225,6 +234,9 @@ npm run build && npx wrangler deploy
 
 # Deploy GitHub activity worker
 npx wrangler deploy --config workers/github/wrangler.toml
+
+# Deploy Strava activity worker
+npx wrangler deploy --config workers/strava/wrangler.toml
 ```
 
 ## 🎨 Styling & Assets

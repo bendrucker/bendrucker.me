@@ -1,0 +1,24 @@
+name = "strava"
+main = "main.ts"
+compatibility_date = "2025-07-28"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "96c63f7bcaea46f68d7250398eaa3fbd"
+preview_id = "142b7ebc47144adeaf8f10e1360265a1"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "strava"
+preview_bucket_name = "strava-preview"
+
+[vars]
+STRAVA_CLIENT_ID = "12215"
+STRAVA_USER_ID = "5723594"
+
+[observability.logs]
+enabled = true
+
+[env.production.triggers]
+crons = ["0 */6 * * *"]
