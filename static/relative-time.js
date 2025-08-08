@@ -20,7 +20,6 @@
       const diffWeeks = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
       const diffMonths = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30));
       const diffYears = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 365));
-
       const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
       let relativeTime;
@@ -47,7 +46,6 @@
 
   // Update on page load
   document.addEventListener("DOMContentLoaded", updateRelativeTime);
-
   // Update every minute for fresh relative times
   setInterval(updateRelativeTime, 60000);
 })();
