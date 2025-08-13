@@ -32,11 +32,11 @@ async function main() {
     writeFileSync(outputPath, JSON.stringify(activityData, null, 2));
 
     const duration = Date.now() - startTime;
-    logger.info("GitHub activity fetch completed", {
+    logger.info({
       repositoryCount: activityData.length,
       durationMs: duration,
       outputPath,
-    });
+    }, "GitHub activity fetch completed");
 
     if (activityData.length === 0) {
       logger.warn("No repositories with activity found in the last 6 months");
@@ -52,7 +52,7 @@ async function main() {
       issues: repo.activitySummary.issueCount,
     }));
 
-    logger.info("Top 5 repositories by activity", { summary });
+    logger.info({ summary }, "Top 5 repositories by activity");
 
     // Show totals
     const totals = activityData.reduce(
@@ -64,15 +64,15 @@ async function main() {
       { prs: 0, reviews: 0, issues: 0 },
     );
 
-    logger.info("Total GitHub activity summary", {
+    logger.info({
       totalPRs: totals.prs,
       totalReviews: totals.reviews,
       totalIssues: totals.issues,
-    });
+    }, "Total GitHub activity summary");
   } catch (error) {
-    logger.error("Failed to fetch GitHub activity", {
+    logger.error({
       error: error instanceof Error ? error.message : error,
-    });
+    }, "Failed to fetch GitHub activity");
     process.exit(1);
   }
 }
