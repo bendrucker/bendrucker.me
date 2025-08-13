@@ -31,10 +31,13 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
   });
 
   const durationMs = Date.now() - startTime;
-  logger.info({
-    repositoryCount: activityData.length,
-    durationMs,
-  }, "Stored GitHub activity data");
+  logger.info(
+    {
+      repositoryCount: activityData.length,
+      durationMs,
+    },
+    "Stored GitHub activity data",
+  );
   return activityData;
 }
 
