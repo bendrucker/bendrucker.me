@@ -248,13 +248,13 @@ export async function fetchGitHubActivity(
   const now = new Date();
   const start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
-  logger.debug("Starting GitHub GraphQL request via Octokit", {
+  logger.debug({
     username: config.username,
     timeframe: {
       from: start.toISOString(),
       to: now.toISOString(),
     },
-  });
+  }, "Starting GitHub GraphQL request via Octokit");
 
   const variables = {
     username: config.username,
@@ -285,7 +285,7 @@ export async function fetchGitHubActivity(
       config.username,
     );
 
-    logger.info("GitHub activity processing completed", {
+    logger.info({
       username: config.username,
       repositoryCount: result.length,
       totalActivity: result.reduce(
@@ -297,15 +297,15 @@ export async function fetchGitHubActivity(
         }),
         { prs: 0, reviews: 0, issues: 0, merges: 0 },
       ),
-    });
+    }, "GitHub activity processing completed");
 
     return result;
   } catch (error) {
     if (error instanceof Error) {
-      logger.error("GitHub GraphQL API request failed", {
+      logger.error({
         error: error.message,
         username: config.username,
-      });
+      }, "GitHub GraphQL API request failed");
       throw error;
     }
     throw new Error("Unknown error occurred while fetching GitHub activity");
