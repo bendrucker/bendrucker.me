@@ -31,10 +31,10 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
   });
 
   const durationMs = Date.now() - startTime;
-  logger.info("Stored GitHub activity data", {
+  logger.info({
     repositoryCount: activityData.length,
     durationMs,
-  });
+  }, "Stored GitHub activity data");
   return activityData;
 }
 
@@ -45,7 +45,7 @@ export default {
     try {
       await updateGitHubActivity(env);
     } catch (error) {
-      logger.error("Failed to update GitHub activity", { error });
+      logger.error({ error }, "Failed to update GitHub activity");
 
       // Store error info in KV for debugging (with shorter TTL)
       try {
@@ -59,7 +59,7 @@ export default {
           { expirationTtl: 60 * 60 }, // 1 hour
         );
       } catch (kvError) {
-        logger.error("Failed to store error info in KV", { error: kvError });
+        logger.error({ error: kvError }, "Failed to store error info in KV");
       }
 
       throw error;
