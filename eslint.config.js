@@ -14,5 +14,12 @@ export default [
     },
   },
   { rules: { "no-console": "error" } },
-  { ignores: ["dist/**", ".astro", "public/pagefind/**", '**/worker-configuration.d.ts'] },
+  {
+    ignores: [
+      "dist/**",
+      ".astro",
+      "public/pagefind/**",
+      "**/worker-configuration.d.ts",
+    ],
+  },
 ];
