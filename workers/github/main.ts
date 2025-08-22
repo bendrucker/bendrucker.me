@@ -42,30 +42,41 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
 }
 
 export default {
-  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
-    const startTime = Date.now();
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    ctx.waitUntil(
+      (async () => {
+        const startTime = Date.now();
 
-    try {
-      await updateGitHubActivity(env);
-    } catch (error) {
-      logger.error({ error }, "Failed to update GitHub activity");
+        try {
+          await updateGitHubActivity(env);
+        } catch (error) {
+          logger.error({ error }, "Failed to update GitHub activity");
 
-      // Store error info in KV for debugging (with shorter TTL)
-      try {
-        await env.GITHUB_KV.put(
-          "activity-error",
-          JSON.stringify({
-            error: error instanceof Error ? error.message : "Unknown error",
-            timestamp: new Date().toISOString(),
-            duration: Date.now() - startTime,
-          }),
-          { expirationTtl: 60 * 60 }, // 1 hour
-        );
-      } catch (kvError) {
-        logger.error({ error: kvError }, "Failed to store error info in KV");
-      }
+          // Store error info in KV for debugging (with shorter TTL)
+          try {
+            await env.GITHUB_KV.put(
+              "activity-error",
+              JSON.stringify({
+                error: error instanceof Error ? error.message : "Unknown error",
+                timestamp: new Date().toISOString(),
+                duration: Date.now() - startTime,
+              }),
+              { expirationTtl: 60 * 60 }, // 1 hour
+            );
+          } catch (kvError) {
+            logger.error(
+              { error: kvError },
+              "Failed to store error info in KV",
+            );
+          }
 
-      throw error;
-    }
+          throw error;
+        }
+      })(),
+    );
   },
 };
