@@ -42,7 +42,11 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
 }
 
 export default {
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
     ctx.waitUntil(
       (async () => {
         const startTime = Date.now();
@@ -64,7 +68,10 @@ export default {
               { expirationTtl: 60 * 60 }, // 1 hour
             );
           } catch (kvError) {
-            logger.error({ error: kvError }, "Failed to store error info in KV");
+            logger.error(
+              { error: kvError },
+              "Failed to store error info in KV",
+            );
           }
 
           throw error;
