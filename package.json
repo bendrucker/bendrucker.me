@@ -28,7 +28,7 @@
     "@types/node": "^24.3.0",
     "astro": "^5.13.3",
     "date-fns": "^4.1.0",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.18",
     "lodash.kebabcase": "^4.1.1",
     "pino": "^9.9.0",
     "pino-pretty": "^13.1.1",
