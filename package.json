@@ -30,7 +30,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
     "lodash.kebabcase": "^4.1.1",
-    "pino": "^9.9.0",
+    "pino": "^9.9.5",
     "pino-pretty": "^13.1.1",
     "remark-collapse": "^0.1.2",
     "remark-toc": "^9.0.0",
