@@ -2,7 +2,7 @@
   "ci": {
     "collect": {
       "numberOfRuns": 3,
-      "startServerCommand": "npx wrangler dev --port 8787 --local",
+      "startServerCommand": "npx wrangler dev --port 8787",
       "startServerReadyPattern": "Ready on",
       "url": ["http://localhost:8787/"]
     },
