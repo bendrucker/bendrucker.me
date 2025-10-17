@@ -24,6 +24,8 @@ jobs:
     permissions:
       contents: read
       deployments: write
+    outputs:
+      www-preview-url: ${{ steps.set-outputs.outputs.www-preview-url }}
     strategy:
       matrix:
         include:
@@ -105,10 +107,22 @@ jobs:
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: ${{ github.event_name == 'pull_request' && matrix.path == '.' && steps.extract-url.outputs.alias-url || (matrix.path == '.' && steps.extract-deployment-url.outputs.formatted-url || steps.wrangler.outputs.deployment-url) }}
 
+      - name: "📤 Set job outputs"
+        id: set-outputs
+        if: matrix.name == 'www' && github.event_name == 'pull_request'
+        run: |
+          echo "www-preview-url=${{ steps.extract-url.outputs.alias-url }}" >> $GITHUB_OUTPUT
+
   lighthouse:
+    # Workaround for https://github.com/cloudflare/workers-sdk/issues/9022
+    # wrangler dev fails with "import.meta.url is undefined" when using content collections
+    # Once fixed, revert to testing against local wrangler dev server
+    needs: cloudflare
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      deployments: read
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -122,16 +136,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build workspace packages
-        run: npm run build --workspaces
-
-      - name: Build site
-        run: npm run build
-
-      - name: Copy assets ignore file
-        run: cp .assetsignore dist/
+      - name: Get preview URL
+        id: preview-url
+        run: |
+          # Extract the preview URL from the deployment
+          URL="${{ needs.cloudflare.outputs.www-preview-url }}"
+          if [ -z "$URL" ]; then
+            echo "No preview URL found, skipping Lighthouse"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "url=$URL" >> $GITHUB_OUTPUT
+            echo "Testing Lighthouse against: $URL"
+          fi
 
       - name: Run Lighthouse CI
-        run: npm run lighthouse
+        if: steps.preview-url.outputs.skip != 'true'
+        run: npx @lhci/cli@0.15.x autorun --collect.url=${{ steps.preview-url.outputs.url }}
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

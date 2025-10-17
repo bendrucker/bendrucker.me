@@ -1,10 +1,7 @@
 {
   "ci": {
     "collect": {
-      "numberOfRuns": 3,
-      "startServerCommand": "npx wrangler dev --port 8787",
-      "startServerReadyPattern": "Ready on",
-      "url": ["http://localhost:8787/"]
+      "numberOfRuns": 3
     },
     "upload": {
       "target": "temporary-public-storage"
