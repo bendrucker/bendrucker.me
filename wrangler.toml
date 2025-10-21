@@ -2,6 +2,7 @@ name = "bendrucker-me"
 main = "./dist/_worker.js/index.js"
 compatibility_date = "2025-07-28"
 compatibility_flags = ["nodejs_compat"]
+preview_urls = true
 
 [assets]
 directory = "dist"

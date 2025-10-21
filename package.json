@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run types:generate && astro check && astro build",
+    "build": "npm run build:packages && npm run types:generate && astro check && astro build",
+    "build:packages": "npm run build --workspace=packages/logger -- --force && npm run build --workspace=packages/github -- --force",
     "preview": "astro preview",
     "sync": "astro sync",
     "astro": "astro",
@@ -20,7 +21,7 @@
     "fetch-activity": "tsx scripts/fetch-github-activity.ts"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^12.6.10",
+    "@astrojs/cloudflare": "12.6.8",
     "@astrojs/rss": "^4.0.12",
     "@astrojs/sitemap": "^3.5.1",
     "@resvg/resvg-wasm": "^2.6.2",
