@@ -80,16 +80,12 @@ jobs:
           command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}-{2}', github.event.number, github.event.pull_request.html_url, matrix.name) || 'deploy' }}
           gitHubToken: ${{ github.token }}
 
-      - name: "🔗 Construct preview URL"
+      - name: "🔗 Extract preview URL"
         id: extract-url
         if: github.event_name == 'pull_request' && matrix.path == '.'
         run: |
-          # Extract worker name from wrangler.toml
-          WORKER_NAME=$(grep -m1 "^name" wrangler.toml | sed 's/.*"\(.*\)".*/\1/')
-          # Replace underscores with hyphens for subdomain (Cloudflare convention)
-          SUBDOMAIN=$(echo "$WORKER_NAME" | tr '_' '-')
-          # Construct the preview alias URL
-          ALIAS_URL="https://pr-${{ github.event.number }}-${{ matrix.name }}.${SUBDOMAIN}.workers.dev"
+          # Extract the Version Preview Alias URL from wrangler output
+          ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
           echo "alias-url=$ALIAS_URL" >> $GITHUB_OUTPUT
           echo "Preview URL: $ALIAS_URL"
 
