@@ -27,7 +27,7 @@
     "@resvg/resvg-wasm": "^2.6.2",
     "@tailwindcss/vite": "^4.1.14",
     "@types/node": "^24.6.2",
-    "astro": "^5.14.4",
+    "astro": "^5.15.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
     "lodash.kebabcase": "^4.1.1",
