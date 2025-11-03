@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@workspace/logger": "*",
-    "strava": "^2.3.0"
+    "strava": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.6.2",
