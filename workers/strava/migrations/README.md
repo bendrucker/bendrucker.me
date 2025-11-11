@@ -4,23 +4,22 @@ This directory contains SQL migrations for the Strava D1 database.
 
 ## Database Setup
 
-The D1 databases are configured to auto-resolve by name. You'll need to create both production and preview databases:
+The D1 database is configured to auto-resolve by name:
 
 ```bash
-# Create production database
+# Create the production database
 wrangler d1 create strava
-
-# Create preview database (for PR deployments)
-wrangler d1 create strava-preview
 ```
 
-No need to update `wrangler.toml` with database IDs - wrangler resolves databases by name automatically. Production uses `strava`, preview environments use `strava-preview`.
+No need to update `wrangler.toml` with database IDs - wrangler resolves databases by name automatically.
+
+**Important**: Both production deployments and PR preview deployments use the same `strava` database. Preview deployments **must be strictly read-only** to avoid polluting production data.
 
 ## Running Migrations
 
-### Local Development (Preview Database)
+### Local Development
 
-To run migrations against your preview database:
+To test migrations locally using wrangler's in-memory database:
 
 ```bash
 cd workers/strava
@@ -31,6 +30,8 @@ npx wrangler d1 execute strava --local --file=migrations/0001_create_activities_
 # Or apply a specific migration
 npx wrangler d1 execute strava --local --file=migrations/XXXX_migration_name.sql
 ```
+
+Note: `--local` uses an ephemeral in-memory database for testing. It does not affect the remote production database.
 
 ### Production Database
 
