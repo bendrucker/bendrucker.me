@@ -1,12 +1,6 @@
 -- Migration: Create activities table for Strava fitness data
 -- Created: 2025-11-10
-
--- Schema migrations tracking table
-CREATE TABLE IF NOT EXISTS schema_migrations (
-  version INTEGER PRIMARY KEY,
-  applied_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  description TEXT NOT NULL
-);
+-- Wrangler automatically tracks this migration in d1_migrations table
 
 -- Main activities table
 CREATE TABLE IF NOT EXISTS activities (
@@ -92,7 +86,3 @@ CREATE INDEX idx_activities_type_date ON activities(type, start_date DESC);
 
 -- Index for year-based queries using SQLite's date functions
 CREATE INDEX idx_activities_year ON activities(strftime('%Y', start_date, 'unixepoch'));
-
--- Record this migration
-INSERT INTO schema_migrations (version, description)
-VALUES (1, 'Create activities table with indexes');

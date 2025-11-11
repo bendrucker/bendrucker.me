@@ -1,51 +1,41 @@
 # D1 Database Migrations
 
-SQL migrations for the Strava D1 database.
+SQL migrations for the Strava D1 database using wrangler's built-in migration tracking.
 
 ## Setup
-
-Create the database (wrangler resolves by name, no IDs needed):
 
 ```bash
 wrangler d1 create strava
 ```
 
-**Note**: Production and PR previews share the same database.
-
 ## Running Migrations
 
-Migrations auto-run via GitHub Actions on merge to main.
+Auto-runs on merge to main via `wrangler d1 migrations apply DB --remote`.
 
-Manual execution:
+Manual:
+```bash
+# Local
+npx wrangler d1 migrations apply DB --local
+
+# Production
+npx wrangler d1 migrations apply DB --remote
+```
+
+## Creating Migrations
 
 ```bash
-# Test locally (ephemeral in-memory DB)
-npx wrangler d1 execute strava --local --file=migrations/0001_create_activities_table.sql
-
-# Production (caution)
-npx wrangler d1 execute strava --remote --file=migrations/0001_create_activities_table.sql
+npx wrangler d1 migrations create DB "description"
 ```
+
+Creates `migrations/XXXX_description.sql`. Wrangler tracks applied migrations in `d1_migrations` table.
 
 ## Schema
 
 ### `activities`
-- Core fields: `strava_id`, `name`, `type`, `start_date`, `distance`, `moving_time`
+- Core: `strava_id`, `name`, `type`, `start_date`, `distance`, `moving_time`
 - Performance: speed, cadence, heart rate, power
 - Elevation: gain, high, low
-- Map: `polyline` for visualization
+- Map: `polyline`
 
 ### Indexes
-- `start_date`, `type`, `strava_id`, `(type, start_date)`, year
-
-### `schema_migrations`
-Tracks applied migrations.
-
-## Creating Migrations
-
-1. Name: `XXXX_description.sql` (e.g., `0002_add_gear_table.sql`)
-2. Use idempotent SQL (`IF NOT EXISTS`)
-3. Add tracking record:
-   ```sql
-   INSERT INTO schema_migrations (version, description)
-   VALUES (2, 'Add gear table');
-   ```
+`start_date`, `type`, `strava_id`, `(type, start_date)`, year
