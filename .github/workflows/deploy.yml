@@ -77,10 +77,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          # Run migrations on production database
+          # Run migrations in order (glob is sorted alphabetically: 0001, 0002, etc.)
+          # Migrations use IF NOT EXISTS for idempotency - safe to re-run
           for migration in migrations/*.sql; do
             echo "Applying migration: $migration"
-            npx wrangler d1 execute strava --remote --file="$migration" || echo "Migration may have already been applied (expected for idempotent migrations)"
+            npx wrangler d1 execute strava --remote --file="$migration"
           done
 
       - name: "🌐 Deploy to Cloudflare"
