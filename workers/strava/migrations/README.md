@@ -5,7 +5,11 @@ SQL migrations for the Strava D1 database using wrangler's built-in migration tr
 ## Setup
 
 ```bash
+# Create the database
 wrangler d1 create strava
+
+# Update wrangler.toml with the returned database_id
+# Replace "placeholder" in the database_id field
 ```
 
 ## Running Migrations
