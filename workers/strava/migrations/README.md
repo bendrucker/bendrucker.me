@@ -4,16 +4,17 @@ This directory contains SQL migrations for the Strava D1 database.
 
 ## Database Setup
 
-The D1 database is configured to auto-resolve by name. Wrangler will automatically find or prompt you to create databases named `strava`.
-
-If the database doesn't exist when you first deploy or run migrations, create it:
+The D1 databases are configured to auto-resolve by name. You'll need to create both production and preview databases:
 
 ```bash
-# Create the database (wrangler will find it by name)
+# Create production database
 wrangler d1 create strava
+
+# Create preview database (for PR deployments)
+wrangler d1 create strava-preview
 ```
 
-No need to update `wrangler.toml` with database IDs - wrangler resolves databases by name automatically.
+No need to update `wrangler.toml` with database IDs - wrangler resolves databases by name automatically. Production uses `strava`, preview environments use `strava-preview`.
 
 ## Running Migrations
 

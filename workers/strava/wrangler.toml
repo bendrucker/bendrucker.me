@@ -17,6 +17,11 @@ preview_bucket_name = "strava-preview"
 binding = "DB"
 database_name = "strava"
 
+[env.preview]
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "strava-preview"
+
 [vars]
 STRAVA_CLIENT_ID = "12215"
 STRAVA_USER_ID = "5723594"
