@@ -32,6 +32,14 @@ jobs:
       - name: Check Prettier formatting
         run: npm run format:check
 
+      - name: Validate SQL syntax
+        run: |
+          # Find all .sql files and validate syntax with SQLite
+          find . -name "*.sql" -type f | while read -r file; do
+            echo "Validating: $file"
+            sqlite3 :memory: < "$file" || exit 1
+          done
+
   build:
     runs-on: ubuntu-latest
     steps:
