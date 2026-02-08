@@ -123,6 +123,33 @@ const repositoriesByYear = repositories.reduce((acc, repo) => {
 }, {} as Record<number, RepoActivity[]>);
 
 const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b - a);
+
+// Visualization data
+const personalCount = repositories.filter(r => r.owner === SITE.githubUsername).length;
+const externalCount = repositories.length - personalCount;
+
+const repoActivity = (repo: RepoActivity) =>
+  repo.activitySummary.prCount + repo.activitySummary.reviewCount +
+  repo.activitySummary.issueCount + repo.activitySummary.mergeCount;
+
+const topRepos = [...repositories]
+  .sort((a, b) => repoActivity(b) - repoActivity(a))
+  .slice(0, 10);
+const maxActivity = topRepos.length > 0 ? repoActivity(topRepos[0]) : 1;
+
+const languageMap = new Map<string, { count: number; color: string }>();
+for (const repo of repositories) {
+  if (repo.primaryLanguage) {
+    const existing = languageMap.get(repo.primaryLanguage.name);
+    if (existing) {
+      existing.count++;
+    } else {
+      languageMap.set(repo.primaryLanguage.name, { count: 1, color: repo.primaryLanguage.color });
+    }
+  }
+}
+const languageCounts = [...languageMap.entries()].sort((a, b) => b[1].count - a[1].count);
+const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0);
 ---
 
 <Layout title={`Activity: Code | ${SITE.title}`} description="My public GitHub activity over the last year.">
@@ -140,9 +167,104 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
           )}
         </div>
       ) : (
-        <div class="space-y-8">
-          {sortedYears.map((year) => (
+        <div class="space-y-8" x-data="{ owner: 'all', language: null, repo: null }">
+          {/* Filter pills */}
+          <nav class="flex flex-wrap gap-2" aria-label="Filter repositories">
+            <button x-on:click="owner = 'all'; language = null; repo = null"
+              x-bind:aria-pressed="(owner === 'all').toString()"
+              x-bind:class="owner === 'all' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
+              class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
+              All ({repositories.length})
+            </button>
+            <button x-on:click="owner = 'personal'; language = null; repo = null"
+              x-bind:aria-pressed="(owner === 'personal').toString()"
+              x-bind:class="owner === 'personal' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
+              class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
+              Personal ({personalCount})
+            </button>
+            <button x-on:click="owner = 'external'; language = null; repo = null"
+              x-bind:aria-pressed="(owner === 'external').toString()"
+              x-bind:class="owner === 'external' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
+              class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
+              External ({externalCount})
+            </button>
+          </nav>
+
+          {/* Bar chart — Most Active */}
+          <div>
+            <h2 class="text-sm font-semibold text-foreground/70 mb-2">Most Active</h2>
+            <div class="space-y-1">
+              {topRepos.map((repo) => {
+                const total = repoActivity(repo);
+                const pct = (n: number) => `${(n / maxActivity * 100).toFixed(1)}%`;
+                const label = repo.owner === SITE.githubUsername ? repo.name : `${repo.owner}/${repo.name}`;
+                return (
+                  <button x-on:click={`repo = repo === '${repo.owner}/${repo.name}' ? null : '${repo.owner}/${repo.name}'; language = null; if (repo) $nextTick(() => { const el = document.querySelector('[data-repo-id=&quot;' + repo + '&quot;]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) })`}
+                    class="flex items-center gap-2 w-full text-left group rounded px-1 -mx-1 hover:bg-muted/50 transition-colors">
+                    <span class="w-28 sm:w-40 text-xs text-foreground/70 truncate flex-shrink-0">{label}</span>
+                    <div class="flex-1 flex h-4 rounded-md overflow-hidden bg-muted/30">
+                      {repo.activitySummary.prCount > 0 && (
+                        <div class="bg-blue-500 h-full" style={`width: ${pct(repo.activitySummary.prCount)}`} />
+                      )}
+                      {repo.activitySummary.reviewCount > 0 && (
+                        <div class="bg-purple-500 h-full" style={`width: ${pct(repo.activitySummary.reviewCount)}`} />
+                      )}
+                      {repo.activitySummary.mergeCount > 0 && (
+                        <div class="bg-green-500 h-full" style={`width: ${pct(repo.activitySummary.mergeCount)}`} />
+                      )}
+                      {repo.activitySummary.issueCount > 0 && (
+                        <div class="bg-orange-400 h-full" style={`width: ${pct(repo.activitySummary.issueCount)}`} />
+                      )}
+                    </div>
+                    <span class="text-xs text-foreground/50 w-6 text-right flex-shrink-0">{total}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-foreground/60">
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-500"></span> PRs</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-500"></span> Reviews</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-green-500"></span> Merges</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-orange-400"></span> Issues</span>
+            </div>
+          </div>
+
+          {/* Language bar */}
+          {languageCounts.length > 0 && (
             <div>
+              <h2 class="text-sm font-semibold text-foreground/70 mb-2">Languages</h2>
+              <div class="flex h-4 rounded-full overflow-hidden">
+                {languageCounts.map(([name, { count, color }]) => (
+                  <button x-on:click={`language = language === '${name}' ? null : '${name}'; repo = null`}
+                    x-bind:style={`language && language !== '${name}' ? 'opacity: 0.3' : ''`}
+                    class="h-full transition-opacity hover:opacity-80"
+                    style={`width: ${(count / totalWithLanguage * 100).toFixed(1)}%; background-color: ${color}`}
+                    title={`${name}: ${count}`}
+                  />
+                ))}
+              </div>
+              <div class="language-legend flex gap-x-3 gap-y-1 mt-2 overflow-x-auto text-xs text-foreground/60">
+                {languageCounts.map(([name, { color }]) => (
+                  <button x-on:click={`language = language === '${name}' ? null : '${name}'; repo = null`}
+                    x-bind:style={`language && language !== '${name}' ? 'opacity: 0.4' : ''`}
+                    class="flex items-center gap-1 flex-shrink-0 hover:text-foreground transition-colors">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={`background-color: ${color}`}></span>
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Selection indicator */}
+          <div x-show="repo || language" x-cloak class="flex items-center gap-2 text-sm text-foreground/70" aria-live="polite">
+            <span x-text="repo ? 'Highlighted: ' + repo : language ? 'Showing: ' + language + ' repos' : ''"></span>
+            <button x-on:click="repo = null; language = null" class="text-accent hover:underline text-xs">Clear</button>
+          </div>
+
+          {/* Repo list */}
+          {sortedYears.map((year) => (
+            <div x-show={`owner === 'all' || ${JSON.stringify(repositoriesByYear[year].map(r => r.owner))}.some(o => owner === 'personal' ? o === '${SITE.githubUsername}' : o !== '${SITE.githubUsername}')`}>
               {year !== new Date().getFullYear() && (
                 <div class="border-b border-border mb-4">
                   <h2 class="text-2xl font-bold text-accent py-3">{year}</h2>
@@ -151,7 +273,10 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
 
               <div class="space-y-3">
                 {repositoriesByYear[year].map((repo) => (
-                  <div class="border border-border rounded-lg p-4 sm:p-6 bg-background">
+                  <div class="border border-border rounded-lg p-4 sm:p-6 bg-background transition-opacity duration-150"
+                    data-repo-id={`${repo.owner}/${repo.name}`}
+                    x-show={`owner === 'all' || (owner === 'personal' && '${repo.owner}' === '${SITE.githubUsername}') || (owner === 'external' && '${repo.owner}' !== '${SITE.githubUsername}')`}
+                    x-bind:style={`(repo && repo !== '${repo.owner}/${repo.name}') || (language && language !== '${repo.primaryLanguage?.name ?? ''}') ? 'opacity: 0.2' : ''`}>
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                       <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-1">
@@ -239,3 +364,8 @@ const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b
     </section>
   </Main>
 </Layout>
+
+<style>
+  .language-legend::-webkit-scrollbar { display: none; }
+  .language-legend { scrollbar-width: none; }
+</style>
