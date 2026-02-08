@@ -167,22 +167,22 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
           )}
         </div>
       ) : (
-        <div class="space-y-8" x-data="{ owner: 'all', language: null, repo: null }">
+        <div class="space-y-8" x-data="{ owner: 'all', language: null, selectedRepo: null, selectRepo(id) { this.selectedRepo = this.selectedRepo === id ? null : id; this.language = null; if (this.selectedRepo) this.$nextTick(() => { document.querySelector('[data-repo-id=\'' + this.selectedRepo + '\']')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) }) } }">
           {/* Filter pills */}
           <nav class="flex flex-wrap gap-2" aria-label="Filter repositories">
-            <button x-on:click="owner = 'all'; language = null; repo = null"
+            <button x-on:click="owner = 'all'; language = null; selectedRepo = null"
               x-bind:aria-pressed="(owner === 'all').toString()"
               x-bind:class="owner === 'all' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
               class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
               All ({repositories.length})
             </button>
-            <button x-on:click="owner = 'personal'; language = null; repo = null"
+            <button x-on:click="owner = 'personal'; language = null; selectedRepo = null"
               x-bind:aria-pressed="(owner === 'personal').toString()"
               x-bind:class="owner === 'personal' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
               class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
               Personal ({personalCount})
             </button>
-            <button x-on:click="owner = 'external'; language = null; repo = null"
+            <button x-on:click="owner = 'external'; language = null; selectedRepo = null"
               x-bind:aria-pressed="(owner === 'external').toString()"
               x-bind:class="owner === 'external' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
               class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
@@ -199,7 +199,7 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
                 const pct = (n: number) => `${(n / maxActivity * 100).toFixed(1)}%`;
                 const label = repo.owner === SITE.githubUsername ? repo.name : `${repo.owner}/${repo.name}`;
                 return (
-                  <button x-on:click={`repo = repo === '${repo.owner}/${repo.name}' ? null : '${repo.owner}/${repo.name}'; language = null; if (repo) $nextTick(() => { const el = document.querySelector('[data-repo-id=&quot;' + repo + '&quot;]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) })`}
+                  <button x-on:click={`selectRepo('${repo.owner}/${repo.name}')`}
                     class="flex items-center gap-2 w-full text-left group rounded px-1 -mx-1 hover:bg-muted/50 transition-colors">
                     <span class="w-28 sm:w-40 text-xs text-foreground/70 truncate flex-shrink-0">{label}</span>
                     <div class="flex-1 flex h-4 rounded-md overflow-hidden bg-muted/30">
@@ -235,17 +235,18 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
               <h2 class="text-sm font-semibold text-foreground/70 mb-2">Languages</h2>
               <div class="flex h-4 rounded-full overflow-hidden">
                 {languageCounts.map(([name, { count, color }]) => (
-                  <button x-on:click={`language = language === '${name}' ? null : '${name}'; repo = null`}
+                  <button x-on:click={`language = language === '${name}' ? null : '${name}'; selectedRepo = null`}
                     x-bind:style={`language && language !== '${name}' ? 'opacity: 0.3' : ''`}
                     class="h-full transition-opacity hover:opacity-80"
                     style={`width: ${(count / totalWithLanguage * 100).toFixed(1)}%; background-color: ${color}`}
+                    aria-label={name}
                     title={`${name}: ${count}`}
                   />
                 ))}
               </div>
               <div class="language-legend flex gap-x-3 gap-y-1 mt-2 overflow-x-auto text-xs text-foreground/60">
                 {languageCounts.map(([name, { color }]) => (
-                  <button x-on:click={`language = language === '${name}' ? null : '${name}'; repo = null`}
+                  <button x-on:click={`language = language === '${name}' ? null : '${name}'; selectedRepo = null`}
                     x-bind:style={`language && language !== '${name}' ? 'opacity: 0.4' : ''`}
                     class="flex items-center gap-1 flex-shrink-0 hover:text-foreground transition-colors">
                     <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={`background-color: ${color}`}></span>
@@ -257,14 +258,17 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
           )}
 
           {/* Selection indicator */}
-          <div x-show="repo || language" x-cloak class="flex items-center gap-2 text-sm text-foreground/70" aria-live="polite">
-            <span x-text="repo ? 'Highlighted: ' + repo : language ? 'Showing: ' + language + ' repos' : ''"></span>
-            <button x-on:click="repo = null; language = null" class="text-accent hover:underline text-xs">Clear</button>
+          <div x-show="selectedRepo || language" x-cloak class="flex items-center gap-2 text-sm text-foreground/70" aria-live="polite">
+            <span x-text="selectedRepo ? 'Highlighted: ' + selectedRepo : language ? 'Showing: ' + language + ' repos' : ''"></span>
+            <button x-on:click="selectedRepo = null; language = null" class="text-accent hover:underline text-xs">Clear</button>
           </div>
 
           {/* Repo list */}
-          {sortedYears.map((year) => (
-            <div x-show={`owner === 'all' || ${JSON.stringify(repositoriesByYear[year].map(r => r.owner))}.some(o => owner === 'personal' ? o === '${SITE.githubUsername}' : o !== '${SITE.githubUsername}')`}>
+          {sortedYears.map((year) => {
+            const yearHasPersonal = repositoriesByYear[year].some(r => r.owner === SITE.githubUsername);
+            const yearHasExternal = repositoriesByYear[year].some(r => r.owner !== SITE.githubUsername);
+            return (
+            <div x-show={`owner === 'all'${yearHasPersonal ? " || owner === 'personal'" : ''}${yearHasExternal ? " || owner === 'external'" : ''}`}>
               {year !== new Date().getFullYear() && (
                 <div class="border-b border-border mb-4">
                   <h2 class="text-2xl font-bold text-accent py-3">{year}</h2>
@@ -276,7 +280,7 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
                   <div class="border border-border rounded-lg p-4 sm:p-6 bg-background transition-opacity duration-150"
                     data-repo-id={`${repo.owner}/${repo.name}`}
                     x-show={`owner === 'all' || (owner === 'personal' && '${repo.owner}' === '${SITE.githubUsername}') || (owner === 'external' && '${repo.owner}' !== '${SITE.githubUsername}')`}
-                    x-bind:style={`(repo && repo !== '${repo.owner}/${repo.name}') || (language && language !== '${repo.primaryLanguage?.name ?? ''}') ? 'opacity: 0.2' : ''`}>
+                    x-bind:style={`(selectedRepo && selectedRepo !== '${repo.owner}/${repo.name}') || (language && language !== '${repo.primaryLanguage?.name ?? ''}') ? 'opacity: 0.2' : ''`}>
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                       <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-1">
@@ -358,7 +362,7 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
                 ))}
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
     </section>
@@ -366,6 +370,7 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
 </Layout>
 
 <style>
+  [x-cloak] { display: none; }
   .language-legend::-webkit-scrollbar { display: none; }
   .language-legend { scrollbar-width: none; }
 </style>
