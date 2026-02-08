@@ -167,7 +167,7 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
           )}
         </div>
       ) : (
-        <div class="space-y-8" x-data="{ owner: 'all', language: null, selectedRepo: null, selectRepo(id) { this.selectedRepo = this.selectedRepo === id ? null : id; this.language = null; if (this.selectedRepo) this.$nextTick(() => { document.querySelector('[data-repo-id=\'' + this.selectedRepo + '\']')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) }) } }">
+        <div class="space-y-8" x-data={`{ owner: 'all', language: null, selectedRepo: null, selectRepo(id) { this.selectedRepo = this.selectedRepo === id ? null : id; this.language = null; if (this.selectedRepo) this.$nextTick(() => { document.querySelector('[data-repo-id="' + this.selectedRepo + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) }) } }`}>
           {/* Filter pills */}
           <nav class="flex flex-wrap gap-2" aria-label="Filter repositories">
             <button x-on:click="owner = 'all'; language = null; selectedRepo = null"
