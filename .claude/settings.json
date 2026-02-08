@@ -1,12 +1,11 @@
 {
   "hooks": {
-    "PostToolUse": [
+    "Stop": [
       {
-        "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/typescript-lint.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/verify.sh"
           }
         ]
       }
