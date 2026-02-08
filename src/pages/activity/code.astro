@@ -204,16 +204,16 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
                     <span class="w-28 sm:w-40 text-xs text-foreground/70 truncate flex-shrink-0">{label}</span>
                     <div class="flex-1 flex h-4 rounded-md overflow-hidden bg-muted/30">
                       {repo.activitySummary.prCount > 0 && (
-                        <div class="bg-blue-400/60 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.prCount)}`} />
+                        <div class="bg-blue-400 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.prCount)}`} />
                       )}
                       {repo.activitySummary.reviewCount > 0 && (
-                        <div class="bg-purple-400/60 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.reviewCount)}`} />
+                        <div class="bg-purple-400 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.reviewCount)}`} />
                       )}
                       {repo.activitySummary.mergeCount > 0 && (
-                        <div class="bg-green-400/60 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.mergeCount)}`} />
+                        <div class="bg-green-400 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.mergeCount)}`} />
                       )}
                       {repo.activitySummary.issueCount > 0 && (
-                        <div class="bg-orange-300/60 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.issueCount)}`} />
+                        <div class="bg-amber-400 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.issueCount)}`} />
                       )}
                     </div>
                     <span class="text-xs text-foreground/50 w-6 text-right flex-shrink-0">{total}</span>
@@ -222,10 +222,10 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
               })}
             </div>
             <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-foreground/60">
-              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-400/60"></span> PRs</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-400/60"></span> Reviews</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-green-400/60"></span> Merges</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-orange-300/60"></span> Issues</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-400"></span> PRs</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-400"></span> Reviews</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-green-400"></span> Merges</span>
+              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-400"></span> Issues</span>
             </div>
           </div>
 
@@ -241,7 +241,7 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
                     style={`width: ${(count / totalWithLanguage * 100).toFixed(1)}%; background-color: ${color}`}
                     aria-label={name}
                     title={`${name}: ${count}`}
-                  />
+                  >&nbsp;</button>
                 ))}
               </div>
               <div class="language-legend flex gap-x-3 gap-y-1 mt-2 overflow-x-auto text-xs text-foreground/60">
