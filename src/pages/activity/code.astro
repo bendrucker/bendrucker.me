@@ -11,6 +11,7 @@ import GitPullRequest from "@/assets/icons/git-pull-request.svg";
 import Star from "@/assets/icons/star.svg";
 import Checklist from "@/assets/icons/checklist.svg";
 import GitMerge from "@/assets/icons/git-merge.svg";
+import * as linguistLanguages from 'linguist-languages';
 
 // Load activity data
 let repositories: RepoActivity[] = [];
@@ -114,28 +115,9 @@ const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue' 
   return `${baseUrl}?q=${encodeURIComponent(query)}&type=${searchType}&s=created&o=desc`;
 };
 
-// Group repositories by year
-const repositoriesByYear = repositories.reduce((acc, repo) => {
-  const year = repo.lastActivity.getFullYear();
-  if (!acc[year]) acc[year] = [];
-  acc[year].push(repo);
-  return acc;
-}, {} as Record<number, RepoActivity[]>);
-
-const sortedYears = Object.keys(repositoriesByYear).map(Number).sort((a, b) => b - a);
-
-// Visualization data
-const personalCount = repositories.filter(r => r.owner === SITE.githubUsername).length;
-const externalCount = repositories.length - personalCount;
-
 const repoActivity = (repo: RepoActivity) =>
   repo.activitySummary.prCount + repo.activitySummary.reviewCount +
   repo.activitySummary.issueCount + repo.activitySummary.mergeCount;
-
-const topRepos = [...repositories]
-  .sort((a, b) => repoActivity(b) - repoActivity(a))
-  .slice(0, 10);
-const maxActivity = topRepos.length > 0 ? repoActivity(topRepos[0]) : 1;
 
 const languageMap = new Map<string, { count: number; color: string }>();
 for (const repo of repositories) {
@@ -150,6 +132,27 @@ for (const repo of repositories) {
 }
 const languageCounts = [...languageMap.entries()].sort((a, b) => b[1].count - a[1].count);
 const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0);
+
+const hexLuminance = (hex: string) => {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+};
+
+const langExtOverrides: Record<string, string> = { HCL: '.tf' };
+const langShort = (name: string) => {
+  const lang = (linguistLanguages as Record<string, { extensions?: readonly string[] }>)[name];
+  const exts = lang?.extensions;
+  if (!exts?.length) return name.toLowerCase();
+  const override = langExtOverrides[name];
+  if (override) {
+    if (!exts.includes(override)) throw new Error(`Invalid override "${override}" for ${name}. Valid: ${exts.join(', ')}`);
+    return override.slice(1);
+  }
+  return exts[0].slice(1);
+};
 ---
 
 <Layout title={`Activity: Code | ${SITE.title}`} description="My public GitHub activity over the last year.">
@@ -167,120 +170,160 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
           )}
         </div>
       ) : (
-        <div class="space-y-8" x-data="{ owner: 'all', language: null, selectedRepo: null }">
-          {/* Filter pills */}
-          <nav class="flex flex-wrap gap-2" aria-label="Filter repositories">
-            <button x-on:click="owner = 'all'; language = null; selectedRepo = null"
-              x-bind:aria-pressed="(owner === 'all').toString()"
-              x-bind:class="owner === 'all' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
-              class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
-              All ({repositories.length})
-            </button>
-            <button x-on:click="owner = 'personal'; language = null; selectedRepo = null"
-              x-bind:aria-pressed="(owner === 'personal').toString()"
-              x-bind:class="owner === 'personal' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
-              class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
-              Personal ({personalCount})
-            </button>
-            <button x-on:click="owner = 'external'; language = null; selectedRepo = null"
-              x-bind:aria-pressed="(owner === 'external').toString()"
-              x-bind:class="owner === 'external' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
-              class="px-3 py-1 rounded-full text-sm font-medium border transition-colors">
-              External ({externalCount})
-            </button>
-          </nav>
+        <div class="space-y-4" x-data={`{
+            owner: 'all',
+            language: null,
+            search: '',
+            sort: 'recent',
+            username: '${SITE.githubUsername}',
+            total: ${repositories.length},
+            visible(el) {
+              if (this.search && !el.dataset.repoId.toLowerCase().includes(this.search.toLowerCase())) return false;
+              if (this.owner !== 'all') {
+                const personal = el.dataset.owner === this.username;
+                if (this.owner === 'personal' && !personal) return false;
+                if (this.owner === 'external' && personal) return false;
+              }
+              if (this.language && el.dataset.language !== this.language) return false;
+              return true;
+            },
+            reorder() {
+              const list = this.$refs.repoList;
+              const cards = [...list.querySelectorAll('[data-repo-id]')];
+              const dividers = [...list.querySelectorAll('[data-year-divider]')];
+              dividers.forEach(d => d.style.display = this.sort === 'recent' ? '' : 'none');
+              const key = { recent: 'sortRecent', active: 'sortActive', stars: 'sortStars', name: 'sortName' }[this.sort];
+              cards.sort((a, b) => {
+                if (this.sort === 'name') return a.dataset[key].localeCompare(b.dataset[key]);
+                return Number(b.dataset[key]) - Number(a.dataset[key]);
+              });
+              cards.forEach(card => list.appendChild(card));
+              if (this.sort === 'recent') dividers.forEach(d => {
+                const year = d.dataset.yearDivider;
+                const first = cards.find(c => c.dataset.repoYear === year);
+                if (first) list.insertBefore(d, first);
+              });
+            }
+          }`}>
+          {/* Filter controls */}
+          <div class="space-y-3">
+            <nav class="flex items-center gap-2" aria-label="Filter repositories">
+              <button x-on:click="owner = 'all'; language = null"
+                x-bind:aria-pressed="(owner === 'all').toString()"
+                x-bind:class="owner === 'all' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
+                class="flex items-center h-8 px-3 rounded-full text-sm font-medium border transition-colors">
+                All
+              </button>
+              <button x-on:click="owner = 'personal'; language = null"
+                x-bind:aria-pressed="(owner === 'personal').toString()"
+                x-bind:class="owner === 'personal' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
+                class="flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium border transition-colors"
+                title="Personal repositories">
+                <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span class="hidden sm:inline">Personal</span>
+              </button>
+              <button x-on:click="owner = 'external'; language = null"
+                x-bind:aria-pressed="(owner === 'external').toString()"
+                x-bind:class="owner === 'external' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
+                class="flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium border transition-colors"
+                title="External / organization repositories">
+                <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span class="hidden sm:inline">External</span>
+              </button>
+              <span class="ml-auto flex items-center gap-1.5 text-xs text-foreground/50">
+                <button x-show="language || owner !== 'all' || search" x-cloak
+                  x-on:click="language = null; owner = 'all'; search = ''"
+                  class="text-foreground/40 hover:text-foreground transition-colors"
+                  aria-label="Reset filters">&times;</button>
+                <span aria-live="polite"
+                  x-text="(() => {
+                    const cards = [...($refs.repoList?.querySelectorAll('[data-repo-id]') ?? [])];
+                    const count = cards.filter(el => visible(el)).length;
+                    return count === total ? total + ' repos' : count + ' / ' + total + ' repos';
+                  })()"></span>
+              </span>
+            </nav>
 
-          {/* Bar chart — Most Active */}
-          <div>
-            <h2 class="text-sm font-semibold text-foreground/70 mb-2">Most Active</h2>
-            <div class="space-y-1">
-              {topRepos.map((repo) => {
-                const total = repoActivity(repo);
-                const pct = (n: number) => `${(n / maxActivity * 100).toFixed(1)}%`;
-                const label = repo.owner === SITE.githubUsername ? repo.name : `${repo.owner}/${repo.name}`;
-                return (
-                  <button x-on:click={`selectedRepo = selectedRepo === '${repo.owner}/${repo.name}' ? null : '${repo.owner}/${repo.name}'; language = null; $nextTick(() => { if (selectedRepo) document.querySelector(\`[data-repo-id="\${selectedRepo}"]\`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) })`}
-                    class="flex items-center gap-2 w-full text-left group rounded px-1 -mx-1 hover:bg-muted/50 transition-colors">
-                    <span class="w-28 sm:w-40 text-xs text-foreground/70 truncate flex-shrink-0">{label}</span>
-                    <div class="flex-1 flex h-4 rounded-md overflow-hidden bg-muted/30">
-                      {repo.activitySummary.prCount > 0 && (
-                        <div class="bg-blue-400 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.prCount)}`} />
-                      )}
-                      {repo.activitySummary.reviewCount > 0 && (
-                        <div class="bg-purple-400 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.reviewCount)}`} />
-                      )}
-                      {repo.activitySummary.mergeCount > 0 && (
-                        <div class="bg-green-400 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.mergeCount)}`} />
-                      )}
-                      {repo.activitySummary.issueCount > 0 && (
-                        <div class="bg-amber-400 h-full last:rounded-r-md" style={`width: ${pct(repo.activitySummary.issueCount)}`} />
-                      )}
-                    </div>
-                    <span class="text-xs text-foreground/50 w-6 text-right flex-shrink-0">{total}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-foreground/60">
-              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-400"></span> PRs</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-400"></span> Reviews</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-green-400"></span> Merges</span>
-              <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-400"></span> Issues</span>
-            </div>
-          </div>
-
-          {/* Language bar */}
-          {languageCounts.length > 0 && (
-            <div>
-              <h2 class="text-sm font-semibold text-foreground/70 mb-2">Languages</h2>
-              <div class="flex h-4 rounded-full overflow-hidden">
-                {languageCounts.map(([name, { count, color }]) => (
-                  <button x-on:click={`language = language === '${name}' ? null : '${name}'; selectedRepo = null`}
-                    x-bind:style={`language && language !== '${name}' ? 'opacity: 0.3' : ''`}
-                    class="h-full transition-opacity hover:opacity-80"
-                    style={`width: ${(count / totalWithLanguage * 100).toFixed(1)}%; background-color: ${color}`}
-                    aria-label={name}
-                    title={`${name}: ${count}`}
-                  >&nbsp;</button>
-                ))}
+            {/* Language bar */}
+            {languageCounts.length > 0 && (
+              <div class="flex h-6 rounded-full overflow-hidden">
+                {languageCounts.map(([name, { count, color }]) => {
+                  const pct = count / totalWithLanguage * 100;
+                  const textClass = hexLuminance(color) > 0.6 ? 'text-black/60' : 'text-white/80';
+                  return (
+                    <button data-lang={name}
+                      x-on:click="language = language === $el.dataset.lang ? null : $el.dataset.lang"
+                      x-bind:class="language && language !== $el.dataset.lang ? 'opacity-30' : ''"
+                      class="h-full transition-opacity hover:opacity-80 overflow-hidden flex items-center justify-center"
+                      style={`width: ${pct.toFixed(1)}%; background-color: ${color};`}
+                      aria-label={name}
+                      title={`${name}: ${count}`}>
+                      {pct >= 5 && <span class={`text-[9px] font-medium ${textClass} truncate px-1 pointer-events-none`}>{langShort(name)}</span>}
+                    </button>
+                  );
+                })}
               </div>
-              <div class="language-legend flex gap-x-3 gap-y-1 mt-2 overflow-x-auto text-xs text-foreground/60">
-                {languageCounts.map(([name, { color }]) => (
-                  <button x-on:click={`language = language === '${name}' ? null : '${name}'; selectedRepo = null`}
-                    x-bind:style={`language && language !== '${name}' ? 'opacity: 0.4' : ''`}
-                    class="flex items-center gap-1 flex-shrink-0 hover:text-foreground transition-colors">
-                    <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={`background-color: ${color}`}></span>
-                    {name}
-                  </button>
-                ))}
+            )}
+
+            {/* Search + sort row */}
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" x-model="search" placeholder="Search"
+                  x-on:keydown.escape="search = ''"
+                  aria-label="Search repositories"
+                  class="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-accent" />
+              </div>
+              <div class="relative flex-shrink-0">
+                <svg class="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10"></path><path d="M11 9h7"></path><path d="M11 13h4"></path><path d="m3 17 3 3 3-3"></path><path d="M6 18V4"></path></svg>
+                <select x-model="sort"
+                  aria-label="Sort order"
+                  class="h-9 pl-7 pr-6 text-sm border border-border rounded-md bg-background text-foreground/70 focus:outline-none focus:border-accent appearance-none cursor-pointer">
+                  <option value="recent">Recent</option>
+                  <option value="active">Most active</option>
+                  <option value="stars">Stars</option>
+                  <option value="name">Name</option>
+                </select>
               </div>
             </div>
-          )}
-
-          {/* Selection indicator */}
-          <div x-show="selectedRepo || language" x-cloak class="flex items-center gap-2 text-sm text-foreground/70" aria-live="polite">
-            <span x-text="selectedRepo ? 'Highlighted: ' + selectedRepo : language ? 'Showing: ' + language + ' repos' : ''"></span>
-            <button x-on:click="selectedRepo = null; language = null" class="text-accent hover:underline text-xs">Clear</button>
           </div>
 
           {/* Repo list */}
-          {sortedYears.map((year) => {
-            const yearHasPersonal = repositoriesByYear[year].some(r => r.owner === SITE.githubUsername);
-            const yearHasExternal = repositoriesByYear[year].some(r => r.owner !== SITE.githubUsername);
-            return (
-            <div x-show={`owner === 'all'${yearHasPersonal ? " || owner === 'personal'" : ''}${yearHasExternal ? " || owner === 'external'" : ''}`}>
-              {year !== new Date().getFullYear() && (
-                <div class="border-b border-border mb-4">
-                  <h2 class="text-2xl font-bold text-accent py-3">{year}</h2>
-                </div>
-              )}
-
-              <div class="space-y-3">
-                {repositoriesByYear[year].map((repo) => (
-                  <div class="border border-border rounded-lg p-4 sm:p-6 bg-background transition-opacity duration-150"
-                    data-repo-id={`${repo.owner}/${repo.name}`}
-                    x-show={`owner === 'all' || (owner === 'personal' && '${repo.owner}' === '${SITE.githubUsername}') || (owner === 'external' && '${repo.owner}' !== '${SITE.githubUsername}')`}
-                    x-bind:style={`(selectedRepo && selectedRepo !== '${repo.owner}/${repo.name}') || (language && language !== '${repo.primaryLanguage?.name ?? ''}') ? 'opacity: 0.2' : ''`}>
+          <div class="space-y-3" x-ref="repoList"
+            x-init="$watch('sort', () => reorder())">
+            {repositories.map((repo, i) => {
+              const year = repo.lastActivity.getFullYear();
+              const prevYear = i > 0 ? repositories[i - 1].lastActivity.getFullYear() : null;
+              const showDivider = year !== new Date().getFullYear() && year !== prevYear;
+              const fullName = `${repo.owner}/${repo.name}`;
+              const activity = repoActivity(repo);
+              return (
+                <>
+                  {showDivider && (
+                    <div data-year-divider={year} class="border-b border-border">
+                      <h2 class="text-2xl font-bold text-accent py-3">{year}</h2>
+                    </div>
+                  )}
+                  <div class="group/card border border-border rounded-lg p-4 sm:p-6 bg-background focus-within:ring-1 focus-within:ring-accent"
+                    tabindex="0"
+                    data-repo-id={fullName}
+                    data-repo-url={repo.url}
+                    data-repo-year={year}
+                    data-owner={repo.owner}
+                    data-language={repo.primaryLanguage?.name ?? ''}
+                    data-sort-recent={repo.lastActivity.getTime()}
+                    data-sort-active={activity}
+                    data-sort-stars={repo.stargazerCount}
+                    data-sort-name={fullName.toLowerCase()}
+                    x-on:keydown.ctrl.o.prevent="window.open($el.dataset.repoUrl, '_blank')"
+                    x-on:keydown.meta.o.prevent="window.open($el.dataset.repoUrl, '_blank')"
+                    x-show="visible($el)"
+                    x-transition:enter="transition-all duration-150 ease-out origin-top"
+                    x-transition:enter-start="scale-y-0 opacity-0"
+                    x-transition:enter-end="scale-y-100 opacity-100"
+                    x-transition:leave="transition-all duration-100 ease-in origin-top"
+                    x-transition:leave-start="scale-y-100 opacity-100"
+                    x-transition:leave-end="scale-y-0 opacity-0">
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                       <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-1">
@@ -356,13 +399,17 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
                         <time datetime={repo.lastActivity.toISOString()} title={formatFullDate(repo.lastActivity)} data-relative>
                           {formatDate(repo.lastActivity)}
                         </time>
+                        <div class="hidden group-focus-within/card:flex items-center gap-1 mt-1 text-foreground/30 text-xs justify-end">
+                          <kbd class="px-1 py-0.5 rounded border border-border bg-muted/50 text-[10px] font-mono leading-none"
+                            x-text="navigator.platform?.includes('Mac') ? '⌘O' : 'Ctrl+O'"></kbd> open
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )})}
+                </>
+              );
+            })}
+          </div>
         </div>
       )}
     </section>
@@ -371,6 +418,5 @@ const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0
 
 <style>
   [x-cloak] { display: none; }
-  .language-legend::-webkit-scrollbar { display: none; }
-  .language-legend { scrollbar-width: none; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
 </style>
