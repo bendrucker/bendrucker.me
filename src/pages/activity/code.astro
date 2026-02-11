@@ -206,7 +206,7 @@ const langShort = (name: string) => {
             }
           }`}>
           {/* Filter controls */}
-          <div class="space-y-3">
+          <div class="sticky top-0 z-10 bg-background space-y-3 pt-3 -mt-3 pb-3 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none">
             <nav class="flex items-center gap-2" aria-label="Filter repositories">
               <button x-on:click="owner = 'all'; language = null"
                 x-bind:aria-pressed="(owner === 'all').toString()"
