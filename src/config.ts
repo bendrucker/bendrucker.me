@@ -11,8 +11,7 @@ export const SITE = {
   scheduledPostMargin: 15 * 60 * 1000, // 15 minutes
   showArchives: true,
   showBackButton: true, // show back button in post detail
-  editPost: {
-    enabled: true,
+  viewSource: {
     text: "View Source",
     url: "https://github.com/bendrucker/bendrucker.me/blob/master/",
   },

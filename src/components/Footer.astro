@@ -11,7 +11,7 @@ export interface Props {
 }
 
 const { noMarginTop = false, sourcePath } = Astro.props;
-const sourceUrl = sourcePath ? `${SITE.editPost.url}${sourcePath}` : undefined;
+const sourceUrl = sourcePath ? `${SITE.viewSource.url}${sourcePath}` : undefined;
 ---
 
 <footer class:list={["w-full", { "mt-auto": !noMarginTop }]}>
@@ -33,7 +33,7 @@ const sourceUrl = sourcePath ? `${SITE.editPost.url}${sourcePath}` : undefined;
             rel="noopener noreferrer"
             class="hover:text-accent"
           >
-            {SITE.editPost.text}
+            {SITE.viewSource.text}
           </a>
         </>
       )}
