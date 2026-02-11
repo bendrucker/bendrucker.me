@@ -30,7 +30,7 @@ const { tag } = params;
 const { page, tagName } = Astro.props;
 ---
 
-<Layout title={`Tag: ${tagName} | ${SITE.title}`}>
+<Layout title={`Tag: ${tagName} | ${SITE.title}`} sourcePath="src/pages/tags/[tag]/[...page].astro">
   <Main
     pageTitle={[`Tag:`, `${tagName}`]}
     titleTransition={tag}
