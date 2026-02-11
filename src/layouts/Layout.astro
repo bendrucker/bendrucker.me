@@ -16,6 +16,7 @@ export interface Props {
   pubDatetime?: Date;
   modDatetime?: Date | null;
   scrollSmooth?: boolean;
+  sourcePath?: string;
 }
 
 const {
@@ -28,6 +29,7 @@ const {
   pubDatetime,
   modDatetime,
   scrollSmooth = false,
+  sourcePath,
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.url);
@@ -138,7 +140,7 @@ const structuredData = {
   <body>
     <Header />
     <slot />
-    <Footer />
+    <Footer sourcePath={sourcePath} />
   </body>
 </html>
 

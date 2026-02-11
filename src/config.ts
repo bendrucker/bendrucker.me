@@ -13,8 +13,8 @@ export const SITE = {
   showBackButton: true, // show back button in post detail
   editPost: {
     enabled: true,
-    text: "Edit page",
-    url: "https://github.com/bendrucker/bendrucker.me/edit/master/",
+    text: "View Source",
+    url: "https://github.com/bendrucker/bendrucker.me/blob/master/",
   },
   dynamicOgImage: false,
   dir: "ltr", // "rtl" | "auto"
