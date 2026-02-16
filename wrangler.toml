@@ -2,6 +2,7 @@ name = "bendrucker-me"
 main = "./dist/_worker.js/index.js"
 compatibility_date = "2025-07-28"
 compatibility_flags = ["nodejs_compat"]
+upload_source_maps = true
 preview_urls = true
 
 [assets]
@@ -18,5 +19,5 @@ preview_id = "e8f3338afa2645669d60e88f16876007"
 pattern = "www.bendrucker.me"
 custom_domain = true
 
-[observability.logs]
+[observability]
 enabled = true
