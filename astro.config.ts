@@ -2,6 +2,7 @@ import { defineConfig, envField } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
 import alpinejs from "@astrojs/alpinejs";
+import sentry from "@sentry/astro";
 import cloudflare from "@astrojs/cloudflare";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
@@ -14,6 +15,8 @@ import { transformerFileName } from "./src/utils/markdown/transformers/fileName.
 import { SITE } from "./src/config";
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+
+const isDev = process.env.NODE_ENV === "development";
 
 function copyStaticFiles(src: string, dest: string) {
   try {
@@ -48,6 +51,14 @@ export default defineConfig({
       filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
     }),
     alpinejs(),
+    ...(isDev
+      ? [
+          sentry({
+            sourceMapsUploadOptions: { enabled: false },
+            autoInstrumentation: { requestHandler: false },
+          }),
+        ]
+      : []),
   ],
   markdown: {
     remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
