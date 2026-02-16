@@ -1,0 +1,100 @@
+---
+import { sql } from "kysely";
+import Layout from "../../../layouts/Layout.astro";
+import Main from "../../../layouts/Main.astro";
+import { SITE } from "../../../config";
+import YearActivity from "../../../components/activity/YearActivity.vue";
+import type { Repo, YearCount } from "../../../components/activity/composables/useActivityApi";
+import { getDb } from "@/db";
+import { repoQuery, yearHaving, mapRepoRow, queryRepos } from "./_query";
+import { formatReposMarkdown } from "./_markdown";
+import { logger } from "@workspace/logger";
+
+const { year: yearParam } = Astro.params;
+const year = Number(yearParam);
+
+if (!Number.isInteger(year) || year < 2000 || year > new Date().getFullYear() + 1) {
+  return Astro.redirect("/404");
+}
+
+const accept = Astro.request.headers.get("accept") ?? "";
+
+if (accept.includes("text/markdown")) {
+  const db = getDb(Astro.locals);
+  const data = await queryRepos(db, { year });
+  if (data.total === 0) {
+    return new Response("Not found", { status: 404 });
+  }
+  return new Response(formatReposMarkdown(data.repos, data.total, { year }), {
+    headers: { "Content-Type": "text/markdown; charset=utf-8" },
+  });
+}
+
+let initialRepos: Repo[] = [];
+let initialTotal = 0;
+let years: YearCount[] = [];
+
+try {
+  const db = getDb(Astro.locals);
+
+  const countSubquery = db
+    .selectFrom("repos")
+    .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
+    .select("repos.id")
+    .groupBy("repos.id")
+    .having(yearHaving, "=", year);
+
+  const countResult = await db
+    .selectFrom(countSubquery.as("sub"))
+    .select(sql<number>`count(*)`.as("total"))
+    .executeTakeFirstOrThrow();
+  initialTotal = countResult.total;
+
+  if (initialTotal === 0) {
+    return Astro.redirect("/404");
+  }
+
+  const rows = await repoQuery(db)
+    .having(yearHaving, "=", year)
+    .orderBy(sql`last_activity`, "desc")
+    .execute();
+
+  initialRepos = rows.map(mapRepoRow);
+
+  const yearSubquery = db
+    .selectFrom("repos")
+    .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
+    .select([
+      "repos.id",
+      sql<number>`max(${sql.ref("repoActivity.year")})`.as("maxYear"),
+    ])
+    .groupBy("repos.id");
+
+  years = await db
+    .selectFrom(yearSubquery.as("sub"))
+    .select(["sub.maxYear as year", sql<number>`count(*)`.as("count")])
+    .groupBy("sub.maxYear")
+    .orderBy("sub.maxYear", "desc")
+    .execute();
+} catch (error) {
+  logger.error({ error, year }, "Failed to load year activity data");
+}
+
+const title = `GitHub Activity: ${year} | ${SITE.title}`;
+const description = `${initialTotal} repositories ${SITE.author} last contributed to in ${year}.`;
+---
+
+<Layout title={title} description={description} ogImage="/activity/code/og.png" sourcePath="src/pages/activity/code/[year].astro">
+  <Main pageTitle={`Activity: Code (${year})`} pageDesc={`Repositories last contributed to in ${year}.`}>
+    <section>
+      <YearActivity
+        client:load
+        initialRepos={initialRepos}
+        initialTotal={initialTotal}
+        year={year}
+        years={years}
+        username={SITE.githubUsername}
+      />
+    </section>
+  </Main>
+</Layout>

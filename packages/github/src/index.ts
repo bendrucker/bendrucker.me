@@ -8,6 +8,8 @@ import type {
 } from "@octokit/graphql-schema";
 import { logger } from "@workspace/logger";
 
+export const GITHUB_EPOCH_YEAR = 2008;
+
 // Our business logic types
 export interface ActivitySummary {
   prCount: number;
@@ -35,6 +37,19 @@ export interface RepoActivity {
 export interface GitHubConfig {
   username: string;
   title: string;
+  from?: Date;
+  to?: Date;
+}
+
+export interface RateLimit {
+  remaining: number;
+  cost: number;
+  resetAt: string;
+}
+
+export interface GitHubActivityResult {
+  repos: RepoActivity[];
+  rateLimit: RateLimit;
 }
 
 // Simple gql tag for syntax highlighting
@@ -179,6 +194,12 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
         }
       }
     }
+
+    rateLimit {
+      remaining
+      cost
+      resetAt
+    }
   }
 `;
 
@@ -186,6 +207,7 @@ interface GraphQLResponse {
   user: Pick<User, "contributionsCollection"> | null;
   search: SearchResultItemConnection | null;
   mergedPRs: SearchResultItemConnection | null;
+  rateLimit: { remaining: number; cost: number; resetAt: string } | null;
 }
 
 function createRepoActivity(
@@ -233,7 +255,7 @@ function getOrCreateRepo(
 export async function fetchGitHubActivity(
   token: string,
   config: GitHubConfig,
-): Promise<RepoActivity[]> {
+): Promise<GitHubActivityResult> {
   const auth = createTokenAuth(token);
 
   const graphqlWithAuth = graphql.defaults({
@@ -246,14 +268,15 @@ export async function fetchGitHubActivity(
   });
 
   const now = new Date();
-  const start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  const to = config.to ?? now;
+  const from = config.from ?? new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
   logger.debug(
     {
       username: config.username,
       timeframe: {
-        from: start.toISOString(),
-        to: now.toISOString(),
+        from: from.toISOString(),
+        to: to.toISOString(),
       },
     },
     "Starting GitHub GraphQL request via Octokit",
@@ -261,10 +284,10 @@ export async function fetchGitHubActivity(
 
   const variables = {
     username: config.username,
-    from: start.toISOString(),
-    to: now.toISOString(),
-    issueSearchQuery: `is:issue involves:${config.username} updated:>${start.toISOString().split("T")[0]}`,
-    mergedPRSearchQuery: `is:pr is:merged user:${config.username} -author:${config.username} -author:app/dependabot -author:app/renovate merged:>${start.toISOString().split("T")[0]}`,
+    from: from.toISOString(),
+    to: to.toISOString(),
+    issueSearchQuery: `is:issue involves:${config.username} updated:>${from.toISOString().split("T")[0]}`,
+    mergedPRSearchQuery: `is:pr is:merged user:${config.username} -author:${config.username} -author:app/dependabot -author:app/renovate merged:>${from.toISOString().split("T")[0]}`,
   };
 
   try {
@@ -288,10 +311,38 @@ export async function fetchGitHubActivity(
       config.username,
     );
 
+    const cc = contributionsCollection;
+    const truncationChecks = [
+      { name: 'commitContributionsByRepository', count: cc.commitContributionsByRepository.length },
+      { name: 'pullRequestContributionsByRepository', count: cc.pullRequestContributionsByRepository.length },
+      { name: 'pullRequestReviewContributionsByRepository', count: cc.pullRequestReviewContributionsByRepository.length },
+      { name: 'issueContributionsByRepository', count: cc.issueContributionsByRepository?.length ?? 0 },
+      { name: 'repositoryContributions', count: cc.repositoryContributions.nodes?.length ?? 0 },
+      { name: 'issueSearch', count: issueSearch?.nodes?.length ?? 0 },
+      { name: 'mergedPRSearch', count: mergedPRSearch?.nodes?.length ?? 0 },
+    ];
+
+    for (const check of truncationChecks) {
+      if (check.count >= 100) {
+        logger.warn(
+          {
+            field: check.name,
+            count: check.count,
+            from: from.toISOString(),
+            to: to.toISOString(),
+          },
+          'GitHub API result may be truncated (hit 100 item limit)',
+        );
+      }
+    }
+
+    const rateLimit: RateLimit = data.rateLimit ?? { remaining: 0, cost: 0, resetAt: new Date().toISOString() };
+
     logger.info(
       {
         username: config.username,
         repositoryCount: result.length,
+        rateLimit: { remaining: rateLimit.remaining, cost: rateLimit.cost },
         totalActivity: result.reduce(
           (acc, repo) => ({
             prs: acc.prs + repo.activitySummary.prCount,
@@ -305,7 +356,7 @@ export async function fetchGitHubActivity(
       "GitHub activity processing completed",
     );
 
-    return result;
+    return { repos: result, rateLimit };
   } catch (error) {
     if (error instanceof Error) {
       logger.error(

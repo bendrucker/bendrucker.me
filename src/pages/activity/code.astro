@@ -1,422 +1,70 @@
 ---
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { formatDistanceToNowStrict, isToday, isYesterday, format } from 'date-fns';
+import { sql } from "kysely";
 import Layout from "../../layouts/Layout.astro";
 import Main from "../../layouts/Main.astro";
 import { SITE } from "../../config";
-import type { RepoActivity } from "../../services/github";
-import CircleDot from "@/assets/icons/circle-dot.svg";
-import GitPullRequest from "@/assets/icons/git-pull-request.svg";
-import Star from "@/assets/icons/star.svg";
-import Checklist from "@/assets/icons/checklist.svg";
-import GitMerge from "@/assets/icons/git-merge.svg";
-import * as linguistLanguages from 'linguist-languages';
+import ActivityTimeline from "../../components/activity/ActivityTimeline.vue";
+import type { Repo } from "../../components/activity/composables/useActivityApi";
+import { getDb } from "@/db";
+import { repoQuery, mapRepoRow, queryRepos } from "./code/_query";
+import { formatReposMarkdown } from "./code/_markdown";
+import { logger } from "@workspace/logger";
 
-// Load activity data
-let repositories: RepoActivity[] = [];
-let isDev = false;
+const accept = Astro.request.headers.get("accept") ?? "";
+
+if (accept.includes("text/markdown")) {
+  const db = getDb(Astro.locals);
+  const data = await queryRepos(db, {});
+  return new Response(formatReposMarkdown(data.repos, data.total), {
+    headers: { "Content-Type": "text/markdown; charset=utf-8" },
+  });
+}
+
+let initialRepos: Repo[] = [];
+let initialTotal = 0;
+let initialHasMore = false;
+let initialCursor: string | null = null;
 
 try {
-  // Access KV through Astro.locals.runtime.env (correct pattern)
-  const { GITHUB_KV } = Astro.locals.runtime.env;
+  const db = getDb(Astro.locals);
 
-  if (GITHUB_KV) {
-    // Production: read from KV storage
-    const kvData = await GITHUB_KV.get('activity', 'json') as RepoActivity[] | null;
-    if (kvData) {
-      repositories = kvData.map(repo => ({
-        ...repo,
-        lastActivity: new Date(repo.lastActivity),
-        createdAt: repo.createdAt ? new Date(repo.createdAt) : undefined
-      }));
-    }
-  } else {
-    // Development: try to load from local file
-    isDev = true;
-    const localDataPath = join(process.cwd(), 'tmp', 'github-activity.json');
-    if (existsSync(localDataPath)) {
-      const localData = JSON.parse(readFileSync(localDataPath, 'utf-8')) as RepoActivity[];
-      repositories = localData.map(repo => ({
-        ...repo,
-        lastActivity: new Date(repo.lastActivity),
-        createdAt: repo.createdAt ? new Date(repo.createdAt) : undefined
-      }));
-    }
+  const countResult = await db
+    .selectFrom("repos")
+    .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
+    .select(sql<number>`count(distinct ${sql.ref("repos.id")})`.as("total"))
+    .executeTakeFirstOrThrow();
+  initialTotal = countResult.total;
+
+  const results = await repoQuery(db)
+    .orderBy(sql`last_activity`, "desc")
+    .limit(21)
+    .execute();
+
+  initialHasMore = results.length > 20;
+  const pageResults = initialHasMore ? results.slice(0, 20) : results;
+
+  if (pageResults.length > 0) {
+    const last = pageResults[pageResults.length - 1];
+    initialCursor = `${last.lastActivity}|${last.id}`;
   }
-} catch {
-  // Silently fail and show empty state
-  repositories = [];
+
+  initialRepos = pageResults.map(mapRepoRow);
+} catch (error) {
+  logger.error({ error }, "Failed to load activity data");
 }
-
-const isRepoNew = (repo: RepoActivity) => {
-  if (!repo.createdAt) return false;
-  const threeMonthsAgo = new Date(Date.now() - (90 * 24 * 60 * 60 * 1000));
-  return repo.createdAt > threeMonthsAgo;
-};
-
-const formatDate = (date: Date) => {
-  // If today, show relative time
-  if (isToday(date)) {
-    return formatDistanceToNowStrict(date, { addSuffix: true });
-  }
-
-  // If yesterday, show "Yesterday"
-  if (isYesterday(date)) {
-    return 'Yesterday';
-  }
-
-  // Otherwise, show date
-  return format(date, 'MMM d');
-};
-
-const formatFullDate = (date: Date) => {
-  return format(date, 'PPPp'); // Full localized date and time format (e.g., 'April 29th, 2022 at 11:15 PM')
-};
-
-const formatCreatedDate = (date: Date) => {
-  return `Created ${format(date, 'PPP')}`; // e.g., 'Created June 1st, 2025'
-};
-
-const formatStarCount = (count: number) => {
-  if (count < 1000) return count.toString();
-  const thousands = Math.floor(count / 100) / 10;
-  return `${thousands}k`;
-};
-
-const getGitHubSearchUrl = (repo: RepoActivity, type: 'pr' | 'review' | 'issue' | 'merge') => {
-  const baseUrl = 'https://github.com/search';
-  const repoQuery = `repo:${repo.owner}/${repo.name}`;
-  const oneYearAgo = new Date(Date.now() - (365 * 24 * 60 * 60 * 1000));
-  const timeFilter = `created:>${oneYearAgo.toISOString().split('T')[0]}`;
-
-  let query = '';
-  let searchType = '';
-
-  switch (type) {
-    case 'pr':
-      query = `${repoQuery} is:pr is:merged author:${SITE.githubUsername} ${timeFilter}`;
-      searchType = 'pullrequests';
-      break;
-    case 'review':
-      query = `${repoQuery} is:pr reviewed-by:${SITE.githubUsername} ${timeFilter}`;
-      searchType = 'pullrequests';
-      break;
-    case 'issue':
-      query = `${repoQuery} is:issue involves:${SITE.githubUsername} updated:>${oneYearAgo.toISOString().split('T')[0]}`;
-      searchType = 'issues';
-      break;
-    case 'merge':
-      query = `${repoQuery} is:pr is:merged -author:${SITE.githubUsername} -author:app/dependabot -author:app/renovate merged:>${oneYearAgo.toISOString().split('T')[0]}`;
-      searchType = 'pullrequests';
-      break;
-  }
-
-  return `${baseUrl}?q=${encodeURIComponent(query)}&type=${searchType}&s=created&o=desc`;
-};
-
-const repoActivity = (repo: RepoActivity) =>
-  repo.activitySummary.prCount + repo.activitySummary.reviewCount +
-  repo.activitySummary.issueCount + repo.activitySummary.mergeCount;
-
-const languageMap = new Map<string, { count: number; color: string }>();
-for (const repo of repositories) {
-  if (repo.primaryLanguage) {
-    const existing = languageMap.get(repo.primaryLanguage.name);
-    if (existing) {
-      existing.count++;
-    } else {
-      languageMap.set(repo.primaryLanguage.name, { count: 1, color: repo.primaryLanguage.color });
-    }
-  }
-}
-const languageCounts = [...languageMap.entries()].sort((a, b) => b[1].count - a[1].count);
-const totalWithLanguage = languageCounts.reduce((sum, [, v]) => sum + v.count, 0);
-
-const hexLuminance = (hex: string) => {
-  const c = hex.replace('#', '');
-  const r = parseInt(c.slice(0, 2), 16);
-  const g = parseInt(c.slice(2, 4), 16);
-  const b = parseInt(c.slice(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-};
-
-const langExtOverrides: Record<string, string> = { HCL: '.tf' };
-const langShort = (name: string) => {
-  const lang = (linguistLanguages as Record<string, { extensions?: readonly string[] }>)[name];
-  const exts = lang?.extensions;
-  if (!exts?.length) return name.toLowerCase();
-  const override = langExtOverrides[name];
-  if (override) {
-    if (!exts.includes(override)) throw new Error(`Invalid override "${override}" for ${name}. Valid: ${exts.join(', ')}`);
-    return override.slice(1);
-  }
-  return exts[0].slice(1);
-};
 ---
 
-<Layout title={`Activity: Code | ${SITE.title}`} description="My public GitHub activity over the last year." sourcePath="src/pages/activity/code.astro">
-  <Main pageTitle="Activity: Code" pageDesc="This page summarizes my GitHub activity over the last year. It is an index of recent software projects I am working on in public.">
+<Layout title={`Activity: Code | ${SITE.title}`} description="My public GitHub activity." ogImage="/activity/code/og.png" sourcePath="src/pages/activity/code.astro">
+  <Main pageTitle="Activity: Code" pageDesc="This page summarizes my GitHub activity by last contribution to each repository. It is an index of software projects I work on in public.">
     <section>
-      {repositories.length === 0 ? (
-        <div class="text-center py-8">
-          {isDev ? (
-            <div class="bg-muted border border-border rounded-lg p-4 text-sm">
-              <p class="font-medium mb-2">Development Mode</p>
-              <p>Run <code class="bg-background px-2 py-1 rounded border">npm run fetch-activity</code> to load GitHub data locally.</p>
-            </div>
-          ) : (
-            <p class="text-muted">No recent activity data available.</p>
-          )}
-        </div>
-      ) : (
-        <div class="space-y-4" x-data={`{
-            owner: 'all',
-            language: null,
-            search: '',
-            sort: 'recent',
-            username: '${SITE.githubUsername}',
-            total: ${repositories.length},
-            visible(el) {
-              if (this.search && !el.dataset.repoId.toLowerCase().includes(this.search.toLowerCase())) return false;
-              if (this.owner !== 'all') {
-                const personal = el.dataset.owner === this.username;
-                if (this.owner === 'personal' && !personal) return false;
-                if (this.owner === 'external' && personal) return false;
-              }
-              if (this.language && el.dataset.language !== this.language) return false;
-              return true;
-            },
-            reorder() {
-              const list = this.$refs.repoList;
-              const cards = [...list.querySelectorAll('[data-repo-id]')];
-              const dividers = [...list.querySelectorAll('[data-year-divider]')];
-              dividers.forEach(d => d.style.display = this.sort === 'recent' ? '' : 'none');
-              const key = { recent: 'sortRecent', active: 'sortActive', stars: 'sortStars', name: 'sortName' }[this.sort];
-              cards.sort((a, b) => {
-                if (this.sort === 'name') return a.dataset[key].localeCompare(b.dataset[key]);
-                return Number(b.dataset[key]) - Number(a.dataset[key]);
-              });
-              cards.forEach(card => list.appendChild(card));
-              if (this.sort === 'recent') dividers.forEach(d => {
-                const year = d.dataset.yearDivider;
-                const first = cards.find(c => c.dataset.repoYear === year);
-                if (first) list.insertBefore(d, first);
-              });
-            }
-          }`}>
-          {/* Filter controls */}
-          <div class="sticky top-0 z-10 bg-background space-y-3 pt-3 -mt-3 pb-3 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none">
-            <nav class="flex items-center gap-2" aria-label="Filter repositories">
-              <button x-on:click="owner = 'all'; language = null"
-                x-bind:aria-pressed="(owner === 'all').toString()"
-                x-bind:class="owner === 'all' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
-                class="flex items-center h-8 px-3 rounded-full text-sm font-medium border transition-colors">
-                All
-              </button>
-              <button x-on:click="owner = 'personal'; language = null"
-                x-bind:aria-pressed="(owner === 'personal').toString()"
-                x-bind:class="owner === 'personal' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
-                class="flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium border transition-colors"
-                title="Personal repositories">
-                <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                <span class="hidden sm:inline">Personal</span>
-              </button>
-              <button x-on:click="owner = 'external'; language = null"
-                x-bind:aria-pressed="(owner === 'external').toString()"
-                x-bind:class="owner === 'external' ? 'bg-accent text-background border-accent' : 'border-border text-foreground hover:border-accent'"
-                class="flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium border transition-colors"
-                title="External / organization repositories">
-                <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                <span class="hidden sm:inline">External</span>
-              </button>
-              <span class="ml-auto flex items-center gap-1.5 text-xs text-foreground/50">
-                <button x-show="language || owner !== 'all' || search" x-cloak
-                  x-on:click="language = null; owner = 'all'; search = ''"
-                  class="text-foreground/40 hover:text-foreground transition-colors"
-                  aria-label="Reset filters">&times;</button>
-                <span aria-live="polite"
-                  x-text="(() => {
-                    const cards = [...($refs.repoList?.querySelectorAll('[data-repo-id]') ?? [])];
-                    const count = cards.filter(el => visible(el)).length;
-                    return count === total ? total + ' repos' : count + ' / ' + total + ' repos';
-                  })()"></span>
-              </span>
-            </nav>
-
-            {/* Language bar */}
-            {languageCounts.length > 0 && (
-              <div class="flex h-6 rounded-full overflow-hidden">
-                {languageCounts.map(([name, { count, color }]) => {
-                  const pct = count / totalWithLanguage * 100;
-                  const textClass = hexLuminance(color) > 0.6 ? 'text-black/60' : 'text-white/80';
-                  return (
-                    <button data-lang={name}
-                      x-on:click="language = language === $el.dataset.lang ? null : $el.dataset.lang"
-                      x-bind:class="language && language !== $el.dataset.lang ? 'opacity-30' : ''"
-                      class="h-full transition-opacity hover:opacity-80 overflow-hidden flex items-center justify-center"
-                      style={`width: ${pct.toFixed(1)}%; background-color: ${color};`}
-                      aria-label={name}
-                      title={`${name}: ${count}`}>
-                      {pct >= 5 && <span class={`text-[9px] font-medium ${textClass} truncate px-1 pointer-events-none`}>{langShort(name)}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Search + sort row */}
-            <div class="flex items-center gap-2">
-              <div class="relative flex-1">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" x-model="search" placeholder="Search"
-                  x-on:keydown.escape="search = ''"
-                  aria-label="Search repositories"
-                  class="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-accent" />
-              </div>
-              <div class="relative flex-shrink-0">
-                <svg class="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10"></path><path d="M11 9h7"></path><path d="M11 13h4"></path><path d="m3 17 3 3 3-3"></path><path d="M6 18V4"></path></svg>
-                <select x-model="sort"
-                  aria-label="Sort order"
-                  class="h-9 pl-7 pr-6 text-sm border border-border rounded-md bg-background text-foreground/70 focus:outline-none focus:border-accent appearance-none cursor-pointer">
-                  <option value="recent">Recent</option>
-                  <option value="active">Most active</option>
-                  <option value="stars">Stars</option>
-                  <option value="name">Name</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Repo list */}
-          <div class="space-y-3" x-ref="repoList"
-            x-init="$watch('sort', () => reorder())">
-            {repositories.map((repo, i) => {
-              const year = repo.lastActivity.getFullYear();
-              const prevYear = i > 0 ? repositories[i - 1].lastActivity.getFullYear() : null;
-              const showDivider = year !== new Date().getFullYear() && year !== prevYear;
-              const fullName = `${repo.owner}/${repo.name}`;
-              const activity = repoActivity(repo);
-              return (
-                <>
-                  {showDivider && (
-                    <div data-year-divider={year} class="border-b border-border">
-                      <h2 class="text-2xl font-bold text-accent py-3">{year}</h2>
-                    </div>
-                  )}
-                  <div class="group/card border border-border rounded-lg p-4 sm:p-6 bg-background focus-within:ring-1 focus-within:ring-accent"
-                    tabindex="0"
-                    data-repo-id={fullName}
-                    data-repo-url={repo.url}
-                    data-repo-year={year}
-                    data-owner={repo.owner}
-                    data-language={repo.primaryLanguage?.name ?? ''}
-                    data-sort-recent={repo.lastActivity.getTime()}
-                    data-sort-active={activity}
-                    data-sort-stars={repo.stargazerCount}
-                    data-sort-name={fullName.toLowerCase()}
-                    x-on:keydown.ctrl.o.prevent="window.open($el.dataset.repoUrl, '_blank')"
-                    x-on:keydown.meta.o.prevent="window.open($el.dataset.repoUrl, '_blank')"
-                    x-show="visible($el)"
-                    x-transition:enter="transition-all duration-150 ease-out origin-top"
-                    x-transition:enter-start="scale-y-0 opacity-0"
-                    x-transition:enter-end="scale-y-100 opacity-100"
-                    x-transition:leave="transition-all duration-100 ease-in origin-top"
-                    x-transition:leave-start="scale-y-100 opacity-100"
-                    x-transition:leave-end="scale-y-0 opacity-0">
-                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-                      <div class="flex-1 min-w-0">
-                        <div class="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 class="text-lg font-semibold">
-                            <a href={repo.url} target="_blank" rel="noopener noreferrer" class="text-foreground hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors">
-                              {repo.owner === SITE.githubUsername ? repo.name : (
-                                <><span class="text-foreground/60 font-normal">{repo.owner}/</span>{repo.name}</>
-                              )}
-                            </a>
-                          </h3>
-                          {repo.primaryLanguage && (
-                            <span
-                              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border border-border"
-                              style={`background-color: ${repo.primaryLanguage.color}20; color: ${repo.primaryLanguage.color}`}
-                            >
-                              {repo.primaryLanguage.name}
-                            </span>
-                          )}
-                          {isRepoNew(repo) && repo.createdAt && (
-                            <span
-                              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 bg-green-500/20 text-green-600"
-                              title={formatCreatedDate(repo.createdAt)}
-                            >
-                              New!
-                            </span>
-                          )}
-                        </div>
-                        <p class="text-foreground text-sm mb-3">{repo.description}</p>
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-foreground/70">
-                          {repo.activitySummary.prCount > 0 && (
-                            <a href={getGitHubSearchUrl(repo, 'pr')} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
-                               title="Pull requests authored">
-                              <GitPullRequest class="w-4 h-4 flex-shrink-0" />
-                              <span>{repo.activitySummary.prCount}</span>
-                            </a>
-                          )}
-                          {repo.activitySummary.reviewCount > 0 && (
-                            <a href={getGitHubSearchUrl(repo, 'review')} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
-                               title="Pull request reviews submitted">
-                              <Checklist class="w-4 h-4 flex-shrink-0" />
-                              <span>{repo.activitySummary.reviewCount}</span>
-                            </a>
-                          )}
-                          {repo.activitySummary.mergeCount > 0 && (
-                            <a href={getGitHubSearchUrl(repo, 'merge')} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
-                               title="Pull requests merged">
-                              <GitMerge class="w-4 h-4 flex-shrink-0" />
-                              <span>{repo.activitySummary.mergeCount}</span>
-                            </a>
-                          )}
-                          {repo.activitySummary.issueCount > 0 && (
-                            <a href={getGitHubSearchUrl(repo, 'issue')} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
-                               title="Issues opened or commented">
-                              <CircleDot class="w-4 h-4 flex-shrink-0" />
-                              <span>{repo.activitySummary.issueCount}</span>
-                            </a>
-                          )}
-                          {repo.stargazerCount > 0 && (
-                            <a href={`${repo.url}/stargazers`} target="_blank" rel="noopener noreferrer"
-                               class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
-                               title="GitHub stars">
-                              <Star class="w-4 h-4 flex-shrink-0" />
-                              <span>{formatStarCount(repo.stargazerCount)}</span>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                      <div class="text-sm text-foreground/60 flex-shrink-0 sm:text-right">
-                        <time datetime={repo.lastActivity.toISOString()} title={formatFullDate(repo.lastActivity)} data-relative>
-                          {formatDate(repo.lastActivity)}
-                        </time>
-                        <div class="hidden group-focus-within/card:flex items-center gap-1 mt-1 text-foreground/30 text-xs justify-end">
-                          <kbd class="px-1 py-0.5 rounded border border-border bg-muted/50 text-[10px] font-mono leading-none"
-                            x-text="navigator.platform?.includes('Mac') ? '⌘O' : 'Ctrl+O'"></kbd> open
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <ActivityTimeline
+        client:load
+        initialRepos={initialRepos}
+        initialTotal={initialTotal}
+        initialHasMore={initialHasMore}
+        initialCursor={initialCursor}
+        username={SITE.githubUsername}
+      />
     </section>
   </Main>
 </Layout>
-
-<style>
-  [x-cloak] { display: none; }
-  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
-</style>
