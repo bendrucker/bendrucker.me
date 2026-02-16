@@ -13,7 +13,7 @@
     "@workspace/logger": "*"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.2.0",
     "typescript": "^5.9.3",
     "wrangler": "^4.59.2"
   }

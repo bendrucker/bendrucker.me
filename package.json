@@ -28,7 +28,7 @@
     "@resvg/resvg-wasm": "^2.6.2",
     "@tailwindcss/vite": "^4.1.18",
     "@types/alpinejs": "^3.13.11",
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.2.0",
     "astro": "^5.16.15",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
