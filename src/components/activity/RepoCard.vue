@@ -135,7 +135,9 @@ function handleKeydown(e: KeyboardEvent) {
             New!
           </span>
         </div>
-        <p class="text-foreground text-sm mb-3 line-clamp-2">{{ repo.description }}</p>
+        <p class="text-foreground text-sm mb-3 line-clamp-2">
+          {{ repo.description }}
+        </p>
         <div
           class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-foreground/70"
         >
@@ -269,10 +271,7 @@ function handleKeydown(e: KeyboardEvent) {
         </div>
       </div>
       <div class="text-sm text-foreground/60 flex-shrink-0 sm:text-right">
-        <time
-          :datetime="lastActivityDate.toISOString()"
-          :title="fullDate"
-        >
+        <time :datetime="lastActivityDate.toISOString()" :title="fullDate">
           {{ relativeDate }}
         </time>
         <div

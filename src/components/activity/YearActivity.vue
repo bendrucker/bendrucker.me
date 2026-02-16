@@ -44,7 +44,10 @@ const state = reactive<{
 function actionInput() {
   return {
     sort: state.filters.sort === "recent" ? undefined : state.filters.sort,
-    owner: state.filters.owner === "all" ? undefined : (state.filters.owner as "personal" | "external"),
+    owner:
+      state.filters.owner === "all"
+        ? undefined
+        : (state.filters.owner as "personal" | "external"),
     language: state.filters.language,
     search: state.filters.search || undefined,
     year: state.filters.year,
@@ -154,7 +157,7 @@ watch(
       fetchLanguages();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 function updateFilters(partial: Record<string, unknown>) {
@@ -248,7 +251,9 @@ onMounted(() => {
       </a>
       <span v-else class="w-16" />
       <div class="flex items-center gap-2">
-        <span v-if="hasNewerFooterYears" class="text-foreground/20">&hellip;</span>
+        <span v-if="hasNewerFooterYears" class="text-foreground/20"
+          >&hellip;</span
+        >
         <a
           v-for="y in footerYears"
           :key="y.year"
@@ -264,7 +269,9 @@ onMounted(() => {
           {{ y.year }}
           <span class="text-xs opacity-60">({{ y.count }})</span>
         </a>
-        <span v-if="hasOlderFooterYears" class="text-foreground/20">&hellip;</span>
+        <span v-if="hasOlderFooterYears" class="text-foreground/20"
+          >&hellip;</span
+        >
       </div>
       <a
         v-if="nextYear"

@@ -269,7 +269,8 @@ export async function fetchGitHubActivity(
 
   const now = new Date();
   const to = config.to ?? now;
-  const from = config.from ?? new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  const from =
+    config.from ?? new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
   logger.debug(
     {
@@ -313,13 +314,28 @@ export async function fetchGitHubActivity(
 
     const cc = contributionsCollection;
     const truncationChecks = [
-      { name: 'commitContributionsByRepository', count: cc.commitContributionsByRepository.length },
-      { name: 'pullRequestContributionsByRepository', count: cc.pullRequestContributionsByRepository.length },
-      { name: 'pullRequestReviewContributionsByRepository', count: cc.pullRequestReviewContributionsByRepository.length },
-      { name: 'issueContributionsByRepository', count: cc.issueContributionsByRepository?.length ?? 0 },
-      { name: 'repositoryContributions', count: cc.repositoryContributions.nodes?.length ?? 0 },
-      { name: 'issueSearch', count: issueSearch?.nodes?.length ?? 0 },
-      { name: 'mergedPRSearch', count: mergedPRSearch?.nodes?.length ?? 0 },
+      {
+        name: "commitContributionsByRepository",
+        count: cc.commitContributionsByRepository.length,
+      },
+      {
+        name: "pullRequestContributionsByRepository",
+        count: cc.pullRequestContributionsByRepository.length,
+      },
+      {
+        name: "pullRequestReviewContributionsByRepository",
+        count: cc.pullRequestReviewContributionsByRepository.length,
+      },
+      {
+        name: "issueContributionsByRepository",
+        count: cc.issueContributionsByRepository?.length ?? 0,
+      },
+      {
+        name: "repositoryContributions",
+        count: cc.repositoryContributions.nodes?.length ?? 0,
+      },
+      { name: "issueSearch", count: issueSearch?.nodes?.length ?? 0 },
+      { name: "mergedPRSearch", count: mergedPRSearch?.nodes?.length ?? 0 },
     ];
 
     for (const check of truncationChecks) {
@@ -331,12 +347,16 @@ export async function fetchGitHubActivity(
             from: from.toISOString(),
             to: to.toISOString(),
           },
-          'GitHub API result may be truncated (hit 100 item limit)',
+          "GitHub API result may be truncated (hit 100 item limit)",
         );
       }
     }
 
-    const rateLimit: RateLimit = data.rateLimit ?? { remaining: 0, cost: 0, resetAt: new Date().toISOString() };
+    const rateLimit: RateLimit = data.rateLimit ?? {
+      remaining: 0,
+      cost: 0,
+      resetAt: new Date().toISOString(),
+    };
 
     logger.info(
       {

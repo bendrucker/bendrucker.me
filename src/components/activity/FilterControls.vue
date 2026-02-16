@@ -18,7 +18,7 @@ const hasActiveFilter = computed(
     props.filters.owner !== "all" ||
     props.filters.language !== null ||
     props.filters.search !== "" ||
-    (!props.yearPage && props.filters.year !== null)
+    (!props.yearPage && props.filters.year !== null),
 );
 
 const countLabel = computed(() => {

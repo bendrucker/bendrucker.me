@@ -130,7 +130,9 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
       durationMs,
       d1Success,
     },
-    d1Success ? "Stored GitHub activity data" : "Stored GitHub activity data (KV only, D1 failed)",
+    d1Success
+      ? "Stored GitHub activity data"
+      : "Stored GitHub activity data (KV only, D1 failed)",
   );
   return activityData;
 }

@@ -105,9 +105,7 @@ async function main() {
 
     const from = new Date(year, 0, 1);
     const to =
-      year === currentYear
-        ? new Date()
-        : new Date(year, 11, 31, 23, 59, 59);
+      year === currentYear ? new Date() : new Date(year, 11, 31, 23, 59, 59);
 
     logger.info(
       { year, from: from.toISOString(), to: to.toISOString() },
@@ -137,9 +135,7 @@ async function main() {
     const cacheFile = join(cacheDir, `${year}.json`);
     if (!existsSync(cacheFile)) continue;
 
-    const repos: RepoActivity[] = JSON.parse(
-      readFileSync(cacheFile, "utf-8"),
-    );
+    const repos: RepoActivity[] = JSON.parse(readFileSync(cacheFile, "utf-8"));
 
     for (const repo of repos) {
       allStatements.push(repoUpsertSQL(repo));

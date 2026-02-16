@@ -8,7 +8,7 @@ const props = defineProps<{
 }>();
 
 const total = computed(() =>
-  props.languages.reduce((sum, l) => sum + l.count, 0)
+  props.languages.reduce((sum, l) => sum + l.count, 0),
 );
 
 const emit = defineEmits<{
@@ -32,9 +32,11 @@ const segments = computed(() =>
   props.languages.map((lang) => {
     const pct = total.value > 0 ? (lang.count / total.value) * 100 : 0;
     const textColor =
-      hexLuminance(lang.color) > 0.6 ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.8)";
+      hexLuminance(lang.color) > 0.6
+        ? "rgba(0,0,0,0.6)"
+        : "rgba(255,255,255,0.8)";
     return { ...lang, pct, textColor, short: langShort(lang) };
-  })
+  }),
 );
 
 function toggle(name: string) {
@@ -43,15 +45,16 @@ function toggle(name: string) {
 </script>
 
 <template>
-  <div v-if="languages.length > 0" class="flex h-6 rounded-full overflow-hidden">
+  <div
+    v-if="languages.length > 0"
+    class="flex h-6 rounded-full overflow-hidden"
+  >
     <button
       v-for="seg in segments"
       :key="seg.name"
       :class="[
         'h-full overflow-hidden flex items-center justify-center hover:opacity-80',
-        selectedLanguage && selectedLanguage !== seg.name
-          ? 'opacity-30'
-          : '',
+        selectedLanguage && selectedLanguage !== seg.name ? 'opacity-30' : '',
       ]"
       :style="{
         width: seg.pct.toFixed(1) + '%',

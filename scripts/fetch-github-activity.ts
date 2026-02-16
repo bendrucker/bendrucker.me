@@ -91,7 +91,9 @@ function importToD1(activityData: RepoActivity[], remote: boolean) {
   const sqlStatements: string[] = [];
 
   for (const repo of activityData) {
-    const lastActivity = Math.floor(new Date(repo.lastActivity).getTime() / 1000);
+    const lastActivity = Math.floor(
+      new Date(repo.lastActivity).getTime() / 1000,
+    );
 
     sqlStatements.push(sql`
 INSERT INTO repos (

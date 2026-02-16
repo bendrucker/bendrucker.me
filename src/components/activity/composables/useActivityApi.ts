@@ -6,7 +6,11 @@ export interface Repo {
   owner: string;
   description: string;
   url: string;
-  primaryLanguage: { name: string; color: string; extension: string | null } | null;
+  primaryLanguage: {
+    name: string;
+    color: string;
+    extension: string | null;
+  } | null;
   stargazerCount: number;
   createdAt: string | null;
   lastActivity: string;
@@ -54,7 +58,7 @@ export interface ActivityState {
 
 export function debounce<T extends (...args: unknown[]) => void>(
   fn: T,
-  ms: number
+  ms: number,
 ): T {
   let timer: ReturnType<typeof setTimeout>;
   return ((...args: unknown[]) => {
@@ -66,7 +70,10 @@ export function debounce<T extends (...args: unknown[]) => void>(
 function actionInput(filters: FilterState) {
   return {
     sort: filters.sort === "recent" ? undefined : filters.sort,
-    owner: filters.owner === "all" ? undefined : (filters.owner as "personal" | "external"),
+    owner:
+      filters.owner === "all"
+        ? undefined
+        : (filters.owner as "personal" | "external"),
     language: filters.language,
     search: filters.search || undefined,
     year: filters.year,
@@ -77,7 +84,7 @@ export function useActivityApi(
   initialRepos: Repo[],
   initialTotal: number,
   initialHasMore: boolean,
-  initialCursor: string | null
+  initialCursor: string | null,
 ) {
   const state = reactive<ActivityState>({
     repos: [...initialRepos],
@@ -222,8 +229,7 @@ export function useActivityApi(
   watch(
     () => ({ ...state.filters }),
     (newVal, oldVal) => {
-      const searchChanged =
-        oldVal && newVal.search !== oldVal.search;
+      const searchChanged = oldVal && newVal.search !== oldVal.search;
       if (searchChanged) {
         debouncedReset();
       } else {
@@ -232,7 +238,7 @@ export function useActivityApi(
         fetchYears();
       }
     },
-    { deep: true }
+    { deep: true },
   );
 
   return {

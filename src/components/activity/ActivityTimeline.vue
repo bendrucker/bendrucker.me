@@ -25,7 +25,7 @@ const { state, fetchRepos, fetchLanguages, fetchYears, prefetchNext } =
     props.initialRepos,
     props.initialTotal,
     props.initialHasMore,
-    props.initialCursor
+    props.initialCursor,
   );
 
 const rootRef = ref<HTMLDivElement | null>(null);
@@ -55,7 +55,6 @@ const reposWithDividers = computed(() => {
   }
   return items;
 });
-
 
 const loadedYears = computed(() => {
   const years = new Set<number>();
@@ -93,7 +92,7 @@ onMounted(() => {
         fetchRepos();
       }
     },
-    { rootMargin: "200px" }
+    { rootMargin: "200px" },
   );
 
   if (sentinelRef.value) {
@@ -111,9 +110,7 @@ onMounted(() => {
     (entries) => {
       let maxYear = -Infinity;
       for (const entry of entries) {
-        const year = Number(
-          (entry.target as HTMLElement).dataset.year
-        );
+        const year = Number((entry.target as HTMLElement).dataset.year);
         if (!year) continue;
 
         let candidate: number;
@@ -129,7 +126,7 @@ onMounted(() => {
       }
       if (maxYear > -Infinity) state.currentYear = maxYear;
     },
-    { rootMargin: `-${headerHeight}px 0px -50% 0px` }
+    { rootMargin: `-${headerHeight}px 0px -50% 0px` },
   );
 
   const root = rootRef.value;
@@ -175,11 +172,7 @@ onMounted(() => {
     <div class="space-y-3">
       <template v-for="item in reposWithDividers" :key="item.key">
         <YearDivider v-if="item.type === 'divider'" :year="item.year" />
-        <RepoCard
-          v-else
-          :repo="item.repo"
-          :username="username"
-        />
+        <RepoCard v-else :repo="item.repo" :username="username" />
       </template>
     </div>
 

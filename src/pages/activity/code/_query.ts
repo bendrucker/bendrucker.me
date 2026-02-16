@@ -38,12 +38,8 @@ export function repoQuery(db: Kysely<Database>) {
       sql<number>`sum(${sql.ref("repoActivity.reviewCount")})`.as(
         "reviewCount",
       ),
-      sql<number>`sum(${sql.ref("repoActivity.issueCount")})`.as(
-        "issueCount",
-      ),
-      sql<number>`sum(${sql.ref("repoActivity.mergeCount")})`.as(
-        "mergeCount",
-      ),
+      sql<number>`sum(${sql.ref("repoActivity.issueCount")})`.as("issueCount"),
+      sql<number>`sum(${sql.ref("repoActivity.mergeCount")})`.as("mergeCount"),
       sql<number>`max(${sql.ref("repoActivity.hasMergedPrs")})`.as(
         "hasMergedPrs",
       ),
