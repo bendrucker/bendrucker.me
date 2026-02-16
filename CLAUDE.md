@@ -35,9 +35,9 @@ CSS vars in `global.css` → Tailwind: `bg-background`, `text-foreground`, `bg-a
 
 All deploy via GitHub Actions matrix on push to `main`. Use `@workspace/logger` for logging.
 
-| Worker | Config | Purpose |
-|--------|--------|---------|
-| www | `wrangler.toml` | Main site, reads D1 |
+| Worker | Config                         | Purpose              |
+| ------ | ------------------------------ | -------------------- |
+| www    | `wrangler.toml`                | Main site, reads D1  |
 | github | `workers/github/wrangler.toml` | GitHub activity → D1 |
 | strava | `workers/strava/wrangler.toml` | Strava activity → KV |
 
