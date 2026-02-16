@@ -7,7 +7,7 @@
     "workers/*"
   ],
   "scripts": {
-    "dev": "spotlight run astro dev",
+    "dev": "astro dev",
     "build": "npm run build:packages && npm run types:generate && astro check && astro build",
     "build:packages": "npm run build --workspace=packages/logger -- --force && npm run build --workspace=packages/github -- --force",
     "preview": "astro preview",
@@ -45,9 +45,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.6",
     "@lhci/cli": "^0.15.1",
-    "@sentry/astro": "^10.39.0",
     "@shikijs/transformers": "^3.22.0",
-    "@spotlightjs/spotlight": "^4.10.0",
     "@tailwindcss/typography": "^0.5.19",
     "@types/lodash.kebabcase": "^4.1.9",
     "@typescript-eslint/parser": "^8.54.0",
