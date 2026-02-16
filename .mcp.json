@@ -2,12 +2,7 @@
   "mcpServers": {
     "spotlight": {
       "command": "npx",
-      "args": [
-        "-y",
-        "--prefer-online",
-        "@spotlightjs/spotlight@latest",
-        "mcp"
-      ]
+      "args": ["-y", "--prefer-online", "@spotlightjs/spotlight@latest", "mcp"]
     }
   }
 }
