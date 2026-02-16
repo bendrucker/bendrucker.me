@@ -18,6 +18,7 @@
     "lint": "eslint .",
     "lighthouse": "lhci autorun",
     "types:generate": "wrangler types",
+    "test": "vitest run",
     "fetch-activity": "tsx scripts/fetch-github-activity.ts"
   },
   "dependencies": {
@@ -53,8 +54,10 @@
     "@shikijs/transformers": "^3.22.0",
     "@spotlightjs/spotlight": "^4.10.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/lodash.kebabcase": "^4.1.9",
     "@typescript-eslint/parser": "^8.54.0",
+    "better-sqlite3": "^12.6.2",
     "eslint": "^9.39.2",
     "eslint-plugin-astro": "^1.5.0",
     "globals": "^17.1.0",
@@ -65,6 +68,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0",
+    "vitest": "^4.0.18",
     "wrangler": "^4.59.2"
   }
 }

@@ -134,6 +134,31 @@ export function mapRepoRow(row: {
 
 const PAGE_SIZE = 20;
 
+export class InvalidCursorError extends Error {
+  readonly cursor: string;
+
+  constructor(cursor: string) {
+    super(`Invalid cursor: ${cursor}`);
+    this.cursor = cursor;
+  }
+}
+
+function parseRecentCursor(cursor: string): { time: number; id: number } {
+  const parts = cursor.split("|");
+  if (parts.length !== 2 || !parts[0] || isNaN(Number(parts[1]))) {
+    throw new InvalidCursorError(cursor);
+  }
+  return { time: Number(parts[0]), id: Number(parts[1]) };
+}
+
+function parseOffsetCursor(cursor: string): number {
+  const offset = parseInt(cursor, 10);
+  if (isNaN(offset)) {
+    throw new InvalidCursorError(cursor);
+  }
+  return offset;
+}
+
 type SortMode = "recent" | "active" | "stars" | "name";
 
 export interface ReposInput {
@@ -197,22 +222,19 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
     .$if(!!filters.year, (qb) => qb.having(yearHaving, "=", filters.year!));
 
   switch (sort) {
-    case "recent":
+    case "recent": {
+      const parsed = cursor ? parseRecentCursor(cursor) : null;
       query = query
-        .$if(!!cursor, (qb) => {
-          const parts = cursor!.split("|");
-          if (parts.length !== 2 || !parts[0] || isNaN(Number(parts[1])))
-            return qb;
-          const cursorTime = Number(parts[0]);
-          const cursorId = Number(parts[1]);
-          return qb.having(
-            sql<SqlBool>`(max(${sql.ref("repoActivity.lastActivity")}) < ${cursorTime} or (max(${sql.ref("repoActivity.lastActivity")}) = ${cursorTime} and ${sql.ref("repos.id")} < ${cursorId}))`,
-          );
-        })
+        .$if(!!parsed, (qb) =>
+          qb.having(
+            sql<SqlBool>`(max(${sql.ref("repoActivity.lastActivity")}) < ${parsed!.time} or (max(${sql.ref("repoActivity.lastActivity")}) = ${parsed!.time} and ${sql.ref("repos.id")} < ${parsed!.id}))`,
+          ),
+        )
         .orderBy(sql`last_activity`, "desc")
         .orderBy("repos.id", "desc")
         .limit(PAGE_SIZE + 1);
       break;
+    }
     case "active":
       query = query
         .orderBy(
@@ -221,21 +243,21 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
         )
         .orderBy("repos.id", "desc")
         .limit(PAGE_SIZE + 1)
-        .$if(!!cursor, (qb) => qb.offset(parseInt(cursor!, 10) || 0));
+        .$if(!!cursor, (qb) => qb.offset(parseOffsetCursor(cursor!)));
       break;
     case "stars":
       query = query
         .orderBy("repos.stargazerCount", "desc")
         .orderBy("repos.id", "desc")
         .limit(PAGE_SIZE + 1)
-        .$if(!!cursor, (qb) => qb.offset(parseInt(cursor!, 10) || 0));
+        .$if(!!cursor, (qb) => qb.offset(parseOffsetCursor(cursor!)));
       break;
     case "name":
       query = query
         .orderBy("repos.name", "asc")
         .orderBy("repos.id", "asc")
         .limit(PAGE_SIZE + 1)
-        .$if(!!cursor, (qb) => qb.offset(parseInt(cursor!, 10) || 0));
+        .$if(!!cursor, (qb) => qb.offset(parseOffsetCursor(cursor!)));
       break;
     default: {
       const _exhaustive: never = sort;
@@ -253,7 +275,7 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
     if (sort === "recent") {
       nextCursor = `${last.lastActivity}|${last.id}`;
     } else {
-      const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+      const offset = cursor ? parseOffsetCursor(cursor) : 0;
       nextCursor = String(offset + PAGE_SIZE);
     }
   }
