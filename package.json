@@ -29,7 +29,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "@types/alpinejs": "^3.13.11",
     "@types/node": "^25.2.0",
-    "astro": "^5.16.15",
+    "astro": "^5.17.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
     "lodash.kebabcase": "^4.1.1",
