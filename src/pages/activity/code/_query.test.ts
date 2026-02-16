@@ -25,8 +25,22 @@ const FIXTURES: SeedRepo[] = [
     primaryLanguageColor: "#3178c6",
     stargazerCount: 100,
     activity: [
-      { lastActivity: 1718000000, prCount: 5, reviewCount: 2, issueCount: 1, mergeCount: 3, hasMergedPrs: 1 },
-      { lastActivity: 1750000000, prCount: 10, reviewCount: 5, issueCount: 3, mergeCount: 8, hasMergedPrs: 1 },
+      {
+        lastActivity: 1718000000,
+        prCount: 5,
+        reviewCount: 2,
+        issueCount: 1,
+        mergeCount: 3,
+        hasMergedPrs: 1,
+      },
+      {
+        lastActivity: 1750000000,
+        prCount: 10,
+        reviewCount: 5,
+        issueCount: 3,
+        mergeCount: 8,
+        hasMergedPrs: 1,
+      },
     ],
   },
   {
@@ -37,7 +51,14 @@ const FIXTURES: SeedRepo[] = [
     primaryLanguageColor: "#f1e05a",
     stargazerCount: 5,
     activity: [
-      { lastActivity: 1686000000, prCount: 1, reviewCount: 0, issueCount: 2, mergeCount: 1, hasMergedPrs: 1 },
+      {
+        lastActivity: 1686000000,
+        prCount: 1,
+        reviewCount: 0,
+        issueCount: 2,
+        mergeCount: 1,
+        hasMergedPrs: 1,
+      },
     ],
   },
   {
@@ -48,7 +69,14 @@ const FIXTURES: SeedRepo[] = [
     primaryLanguageColor: "#00ADD8",
     stargazerCount: 50,
     activity: [
-      { lastActivity: 1741000000, prCount: 3, reviewCount: 1, issueCount: 0, mergeCount: 2, hasMergedPrs: 1 },
+      {
+        lastActivity: 1741000000,
+        prCount: 3,
+        reviewCount: 1,
+        issueCount: 0,
+        mergeCount: 2,
+        hasMergedPrs: 1,
+      },
     ],
   },
   {
@@ -59,7 +87,14 @@ const FIXTURES: SeedRepo[] = [
     primaryLanguageColor: "#3178c6",
     stargazerCount: 200,
     activity: [
-      { lastActivity: 1748000000, prCount: 2, reviewCount: 4, issueCount: 1, mergeCount: 1, hasMergedPrs: 1 },
+      {
+        lastActivity: 1748000000,
+        prCount: 2,
+        reviewCount: 4,
+        issueCount: 1,
+        mergeCount: 1,
+        hasMergedPrs: 1,
+      },
     ],
   },
   {
@@ -70,7 +105,14 @@ const FIXTURES: SeedRepo[] = [
     primaryLanguageColor: "#3572A5",
     stargazerCount: 10,
     activity: [
-      { lastActivity: 1725000000, prCount: 0, reviewCount: 0, issueCount: 3, mergeCount: 0, hasMergedPrs: 0 },
+      {
+        lastActivity: 1725000000,
+        prCount: 0,
+        reviewCount: 0,
+        issueCount: 3,
+        mergeCount: 0,
+        hasMergedPrs: 0,
+      },
     ],
   },
   {
@@ -79,7 +121,14 @@ const FIXTURES: SeedRepo[] = [
     description: "A big project",
     stargazerCount: 500,
     activity: [
-      { lastActivity: 1745000000, prCount: 7, reviewCount: 3, issueCount: 2, mergeCount: 5, hasMergedPrs: 1 },
+      {
+        lastActivity: 1745000000,
+        prCount: 7,
+        reviewCount: 3,
+        issueCount: 2,
+        mergeCount: 5,
+        hasMergedPrs: 1,
+      },
     ],
   },
 ];
