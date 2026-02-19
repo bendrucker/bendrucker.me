@@ -6,7 +6,8 @@ import { join } from "path";
 import type { RepoActivity } from "@workspace/github";
 import { fetchGitHubActivityWithConfig } from "../src/services/github";
 import { logger } from "@workspace/logger";
-import { sql } from "./sql";
+import { connectD1, formatSql, executeRemote } from "./d1";
+import { upsertRepo, upsertActivity } from "./upsert";
 
 async function main() {
   const startTime = Date.now();
@@ -32,7 +33,7 @@ async function main() {
     writeFileSync(outputPath, JSON.stringify(activityData, null, 2));
 
     const remote = process.argv.includes("--remote");
-    importToD1(activityData, remote);
+    await importToD1(activityData, remote);
 
     const duration = Date.now() - startTime;
     logger.info(
@@ -87,67 +88,27 @@ async function main() {
   }
 }
 
-function importToD1(activityData: RepoActivity[], remote: boolean) {
-  const sqlStatements: string[] = [];
-
-  for (const repo of activityData) {
-    const lastActivity = Math.floor(
-      new Date(repo.lastActivity).getTime() / 1000,
-    );
-
-    sqlStatements.push(sql`
-INSERT INTO repos (
-  owner, name, description, url,
-  primary_language_name, primary_language_color,
-  stargazer_count, created_at
-) VALUES (
-  ${repo.owner}, ${repo.name}, ${repo.description}, ${repo.url},
-  ${repo.primaryLanguage?.name ?? null}, ${repo.primaryLanguage?.color ?? null},
-  ${repo.stargazerCount}, ${repo.createdAt ? new Date(repo.createdAt).toISOString() : null}
-)
-ON CONFLICT(owner, name) DO UPDATE SET
-  description = excluded.description,
-  url = excluded.url,
-  primary_language_name = excluded.primary_language_name,
-  primary_language_color = excluded.primary_language_color,
-  stargazer_count = excluded.stargazer_count,
-  updated_at = datetime('now');`);
-
-    sqlStatements.push(sql`
-INSERT INTO repo_activity (
-  repo_id, pr_count, review_count,
-  issue_count, merge_count, has_merged_prs, last_activity
-) VALUES (
-  (SELECT id FROM repos WHERE owner = ${repo.owner} AND name = ${repo.name}),
-  ${repo.activitySummary.prCount}, ${repo.activitySummary.reviewCount},
-  ${repo.activitySummary.issueCount}, ${repo.activitySummary.mergeCount},
-  ${repo.activitySummary.hasMergedPRs}, ${lastActivity}
-)
-ON CONFLICT(repo_id, year) DO UPDATE SET
-  pr_count = excluded.pr_count,
-  review_count = excluded.review_count,
-  issue_count = excluded.issue_count,
-  merge_count = excluded.merge_count,
-  has_merged_prs = excluded.has_merged_prs,
-  last_activity = excluded.last_activity;`);
+async function importToD1(activityData: RepoActivity[], remote: boolean) {
+  if (remote) {
+    const { db } = await connectD1();
+    const statements = activityData.flatMap((repo) => [
+      formatSql(upsertRepo(db, repo).compile()),
+      formatSql(upsertActivity(db, repo).compile()),
+    ]);
+    executeRemote(statements);
+  } else {
+    const { db, dispose } = await connectD1();
+    try {
+      for (const repo of activityData) {
+        await upsertRepo(db, repo).execute();
+        await upsertActivity(db, repo).execute();
+      }
+    } finally {
+      await dispose();
+    }
   }
 
-  const sqlFile = join(process.cwd(), "tmp", "activity-import.sql");
-  writeFileSync(sqlFile, sqlStatements.join("\n"));
-
-  try {
-    const target = remote ? "--remote" : "--local";
-    execSync(
-      `wrangler d1 execute bendrucker-activity ${target} --file=${sqlFile}`,
-      { encoding: "utf-8" },
-    );
-    logger.info({ remote }, "Imported activity data to D1");
-  } catch (e) {
-    logger.warn(
-      { error: e instanceof Error ? e.message : e },
-      `Failed to import to D1 (run wrangler d1 migrations apply bendrucker-activity ${remote ? "--remote" : "--local"} first)`,
-    );
-  }
+  logger.info({ remote }, "Imported activity data to D1");
 }
 
 main();

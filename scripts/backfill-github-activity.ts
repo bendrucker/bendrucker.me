@@ -11,48 +11,8 @@ import {
   type RateLimit,
 } from "@workspace/github";
 import { logger } from "@workspace/logger";
-import { sql } from "./sql";
-
-function repoUpsertSQL(repo: RepoActivity): string {
-  return sql`
-INSERT INTO repos (
-  owner, name, description, url,
-  primary_language_name, primary_language_color,
-  stargazer_count, created_at
-) VALUES (
-  ${repo.owner}, ${repo.name}, ${repo.description}, ${repo.url},
-  ${repo.primaryLanguage?.name ?? null}, ${repo.primaryLanguage?.color ?? null},
-  ${repo.stargazerCount}, ${repo.createdAt ? new Date(repo.createdAt).toISOString() : null}
-)
-ON CONFLICT(owner, name) DO UPDATE SET
-  description = excluded.description,
-  url = excluded.url,
-  primary_language_name = excluded.primary_language_name,
-  primary_language_color = excluded.primary_language_color,
-  stargazer_count = excluded.stargazer_count,
-  updated_at = datetime('now');`;
-}
-
-function activityUpsertSQL(repo: RepoActivity): string {
-  const lastActivity = Math.floor(new Date(repo.lastActivity).getTime() / 1000);
-  return sql`
-INSERT INTO repo_activity (
-  repo_id, pr_count, review_count,
-  issue_count, merge_count, has_merged_prs, last_activity
-) VALUES (
-  (SELECT id FROM repos WHERE owner = ${repo.owner} AND name = ${repo.name}),
-  ${repo.activitySummary.prCount}, ${repo.activitySummary.reviewCount},
-  ${repo.activitySummary.issueCount}, ${repo.activitySummary.mergeCount},
-  ${repo.activitySummary.hasMergedPRs}, ${lastActivity}
-)
-ON CONFLICT(repo_id, year) DO UPDATE SET
-  pr_count = excluded.pr_count,
-  review_count = excluded.review_count,
-  issue_count = excluded.issue_count,
-  merge_count = excluded.merge_count,
-  has_merged_prs = excluded.has_merged_prs,
-  last_activity = excluded.last_activity;`;
-}
+import { connectD1, formatSql, executeRemote } from "./d1";
+import { upsertRepo, upsertActivity } from "./upsert";
 
 async function rateLimitBackoff(rateLimit: RateLimit): Promise<void> {
   const { remaining, cost, resetAt } = rateLimit;
@@ -129,34 +89,37 @@ async function main() {
 
   logger.info("Loading cached data for D1 import...");
 
-  const allStatements: string[] = [];
+  const remote = process.argv.includes("--remote");
+  const allRepos: RepoActivity[] = [];
 
   for (let year = startYear; year <= currentYear; year++) {
     const cacheFile = join(cacheDir, `${year}.json`);
     if (!existsSync(cacheFile)) continue;
+    allRepos.push(...JSON.parse(readFileSync(cacheFile, "utf-8")));
+  }
 
-    const repos: RepoActivity[] = JSON.parse(readFileSync(cacheFile, "utf-8"));
-
-    for (const repo of repos) {
-      allStatements.push(repoUpsertSQL(repo));
-      allStatements.push(activityUpsertSQL(repo));
+  if (remote) {
+    const { db } = await connectD1();
+    const statements = allRepos.flatMap((repo) => [
+      formatSql(upsertRepo(db, repo).compile()),
+      formatSql(upsertActivity(db, repo).compile()),
+    ]);
+    executeRemote(statements);
+  } else {
+    const { db, dispose } = await connectD1();
+    try {
+      for (const repo of allRepos) {
+        await upsertRepo(db, repo).execute();
+        await upsertActivity(db, repo).execute();
+      }
+    } finally {
+      await dispose();
     }
   }
 
-  const sqlFile = join(cacheDir, "import.sql");
-  writeFileSync(sqlFile, allStatements.join("\n"));
   logger.info(
-    { statements: allStatements.length, file: sqlFile },
-    "Generated SQL import file",
-  );
-
-  logger.info("Run the following to import to local D1:");
-  logger.info(
-    `  wrangler d1 execute bendrucker-activity --local --file=${sqlFile}`,
-  );
-  logger.info("For production:");
-  logger.info(
-    `  wrangler d1 execute bendrucker-activity --remote --file=${sqlFile}`,
+    { statements: allRepos.length * 2, remote },
+    "Imported activity data to D1",
   );
 }
 

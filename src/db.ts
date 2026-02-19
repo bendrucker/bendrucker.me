@@ -1,9 +1,9 @@
-import { CamelCasePlugin, Kysely } from "kysely";
+import { CamelCasePlugin, Kysely, type Generated } from "kysely";
 import { D1Dialect } from "kysely-d1";
 import type { Runtime } from "@astrojs/cloudflare";
 
 export interface ReposTable {
-  id: number;
+  id: Generated<number>;
   owner: string;
   name: string;
   description: string;
@@ -12,13 +12,13 @@ export interface ReposTable {
   primaryLanguageColor: string | null;
   stargazerCount: number;
   createdAt: string | null;
-  updatedAt: string;
+  updatedAt: Generated<string>;
 }
 
 export interface RepoActivityTable {
-  id: number;
+  id: Generated<number>;
   repoId: number;
-  year: number;
+  year: Generated<number>;
   prCount: number;
   reviewCount: number;
   issueCount: number;

@@ -1,11 +1,11 @@
 #!/usr/bin/env tsx
 
 import { createRequire } from "node:module";
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { sql } from "./sql";
 import { logger } from "@workspace/logger";
+import { connectD1, formatSql, executeRemote } from "./d1";
+import { upsertLanguageExtension } from "./upsert";
 
 const require = createRequire(import.meta.url);
 const pkgDir = join(require.resolve("linguist-languages"), "..");
@@ -28,31 +28,37 @@ for (const file of readdirSync(dataDir)) {
   }
 }
 
-const statements = Object.entries(map).map(
-  ([name, ext]) => sql`
-INSERT INTO language_extensions (name, extension) VALUES (${name}, ${ext})
-ON CONFLICT(name) DO UPDATE SET extension = excluded.extension;`,
-);
-
-const sqlFile = join(process.cwd(), "tmp", "language-extensions.sql");
-writeFileSync(sqlFile, statements.join("\n") + "\n");
-
+const entries = Object.entries(map);
 const remote = process.argv.includes("--remote");
-const target = remote ? "--remote" : "--local";
 
-try {
-  execSync(
-    `wrangler d1 execute bendrucker-activity ${target} --file=${sqlFile}`,
-    { encoding: "utf-8" },
-  );
+async function main() {
+  if (remote) {
+    const { db } = await connectD1();
+    const statements = entries.map(([name, ext]) =>
+      formatSql(upsertLanguageExtension(db, name, ext).compile()),
+    );
+    executeRemote(statements);
+  } else {
+    const { db, dispose } = await connectD1();
+    try {
+      for (const [name, ext] of entries) {
+        await upsertLanguageExtension(db, name, ext).execute();
+      }
+    } finally {
+      await dispose();
+    }
+  }
+
   logger.info(
-    { count: statements.length, remote },
+    { count: entries.length, remote },
     "Seeded language_extensions table",
   );
-} catch (e) {
+}
+
+main().catch((error) => {
   logger.error(
-    { error: e instanceof Error ? e.message : e },
+    { error: error instanceof Error ? error.message : error },
     "Failed to seed language_extensions",
   );
   process.exit(1);
-}
+});
