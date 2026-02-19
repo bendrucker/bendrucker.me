@@ -4,6 +4,7 @@ import { join } from "path";
 import { getPlatformProxy } from "wrangler";
 import { createDb } from "../src/db";
 import type { CompiledQuery } from "kysely";
+import SQLite from "better-sqlite3";
 
 export async function connectD1() {
   const { env, dispose } = await getPlatformProxy<{
@@ -13,15 +14,13 @@ export async function connectD1() {
   return { db, dispose };
 }
 
+const quote = new SQLite(":memory:").prepare("SELECT quote(?)").pluck();
+
 export function formatSql(compiled: CompiledQuery): string {
   let i = 0;
-  return compiled.sql.replace(/\?/g, () => {
-    const val = compiled.parameters[i++];
-    if (val === null || val === undefined) return "NULL";
-    if (typeof val === "number") return String(val);
-    if (typeof val === "boolean") return val ? "1" : "0";
-    return `'${String(val).replace(/'/g, "''")}'`;
-  });
+  return compiled.sql.replace(/\?/g, () =>
+    String(quote.get(compiled.parameters[i++])),
+  );
 }
 
 export function executeRemote(statements: string[]) {
