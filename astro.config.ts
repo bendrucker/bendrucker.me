@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
 import alpinejs from "@astrojs/alpinejs";
 import sentry from "@sentry/astro";
+import vue from "@astrojs/vue";
 import cloudflare from "@astrojs/cloudflare";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
@@ -51,6 +52,7 @@ export default defineConfig({
       filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
     }),
     alpinejs(),
+    vue(),
     ...(isDev
       ? [
           sentry({

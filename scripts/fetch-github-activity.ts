@@ -3,8 +3,11 @@
 import { execSync } from "child_process";
 import { writeFileSync } from "fs";
 import { join } from "path";
+import type { RepoActivity } from "@workspace/github";
 import { fetchGitHubActivityWithConfig } from "../src/services/github";
 import { logger } from "@workspace/logger";
+import { connectD1, formatSql, executeRemote } from "./d1";
+import { upsertRepo, upsertActivity } from "./upsert";
 
 async function main() {
   const startTime = Date.now();
@@ -12,7 +15,6 @@ async function main() {
   try {
     logger.info("Getting GitHub token from gh CLI");
 
-    // Get GitHub token from gh CLI
     let token: string;
     try {
       token = execSync("gh auth token", { encoding: "utf-8" }).trim();
@@ -25,11 +27,13 @@ async function main() {
     }
 
     logger.info("Fetching GitHub activity data");
-    const activityData = await fetchGitHubActivityWithConfig(token);
+    const { repos: activityData } = await fetchGitHubActivityWithConfig(token);
 
-    // Write to a local JSON file for development
     const outputPath = join(process.cwd(), "tmp", "github-activity.json");
     writeFileSync(outputPath, JSON.stringify(activityData, null, 2));
+
+    const remote = process.argv.includes("--remote");
+    await importToD1(activityData, remote);
 
     const duration = Date.now() - startTime;
     logger.info(
@@ -42,11 +46,10 @@ async function main() {
     );
 
     if (activityData.length === 0) {
-      logger.warn("No repositories with activity found in the last 6 months");
+      logger.warn("No repositories with activity found in the last year");
       return;
     }
 
-    // Show summary
     const summary = activityData.slice(0, 5).map((repo) => ({
       repo: `${repo.owner}/${repo.name}`,
       lastActivity: repo.lastActivity.toISOString().split("T")[0],
@@ -57,7 +60,6 @@ async function main() {
 
     logger.info({ summary }, "Top 5 repositories by activity");
 
-    // Show totals
     const totals = activityData.reduce(
       (acc, repo) => ({
         prs: acc.prs + repo.activitySummary.prCount,
@@ -84,6 +86,29 @@ async function main() {
     );
     process.exit(1);
   }
+}
+
+async function importToD1(activityData: RepoActivity[], remote: boolean) {
+  if (remote) {
+    const { db } = await connectD1();
+    const statements = activityData.flatMap((repo) => [
+      formatSql(upsertRepo(db, repo).compile()),
+      formatSql(upsertActivity(db, repo).compile()),
+    ]);
+    executeRemote(statements);
+  } else {
+    const { db, dispose } = await connectD1();
+    try {
+      for (const repo of activityData) {
+        await upsertRepo(db, repo).execute();
+        await upsertActivity(db, repo).execute();
+      }
+    } finally {
+      await dispose();
+    }
+  }
+
+  logger.info({ remote }, "Imported activity data to D1");
 }
 
 main();

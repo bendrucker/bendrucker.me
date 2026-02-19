@@ -9,6 +9,12 @@ id = "fa47de77b5c94c938cc68c94c6a247a9"
 preview_id = "e8f3338afa2645669d60e88f16876007"
 
 
+[[d1_databases]]
+binding = "ACTIVITY_DB"
+database_name = "bendrucker-activity"
+database_id = "fea2c18d-3c27-4a2a-80be-8622fc4ebc59"
+migrations_dir = "../../migrations"
+
 [observability.logs]
 enabled = true
 
