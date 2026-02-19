@@ -101,23 +101,22 @@ async function main() {
     allRepos.push(...JSON.parse(readFileSync(cacheFile, "utf-8")));
   }
 
-  if (remote) {
-    const { db } = await connectD1();
-    const statements = allRepos.flatMap((repo) => [
-      formatSql(upsertRepo(db, repo).compile()),
-      formatSql(upsertActivity(db, repo).compile()),
-    ]);
-    executeRemote(statements);
-  } else {
-    const { db, dispose } = await connectD1();
-    try {
+  const { db, dispose } = await connectD1();
+  try {
+    if (remote) {
+      const statements = allRepos.flatMap((repo) => [
+        formatSql(upsertRepo(db, repo).compile()),
+        formatSql(upsertActivity(db, repo).compile()),
+      ]);
+      executeRemote(statements);
+    } else {
       for (const repo of allRepos) {
         await upsertRepo(db, repo).execute();
         await upsertActivity(db, repo).execute();
       }
-    } finally {
-      await dispose();
     }
+  } finally {
+    await dispose();
   }
 
   logger.info(

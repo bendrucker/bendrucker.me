@@ -89,23 +89,22 @@ async function main() {
 }
 
 async function importToD1(activityData: RepoActivity[], remote: boolean) {
-  if (remote) {
-    const { db } = await connectD1();
-    const statements = activityData.flatMap((repo) => [
-      formatSql(upsertRepo(db, repo).compile()),
-      formatSql(upsertActivity(db, repo).compile()),
-    ]);
-    executeRemote(statements);
-  } else {
-    const { db, dispose } = await connectD1();
-    try {
+  const { db, dispose } = await connectD1();
+  try {
+    if (remote) {
+      const statements = activityData.flatMap((repo) => [
+        formatSql(upsertRepo(db, repo).compile()),
+        formatSql(upsertActivity(db, repo).compile()),
+      ]);
+      executeRemote(statements);
+    } else {
       for (const repo of activityData) {
         await upsertRepo(db, repo).execute();
         await upsertActivity(db, repo).execute();
       }
-    } finally {
-      await dispose();
     }
+  } finally {
+    await dispose();
   }
 
   logger.info({ remote }, "Imported activity data to D1");
