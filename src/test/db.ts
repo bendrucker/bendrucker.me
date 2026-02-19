@@ -53,9 +53,7 @@ export async function seed(
         owner: repo.owner,
         name: repo.name,
         description: repo.description ?? "",
-        url:
-          repo.url ??
-          `https://github.com/${repo.owner}/${repo.name}`,
+        url: repo.url ?? `https://github.com/${repo.owner}/${repo.name}`,
         primaryLanguageName: repo.primaryLanguageName ?? null,
         primaryLanguageColor: repo.primaryLanguageColor ?? null,
         stargazerCount: repo.stargazerCount ?? 0,
@@ -81,9 +79,6 @@ export async function seed(
   }
 
   for (const ext of languageExtensions) {
-    await db
-      .insertInto("languageExtensions")
-      .values(ext)
-      .execute();
+    await db.insertInto("languageExtensions").values(ext).execute();
   }
 }

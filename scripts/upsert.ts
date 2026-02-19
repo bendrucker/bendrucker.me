@@ -13,9 +13,7 @@ export function upsertRepo(db: Kysely<Database>, repo: RepoActivity) {
       primaryLanguageName: repo.primaryLanguage?.name ?? null,
       primaryLanguageColor: repo.primaryLanguage?.color ?? null,
       stargazerCount: repo.stargazerCount,
-      createdAt: repo.createdAt
-        ? new Date(repo.createdAt).toISOString()
-        : null,
+      createdAt: repo.createdAt ? new Date(repo.createdAt).toISOString() : null,
     })
     .onConflict((oc) =>
       oc.columns(["owner", "name"]).doUpdateSet((eb) => ({
@@ -30,9 +28,7 @@ export function upsertRepo(db: Kysely<Database>, repo: RepoActivity) {
 }
 
 export function upsertActivity(db: Kysely<Database>, repo: RepoActivity) {
-  const lastActivity = Math.floor(
-    new Date(repo.lastActivity).getTime() / 1000,
-  );
+  const lastActivity = Math.floor(new Date(repo.lastActivity).getTime() / 1000);
 
   return db
     .insertInto("repoActivity")
