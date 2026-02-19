@@ -18,9 +18,10 @@ const quote = new SQLite(":memory:").prepare("SELECT quote(?)").pluck();
 
 export function formatSql(compiled: CompiledQuery): string {
   let i = 0;
-  return compiled.sql.replace(/\?/g, () =>
+  const sql = compiled.sql.replace(/\?/g, () =>
     String(quote.get(compiled.parameters[i++])),
   );
+  return sql + ";";
 }
 
 export function executeRemote(statements: string[]) {
