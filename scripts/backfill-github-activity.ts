@@ -49,7 +49,10 @@ async function main() {
   mkdirSync(cacheDir, { recursive: true });
 
   const { values } = parseArgs({
-    options: { from: { type: "string" } },
+    options: {
+      from: { type: "string" },
+      remote: { type: "boolean", default: false },
+    },
   });
 
   const currentYear = new Date().getFullYear();
@@ -89,7 +92,7 @@ async function main() {
 
   logger.info("Loading cached data for D1 import...");
 
-  const remote = process.argv.includes("--remote");
+  const remote = values.remote;
   const allRepos: RepoActivity[] = [];
 
   for (let year = startYear; year <= currentYear; year++) {
