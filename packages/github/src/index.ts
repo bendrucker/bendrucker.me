@@ -77,8 +77,6 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
     $username: String!
     $from: DateTime!
     $to: DateTime!
-    $issueSearchQuery: String!
-    $mergedPRSearchQuery: String!
   ) {
     user(login: $username) {
       contributionsCollection(from: $from, to: $to) {
@@ -159,8 +157,37 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
       }
     }
 
-    # Search for issues involving the user
-    search(query: $issueSearchQuery, type: ISSUE, first: 100) {
+    rateLimit {
+      remaining
+      cost
+      resetAt
+    }
+  }
+`;
+
+const ISSUE_SEARCH_QUERY = gql`
+  fragment RepositoryInfo on Repository {
+    name
+    owner {
+      login
+    }
+    description
+    url
+    createdAt
+    isFork
+    stargazerCount
+    primaryLanguage {
+      name
+      color
+    }
+  }
+
+  query IssueSearch($searchQuery: String!, $first: Int!, $after: String) {
+    search(query: $searchQuery, type: ISSUE, first: $first, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
         ... on Issue {
           number
@@ -173,9 +200,32 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
         }
       }
     }
+  }
+`;
 
-    # Search for PRs merged by the user (not authored by them)
-    mergedPRs: search(query: $mergedPRSearchQuery, type: ISSUE, first: 100) {
+const MERGED_PR_SEARCH_QUERY = gql`
+  fragment RepositoryInfo on Repository {
+    name
+    owner {
+      login
+    }
+    description
+    url
+    createdAt
+    isFork
+    stargazerCount
+    primaryLanguage {
+      name
+      color
+    }
+  }
+
+  query MergedPRSearch($searchQuery: String!, $first: Int!, $after: String) {
+    search(query: $searchQuery, type: ISSUE, first: $first, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
         ... on PullRequest {
           number
@@ -195,14 +245,48 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
         }
       }
     }
-
-    rateLimit {
-      remaining
-      cost
-      resetAt
-    }
   }
 `;
+
+const SEARCH_PAGE_SIZE = 100;
+const SEARCH_MAX_RESULTS = 1000;
+
+interface SearchPage {
+  search: {
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    nodes: SearchResultItemConnection["nodes"];
+  };
+}
+
+async function paginateSearch(
+  graphqlWithAuth: typeof graphql,
+  query: string,
+  searchQuery: string,
+): Promise<SearchResultItemConnection["nodes"]> {
+  const allNodes: NonNullable<SearchResultItemConnection["nodes"]> = [];
+  let after: string | null = null;
+
+  while (allNodes.length < SEARCH_MAX_RESULTS) {
+    const data = (await graphqlWithAuth(query, {
+      searchQuery,
+      first: SEARCH_PAGE_SIZE,
+      after,
+    })) as SearchPage;
+
+    const nodes = data.search.nodes ?? [];
+    allNodes.push(...nodes);
+
+    if (!data.search.pageInfo.hasNextPage) break;
+    after = data.search.pageInfo.endCursor;
+  }
+
+  return allNodes;
+}
+
+interface ContributionsResponse {
+  user: Pick<User, "contributionsCollection"> | null;
+  rateLimit: { remaining: number; cost: number; resetAt: string } | null;
+}
 
 interface GraphQLResponse {
   user: Pick<User, "contributionsCollection"> | null;
@@ -284,27 +368,35 @@ export async function fetchGitHubActivity(
     "Starting GitHub GraphQL request via Octokit",
   );
 
-  const variables = {
-    username: config.username,
-    from: from.toISOString(),
-    to: to.toISOString(),
-    issueSearchQuery: `is:issue involves:${config.username} updated:>${from.toISOString().split("T")[0]}`,
-    mergedPRSearchQuery: `is:pr is:merged user:${config.username} -author:${config.username} -author:app/dependabot -author:app/renovate merged:>${from.toISOString().split("T")[0]}`,
-  };
+  const issueSearchQuery = `is:issue involves:${config.username} updated:>${from.toISOString().split("T")[0]}`;
+  const mergedPRSearchQuery = `is:pr is:merged user:${config.username} -author:${config.username} -author:app/dependabot -author:app/renovate merged:>${from.toISOString().split("T")[0]}`;
 
   try {
-    const data = (await graphqlWithAuth(
-      GET_USER_CONTRIBUTIONS_QUERY,
-      variables,
-    )) as GraphQLResponse;
+    const data = (await graphqlWithAuth(GET_USER_CONTRIBUTIONS_QUERY, {
+      username: config.username,
+      from: from.toISOString(),
+      to: to.toISOString(),
+    })) as ContributionsResponse;
 
     if (!data?.user?.contributionsCollection) {
       throw new Error("Invalid response structure from GitHub API");
     }
 
     const contributionsCollection = data.user.contributionsCollection;
-    const issueSearch = data.search;
-    const mergedPRSearch = data.mergedPRs;
+
+    const [issueNodes, mergedPRNodes] = await Promise.all([
+      paginateSearch(graphqlWithAuth, ISSUE_SEARCH_QUERY, issueSearchQuery),
+      paginateSearch(
+        graphqlWithAuth,
+        MERGED_PR_SEARCH_QUERY,
+        mergedPRSearchQuery,
+      ),
+    ]);
+
+    const issueSearch = { nodes: issueNodes } as SearchResultItemConnection;
+    const mergedPRSearch = {
+      nodes: mergedPRNodes,
+    } as SearchResultItemConnection;
 
     const result = aggregateActivityByRepository(
       contributionsCollection,
@@ -335,8 +427,6 @@ export async function fetchGitHubActivity(
         name: "repositoryContributions",
         count: cc.repositoryContributions.nodes?.length ?? 0,
       },
-      { name: "issueSearch", count: issueSearch?.nodes?.length ?? 0 },
-      { name: "mergedPRSearch", count: mergedPRSearch?.nodes?.length ?? 0 },
     ];
 
     const truncated = truncationChecks.some((check) => check.count >= 100);
