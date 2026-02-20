@@ -32,12 +32,16 @@ if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
       <span aria-hidden="true" class="opacity-80">&raquo;</span>
     </li>
     {
-      breadcrumbList.map((breadcrumb, index) =>
-        index + 1 === breadcrumbList.length ? (
+      breadcrumbList.map((breadcrumb, index) => {
+        const isLast = index + 1 === breadcrumbList.length;
+        const href = "/" + breadcrumbList.slice(0, index + 1).join("/");
+        const isNonLinkable = breadcrumb === "activity";
+
+        return isLast ? (
           <li>
             <span
-              class:list={["capitalize opacity-75", { 
-                lowercase: breadcrumbList[0] === "tags" && index > 0 
+              class:list={["capitalize opacity-75", {
+                lowercase: breadcrumbList[0] === "tags" && index > 0
               }]}
               aria-current="page"
             >
@@ -45,15 +49,22 @@ if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
               {decodeURIComponent(breadcrumb)}
             </span>
           </li>
+        ) : isNonLinkable ? (
+          <li>
+            <span class="capitalize opacity-70">
+              {breadcrumb}
+            </span>
+            <span aria-hidden="true">&raquo;</span>
+          </li>
         ) : (
           <li>
-            <a href={`/${breadcrumb}/`} class="capitalize opacity-70">
+            <a href={href} class="capitalize opacity-70">
               {breadcrumb}
             </a>
             <span aria-hidden="true">&raquo;</span>
           </li>
-        )
-      )
+        );
+      })
     }
   </ul>
 </nav>
