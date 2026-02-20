@@ -1,8 +1,9 @@
 {
   "extends": ["./tsconfig.base.json", "astro/tsconfigs/strict"],
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "public/pagefind"],
+  "include": [".astro/types.d.ts", "src/**/*", "scripts/**/*", "packages/**/*", "workers/**/*", "*.ts", "*.d.ts"],
   "compilerOptions": {
+    "composite": false,
+    "declaration": false,
     "paths": {
       "@/*": ["./src/*"]
     },
