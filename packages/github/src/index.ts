@@ -105,6 +105,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
                 url
                 state
                 merged
+                mergedAt
               }
             }
           }
@@ -538,7 +539,10 @@ function aggregateActivityByRepository(
 
     repoContrib.contributions.nodes.forEach((contrib) => {
       if (contrib) {
-        const contributionDate = new Date(contrib.occurredAt);
+        const contributionDate = new Date(
+          (contrib.pullRequest.merged && contrib.pullRequest.mergedAt) ||
+            contrib.occurredAt,
+        );
         if (contributionDate > repo.lastActivity) {
           repo.lastActivity = contributionDate;
         }
