@@ -50,6 +50,7 @@ export interface RateLimit {
 export interface GitHubActivityResult {
   repos: RepoActivity[];
   rateLimit: RateLimit;
+  truncated: boolean;
 }
 
 // Simple gql tag for syntax highlighting
@@ -338,6 +339,8 @@ export async function fetchGitHubActivity(
       { name: "mergedPRSearch", count: mergedPRSearch?.nodes?.length ?? 0 },
     ];
 
+    const truncated = truncationChecks.some((check) => check.count >= 100);
+
     for (const check of truncationChecks) {
       if (check.count >= 100) {
         logger.warn(
@@ -376,7 +379,7 @@ export async function fetchGitHubActivity(
       "GitHub activity processing completed",
     );
 
-    return { repos: result, rateLimit };
+    return { repos: result, rateLimit, truncated };
   } catch (error) {
     if (error instanceof Error) {
       logger.error(

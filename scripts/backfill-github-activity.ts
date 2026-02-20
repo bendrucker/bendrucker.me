@@ -7,6 +7,7 @@ import { parseArgs } from "util";
 import {
   fetchGitHubActivity,
   GITHUB_EPOCH_YEAR,
+  type GitHubConfig,
   type RepoActivity,
   type RateLimit,
 } from "@workspace/github";
@@ -35,6 +36,75 @@ async function rateLimitBackoff(rateLimit: RateLimit): Promise<void> {
   } else {
     await new Promise((r) => setTimeout(r, 1000));
   }
+}
+
+const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+
+function mergeRepos(a: RepoActivity[], b: RepoActivity[]): RepoActivity[] {
+  const map = new Map<string, RepoActivity>();
+
+  for (const repo of [...a, ...b]) {
+    const key = `${repo.owner}/${repo.name}`;
+    const existing = map.get(key);
+
+    if (!existing) {
+      map.set(key, { ...repo, activitySummary: { ...repo.activitySummary } });
+      continue;
+    }
+
+    if (repo.lastActivity > existing.lastActivity) {
+      existing.lastActivity = repo.lastActivity;
+    }
+
+    existing.activitySummary.prCount += repo.activitySummary.prCount;
+    existing.activitySummary.reviewCount += repo.activitySummary.reviewCount;
+    existing.activitySummary.issueCount += repo.activitySummary.issueCount;
+    existing.activitySummary.mergeCount += repo.activitySummary.mergeCount;
+    existing.activitySummary.hasMergedPRs ||= repo.activitySummary.hasMergedPRs;
+  }
+
+  return Array.from(map.values());
+}
+
+async function fetchWithSplitting(
+  token: string,
+  config: GitHubConfig,
+  from: Date,
+  to: Date,
+): Promise<{ repos: RepoActivity[]; rateLimit: RateLimit }> {
+  const result = await fetchGitHubActivity(token, { ...config, from, to });
+
+  if (!result.truncated) {
+    return result;
+  }
+
+  const rangeMs = to.getTime() - from.getTime();
+  if (rangeMs <= ONE_MONTH_MS) {
+    logger.warn(
+      { from: from.toISOString(), to: to.toISOString() },
+      "Window at minimum size (1 month) but still truncated",
+    );
+    return result;
+  }
+
+  const mid = new Date(from.getTime() + rangeMs / 2);
+  logger.info(
+    {
+      from: from.toISOString(),
+      mid: mid.toISOString(),
+      to: to.toISOString(),
+    },
+    "Splitting truncated window",
+  );
+
+  const first = await fetchWithSplitting(token, config, from, mid);
+  await rateLimitBackoff(first.rateLimit);
+  const second = await fetchWithSplitting(token, config, mid, to);
+
+  return {
+    repos: mergeRepos(first.repos, second.repos),
+    rateLimit: second.rateLimit,
+  };
 }
 
 async function main() {
@@ -75,12 +145,17 @@ async function main() {
       "Fetching year",
     );
 
-    const { repos: data, rateLimit } = await fetchGitHubActivity(token, {
+    const config = {
       username: "bendrucker",
       title: "Ben Drucker",
+    };
+
+    const { repos: data, rateLimit } = await fetchWithSplitting(
+      token,
+      config,
       from,
       to,
-    });
+    );
 
     writeFileSync(cacheFile, JSON.stringify(data, null, 2));
     logger.info({ year, repos: data.length }, "Fetched and cached year");
