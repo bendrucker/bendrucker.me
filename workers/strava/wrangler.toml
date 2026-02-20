@@ -2,6 +2,7 @@ name = "strava"
 main = "main.ts"
 compatibility_date = "2025-07-28"
 compatibility_flags = ["nodejs_compat"]
+upload_source_maps = true
 
 [[kv_namespaces]]
 binding = "KV"
@@ -17,7 +18,7 @@ preview_bucket_name = "strava-preview"
 STRAVA_CLIENT_ID = "12215"
 STRAVA_USER_ID = "5723594"
 
-[observability.logs]
+[observability]
 enabled = true
 
 [env.production.triggers]

@@ -2,6 +2,7 @@ name = "github"
 main = "main.ts"
 compatibility_date = "2025-07-28"
 compatibility_flags = ["nodejs_compat"]
+upload_source_maps = true
 
 [[kv_namespaces]]
 binding = "GITHUB_KV"
@@ -15,7 +16,7 @@ database_name = "bendrucker-activity"
 database_id = "fea2c18d-3c27-4a2a-80be-8622fc4ebc59"
 migrations_dir = "../../migrations"
 
-[observability.logs]
+[observability]
 enabled = true
 
 [triggers]
