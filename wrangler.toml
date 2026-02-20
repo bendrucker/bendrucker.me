@@ -9,12 +9,6 @@ preview_urls = true
 directory = "dist"
 binding = "ASSETS"
 
-# KV namespace for GitHub activity data (shared with GitHub worker)
-[[kv_namespaces]]
-binding = "GITHUB_KV"
-id = "fa47de77b5c94c938cc68c94c6a247a9"
-preview_id = "e8f3338afa2645669d60e88f16876007"
-
 [[routes]]
 pattern = "www.bendrucker.me"
 custom_domain = true

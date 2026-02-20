@@ -1,7 +1,6 @@
 /// <reference types="astro/client" />
 
 type ENV = {
-  GITHUB_KV: KVNamespace;
   ASSETS: Fetcher;
 };
 

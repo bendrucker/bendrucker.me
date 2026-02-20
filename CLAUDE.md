@@ -112,12 +112,9 @@ The GitHub worker includes scheduled functions that can be tested in preview mod
    This simulates the cron trigger that runs every 6 hours in production.
 
 3. **Verify the results**:
-   - Check console output for successful GitHub API fetch and KV storage
+   - Check console output for successful GitHub API fetch and D1 storage
    - The worker logs will show repository count and execution time
-   - Data is stored in the preview KV namespace (`preview_id` in `wrangler.toml`)
    - Test the `/activity` endpoint: `curl http://localhost:8787/activity`
-
-**Note**: This testing approach uses the preview KV namespace, ensuring production data remains untouched during development and testing.
 
 ### Content Management
 
@@ -193,13 +190,13 @@ This project uses a **multi-worker setup** on Cloudflare:
 
 1. **Main Site Worker** (`wrangler.toml`)
    - Serves the static site at www.bendrucker.me
-   - Reads activity data from KV storage
+   - Reads activity data from D1
    - Deployed from project root
 
 2. **GitHub Activity Worker** (`workers/github/wrangler.toml`)
    - Background data fetching for GitHub activity
    - Runs cron job every hour (`0 * * * *`)
-   - Fetches GitHub API data and stores in KV namespace
+   - Fetches GitHub API data and stores in D1
    - Deployed from `workers/github/` directory
 
 3. **Strava Activity Worker** (`workers/strava/wrangler.toml`)
@@ -210,14 +207,9 @@ This project uses a **multi-worker setup** on Cloudflare:
    - Deployed from `workers/strava/` directory
    - **Note**: Strava doesn't support PKCE in their OAuth implementation as of 2024
 
-### KV Storage Configuration
+### D1 Storage
 
-Both workers share the same KV namespace for GitHub data:
-
-- **Production**: `fa47de77b5c94c938cc68c94c6a247a9` (binding: `GITHUB_KV`)
-- **Preview**: `e8f3338afa2645669d60e88f16876007` (binding: `GITHUB_KV`)
-
-Future platforms will have dedicated KV namespaces (e.g., `STRAVA_KV`, `LINKEDIN_KV`)
+GitHub activity data is stored in D1 (`ACTIVITY_DB` binding, database: `bendrucker-activity`).
 
 ### Automatic Deployment
 
