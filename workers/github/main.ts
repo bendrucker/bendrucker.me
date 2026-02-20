@@ -9,7 +9,6 @@ interface Env {
 async function upsertActivityToD1(
   db: D1Database,
   repos: RepoActivity[],
-  year: number,
 ): Promise<void> {
   const statements: D1PreparedStatement[] = [];
 
@@ -39,13 +38,13 @@ async function upsertActivityToD1(
         ),
     );
 
-    const lastActivity = repo.lastActivity.toISOString();
+    const lastActivity = Math.floor(repo.lastActivity.getTime() / 1000);
 
     statements.push(
       db
         .prepare(
-          `INSERT INTO repo_activity (repo_id, year, pr_count, review_count, issue_count, merge_count, has_merged_prs, last_activity)
-           VALUES ((SELECT id FROM repos WHERE owner=? AND name=?), ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO repo_activity (repo_id, pr_count, review_count, issue_count, merge_count, has_merged_prs, last_activity)
+           VALUES ((SELECT id FROM repos WHERE owner=? AND name=?), ?, ?, ?, ?, ?, ?)
            ON CONFLICT(repo_id, year) DO UPDATE SET
              pr_count=excluded.pr_count,
              review_count=excluded.review_count,
@@ -57,7 +56,6 @@ async function upsertActivityToD1(
         .bind(
           repo.owner,
           repo.name,
-          year,
           repo.activitySummary.prCount,
           repo.activitySummary.reviewCount,
           repo.activitySummary.issueCount,
@@ -79,7 +77,6 @@ async function upsertActivityToD1(
     {
       statements: statements.length,
       results: totalResults,
-      year,
     },
     "D1 upsert completed",
   );
@@ -103,8 +100,7 @@ async function updateGitHubActivity(env: Env): Promise<RepoActivity[]> {
     to: now,
   });
 
-  const year = now.getFullYear();
-  await upsertActivityToD1(env.ACTIVITY_DB, activityData, year);
+  await upsertActivityToD1(env.ACTIVITY_DB, activityData);
 
   const durationMs = Date.now() - startTime;
   logger.info(
