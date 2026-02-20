@@ -21,5 +21,8 @@ STRAVA_USER_ID = "5723594"
 [observability]
 enabled = true
 
+[observability.traces]
+enabled = true
+
 [env.production.triggers]
 crons = ["0 */6 * * *"]
