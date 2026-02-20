@@ -1,5 +1,5 @@
 import { CamelCasePlugin, Kysely, type Generated } from "kysely";
-import { D1Dialect } from "kysely-d1";
+import { D1Dialect } from "@/d1-dialect";
 import type { Runtime } from "@astrojs/cloudflare";
 
 export interface ReposTable {
