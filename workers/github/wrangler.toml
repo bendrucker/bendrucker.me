@@ -13,5 +13,8 @@ migrations_dir = "../../migrations"
 [observability]
 enabled = true
 
+[observability.traces]
+enabled = true
+
 [triggers]
 crons = ["0 * * * *"]
