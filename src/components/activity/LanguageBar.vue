@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import {
+  HoverCardRoot,
+  HoverCardTrigger,
+  HoverCardPortal,
+  HoverCardContent,
+} from "reka-ui";
 import type { Language } from "./composables/useActivityApi";
 
 const OVERFLOW_THRESHOLD = 2;
@@ -18,7 +24,6 @@ const emit = defineEmits<{
 }>();
 
 const showChips = ref(false);
-const tooltipVisible = ref(false);
 
 function langShort(lang: Language): string {
   if (!lang.extension) return lang.name.toLowerCase();
@@ -101,7 +106,7 @@ function toggleChips() {
 </script>
 
 <template>
-  <div v-if="languages.length > 0" class="relative">
+  <div v-if="languages.length > 0">
     <div class="flex h-6 rounded-full overflow-hidden">
       <button
         v-for="seg in primarySegments"
@@ -128,48 +133,63 @@ function toggleChips() {
         </span>
       </button>
 
-      <button
+      <HoverCardRoot
         v-if="overflowLangs.length > 0"
-        :class="[
-          'h-full overflow-hidden flex items-center justify-center hover:opacity-80',
-          selectedLanguage && !isOverflowSelected ? 'opacity-30' : '',
-        ]"
-        :style="{
-          width: overflowPct.toFixed(1) + '%',
-          backgroundImage: overflowGradient,
-          transition: 'width 300ms ease, opacity 150ms ease',
-        }"
-        aria-label="Other languages"
-        :title="`Other: ${overflowLangs.length} languages`"
-        @mouseenter="tooltipVisible = true"
-        @mouseleave="tooltipVisible = false"
-        @click="toggleChips()"
+        :open-delay="200"
+        :close-delay="300"
       >
-        <span
-          v-if="overflowPct >= 5"
-          class="text-[9px] font-medium truncate px-1 pointer-events-none text-foreground/60"
-        >
-          ...
-        </span>
-      </button>
-    </div>
+        <HoverCardTrigger as-child>
+          <button
+            :class="[
+              'h-full overflow-hidden flex items-center justify-center hover:opacity-80',
+              selectedLanguage && !isOverflowSelected ? 'opacity-30' : '',
+            ]"
+            :style="{
+              width: overflowPct.toFixed(1) + '%',
+              backgroundImage: overflowGradient,
+              transition: 'width 300ms ease, opacity 150ms ease',
+            }"
+            aria-label="Other languages"
+            @click="toggleChips()"
+          >
+            <span
+              v-if="overflowPct >= 5"
+              class="text-[9px] font-medium truncate px-1 pointer-events-none text-foreground/60"
+            >
+              ...
+            </span>
+          </button>
+        </HoverCardTrigger>
 
-    <div
-      v-if="tooltipVisible && overflowLangs.length > 0"
-      class="absolute bottom-full mb-2 right-0 bg-background border border-border rounded-lg shadow-lg p-2 z-10 pointer-events-none"
-    >
-      <div
-        v-for="lang in overflowLangs"
-        :key="lang.name"
-        class="flex items-center gap-2 text-xs whitespace-nowrap py-0.5"
-      >
-        <span
-          class="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-          :style="{ backgroundColor: lang.color }"
-        />
-        <span class="text-foreground">{{ lang.name }}</span>
-        <span class="text-muted ml-auto pl-3">{{ lang.count }}</span>
-      </div>
+        <HoverCardPortal>
+          <HoverCardContent
+            side="top"
+            align="end"
+            :side-offset="4"
+            class="bg-background border border-border rounded-lg shadow-lg p-1 z-10"
+          >
+            <button
+              v-for="lang in overflowLangs.slice(0, 8)"
+              :key="lang.name"
+              class="flex items-center gap-2 text-xs whitespace-nowrap py-1 px-1.5 rounded hover:bg-muted/20 w-full text-left"
+              @click="toggle(lang.name)"
+            >
+              <span
+                class="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                :style="{ backgroundColor: lang.color }"
+              />
+              <span class="text-foreground">{{ lang.name }}</span>
+              <span class="text-muted ml-auto pl-3">{{ lang.count }}</span>
+            </button>
+            <div
+              v-if="overflowLangs.length > 8"
+              class="text-xs text-muted py-0.5 px-1.5"
+            >
+              +{{ overflowLangs.length - 8 }} more
+            </div>
+          </HoverCardContent>
+        </HoverCardPortal>
+      </HoverCardRoot>
     </div>
 
     <div v-if="showChips" class="flex flex-wrap gap-1.5 mt-2">
