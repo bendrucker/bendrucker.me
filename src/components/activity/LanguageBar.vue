@@ -23,7 +23,11 @@ const emit = defineEmits<{
   select: [language: string | null];
 }>();
 
-const showChips = ref(false);
+const manualChips = ref(false);
+
+const chipsVisible = computed(
+  () => manualChips.value || props.selectedLanguage !== null,
+);
 
 function langShort(lang: Language): string {
   if (!lang.extension) return lang.name.toLowerCase();
@@ -101,7 +105,7 @@ function toggle(name: string) {
 }
 
 function toggleChips() {
-  showChips.value = !showChips.value;
+  manualChips.value = !manualChips.value;
 }
 </script>
 
@@ -192,26 +196,33 @@ function toggleChips() {
       </HoverCardRoot>
     </div>
 
-    <div v-if="showChips" class="flex flex-wrap gap-1.5 mt-2">
-      <button
-        v-for="lang in overflowLangs"
-        :key="lang.name"
-        :class="[
-          'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-border hover:opacity-80',
-          selectedLanguage && selectedLanguage !== lang.name
-            ? 'opacity-30'
-            : '',
-        ]"
-        :style="{ transition: 'opacity 150ms ease' }"
-        @click="toggle(lang.name)"
-      >
-        <span
-          class="inline-block w-2 h-2 rounded-full"
-          :style="{ backgroundColor: lang.color }"
-        />
-        {{ lang.short }}
-        <span class="text-muted">{{ lang.count }}</span>
-      </button>
+    <div
+      class="grid transition-[grid-template-rows] duration-300 ease-in-out"
+      :class="chipsVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
+    >
+      <div class="overflow-hidden">
+        <div class="flex flex-wrap gap-1.5 pt-2">
+          <button
+            v-for="seg in segments"
+            :key="seg.name"
+            :class="[
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-border hover:opacity-80',
+              selectedLanguage && selectedLanguage !== seg.name
+                ? 'opacity-30'
+                : '',
+            ]"
+            :style="{ transition: 'opacity 150ms ease' }"
+            @click="toggle(seg.name)"
+          >
+            <span
+              class="inline-block w-2 h-2 rounded-full"
+              :style="{ backgroundColor: seg.color }"
+            />
+            {{ seg.short }}
+            <span class="text-muted">{{ seg.count }}</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
