@@ -7,9 +7,20 @@ import siteOgImage from "./templates/site";
 
 let wasmInitialized = false;
 
+async function loadWasm() {
+  // Vite SSR returns a bare path for ?url imports that fetch() can't parse
+  if (import.meta.env.DEV) {
+    const { readFile } = await import("node:fs/promises");
+    const { fileURLToPath } = await import("node:url");
+    const resolved = import.meta.resolve("@resvg/resvg-wasm/index_bg.wasm");
+    return readFile(fileURLToPath(resolved));
+  }
+  return fetch(wasmUrl);
+}
+
 async function svgBufferToPngBuffer(svg: string) {
   if (!wasmInitialized) {
-    await initWasm(fetch(wasmUrl));
+    await initWasm(await loadWasm());
     wasmInitialized = true;
   }
   const resvg = new Resvg(svg);
