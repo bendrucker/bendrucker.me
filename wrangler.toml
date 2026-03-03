@@ -1,5 +1,5 @@
 name = "bendrucker-me"
-main = "./dist/_worker.js/index.js"
+main = "@astrojs/cloudflare/entrypoints/server"
 compatibility_date = "2025-07-28"
 compatibility_flags = ["nodejs_compat"]
 upload_source_maps = true
