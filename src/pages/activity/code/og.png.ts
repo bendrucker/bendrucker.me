@@ -3,8 +3,8 @@ import { sql } from "kysely";
 import { getDb } from "@/db";
 import { generateOgImageForActivity } from "@/utils/images/generate";
 
-export const GET: APIRoute = async (context) => {
-  const db = getDb(context.locals);
+export const GET: APIRoute = async () => {
+  const db = getDb();
 
   const stats = await db
     .selectFrom("repos")
