@@ -41,7 +41,7 @@
     "reka-ui": "^2.8.2",
     "remark-collapse": "^0.1.2",
     "remark-toc": "^9.0.0",
-    "satori": "^0.19.1",
+    "satori": "^0.19.2",
     "sharp": "^0.34.5",
     "shiki": "^3.22.0",
     "tailwindcss": "^4.2.0",
