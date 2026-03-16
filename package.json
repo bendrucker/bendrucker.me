@@ -51,7 +51,7 @@
     "@astrojs/check": "^0.9.6",
     "@lhci/cli": "^0.15.1",
     "@sentry/astro": "^10.40.0",
-    "@shikijs/transformers": "^3.22.0",
+    "@shikijs/transformers": "^4.0.0",
     "@spotlightjs/spotlight": "^4.10.0",
     "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.13",
