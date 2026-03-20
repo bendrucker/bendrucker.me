@@ -34,7 +34,7 @@
     "astro": "^5.17.2",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
-    "kysely": "^0.28.12",
+    "kysely": "^0.28.14",
     "lodash.kebabcase": "^4.1.1",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",
