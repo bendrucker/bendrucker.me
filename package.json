@@ -30,7 +30,7 @@
     "@resvg/resvg-wasm": "^2.6.2",
     "@tailwindcss/vite": "^4.2.1",
     "@types/alpinejs": "^3.13.11",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "astro": "^5.18.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
