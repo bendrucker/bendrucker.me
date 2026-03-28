@@ -13,8 +13,8 @@
     "@workspace/logger": "*"
   },
   "devDependencies": {
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "typescript": "^5.9.3",
-    "wrangler": "^4.69.0"
+    "wrangler": "^4.71.0"
   }
 }
