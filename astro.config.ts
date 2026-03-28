@@ -43,6 +43,7 @@ export default defineConfig({
   output: "server",
   adapter: cloudflare({
     imageService: "compile",
+    prerenderEnvironment: "node",
   }),
   integrations: [
     sitemap({

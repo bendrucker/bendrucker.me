@@ -1,6 +1,5 @@
 import { CamelCasePlugin, Kysely, type Generated } from "kysely";
 import { D1Dialect } from "@/d1-dialect";
-import { env } from "cloudflare:workers";
 
 export interface ReposTable {
   id: Generated<number>;
@@ -45,6 +44,7 @@ export function createDb(d1: D1Database): Kysely<Database> {
   });
 }
 
-export function getDb(): Kysely<Database> {
+export async function getDb(): Promise<Kysely<Database>> {
+  const { env } = await import("cloudflare:workers");
   return createDb(env.ACTIVITY_DB);
 }

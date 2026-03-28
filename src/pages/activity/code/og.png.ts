@@ -4,7 +4,7 @@ import { getDb } from "@/db";
 import { generateOgImageForActivity } from "@/utils/images/generate";
 
 export const GET: APIRoute = async () => {
-  const db = getDb();
+  const db = await getDb();
 
   const stats = await db
     .selectFrom("repos")

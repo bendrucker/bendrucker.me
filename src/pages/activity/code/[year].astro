@@ -20,7 +20,7 @@ if (!Number.isInteger(year) || year < 2000 || year > new Date().getFullYear() + 
 const accept = Astro.request.headers.get("accept") ?? "";
 
 if (accept.includes("text/markdown")) {
-  const db = getDb();
+  const db = await getDb();
   const data = await queryRepos(db, { year });
   if (data.total === 0) {
     return new Response("Not found", { status: 404 });
@@ -35,7 +35,7 @@ let initialTotal = 0;
 let years: YearCount[] = [];
 
 try {
-  const db = getDb();
+  const db = await getDb();
 
   const countSubquery = db
     .selectFrom("repos")
