@@ -36,8 +36,10 @@ function createLogger(minLevel: LogLevel = "info"): Logger {
       if (levels[level] < minLevelValue) return;
 
       if (typeof msgOrObj === "string") {
+        // eslint-disable-next-line no-console
         console[method](`[${level.toUpperCase()}]`, msgOrObj, ...args);
       } else {
+        // eslint-disable-next-line no-console
         console[method](`[${level.toUpperCase()}]`, args[0], ...args.slice(1), formatContext(msgOrObj));
       }
     };
