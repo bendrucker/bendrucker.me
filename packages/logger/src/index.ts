@@ -23,7 +23,9 @@ function formatContext(obj: Record<string, unknown>): Record<string, unknown> {
   const formatted: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     formatted[key] =
-      value instanceof Error ? { message: value.message, stack: value.stack } : value;
+      value instanceof Error
+        ? { message: value.message, stack: value.stack }
+        : value;
   }
   return formatted;
 }
@@ -40,7 +42,12 @@ function createLogger(minLevel: LogLevel = "info"): Logger {
         console[method](`[${level.toUpperCase()}]`, msgOrObj, ...args);
       } else {
         // eslint-disable-next-line no-console
-        console[method](`[${level.toUpperCase()}]`, args[0], ...args.slice(1), formatContext(msgOrObj));
+        console[method](
+          `[${level.toUpperCase()}]`,
+          args[0],
+          ...args.slice(1),
+          formatContext(msgOrObj),
+        );
       }
     };
   }
