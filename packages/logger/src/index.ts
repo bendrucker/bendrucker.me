@@ -1,54 +1,53 @@
-type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal";
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 const levels: Record<LogLevel, number> = {
-  trace: 10,
   debug: 20,
   info: 30,
   warn: 40,
   error: 50,
-  fatal: 60,
 };
 
+type LogFn = (
+  msgOrObj: string | Record<string, unknown>,
+  ...args: unknown[]
+) => void;
+
 interface Logger {
-  trace: LogFn;
   debug: LogFn;
   info: LogFn;
   warn: LogFn;
   error: LogFn;
-  fatal: LogFn;
 }
 
-type LogFn = {
-  (msg: string, ...args: unknown[]): void;
-  (obj: Record<string, unknown>, msg: string, ...args: unknown[]): void;
-};
+function formatContext(obj: Record<string, unknown>): Record<string, unknown> {
+  const formatted: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    formatted[key] =
+      value instanceof Error ? { message: value.message, stack: value.stack } : value;
+  }
+  return formatted;
+}
 
 function createLogger(minLevel: LogLevel = "info"): Logger {
   const minLevelValue = levels[minLevel];
 
-  function makeLogFn(
-    level: LogLevel,
-    method: "log" | "warn" | "error",
-  ): LogFn {
-    return (...args: unknown[]) => {
+  function makeLogFn(level: LogLevel, method: "log" | "warn" | "error"): LogFn {
+    return (msgOrObj: string | Record<string, unknown>, ...args: unknown[]) => {
       if (levels[level] < minLevelValue) return;
 
-      const first = args[0];
-      if (typeof first === "object" && first !== null && !Array.isArray(first)) {
-        console[method](`[${level.toUpperCase()}]`, args[1], ...args.slice(2), first);
+      if (typeof msgOrObj === "string") {
+        console[method](`[${level.toUpperCase()}]`, msgOrObj, ...args);
       } else {
-        console[method](`[${level.toUpperCase()}]`, ...args);
+        console[method](`[${level.toUpperCase()}]`, args[0], ...args.slice(1), formatContext(msgOrObj));
       }
     };
   }
 
   return {
-    trace: makeLogFn("trace", "log"),
     debug: makeLogFn("debug", "log"),
     info: makeLogFn("info", "log"),
     warn: makeLogFn("warn", "warn"),
     error: makeLogFn("error", "error"),
-    fatal: makeLogFn("fatal", "error"),
   };
 }
 
