@@ -27,16 +27,20 @@ if [[ -n "$changed_existing" ]]; then
   npx prettier --write --ignore-unknown $changed_existing >/dev/null 2>&1
   formatted=$(git diff --name-only)
   if [[ -n "$formatted" ]]; then
-    errors+="Prettier formatted files:\n${formatted}\n\nStage and commit the formatting changes.\n\n"
+    git add $formatted
+    errors+="Prettier formatted files (auto-staged):\n${formatted}\n\nCommit the formatting changes.\n\n"
   fi
 fi
 
-if ! lint_output=$(npx eslint . 2>&1); then
-  errors+="ESLint errors:\n${lint_output}\n\n"
+lint_files=$(echo "$changed_existing" | grep -E '\.(js|mjs|cjs|ts|astro)$' || true)
+if [[ -n "$lint_files" ]]; then
+  if ! lint_output=$(npx eslint $lint_files 2>&1); then
+    errors+="ESLint errors:\n${lint_output}\n\n"
+  fi
 fi
 
 # Skip build if source files haven't changed since last successful build
-build_marker="/tmp/claude-stop-hook-build-$(echo "$cwd" | md5sum | cut -d' ' -f1)"
+build_marker="/tmp/claude-stop-hook-build-$(echo "$cwd" | md5 -q)"
 newest_source=$(git ls-files -- '*.ts' '*.js' '*.mjs' '*.cjs' '*.astro' '*.md' '*.css' | xargs stat -f '%m' 2>/dev/null | sort -rn | head -1)
 
 if [[ -f "$build_marker" ]] && [[ -n "$newest_source" ]]; then
