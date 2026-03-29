@@ -1,29 +1,59 @@
-import pino from "pino";
+type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal";
 
-const isProduction = process.env.NODE_ENV === "production";
+const levels: Record<LogLevel, number> = {
+  trace: 10,
+  debug: 20,
+  info: 30,
+  warn: 40,
+  error: 50,
+  fatal: 60,
+};
 
-export const logger = pino(
-  isProduction
-    ? {
-        level: "info",
-        formatters: {
-          level: (label: string) => ({ level: label }),
-        },
+interface Logger {
+  trace: LogFn;
+  debug: LogFn;
+  info: LogFn;
+  warn: LogFn;
+  error: LogFn;
+  fatal: LogFn;
+}
+
+type LogFn = {
+  (msg: string, ...args: unknown[]): void;
+  (obj: Record<string, unknown>, msg: string, ...args: unknown[]): void;
+};
+
+function createLogger(minLevel: LogLevel = "info"): Logger {
+  const minLevelValue = levels[minLevel];
+
+  function makeLogFn(
+    level: LogLevel,
+    method: "log" | "warn" | "error",
+  ): LogFn {
+    return (...args: unknown[]) => {
+      if (levels[level] < minLevelValue) return;
+
+      const first = args[0];
+      if (typeof first === "object" && first !== null && !Array.isArray(first)) {
+        console[method](`[${level.toUpperCase()}]`, args[1], ...args.slice(2), first);
+      } else {
+        console[method](`[${level.toUpperCase()}]`, ...args);
       }
-    : {
-        level: "debug",
-        transport: {
-          target: "pino-pretty",
-          options: {
-            colorize: true,
-            translateTime: "HH:MM:ss",
-            ignore: "pid,hostname",
-            messageFormat: "{msg}",
-            customColors:
-              "trace:gray,debug:blue,info:green,warn:yellow,error:red,fatal:magenta",
-          },
-        },
-      },
-);
+    };
+  }
 
+  return {
+    trace: makeLogFn("trace", "log"),
+    debug: makeLogFn("debug", "log"),
+    info: makeLogFn("info", "log"),
+    warn: makeLogFn("warn", "warn"),
+    error: makeLogFn("error", "error"),
+    fatal: makeLogFn("fatal", "error"),
+  };
+}
+
+const isProduction =
+  typeof process !== "undefined" && process.env?.NODE_ENV === "production";
+
+export const logger: Logger = createLogger(isProduction ? "info" : "debug");
 export default logger;
