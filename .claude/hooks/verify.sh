@@ -25,10 +25,13 @@ errors=""
 changed_existing=$(echo "$changed" | while read -r f; do [ -f "$f" ] && echo "$f"; done | sort -u)
 if [[ -n "$changed_existing" ]]; then
   npx prettier --write --ignore-unknown $changed_existing >/dev/null 2>&1
-  formatted=$(git diff --name-only)
+  formatted=$(git diff --name-only -- $changed_existing)
   if [[ -n "$formatted" ]]; then
-    git add $formatted
-    errors+="Prettier formatted files (auto-staged):\n${formatted}\n\nCommit the formatting changes.\n\n"
+    if git add -- $formatted; then
+      errors+="Prettier formatted files (auto-staged):\n${formatted}\n\nCommit the formatting changes.\n\n"
+    else
+      errors+="Prettier formatted files (staging failed):\n${formatted}\n\nStage and commit the formatting changes.\n\n"
+    fi
   fi
 fi
 
