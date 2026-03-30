@@ -17,8 +17,8 @@ export const server = {
       search: z.string().nullish(),
       year: z.number().int().min(2000).nullish(),
     }),
-    handler: async (input, context) => {
-      const db = getDb(context.locals);
+    handler: async (input) => {
+      const db = await getDb();
       return queryRepos(db, input);
     },
   }),
@@ -29,8 +29,8 @@ export const server = {
       search: z.string().nullish(),
       year: z.number().int().min(2000).nullish(),
     }),
-    handler: async (input, context) => {
-      const db = getDb(context.locals);
+    handler: async (input) => {
+      const db = await getDb();
       return queryLanguages(db, input);
     },
   }),
@@ -41,8 +41,8 @@ export const server = {
       language: z.string().nullish(),
       search: z.string().nullish(),
     }),
-    handler: async (input, context) => {
-      const db = getDb(context.locals);
+    handler: async (input) => {
+      const db = await getDb();
       return queryYears(db, input);
     },
   }),

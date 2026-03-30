@@ -43,9 +43,7 @@ export default defineConfig({
   output: "server",
   adapter: cloudflare({
     imageService: "compile",
-    platformProxy: {
-      enabled: true,
-    },
+    prerenderEnvironment: "node",
   }),
   integrations: [
     sitemap({
@@ -78,10 +76,6 @@ export default defineConfig({
     },
   },
   vite: {
-    // eslint-disable-next-line
-    // @ts-ignore
-    // This will be fixed in Astro 6 with Vite 7 support
-    // See: https://github.com/withastro/astro/issues/14030
     plugins: [
       tailwindcss(),
       {
@@ -105,8 +99,5 @@ export default defineConfig({
         optional: true,
       }),
     },
-  },
-  experimental: {
-    preserveScriptOrder: true,
   },
 });

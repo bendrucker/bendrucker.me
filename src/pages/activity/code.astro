@@ -11,9 +11,9 @@ import { formatReposMarkdown } from "./code/_markdown";
 import { logger } from "@workspace/logger";
 
 const accept = Astro.request.headers.get("accept") ?? "";
+const db = await getDb();
 
 if (accept.includes("text/markdown")) {
-  const db = getDb(Astro.locals);
   const data = await queryRepos(db, {});
   return new Response(formatReposMarkdown(data.repos, data.total), {
     headers: { "Content-Type": "text/markdown; charset=utf-8" },
@@ -26,8 +26,6 @@ let initialHasMore = false;
 let initialCursor: string | null = null;
 
 try {
-  const db = getDb(Astro.locals);
-
   const countResult = await db
     .selectFrom("repos")
     .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
