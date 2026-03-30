@@ -24,7 +24,7 @@
   "dependencies": {
     "@astrojs/alpinejs": "^0.4.9",
     "@astrojs/cloudflare": "12.6.12",
-    "@astrojs/rss": "^4.0.15",
+    "@astrojs/rss": "^4.0.17",
     "@astrojs/sitemap": "^3.7.0",
     "@astrojs/vue": "^5.1.4",
     "@resvg/resvg-wasm": "^2.6.2",
