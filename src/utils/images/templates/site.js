@@ -1,4 +1,4 @@
-import satori from "satori";
+import satori from "@cf-wasm/satori/workerd";
 import { SITE } from "@/config";
 import loadGoogleFonts from "../fonts";
 

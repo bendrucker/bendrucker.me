@@ -1,28 +1,10 @@
-import { Resvg, initWasm } from "@resvg/resvg-wasm";
-import wasmUrl from "@resvg/resvg-wasm/index_bg.wasm?url";
+import { Resvg } from "@cf-wasm/resvg/workerd";
 import { type CollectionEntry } from "astro:content";
 import activityOgImage from "./templates/activity";
 import postOgImage from "./templates/post";
 import siteOgImage from "./templates/site";
 
-let wasmInitialized = false;
-
-async function loadWasm() {
-  // Vite SSR returns a bare path for ?url imports that fetch() can't parse
-  if (import.meta.env.DEV) {
-    const { readFile } = await import("node:fs/promises");
-    const { fileURLToPath } = await import("node:url");
-    const resolved = import.meta.resolve("@resvg/resvg-wasm/index_bg.wasm");
-    return readFile(fileURLToPath(resolved));
-  }
-  return fetch(wasmUrl);
-}
-
-async function svgBufferToPngBuffer(svg: string) {
-  if (!wasmInitialized) {
-    await initWasm(await loadWasm());
-    wasmInitialized = true;
-  }
+function svgBufferToPngBuffer(svg: string) {
   const resvg = new Resvg(svg);
   const pngData = resvg.render();
   return new Uint8Array(pngData.asPng());
@@ -30,12 +12,12 @@ async function svgBufferToPngBuffer(svg: string) {
 
 export async function generateOgImageForPost(post: CollectionEntry<"blog">) {
   const svg = await postOgImage(post);
-  return await svgBufferToPngBuffer(svg);
+  return svgBufferToPngBuffer(svg);
 }
 
 export async function generateOgImageForSite() {
   const svg = await siteOgImage();
-  return await svgBufferToPngBuffer(svg);
+  return svgBufferToPngBuffer(svg);
 }
 
 export interface ActivityOgStats {
@@ -49,5 +31,5 @@ export interface ActivityOgStats {
 
 export async function generateOgImageForActivity(stats: ActivityOgStats) {
   const svg = await activityOgImage(stats);
-  return await svgBufferToPngBuffer(svg);
+  return svgBufferToPngBuffer(svg);
 }

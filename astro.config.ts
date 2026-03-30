@@ -43,7 +43,6 @@ export default defineConfig({
   output: "server",
   adapter: cloudflare({
     imageService: "compile",
-    prerenderEnvironment: "node",
   }),
   integrations: [
     sitemap({
@@ -84,7 +83,7 @@ export default defineConfig({
       },
     ],
     ssr: {
-      external: ["node:fs", "node:path", "node:url", "node:fs/promises"],
+      external: ["node:fs", "node:path"],
     },
   },
   image: {

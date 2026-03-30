@@ -1,4 +1,4 @@
-import satori from "satori";
+import satori from "@cf-wasm/satori/workerd";
 import { SITE } from "@/config";
 import loadGoogleFonts from "../fonts";
 
@@ -10,7 +10,7 @@ export default async (stats) => {
     `${stats.prs} PRs`,
     `${stats.reviews} reviews`,
     `${stats.issues} issues`,
-    stats.languages.map((l) => l.name).join(""),
+    stats.languages.map((l) => `${l.name} (${l.count})`).join(" "),
     `${stats.years} years`,
     new URL(SITE.website).hostname,
   ].join(" ");
