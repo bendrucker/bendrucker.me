@@ -131,7 +131,7 @@ jobs:
           status: ${{ steps.wrangler.outcome == 'success' && 'success' || 'failure' }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ github.event_name == 'pull_request' && matrix.path == '.' && steps.extract-url.outputs.alias-url || (matrix.path == '.' && steps.extract-deployment-url.outputs.formatted-url || steps.wrangler.outputs.deployment-url) }}
+          env_url: ${{ matrix.path == '.' && (github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || steps.extract-deployment-url.outputs.formatted-url) || '' }}
 
       - name: "📤 Set job outputs"
         id: set-outputs
