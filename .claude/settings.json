@@ -11,6 +11,14 @@
       }
     ]
   },
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": [
+        "~/.config/.wrangler/logs",
+        "~/.config/.wrangler/registry"
+      ]
+    }
+  },
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
