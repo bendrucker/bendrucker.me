@@ -13,10 +13,7 @@
   },
   "sandbox": {
     "filesystem": {
-      "allowWrite": [
-        "~/.config/.wrangler/logs",
-        "~/.config/.wrangler/registry"
-      ]
+      "allowWrite": ["~/.config/.wrangler/logs", "~/.config/.wrangler/registry"]
     }
   },
   "enabledPlugins": {
