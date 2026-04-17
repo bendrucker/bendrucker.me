@@ -59,7 +59,7 @@
     "better-sqlite3": "^12.6.2",
     "eslint": "^10.0.3",
     "eslint-plugin-astro": "^1.6.0",
-    "globals": "^17.1.0",
+    "globals": "^17.4.0",
     "linguist-languages": "^9.3.1",
     "prettier": "^3.8.1",
     "prettier-plugin-astro": "^0.14.1",
