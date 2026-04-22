@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { getCollection, type CollectionEntry } from "astro:content";
-import { getPath } from "@/utils/posts/path";
-import { generateOgImageForPost } from "@/utils/images/generate";
+import { getPath } from "@/blog/path";
+import { generateOgImageForPost } from "@/og/generate";
 import { SITE } from "@/config";
 
 export const prerender = true;

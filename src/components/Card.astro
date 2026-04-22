@@ -1,7 +1,7 @@
 ---
-import { slugifyStr } from "@/utils/text/slugify";
+import kebabcase from "lodash.kebabcase";
 import type { CollectionEntry } from "astro:content";
-import { getPath } from "@/utils/posts/path";
+import { getPath } from "@/blog/path";
 import Datetime from "./Datetime.astro";
 
 export interface Props extends CollectionEntry<"blog"> {
@@ -13,7 +13,7 @@ const { variant = "h2", data, id, filePath } = Astro.props;
 const { title, description, pubDatetime, modDatetime, timezone } = data;
 
 const headerProps = {
-  style: { viewTransitionName: slugifyStr(title) },
+  style: { viewTransitionName: kebabcase(title) },
   class: "text-lg font-medium decoration-dashed hover:underline",
 };
 ---

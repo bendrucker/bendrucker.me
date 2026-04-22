@@ -2,8 +2,8 @@ export const prerender = true;
 
 import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
-import { getPath } from "@/utils/posts/path";
-import getSortedPosts from "@/utils/posts/sort";
+import { getPath } from "@/blog/path";
+import getSortedPosts from "@/blog/sort";
 import { SITE } from "@/config";
 
 export async function GET() {

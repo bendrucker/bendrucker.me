@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { sql } from "kysely";
 import { getDb } from "@/db";
-import { generateOgImageForActivity } from "@/utils/images/generate";
+import { generateOgImageForActivity } from "@/og/generate";
 
 export const GET: APIRoute = async () => {
   const db = await getDb();

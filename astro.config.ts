@@ -12,7 +12,7 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
-import { transformerFileName } from "./src/utils/markdown/transformers/fileName.js";
+import { transformerFileName } from "./src/shiki/fileName";
 import { SITE } from "./src/config";
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";

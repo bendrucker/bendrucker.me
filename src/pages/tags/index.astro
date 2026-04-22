@@ -5,7 +5,7 @@ import { getCollection } from "astro:content";
 import Main from "@/layouts/Main.astro";
 import Layout from "@/layouts/Layout.astro";
 import Tag from "@/components/Tag.astro";
-import { getUniqueTags } from "@/utils/posts/tags";
+import { getUniqueTags } from "@/blog/tags";
 import { SITE } from "@/config";
 
 const posts = await getCollection("blog");
