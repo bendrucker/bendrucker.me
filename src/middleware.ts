@@ -23,6 +23,20 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   const response = await next();
-  response.headers.append("Vary", "Accept");
+  addVary(response.headers, "Accept");
   return response;
 };
+
+function addVary(headers: Headers, value: string): void {
+  const existing = headers.get("Vary");
+  if (!existing) {
+    headers.set("Vary", value);
+    return;
+  }
+  const tokens = existing
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+  if (tokens.some((t) => t.toLowerCase() === value.toLowerCase())) return;
+  headers.set("Vary", [...tokens, value].join(", "));
+}

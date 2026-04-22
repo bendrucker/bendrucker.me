@@ -1,5 +1,6 @@
 import { getCollection } from "astro:content";
 import { getPath } from "@/utils/posts/path";
+import postFilter from "@/utils/posts/filter";
 import aboutMd from "../pages/about.md?raw";
 
 function stripTrailingSlash(pathname: string): string {
@@ -19,7 +20,7 @@ export async function resolveMarkdown(
   }
 
   if (path.startsWith("/posts/")) {
-    const posts = await getCollection("blog", ({ data }) => !data.draft);
+    const posts = await getCollection("blog", postFilter);
     const entry = posts.find((p) => getPath(p.id, p.filePath) === path);
     return entry?.body ?? null;
   }

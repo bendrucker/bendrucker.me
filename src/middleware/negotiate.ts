@@ -9,13 +9,13 @@ type AcceptEntry = {
 
 function parseEntry(part: string): AcceptEntry | null {
   const [mediaRange, ...paramParts] = part.split(";").map((s) => s.trim());
-  const [type, subtype] = mediaRange.split("/");
+  const [type, subtype] = mediaRange.toLowerCase().split("/");
   if (!type || !subtype) return null;
 
   let q = 1;
   for (const param of paramParts) {
     const [k, v] = param.split("=").map((s) => s.trim());
-    if (k !== "q" || v === undefined) continue;
+    if (k?.toLowerCase() !== "q" || v === undefined) continue;
     const parsed = Number.parseFloat(v);
     if (Number.isFinite(parsed)) {
       q = Math.max(0, Math.min(1, parsed));
@@ -38,7 +38,7 @@ function parseAccept(header: string): AcceptEntry[] {
 }
 
 function matches(candidate: string, entry: AcceptEntry): boolean {
-  const [type, subtype] = candidate.split("/");
+  const [type, subtype] = candidate.toLowerCase().split("/");
   if (entry.type === "*" && entry.subtype === "*") return true;
   if (entry.subtype === "*") return entry.type === type;
   return entry.type === type && entry.subtype === subtype;
@@ -61,9 +61,11 @@ export function negotiate(
     const matching = entries.filter((e) => matches(candidate, e));
     if (matching.length === 0) continue;
 
-    const mostSpecific = matching.reduce((a, b) =>
-      b.specificity > a.specificity ? b : a,
-    );
+    const mostSpecific = matching.reduce((a, b) => {
+      if (b.specificity > a.specificity) return b;
+      if (b.specificity < a.specificity) return a;
+      return b.q > a.q ? b : a;
+    });
     if (mostSpecific.q === 0) continue;
 
     if (

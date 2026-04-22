@@ -55,4 +55,17 @@ describe("negotiate", () => {
       "text/markdown",
     );
   });
+
+  it("matches media types case-insensitively", () => {
+    expect(negotiate("Text/Markdown", PRODUCES)).toBe("text/markdown");
+    expect(negotiate("TEXT/HTML;Q=0.5, TEXT/MARKDOWN;Q=0.9", PRODUCES)).toBe(
+      "text/markdown",
+    );
+  });
+
+  it("picks max q when multiple entries match with equal specificity", () => {
+    expect(negotiate("text/html;q=0.5, text/html;q=0.9", PRODUCES)).toBe(
+      "text/html",
+    );
+  });
 });
