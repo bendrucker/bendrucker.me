@@ -1,6 +1,9 @@
 import type { MiddlewareHandler } from "astro";
 import { negotiate, PRODUCES } from "./middleware/negotiate";
-import { resolveMarkdown } from "./middleware/sources";
+import {
+  hasMarkdownRepresentation,
+  resolveMarkdown,
+} from "./middleware/sources";
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const { request } = context;
@@ -8,20 +11,23 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     return next();
   }
 
+  const { pathname } = context.url;
   const chosen = negotiate(request.headers.get("accept"), PRODUCES);
-  const md = await resolveMarkdown(context.url.pathname);
 
-  if (chosen === "text/markdown" && md !== null) {
-    return new Response(md, {
-      headers: {
-        "Content-Type": "text/markdown; charset=utf-8",
-        Vary: "Accept",
-      },
-    });
+  if (chosen === "text/markdown") {
+    const md = await resolveMarkdown(pathname);
+    if (md !== null) {
+      return new Response(request.method === "HEAD" ? null : md, {
+        headers: {
+          "Content-Type": "text/markdown; charset=utf-8",
+          Vary: "Accept",
+        },
+      });
+    }
   }
 
   const response = await next();
-  if (md !== null) {
+  if (hasMarkdownRepresentation(pathname)) {
     addVary(response.headers, "Accept");
   }
   return response;

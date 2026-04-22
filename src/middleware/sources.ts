@@ -10,6 +10,11 @@ function stripTrailingSlash(pathname: string): string {
   return pathname;
 }
 
+export function hasMarkdownRepresentation(pathname: string): boolean {
+  const path = stripTrailingSlash(pathname);
+  return path === "/about" || path.startsWith("/posts/");
+}
+
 export async function resolveMarkdown(
   pathname: string,
 ): Promise<string | null> {
