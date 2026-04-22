@@ -12,8 +12,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   const { pathname } = context.url;
-  const chosen = negotiate(request.headers.get("accept"), PRODUCES);
+  if (!hasMarkdownRepresentation(pathname)) {
+    return next();
+  }
 
+  const chosen = negotiate(request.headers.get("accept"), PRODUCES);
   if (chosen === "text/markdown") {
     const md = await resolveMarkdown(pathname);
     if (md !== null) {
@@ -27,9 +30,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   const response = await next();
-  if (hasMarkdownRepresentation(pathname)) {
-    addVary(response.headers, "Accept");
-  }
+  addVary(response.headers, "Accept");
   return response;
 };
 
