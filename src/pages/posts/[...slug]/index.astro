@@ -2,19 +2,16 @@
 import { getCollection } from "astro:content";
 import PostDetails from "@/layouts/PostDetails.astro";
 import getSortedPosts from "@/utils/posts/sort";
-import postFilter from "@/utils/posts/filter";
 import { getPath } from "@/utils/posts/path";
 
 const pathname = Astro.url.pathname.replace(/\/$/, "");
 
-const posts = await getCollection("blog", postFilter);
-const post = posts.find((p) => getPath(p.id, p.filePath) === pathname);
+const sortedPosts = getSortedPosts(await getCollection("blog"));
+const post = sortedPosts.find((p) => getPath(p.id, p.filePath) === pathname);
 
 if (!post) {
   return new Response(null, { status: 404 });
 }
-
-const sortedPosts = getSortedPosts(posts);
 ---
 
 <PostDetails post={post} posts={sortedPosts} />
