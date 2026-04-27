@@ -47,7 +47,7 @@
     "vue": "^3.5.32"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.7",
+    "@astrojs/check": "0.9.8",
     "@lhci/cli": "^0.15.1",
     "@sentry/astro": "^10.47.0",
     "@shikijs/transformers": "^4.0.1",
