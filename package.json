@@ -55,7 +55,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.13",
     "@types/lodash.kebabcase": "^4.1.9",
-    "@typescript-eslint/parser": "^8.57.0",
+    "@typescript-eslint/parser": "^8.58.1",
     "better-sqlite3": "^12.9.0",
     "eslint": "^10.2.0",
     "eslint-plugin-astro": "^1.6.0",
