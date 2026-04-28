@@ -6,8 +6,8 @@ import Datetime from "@/components/Datetime.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import BackButton from "@/components/BackButton.astro";
 import BackToTopButton from "@/components/BackToTopButton.astro";
-import { getPath } from "@/utils/posts/path";
-import { slugifyStr } from "@/utils/text/slugify";
+import kebabcase from "lodash.kebabcase";
+import { getPath } from "@/blog/path";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
 import { SITE } from "@/config";
@@ -90,7 +90,7 @@ const nextPost =
     data-pagefind-body
   >
     <h1
-      transition:name={slugifyStr(title)}
+      transition:name={kebabcase(title)}
       class="inline-block text-2xl font-bold text-accent sm:text-3xl"
     >
       {title}
@@ -108,7 +108,7 @@ const nextPost =
     <hr class="my-8 border-dashed" />
 
     <ul class="mt-4 mb-8 sm:my-8">
-      {tags.map(tag => <Tag tag={slugifyStr(tag)} tagName={tag} />)}
+      {tags.map(tag => <Tag tag={kebabcase(tag)} tagName={tag} />)}
     </ul>
 
     <BackToTopButton />
