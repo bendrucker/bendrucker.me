@@ -1,6 +1,6 @@
 import { getCollection } from "astro:content";
 import { getPath } from "@/blog/path";
-import postFilter from "@/blog/filter";
+import { postFilter } from "@/blog/posts";
 import aboutMd from "../pages/about.md?raw";
 
 function stripTrailingSlash(pathname: string): string {
