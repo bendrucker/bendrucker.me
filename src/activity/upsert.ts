@@ -1,5 +1,5 @@
 import { sql, type Kysely } from "kysely";
-import type { Database } from "../src/db";
+import type { Database } from "../db";
 import type { RepoActivity } from "@workspace/github";
 
 export function upsertRepo(db: Kysely<Database>, repo: RepoActivity) {

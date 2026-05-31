@@ -4,7 +4,10 @@ import { logger } from "@workspace/logger";
 
 export * from "@workspace/github";
 
-export function fetchGitHubActivityWithConfig(token: string) {
+export function fetchGitHubActivityWithConfig(
+  token: string,
+  window?: { from?: Date; to?: Date },
+) {
   logger.debug(
     {
       username: SITE.githubUsername,
@@ -16,5 +19,7 @@ export function fetchGitHubActivityWithConfig(token: string) {
   return fetchGitHubActivity(token, {
     username: SITE.githubUsername,
     title: SITE.title,
+    from: window?.from,
+    to: window?.to,
   });
 }
