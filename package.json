@@ -25,7 +25,7 @@
     "@astrojs/alpinejs": "0.5.0",
     "@astrojs/cloudflare": "13.5.1",
     "@astrojs/rss": "4.0.18",
-    "@astrojs/sitemap": "3.7.1",
+    "@astrojs/sitemap": "3.7.2",
     "@astrojs/vue": "6.0.1",
     "@cf-wasm/resvg": "^0.3.4",
     "@cf-wasm/satori": "^0.3.6",
