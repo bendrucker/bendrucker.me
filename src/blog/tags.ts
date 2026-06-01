@@ -1,7 +1,6 @@
 import type { CollectionEntry } from "astro:content";
 import kebabcase from "lodash.kebabcase";
-import getSortedPosts from "./sort";
-import postFilter from "./filter";
+import { getSortedPosts, postFilter } from "./posts";
 
 export const getPostsByTag = (posts: CollectionEntry<"blog">[], tag: string) =>
   getSortedPosts(

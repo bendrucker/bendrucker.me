@@ -1,7 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import PostDetails from "@/layouts/PostDetails.astro";
-import getSortedPosts from "@/blog/sort";
+import { getSortedPosts } from "@/blog/posts";
 import { getPath } from "@/blog/path";
 
 const pathname = Astro.url.pathname.replace(/\/$/, "");
