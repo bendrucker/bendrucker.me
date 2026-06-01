@@ -7,7 +7,7 @@ import type { RepoActivity } from "@workspace/github";
 import { fetchGitHubActivityWithConfig } from "../src/services/github";
 import { logger } from "@workspace/logger";
 import { connectD1, formatSql, executeRemote } from "./d1";
-import { upsertRepo, upsertActivity } from "./upsert";
+import { upsertRepo, upsertActivity } from "../src/activity/upsert";
 
 async function main() {
   const startTime = Date.now();
