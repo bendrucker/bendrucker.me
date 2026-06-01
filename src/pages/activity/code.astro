@@ -1,12 +1,11 @@
 ---
-import { sql } from "kysely";
 import Layout from "../../layouts/Layout.astro";
 import Main from "../../layouts/Main.astro";
 import { SITE } from "../../config";
 import ActivityTimeline from "../../components/activity/ActivityTimeline.vue";
 import type { Repo } from "../../components/activity/composables/useActivityApi";
 import { getDb } from "@/db";
-import { repoQuery, mapRepoRow, queryRepos } from "./code/_query";
+import { queryRepos } from "./code/_query";
 import { formatReposMarkdown } from "./code/_markdown";
 import { logger } from "@workspace/logger";
 
@@ -26,27 +25,11 @@ let initialHasMore = false;
 let initialCursor: string | null = null;
 
 try {
-  const countResult = await db
-    .selectFrom("repos")
-    .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
-    .select(sql<number>`count(distinct ${sql.ref("repos.id")})`.as("total"))
-    .executeTakeFirstOrThrow();
-  initialTotal = countResult.total;
-
-  const results = await repoQuery(db)
-    .orderBy(sql`last_activity`, "desc")
-    .limit(21)
-    .execute();
-
-  initialHasMore = results.length > 20;
-  const pageResults = initialHasMore ? results.slice(0, 20) : results;
-
-  if (pageResults.length > 0) {
-    const last = pageResults[pageResults.length - 1];
-    initialCursor = `${last.lastActivity}|${last.id}`;
-  }
-
-  initialRepos = pageResults.map(mapRepoRow);
+  const result = await queryRepos(db, {});
+  initialRepos = result.repos;
+  initialTotal = result.total;
+  initialHasMore = result.hasMore;
+  initialCursor = result.nextCursor;
 } catch (error) {
   logger.error({ error }, "Failed to load activity data");
 }
