@@ -30,7 +30,7 @@
     "@cf-wasm/resvg": "^0.3.4",
     "@cf-wasm/satori": "^0.3.6",
     "@date-fns/tz": "^1.5.0",
-    "@sentry/cloudflare": "^10.51.0",
+    "@sentry/cloudflare": "^10.53.1",
     "@tailwindcss/vite": "^4.2.2",
     "@types/alpinejs": "^3.13.11",
     "@types/node": "^25.9.1",
