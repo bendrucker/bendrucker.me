@@ -29,7 +29,7 @@
     "@astrojs/vue": "6.0.1",
     "@cf-wasm/resvg": "^0.3.4",
     "@cf-wasm/satori": "^0.3.6",
-    "@date-fns/tz": "^1.4.1",
+    "@date-fns/tz": "^1.5.0",
     "@sentry/cloudflare": "^10.51.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/alpinejs": "^3.13.11",
