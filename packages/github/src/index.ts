@@ -677,5 +677,5 @@ function aggregateActivityByRepository(
         repo.activitySummary.mergeCount > 0
       );
     })
-    .sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime());
+    .toSorted((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime());
 }
