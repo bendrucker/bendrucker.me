@@ -38,8 +38,8 @@ const visibleYears = computed(() => {
 
 const hasOlderYears = computed(() => {
   if (expanded.value || props.years.length <= MAX_VISIBLE) return false;
-  const last = windowedYears.value[windowedYears.value.length - 1];
-  const allLast = props.years[props.years.length - 1];
+  const last = windowedYears.value.at(-1);
+  const allLast = props.years.at(-1);
   return last && allLast && last.year > allLast.year;
 });
 

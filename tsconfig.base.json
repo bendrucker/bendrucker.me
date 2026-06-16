@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "node",
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "ignoreDeprecations": "6.0",
     "incremental": true,
     "sourceMap": true,

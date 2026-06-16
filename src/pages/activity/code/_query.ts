@@ -127,7 +127,7 @@ export function mapRepoRow(row: {
       ? row.years
           .split(",")
           .map(Number)
-          .sort((a: number, b: number) => b - a)
+          .toSorted((a: number, b: number) => b - a)
       : [],
   };
 }

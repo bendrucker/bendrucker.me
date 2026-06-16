@@ -15,15 +15,6 @@ if (!SITE.showArchives) {
 
 const posts = await getCollection("blog", postFilter);
 
-const groupBy = <T,>(items: T[], keyOf: (item: T) => string | number) => {
-  const groups: Record<string | number, T[]> = {};
-  for (const item of items) {
-    const key = keyOf(item);
-    (groups[key] ??= []).push(item);
-  }
-  return groups;
-};
-
 const months = [
   "January",
   "February",
@@ -44,18 +35,20 @@ const months = [
   <Main pageTitle="Archives" pageDesc="All the articles I've archived.">
     {
       Object.entries(
-        groupBy(posts, post => post.data.pubDatetime.getFullYear())
+        Object.groupBy(posts, post => post.data.pubDatetime.getFullYear())
       )
-        .sort(([yearA], [yearB]) => Number(yearB) - Number(yearA))
-        .map(([year, yearGroup]) => (
+        .toSorted(([yearA], [yearB]) => Number(yearB) - Number(yearA))
+        .map(([year, yearGroup = []]) => (
           <div>
             <span class="text-2xl font-bold">{year}</span>
             <sup class="text-sm">{yearGroup.length}</sup>
             {Object.entries(
-              groupBy(yearGroup, post => post.data.pubDatetime.getMonth() + 1)
+              Object.groupBy(yearGroup, post =>
+                post.data.pubDatetime.getMonth() + 1
+              )
             )
-              .sort(([monthA], [monthB]) => Number(monthB) - Number(monthA))
-              .map(([month, monthGroup]) => (
+              .toSorted(([monthA], [monthB]) => Number(monthB) - Number(monthA))
+              .map(([month, monthGroup = []]) => (
                 <div class="flex flex-col sm:flex-row">
                   <div class="mt-6 min-w-36 text-lg sm:my-6">
                     <span class="font-bold">{months[Number(month) - 1]}</span>
@@ -63,7 +56,7 @@ const months = [
                   </div>
                   <ul>
                     {monthGroup
-                      .sort(
+                      .toSorted(
                         (a, b) =>
                           Math.floor(
                             new Date(b.data.pubDatetime).getTime() / 1000

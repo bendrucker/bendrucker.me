@@ -11,7 +11,7 @@ export const postFilter = ({ data }: CollectionEntry<"blog">) => {
 export const getSortedPosts = (posts: CollectionEntry<"blog">[]) =>
   posts
     .filter(postFilter)
-    .sort(
+    .toSorted(
       (a, b) =>
         Math.floor(
           new Date(b.data.modDatetime ?? b.data.pubDatetime).getTime() / 1000,

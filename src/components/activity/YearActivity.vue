@@ -55,13 +55,13 @@ function actionInput() {
 }
 
 const prevYear = computed(() => {
-  const sorted = props.years.map((y) => y.year).sort((a, b) => b - a);
+  const sorted = props.years.map((y) => y.year).toSorted((a, b) => b - a);
   const idx = sorted.indexOf(props.year);
   return idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1] : null;
 });
 
 const nextYear = computed(() => {
-  const sorted = props.years.map((y) => y.year).sort((a, b) => b - a);
+  const sorted = props.years.map((y) => y.year).toSorted((a, b) => b - a);
   const idx = sorted.indexOf(props.year);
   return idx > 0 ? sorted[idx - 1] : null;
 });
@@ -85,8 +85,8 @@ const footerYears = computed(() => {
 
 const hasOlderFooterYears = computed(() => {
   if (props.years.length <= MAX_FOOTER_YEARS) return false;
-  const last = footerYears.value[footerYears.value.length - 1];
-  const allLast = props.years[props.years.length - 1];
+  const last = footerYears.value.at(-1);
+  const allLast = props.years.at(-1);
   return last && allLast && last.year > allLast.year;
 });
 
