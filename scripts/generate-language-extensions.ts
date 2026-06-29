@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { logger } from "@workspace/logger";
 import { connectD1, formatSql, executeRemote } from "./d1";
-import { upsertLanguageExtension } from "./upsert";
+import { upsertLanguageExtension } from "../src/activity/upsert";
 
 const require = createRequire(import.meta.url);
 const pkgDir = join(require.resolve("linguist-languages"), "..");

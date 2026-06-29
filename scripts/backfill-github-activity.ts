@@ -13,7 +13,7 @@ import {
 } from "@workspace/github";
 import { logger } from "@workspace/logger";
 import { connectD1, formatSql, executeRemote } from "./d1";
-import { upsertRepo, upsertActivity } from "./upsert";
+import { upsertRepo, upsertActivity } from "../src/activity/upsert";
 
 async function rateLimitBackoff(rateLimit: RateLimit): Promise<void> {
   const { remaining, cost, resetAt } = rateLimit;
