@@ -33,7 +33,7 @@
     "@sentry/cloudflare": "^10.55.0",
     "@tailwindcss/vite": "^4.3.1",
     "@types/alpinejs": "^3.13.11",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.3",
     "alpinejs": "^3.15.12",
     "astro": "6.4.8",
     "date-fns": "^4.4.0",
