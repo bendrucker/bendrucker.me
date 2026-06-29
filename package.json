@@ -52,7 +52,7 @@
     "@sentry/astro": "^10.56.0",
     "@shikijs/transformers": "^4.0.2",
     "@spotlightjs/spotlight": "^4.11.4",
-    "@tailwindcss/typography": "^0.5.19",
+    "@tailwindcss/typography": "^0.5.20",
     "@types/better-sqlite3": "^7.6.13",
     "@types/lodash.kebabcase": "^4.1.9",
     "@typescript-eslint/parser": "^8.60.0",
