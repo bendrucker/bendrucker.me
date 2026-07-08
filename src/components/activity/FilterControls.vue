@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { FilterState } from "./composables/useActivityApi";
+import type { FilterState } from "@/activity/types";
 
 const props = defineProps<{
   filters: FilterState;

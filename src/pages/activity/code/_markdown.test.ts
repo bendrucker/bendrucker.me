@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Repo } from "@/components/activity/composables/useActivityApi";
+import type { Repo } from "@/activity/types";
 import { formatReposMarkdown } from "./_markdown";
 
 const repo: Repo = {

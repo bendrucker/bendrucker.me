@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from "vue";
 import { actions } from "astro:actions";
-import {
-  type Repo,
-  type Language,
-  type YearCount,
-  type FilterState,
-  debounce,
-} from "./composables/useActivityApi";
+import type { Repo, Language, YearCount, FilterState } from "@/activity/types";
+import { debounce } from "./composables/useActivityApi";
 import FilterControls from "./FilterControls.vue";
 import LanguageBar from "./LanguageBar.vue";
 import RepoCard from "./RepoCard.vue";
