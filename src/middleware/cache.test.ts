@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activityMaxAge, cacheControl, DEFAULT_CACHE_CONTROL } from "./cache";
+import { activityMaxAge, cachePolicy, DEFAULT_CACHE_POLICY } from "./cache";
 
 describe("activityMaxAge", () => {
   it("expires at five past the next hour mid-hour", () => {
@@ -23,17 +23,18 @@ describe("activityMaxAge", () => {
   });
 });
 
-describe("cacheControl", () => {
+describe("cachePolicy", () => {
   const now = new Date("2026-07-06T12:30:00Z");
 
   it("uses the default policy outside /activity", () => {
-    expect(cacheControl("/posts/some-post/", now)).toBe(DEFAULT_CACHE_CONTROL);
-    expect(cacheControl("/", now)).toBe(DEFAULT_CACHE_CONTROL);
+    expect(cachePolicy("/posts/some-post/", now)).toEqual(DEFAULT_CACHE_POLICY);
+    expect(cachePolicy("/", now)).toEqual(DEFAULT_CACHE_POLICY);
   });
 
   it("aligns /activity max-age to the next data sync", () => {
-    expect(cacheControl("/activity/code", now)).toBe(
-      "public, max-age=2100, stale-while-revalidate=3600",
-    );
+    expect(cachePolicy("/activity/code", now)).toEqual({
+      maxAge: 2100,
+      swr: 3600,
+    });
   });
 });

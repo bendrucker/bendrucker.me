@@ -6,14 +6,21 @@
 // regardless of TTL.
 const ACTIVITY_SYNC_BUFFER_SECONDS = 300;
 
-export const DEFAULT_CACHE_CONTROL =
-  "public, max-age=3600, stale-while-revalidate=86400";
+export interface CachePolicy {
+  maxAge: number;
+  swr: number;
+}
 
-export function cacheControl(pathname: string, now: Date): string {
+export const DEFAULT_CACHE_POLICY: CachePolicy = {
+  maxAge: 3600,
+  swr: 86400,
+};
+
+export function cachePolicy(pathname: string, now: Date): CachePolicy {
   if (!pathname.startsWith("/activity")) {
-    return DEFAULT_CACHE_CONTROL;
+    return DEFAULT_CACHE_POLICY;
   }
-  return `public, max-age=${activityMaxAge(now)}, stale-while-revalidate=3600`;
+  return { maxAge: activityMaxAge(now), swr: 3600 };
 }
 
 export function activityMaxAge(now: Date): number {

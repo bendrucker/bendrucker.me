@@ -5,6 +5,8 @@ import alpinejs from "@astrojs/alpinejs";
 import sentry from "@sentry/astro";
 import vue from "@astrojs/vue";
 import cloudflare from "@astrojs/cloudflare";
+import { cacheCloudflare } from "@astrojs/cloudflare/cache";
+import { unified } from "@astrojs/markdown-remark";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
 import {
@@ -44,6 +46,9 @@ export default defineConfig({
   adapter: cloudflare({
     imageService: "compile",
   }),
+  cache: {
+    provider: cacheCloudflare(),
+  },
   integrations: [
     sitemap({
       filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
@@ -60,7 +65,12 @@ export default defineConfig({
       : []),
   ],
   markdown: {
-    remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
+    processor: unified({
+      remarkPlugins: [
+        remarkToc,
+        [remarkCollapse, { test: "Table of contents" }],
+      ],
+    }),
     shikiConfig: {
       // For more themes, visit https://shiki.style/themes
       themes: { light: "min-light", dark: "night-owl" },
