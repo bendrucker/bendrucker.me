@@ -5,6 +5,9 @@ compatibility_flags = ["nodejs_compat"]
 upload_source_maps = true
 preview_urls = true
 
+[cache]
+enabled = true
+
 [assets]
 directory = "dist"
 binding = "ASSETS"

@@ -1,11 +1,28 @@
 import type { MiddlewareHandler } from "astro";
+import { sequence } from "astro:middleware";
+import { cacheControl } from "./middleware/cache";
 import { negotiate, PRODUCES } from "./middleware/negotiate";
 import {
   hasMarkdownRepresentation,
   resolveMarkdown,
 } from "./middleware/sources";
 
-export const onRequest: MiddlewareHandler = async (context, next) => {
+const cache: MiddlewareHandler = async (context, next) => {
+  const response = await next();
+  const { method } = context.request;
+  if (method !== "GET" && method !== "HEAD") return response;
+  if (context.isPrerendered) return response;
+  if (response.status !== 200) return response;
+  if (response.headers.has("Cache-Control")) return response;
+
+  response.headers.set(
+    "Cache-Control",
+    cacheControl(context.url.pathname, new Date()),
+  );
+  return response;
+};
+
+const markdown: MiddlewareHandler = async (context, next) => {
   const { request } = context;
   if (request.method !== "GET" && request.method !== "HEAD") {
     return next();
@@ -33,6 +50,8 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   addVary(response.headers, "Accept");
   return response;
 };
+
+export const onRequest = sequence(cache, markdown);
 
 function addVary(headers: Headers, value: string): void {
   const existing = headers.get("Vary");
