@@ -1,7 +1,7 @@
 import { sql, type SqlBool } from "kysely";
 import type { Kysely, WhereInterface } from "kysely";
 import type { Database } from "@/db";
-import type { Repo } from "@/components/activity/composables/useActivityApi";
+import type { Repo } from "@/activity/types";
 import { SITE } from "@/config";
 
 export interface FilterParams {

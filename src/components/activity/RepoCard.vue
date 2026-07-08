@@ -6,7 +6,7 @@ import {
   isYesterday,
   format,
 } from "date-fns";
-import type { Repo } from "./composables/useActivityApi";
+import type { Repo } from "@/activity/types";
 
 const props = defineProps<{
   repo: Repo;

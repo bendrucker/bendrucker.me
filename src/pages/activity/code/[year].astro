@@ -4,7 +4,7 @@ import Layout from "../../../layouts/Layout.astro";
 import Main from "../../../layouts/Main.astro";
 import { SITE } from "../../../config";
 import YearActivity from "../../../components/activity/YearActivity.vue";
-import type { Repo, YearCount } from "../../../components/activity/composables/useActivityApi";
+import type { Repo, YearCount } from "@/activity/types";
 import { getDb } from "@/db";
 import { repoQuery, yearHaving, mapRepoRow, queryRepos } from "./_query";
 import { formatReposMarkdown } from "./_markdown";

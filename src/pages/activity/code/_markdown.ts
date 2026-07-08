@@ -1,4 +1,4 @@
-import type { Repo } from "@/components/activity/composables/useActivityApi";
+import type { Repo } from "@/activity/types";
 
 export function formatReposMarkdown(
   repos: Repo[],

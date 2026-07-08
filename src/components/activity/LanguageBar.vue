@@ -6,7 +6,7 @@ import {
   HoverCardPortal,
   HoverCardContent,
 } from "reka-ui";
-import type { Language } from "./composables/useActivityApi";
+import type { Language } from "@/activity/types";
 
 const OVERFLOW_THRESHOLD = 2;
 

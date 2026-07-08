@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Main from "../../layouts/Main.astro";
 import { SITE } from "../../config";
 import ActivityTimeline from "../../components/activity/ActivityTimeline.vue";
-import type { Repo } from "../../components/activity/composables/useActivityApi";
+import type { Repo } from "@/activity/types";
 import { getDb } from "@/db";
 import { queryRepos } from "./code/_query";
 import { formatReposMarkdown } from "./code/_markdown";
