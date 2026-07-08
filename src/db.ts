@@ -1,5 +1,5 @@
 import { CamelCasePlugin, Kysely, type Generated } from "kysely";
-import { D1Dialect } from "@/d1-dialect";
+import { D1Dialect } from "./d1-dialect";
 
 export interface ReposTable {
   id: Generated<number>;

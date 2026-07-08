@@ -3,5 +3,14 @@
   "references": [
     { "path": "../../packages/github" },
     { "path": "../../packages/logger" }
-  ]
+  ],
+  "include": [
+    "*.ts",
+    "../../src/db.ts",
+    "../../src/d1-dialect.ts",
+    "../../src/config.ts",
+    "../../src/activity/**/*.ts",
+    "../../src/services/github.ts"
+  ],
+  "exclude": ["../../src/**/*.test.ts"]
 }
