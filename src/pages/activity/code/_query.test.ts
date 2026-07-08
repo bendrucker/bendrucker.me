@@ -6,6 +6,8 @@ import {
   queryRepos,
   queryLanguages,
   queryYears,
+  queryYearsByLastActivity,
+  queryActivityTotals,
   InvalidCursorError,
 } from "./_query";
 
@@ -373,5 +375,158 @@ describe("queryYears", () => {
     expect(result.years.length).toBeGreaterThan(0);
     const years = result.years.map((y) => y.year);
     expect(years).not.toContain(2023);
+  });
+});
+
+const TS_2023 = 1680000000;
+const TS_2024 = 1710000000;
+const TS_2025 = 1740000000;
+
+describe("queryLanguages with limit", () => {
+  let db: Kysely<Database>;
+
+  beforeEach(async () => {
+    db = createTestDb();
+    await seed(db, FIXTURES, LANGUAGE_EXTENSIONS);
+  });
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("caps results while keeping count-descending order", async () => {
+    const all = await queryLanguages(db, {});
+    expect(all.languages.length).toBeGreaterThan(2);
+
+    const limited = await queryLanguages(db, { limit: 2 });
+    expect(limited.languages).toHaveLength(2);
+    expect(limited.languages[0].name).toBe("TypeScript");
+    expect(limited.languages[0].count).toBe(2);
+    const counts = limited.languages.map((l) => l.count);
+    expect(counts).toEqual([...counts].sort((a, b) => b - a));
+  });
+});
+
+describe("queryActivityTotals", () => {
+  let db: Kysely<Database>;
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("coalesces to zero on an empty database", async () => {
+    db = createTestDb();
+    const totals = await queryActivityTotals(db);
+    expect(totals).toEqual({
+      repos: 0,
+      prs: 0,
+      reviews: 0,
+      issues: 0,
+      years: 0,
+    });
+  });
+
+  it("sums counts and counts distinct repos and years", async () => {
+    db = createTestDb();
+    await seed(db, [
+      {
+        owner: "bendrucker",
+        name: "multi-year",
+        activity: [
+          {
+            lastActivity: TS_2024,
+            prCount: 5,
+            reviewCount: 2,
+            issueCount: 1,
+          },
+          {
+            lastActivity: TS_2025,
+            prCount: 10,
+            reviewCount: 3,
+            issueCount: 2,
+          },
+        ],
+      },
+      {
+        owner: "bendrucker",
+        name: "single-year",
+        activity: [
+          {
+            lastActivity: TS_2025,
+            prCount: 1,
+            reviewCount: 1,
+            issueCount: 1,
+          },
+        ],
+      },
+    ]);
+
+    const totals = await queryActivityTotals(db);
+    expect(totals.repos).toBe(2);
+    expect(totals.prs).toBe(16);
+    expect(totals.reviews).toBe(6);
+    expect(totals.issues).toBe(4);
+    expect(totals.years).toBe(2);
+  });
+});
+
+describe("queryRepos all mode", () => {
+  let db: Kysely<Database>;
+
+  beforeEach(async () => {
+    db = createTestDb();
+    const repos: SeedRepo[] = Array.from({ length: 25 }, (_, i) => ({
+      owner: "bendrucker",
+      name: `repo-${String(i).padStart(2, "0")}`,
+      activity: [{ lastActivity: TS_2025 + i * 3600 }],
+    }));
+    await seed(db, repos);
+  });
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("returns every repo for the year without paginating", async () => {
+    const result = await queryRepos(db, { year: 2025, all: true });
+    expect(result.repos).toHaveLength(25);
+    expect(result.total).toBe(25);
+    expect(result.hasMore).toBe(false);
+    expect(result.nextCursor).toBeNull();
+  });
+});
+
+describe("queryYearsByLastActivity", () => {
+  let db: Kysely<Database>;
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("counts each repo once in its max year, ordered descending", async () => {
+    db = createTestDb();
+    await seed(db, [
+      {
+        owner: "bendrucker",
+        name: "spans-years",
+        activity: [{ lastActivity: TS_2023 }, { lastActivity: TS_2025 }],
+      },
+      {
+        owner: "bendrucker",
+        name: "mid",
+        activity: [{ lastActivity: TS_2024 }],
+      },
+      {
+        owner: "bendrucker",
+        name: "recent",
+        activity: [{ lastActivity: TS_2025 }],
+      },
+    ]);
+
+    const { years } = await queryYearsByLastActivity(db);
+    expect(years).toEqual([
+      { year: 2025, count: 2 },
+      { year: 2024, count: 1 },
+    ]);
   });
 });
