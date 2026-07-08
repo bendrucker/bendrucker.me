@@ -5,10 +5,9 @@ import { createDb } from "../../src/db";
 import { upsertRepo, upsertActivity } from "../../src/activity/upsert";
 import { fetchGitHubActivityWithConfig } from "../../src/services/github";
 
-interface Env {
+type Env = Required<Cloudflare.Env> & {
   GITHUB_TOKEN: string;
-  ACTIVITY_DB: D1Database;
-}
+};
 
 const BATCH_SIZE = 500;
 
