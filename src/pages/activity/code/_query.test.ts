@@ -6,6 +6,8 @@ import {
   queryRepos,
   queryLanguages,
   queryYears,
+  queryYearsByLastActivity,
+  queryActivityTotals,
   InvalidCursorError,
 } from "./_query";
 
@@ -310,6 +312,40 @@ describe("queryRepos pagination", () => {
   });
 });
 
+describe("queryRepos all mode", () => {
+  let db: Kysely<Database>;
+
+  beforeEach(async () => {
+    db = createTestDb();
+    const repos: SeedRepo[] = Array.from({ length: 25 }, (_, i) => ({
+      owner: "bendrucker",
+      name: `repo-${String(i).padStart(2, "0")}`,
+      activity: [{ lastActivity: 1750000000 - i * 3600 }],
+    }));
+    repos.push({
+      owner: "bendrucker",
+      name: "prior-year",
+      activity: [{ lastActivity: 1718000000 }],
+    });
+    await seed(db, repos);
+  });
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("returns every repo for the year with no pagination", async () => {
+    const data = await queryRepos(db, { year: 2025, all: true });
+    expect(data.repos).toHaveLength(25);
+    expect(data.total).toBe(25);
+    expect(data.hasMore).toBe(false);
+    expect(data.nextCursor).toBeNull();
+    expect(data.repos[0].name).toBe("repo-00");
+    expect(data.repos.at(-1)?.name).toBe("repo-24");
+    expect(data.repos.map((r) => r.name)).not.toContain("prior-year");
+  });
+});
+
 describe("queryLanguages", () => {
   let db: Kysely<Database>;
 
@@ -347,6 +383,14 @@ describe("queryLanguages", () => {
     expect(ts).toBeDefined();
     expect(ts!.extension).toBe(".ts");
   });
+
+  it("caps results with limit and keeps count-desc order", async () => {
+    const result = await queryLanguages(db, { limit: 2 });
+    expect(result.languages).toHaveLength(2);
+    const counts = result.languages.map((l) => l.count);
+    expect(counts).toEqual([...counts].sort((a, b) => b - a));
+    expect(result.languages[0].name).toBe("TypeScript");
+  });
 });
 
 describe("queryYears", () => {
@@ -373,5 +417,113 @@ describe("queryYears", () => {
     expect(result.years.length).toBeGreaterThan(0);
     const years = result.years.map((y) => y.year);
     expect(years).not.toContain(2023);
+  });
+});
+
+describe("queryYearsByLastActivity", () => {
+  let db: Kysely<Database>;
+
+  beforeEach(async () => {
+    db = createTestDb();
+    await seed(db, [
+      {
+        owner: "bendrucker",
+        name: "long-lived",
+        activity: [
+          { lastActivity: 1686000000 },
+          { lastActivity: 1718000000 },
+          { lastActivity: 1750000000 },
+        ],
+      },
+      {
+        owner: "bendrucker",
+        name: "also-2025",
+        activity: [{ lastActivity: 1750000000 }],
+      },
+      {
+        owner: "bendrucker",
+        name: "peaked-2024",
+        activity: [{ lastActivity: 1686000000 }, { lastActivity: 1718000000 }],
+      },
+      {
+        owner: "bendrucker",
+        name: "only-2023",
+        activity: [{ lastActivity: 1686000000 }],
+      },
+    ]);
+  });
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("counts each repo once in its max year, descending", async () => {
+    const result = await queryYearsByLastActivity(db);
+    expect(result.years).toEqual([
+      { year: 2025, count: 2 },
+      { year: 2024, count: 1 },
+      { year: 2023, count: 1 },
+    ]);
+  });
+});
+
+describe("queryActivityTotals", () => {
+  let db: Kysely<Database>;
+
+  beforeEach(async () => {
+    db = createTestDb();
+    await seed(db, FIXTURES, LANGUAGE_EXTENSIONS);
+  });
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("sums activity across all repos", async () => {
+    const totals = await queryActivityTotals(db);
+    expect(totals.repos).toBe(6);
+    expect(totals.prs).toBe(28);
+    expect(totals.reviews).toBe(15);
+    expect(totals.issues).toBe(12);
+    expect(totals.years).toBe(3);
+  });
+
+  it("returns zeros on an empty database", async () => {
+    const emptyDb = createTestDb();
+    try {
+      const totals = await queryActivityTotals(emptyDb);
+      expect(totals).toEqual({
+        repos: 0,
+        prs: 0,
+        reviews: 0,
+        issues: 0,
+        years: 0,
+      });
+    } finally {
+      await emptyDb.destroy();
+    }
+  });
+
+  it("counts distinct repos and years", async () => {
+    const multiDb = createTestDb();
+    try {
+      await seed(multiDb, [
+        {
+          owner: "bendrucker",
+          name: "long-lived",
+          activity: [
+            { lastActivity: 1686000000, prCount: 1 },
+            { lastActivity: 1718000000, prCount: 2 },
+            { lastActivity: 1750000000, prCount: 3 },
+          ],
+        },
+      ]);
+      const totals = await queryActivityTotals(multiDb);
+      expect(totals.repos).toBe(1);
+      expect(totals.years).toBe(3);
+      expect(totals.prs).toBe(6);
+    } finally {
+      await multiDb.destroy();
+    }
   });
 });

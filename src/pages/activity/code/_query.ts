@@ -168,12 +168,14 @@ export interface ReposInput {
   language?: string | null;
   search?: string | null;
   year?: number | null;
+  all?: boolean;
 }
 
 export interface LanguagesInput {
   owner?: "personal" | "external" | null;
   search?: string | null;
   year?: number | null;
+  limit?: number;
 }
 
 export interface YearsInput {
@@ -216,6 +218,16 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
     .executeTakeFirstOrThrow();
 
   const total = countResult.total;
+
+  if (input.all === true) {
+    const rows = await repoQuery(db)
+      .$call(applyFilters(filters))
+      .$if(!!filters.year, (qb) => qb.having(yearHaving, "=", filters.year!))
+      .orderBy(sql`last_activity`, "desc")
+      .execute();
+    const repos = rows.map(mapRepoRow);
+    return { repos, nextCursor: null, hasMore: false, total };
+  }
 
   let query = repoQuery(db)
     .$call(applyFilters(filters))
@@ -320,6 +332,7 @@ export async function queryLanguages(
     ])
     .groupBy("sub.primaryLanguageName")
     .orderBy(sql`count`, "desc")
+    .$if(input.limit != null, (qb) => qb.limit(input.limit!))
     .execute();
 
   const total = rows.reduce((sum, row) => sum + row.count, 0);
@@ -350,4 +363,44 @@ export async function queryYears(db: Kysely<Database>, input: YearsInput) {
     .execute();
 
   return { years: rows };
+}
+
+export async function queryYearsByLastActivity(db: Kysely<Database>) {
+  const subquery = db
+    .selectFrom("repos")
+    .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
+    .select([
+      "repos.id",
+      sql<number>`max(${sql.ref("repoActivity.year")})`.as("maxYear"),
+    ])
+    .groupBy("repos.id");
+
+  const rows = await db
+    .selectFrom(subquery.as("sub"))
+    .select(["sub.maxYear as year", sql<number>`count(*)`.as("count")])
+    .groupBy("sub.maxYear")
+    .orderBy("sub.maxYear", "desc")
+    .execute();
+
+  return { years: rows };
+}
+
+export async function queryActivityTotals(db: Kysely<Database>) {
+  return db
+    .selectFrom("repos")
+    .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
+    .select([
+      sql<number>`count(distinct ${sql.ref("repos.id")})`.as("repos"),
+      sql<number>`coalesce(sum(${sql.ref("repoActivity.prCount")}), 0)`.as(
+        "prs",
+      ),
+      sql<number>`coalesce(sum(${sql.ref("repoActivity.reviewCount")}), 0)`.as(
+        "reviews",
+      ),
+      sql<number>`coalesce(sum(${sql.ref("repoActivity.issueCount")}), 0)`.as(
+        "issues",
+      ),
+      sql<number>`count(distinct ${sql.ref("repoActivity.year")})`.as("years"),
+    ])
+    .executeTakeFirstOrThrow();
 }

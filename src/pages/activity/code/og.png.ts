@@ -1,52 +1,23 @@
 import type { APIRoute } from "astro";
-import { sql } from "kysely";
 import { getDb } from "@/db";
 import { generateOgImageForActivity } from "@/og/generate";
+import { queryActivityTotals, queryLanguages } from "./_query";
 
 export const GET: APIRoute = async () => {
   const db = await getDb();
 
-  const stats = await db
-    .selectFrom("repos")
-    .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
-    .select([
-      sql<number>`count(distinct ${sql.ref("repos.id")})`.as("repos"),
-      sql<number>`coalesce(sum(${sql.ref("repoActivity.prCount")}), 0)`.as(
-        "prs",
-      ),
-      sql<number>`coalesce(sum(${sql.ref("repoActivity.reviewCount")}), 0)`.as(
-        "reviews",
-      ),
-      sql<number>`coalesce(sum(${sql.ref("repoActivity.issueCount")}), 0)`.as(
-        "issues",
-      ),
-      sql<number>`count(distinct ${sql.ref("repoActivity.year")})`.as("years"),
-    ])
-    .executeTakeFirstOrThrow();
-
-  const languages = await db
-    .selectFrom("repos")
-    .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
-    .where("repos.primaryLanguageName", "is not", null)
-    .select([
-      "repos.primaryLanguageName as name",
-      "repos.primaryLanguageColor as color",
-      sql<number>`count(distinct ${sql.ref("repos.id")})`.as("count"),
-    ])
-    .groupBy("repos.primaryLanguageName")
-    .orderBy(sql`count`, "desc")
-    .limit(6)
-    .execute();
+  const totals = await queryActivityTotals(db);
+  const { languages } = await queryLanguages(db, { limit: 6 });
 
   const png = await generateOgImageForActivity({
-    repos: stats.repos,
-    prs: stats.prs,
-    reviews: stats.reviews,
-    issues: stats.issues,
-    years: stats.years,
+    repos: totals.repos,
+    prs: totals.prs,
+    reviews: totals.reviews,
+    issues: totals.issues,
+    years: totals.years,
     languages: languages.map((l) => ({
-      name: l.name!,
-      color: l.color!,
+      name: l.name,
+      color: l.color,
       count: l.count,
     })),
   });
