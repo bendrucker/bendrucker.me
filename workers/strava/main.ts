@@ -1,11 +1,8 @@
 import { Strava } from "strava";
 import { logger } from "@workspace/logger";
 
-export interface Env {
-  STRAVA_CLIENT_ID: string;
+interface Env extends Cloudflare.Env {
   STRAVA_CLIENT_SECRET: string;
-  STRAVA_USER_ID: string;
-  STRAVA_KV: KVNamespace;
 }
 
 interface StoredTokens {
@@ -16,7 +13,7 @@ interface StoredTokens {
 }
 
 async function getStravaClient(env: Env): Promise<Strava> {
-  const storedTokens = (await env.STRAVA_KV.get(
+  const storedTokens = (await env.KV.get(
     "tokens",
     "json",
   )) as StoredTokens | null;
@@ -33,7 +30,7 @@ async function getStravaClient(env: Env): Promise<Strava> {
       client_secret: env.STRAVA_CLIENT_SECRET,
       on_token_refresh: async (response) => {
         logger.info("Token refreshed automatically by Strava client");
-        await env.STRAVA_KV.put(
+        await env.KV.put(
           "tokens",
           JSON.stringify({
             access_token: response.access_token,
@@ -67,7 +64,7 @@ async function fetchStravaData(env: Env) {
     );
 
     // Store athlete data
-    await env.STRAVA_KV.put(
+    await env.KV.put(
       "athlete",
       JSON.stringify({
         ...athlete,
@@ -150,7 +147,7 @@ export default {
               client_secret: env.STRAVA_CLIENT_SECRET,
               on_token_refresh: async (response) => {
                 logger.info("Initial token received via OAuth");
-                await env.STRAVA_KV.put(
+                await env.KV.put(
                   "tokens",
                   JSON.stringify({
                     access_token: response.access_token,

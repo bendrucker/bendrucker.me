@@ -1,9 +1,8 @@
 import { fetchGitHubActivity, type RepoActivity } from "@workspace/github";
 import { logger } from "@workspace/logger";
 
-interface Env {
+interface Env extends Cloudflare.Env {
   GITHUB_TOKEN: string;
-  ACTIVITY_DB: D1Database;
 }
 
 async function upsertActivityToD1(
