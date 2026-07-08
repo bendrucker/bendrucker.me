@@ -11,5 +11,6 @@
     "../../src/config.ts",
     "../../src/activity/**/*.ts",
     "../../src/services/github.ts"
-  ]
+  ],
+  "exclude": ["../../src/**/*.test.ts"]
 }
