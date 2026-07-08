@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "astro";
 import { sequence } from "astro:middleware";
-import { cacheControl } from "./middleware/cache";
+import { cachePolicy } from "./middleware/cache";
 import { negotiate, PRODUCES } from "./middleware/negotiate";
 import {
   hasMarkdownRepresentation,
@@ -15,10 +15,7 @@ const cache: MiddlewareHandler = async (context, next) => {
   if (response.status !== 200) return response;
   if (response.headers.has("Cache-Control")) return response;
 
-  response.headers.set(
-    "Cache-Control",
-    cacheControl(context.url.pathname, new Date()),
-  );
+  context.cache.set(cachePolicy(context.url.pathname, new Date()));
   return response;
 };
 
