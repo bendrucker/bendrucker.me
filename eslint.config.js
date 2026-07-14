@@ -17,6 +17,8 @@ export default [
   {
     ignores: [
       "dist/**",
+      ".worktrees/**",
+      "tmp/**",
       ".astro",
       "public/pagefind/**",
       "**/worker-configuration.d.ts",
