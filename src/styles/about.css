@@ -1,0 +1,66 @@
+@layer components {
+  /* Assign each section its Tabler glyph by heading id. `:where()` keeps these
+     at the same specificity as the layout rules below, so the responsive
+     overrides win by source order rather than an id-specificity arms race. */
+  #about h2:where(#code)::before {
+    @apply icon-[tabler--code];
+  }
+  #about h2:where(#cycling)::before {
+    @apply icon-[tabler--bike];
+  }
+  #about h2:where(#work)::before {
+    @apply icon-[tabler--briefcase];
+  }
+  #about h2:where(#contact)::before {
+    @apply icon-[tabler--mail];
+  }
+  #about h2:where(#source-code)::before {
+    @apply icon-[tabler--git-fork];
+  }
+
+  #about h2 {
+    position: relative;
+    margin-top: 3.5rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 2rem;
+  }
+
+  #about h2:first-of-type {
+    margin-top: 2.5rem;
+  }
+
+  /* Mobile: the icon rides above the heading as a centered divider mark,
+     while the heading text stays left-aligned with the body copy. */
+  #about h2::before {
+    content: "";
+    display: block;
+    width: 1em;
+    height: 1em;
+    margin: 0 auto 0.85rem;
+    font-size: 1.6rem;
+    color: var(--color-accent);
+  }
+
+  /* Very wide viewports: the icon floats out into the left gutter, aligned to
+     the heading, and the divider treatment falls away. */
+  @media (min-width: 80rem) {
+    #about h2,
+    #about h2:first-of-type {
+      margin-top: 3rem;
+      border-top: none;
+      padding-top: 0;
+    }
+
+    #about h2:first-of-type {
+      margin-top: 1.5rem;
+    }
+
+    #about h2::before {
+      position: absolute;
+      top: 0.1em;
+      right: 100%;
+      margin: 0 2rem 0 0;
+      font-size: 1.75rem;
+    }
+  }
+}

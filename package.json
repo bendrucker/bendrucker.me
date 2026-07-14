@@ -49,6 +49,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.9",
+    "@iconify-json/tabler": "^1.2.35",
+    "@iconify/tailwind4": "^1.2.3",
     "@lhci/cli": "^0.15.1",
     "@sentry/astro": "^10.62.0",
     "@shikijs/transformers": "^4.3.0",
