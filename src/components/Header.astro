@@ -63,7 +63,6 @@ const isActive = (path: string) => {
           class:list={[
             "mt-4 grid w-44 grid-cols-2 place-content-center gap-2",
             "[&>li>a]:block [&>li>a]:px-4 [&>li>a]:py-3 [&>li>a]:text-center [&>li>a]:font-medium [&>li>a]:hover:text-accent sm:[&>li>a]:px-2 sm:[&>li>a]:py-1",
-            "hidden",
             "sm:mt-0 sm:flex sm:w-auto sm:gap-x-5 sm:gap-y-0",
           ]}
         >
@@ -115,14 +114,46 @@ const isActive = (path: string) => {
   <Hr />
 </header>
 
+<style>
+  @media (width < 640px) {
+    #menu-items {
+      display: none;
+      opacity: 0;
+      transform: translateY(-0.25rem);
+      transition:
+        opacity 200ms ease-out,
+        transform 200ms ease-out,
+        display 200ms allow-discrete;
+    }
+
+    #menu-btn[aria-expanded="true"] ~ #menu-items {
+      display: grid;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @starting-style {
+      #menu-btn[aria-expanded="true"] ~ #menu-items {
+        opacity: 0;
+        transform: translateY(-0.25rem);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #menu-items {
+        transition: none;
+      }
+    }
+  }
+</style>
+
 <script>
   function toggleNav() {
     const menuBtn = document.querySelector("#menu-btn");
-    const menuItems = document.querySelector("#menu-items");
     const menuIcon = document.querySelector("#menu-icon");
     const closeIcon = document.querySelector("#close-icon");
 
-    if (!menuBtn || !menuItems || !menuIcon || !closeIcon) return;
+    if (!menuBtn || !menuIcon || !closeIcon) return;
 
     menuBtn.addEventListener("click", () => {
       const openMenu = menuBtn.getAttribute("aria-expanded") === "true";
@@ -130,7 +161,6 @@ const isActive = (path: string) => {
       menuBtn.setAttribute("aria-expanded", openMenu ? "false" : "true");
       menuBtn.setAttribute("aria-label", openMenu ? "Open Menu" : "Close Menu");
 
-      menuItems.classList.toggle("hidden");
       menuIcon.classList.toggle("hidden");
       closeIcon.classList.toggle("hidden");
     });
