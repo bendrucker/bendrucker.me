@@ -20,6 +20,8 @@ export default [
   {
     ignores: [
       "dist/**",
+      ".worktrees/**",
+      "tmp/**",
       ".astro",
       ".worktrees/**",
       "public/pagefind/**",

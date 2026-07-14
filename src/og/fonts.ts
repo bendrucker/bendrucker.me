@@ -1,4 +1,4 @@
-async function loadGoogleFont(
+export async function loadGoogleFont(
   font: string,
   text: string,
   weight: number,

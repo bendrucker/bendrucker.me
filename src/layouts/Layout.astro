@@ -63,6 +63,8 @@ const structuredData = pubDatetime
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="canonical" href={canonicalURL} />
     <meta name="generator" content={Astro.generator} />
 
@@ -125,7 +127,16 @@ const structuredData = pubDatetime
       href={new URL("rss.xml", Astro.site)}
     />
 
-    <meta name="theme-color" content="" />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="#fdfdfd"
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#212737"
+    />
 
     {
       // If PUBLIC_GOOGLE_SITE_VERIFICATION is set in the environment variable,
@@ -142,6 +153,7 @@ const structuredData = pubDatetime
     <ClientRouter />
 
     <script is:inline src="/toggle-theme.js"></script>
+    <script is:inline src="/favicon-theme.js"></script>
     <script is:inline src="/relative-time.js"></script>
   </head>
   <body>
