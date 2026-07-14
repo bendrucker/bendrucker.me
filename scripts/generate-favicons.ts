@@ -51,11 +51,15 @@ function faviconSvg({ d, transform }: Placement): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS} ${CANVAS}"><style>path{fill:${INK.light}}@media(prefers-color-scheme:dark){path{fill:${INK.dark}}}</style><g transform="${transform}"><path d="${d}"/></g></svg>\n`;
 }
 
-function inkSvg({ d, transform }: Placement, background?: string): string {
+function inkSvg(
+  { d, transform }: Placement,
+  fill: string,
+  background?: string,
+): string {
   const tile = background
     ? `<rect width="${CANVAS}" height="${CANVAS}" fill="${background}"/>`
     : "";
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS} ${CANVAS}">${tile}<g transform="${transform}"><path d="${d}" fill="${INK.light}"/></g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS} ${CANVAS}">${tile}<g transform="${transform}"><path d="${d}" fill="${fill}"/></g></svg>`;
 }
 
 // Resvg.async resolves once the wasm module is ready, so rasterizing never
@@ -82,13 +86,21 @@ async function main() {
   writeFileSync(join(STATIC, "favicon.svg"), faviconSvg(favicon));
   logger.info("Wrote favicon.svg");
 
+  // Safari ignores prefers-color-scheme inside a favicon, so favicon-theme.js
+  // swaps to this explicit light-ink variant when the OS switches to dark.
+  writeFileSync(
+    join(STATIC, "favicon-dark.svg"),
+    inkSvg(favicon, INK.dark) + "\n",
+  );
+  logger.info("Wrote favicon-dark.svg");
+
   const frames = await Promise.all(
-    ICO_SIZES.map((size) => rasterize(inkSvg(favicon), size)),
+    ICO_SIZES.map((size) => rasterize(inkSvg(favicon, INK.light), size)),
   );
   writeFileSync(join(STATIC, "favicon.ico"), await pngToIco(frames));
   logger.info(`Wrote favicon.ico (${ICO_SIZES.join("/")})`);
 
-  const tile = inkSvg(place(font, APPLE_FILL), TILE_BG);
+  const tile = inkSvg(place(font, APPLE_FILL), INK.light, TILE_BG);
   writeFileSync(
     join(STATIC, "apple-touch-icon.png"),
     await rasterize(tile, APPLE_SIZE, TILE_BG),
