@@ -21,4 +21,4 @@ The best way to reach me is via [email](mailto:bvdrucker@gmail.com). I'm not act
 
 ## Source Code
 
-The source code for this website is available on GitHub ([`bendrucker/bendrucker.me`](https://github.com/bendrucker/bendrucker.me)), under the [MIT license](https://github.com/bendrucker/bendrucker.me/blob/master/LICENSE). Pull requests are welcome if you notice a typo!
+The source code for this website is available on GitHub ([`bendrucker/bendrucker.me`](https://github.com/bendrucker/bendrucker.me)), under the [MIT license](https://github.com/bendrucker/bendrucker.me/blob/HEAD/LICENSE). Pull requests are welcome if you notice a typo!
