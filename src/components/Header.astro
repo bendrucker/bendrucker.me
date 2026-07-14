@@ -15,8 +15,8 @@ const currentPath =
   pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
 
 const isActive = (path: string) => {
-  const currentPathArray = currentPath.split("/").filter(p => p.trim());
-  const pathArray = path.split("/").filter(p => p.trim());
+  const currentPathArray = currentPath.split("/").filter((p) => p.trim());
+  const pathArray = path.split("/").filter((p) => p.trim());
 
   return currentPath === path || currentPathArray[0] === pathArray[0];
 };
@@ -58,56 +58,63 @@ const isActive = (path: string) => {
           <IconX id="close-icon" class="hidden" />
           <IconMenuDeep id="menu-icon" />
         </button>
-        <ul
-          id="menu-items"
-          class:list={[
-            "mt-4 grid w-44 grid-cols-2 place-content-center gap-2",
-            "[&>li>a]:block [&>li>a]:px-4 [&>li>a]:py-3 [&>li>a]:text-center [&>li>a]:font-medium [&>li>a]:hover:text-accent sm:[&>li>a]:px-2 sm:[&>li>a]:py-1",
-            "sm:mt-0 sm:flex sm:w-auto sm:gap-x-5 sm:gap-y-0",
-          ]}
-        >
-          <li class="col-span-2">
-            <a href="/about" class:list={{ "active-nav": isActive("/about") }}>
-              About
-            </a>
-          </li>
-          {
-            SITE.showArchives && (
+        <div id="menu-items" class="sm:contents">
+          <div class="sm:contents">
+            <ul
+              class:list={[
+                "grid w-44 grid-cols-2 place-content-center gap-2 pt-4",
+                "[&>li>a]:block [&>li>a]:px-4 [&>li>a]:py-3 [&>li>a]:text-center [&>li>a]:font-medium [&>li>a]:hover:text-accent sm:[&>li>a]:px-2 sm:[&>li>a]:py-1",
+                "sm:flex sm:w-auto sm:gap-x-5 sm:gap-y-0 sm:pt-0",
+              ]}
+            >
               <li class="col-span-2">
-                <LinkButton
-                  href="/archives"
-                  class:list={[
-                    "focus-outline flex justify-center p-3 sm:p-1",
-                    {
-                      "active-nav [&>svg]:stroke-accent": isActive("/archives"),
-                    },
-                  ]}
-                  ariaLabel="archives"
-                  title="Archives"
+                <a
+                  href="/about"
+                  class:list={{ "active-nav": isActive("/about") }}
                 >
-                  <IconArchive class="hidden sm:inline-block" />
-                  <span class="sm:sr-only">Archives</span>
-                </LinkButton>
+                  About
+                </a>
               </li>
-            )
-          }
-          {
-            SITE.lightAndDarkMode && (
-              <li class="col-span-2 flex items-center justify-center">
-                <button
-                  id="theme-btn"
-                  class="focus-outline relative size-12 p-4 sm:size-8 hover:[&>svg]:stroke-accent"
-                  title="Toggles light & dark"
-                  aria-label="auto"
-                  aria-live="polite"
-                >
-                  <IconMoon class="absolute top-[50%] left-[50%] -translate-[50%] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-                  <IconSunHigh class="absolute top-[50%] left-[50%] -translate-[50%] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-                </button>
-              </li>
-            )
-          }
-        </ul>
+              {
+                SITE.showArchives && (
+                  <li class="col-span-2">
+                    <LinkButton
+                      href="/archives"
+                      class:list={[
+                        "focus-outline flex justify-center p-3 sm:p-1",
+                        {
+                          "active-nav [&>svg]:stroke-accent":
+                            isActive("/archives"),
+                        },
+                      ]}
+                      ariaLabel="archives"
+                      title="Archives"
+                    >
+                      <IconArchive class="hidden sm:inline-block" />
+                      <span class="sm:sr-only">Archives</span>
+                    </LinkButton>
+                  </li>
+                )
+              }
+              {
+                SITE.lightAndDarkMode && (
+                  <li class="col-span-2 flex items-center justify-center">
+                    <button
+                      id="theme-btn"
+                      class="focus-outline relative size-12 p-4 sm:size-8 hover:[&>svg]:stroke-accent"
+                      title="Toggles light & dark"
+                      aria-label="auto"
+                      aria-live="polite"
+                    >
+                      <IconMoon class="absolute top-[50%] left-[50%] -translate-[50%] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+                      <IconSunHigh class="absolute top-[50%] left-[50%] -translate-[50%] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+                    </button>
+                  </li>
+                )
+              }
+            </ul>
+          </div>
+        </div>
       </nav>
     </div>
   </div>
@@ -117,30 +124,33 @@ const isActive = (path: string) => {
 <style>
   @media (width < 640px) {
     #menu-items {
-      display: none;
-      opacity: 0;
-      transform: translateY(-0.25rem);
-      transition:
-        opacity 200ms ease-out,
-        transform 200ms ease-out,
-        display 200ms allow-discrete;
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 200ms ease-out;
     }
 
     #menu-btn[aria-expanded="true"] ~ #menu-items {
-      display: grid;
-      opacity: 1;
-      transform: translateY(0);
+      grid-template-rows: 1fr;
     }
 
-    @starting-style {
-      #menu-btn[aria-expanded="true"] ~ #menu-items {
-        opacity: 0;
-        transform: translateY(-0.25rem);
-      }
+    #menu-items > div {
+      min-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 200ms ease-out,
+        visibility 200ms;
+    }
+
+    #menu-btn[aria-expanded="true"] ~ #menu-items > div {
+      opacity: 1;
+      visibility: visible;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      #menu-items {
+      #menu-items,
+      #menu-items > div {
         transition: none;
       }
     }
