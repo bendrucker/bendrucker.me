@@ -13,7 +13,7 @@ export const SITE = {
   showBackButton: true, // show back button in post detail
   viewSource: {
     text: "View Source",
-    url: "https://github.com/bendrucker/bendrucker.me/blob/master/",
+    url: "https://github.com/bendrucker/bendrucker.me/blob/HEAD/",
   },
   dynamicOgImage: false,
   dir: "ltr", // "rtl" | "auto"
