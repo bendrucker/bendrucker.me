@@ -1,0 +1,56 @@
+@layer components {
+  /* Assign each section its Phosphor glyph by heading id. `:where()` keeps these
+     at the same specificity as the layout rules below, so the responsive
+     overrides win by source order rather than an id-specificity arms race.
+     Phosphor's `-light` weight gives a 1.5px stroke, lighter than Tabler's 2px. */
+  #about h2:where(#code)::after {
+    @apply icon-[ph--code-light];
+  }
+  #about h2:where(#cycling)::after {
+    @apply icon-[ph--bicycle-light];
+  }
+  #about h2:where(#work)::after {
+    @apply icon-[ph--briefcase-light];
+  }
+  #about h2:where(#contact)::after {
+    @apply icon-[ph--envelope-simple-light];
+  }
+  #about h2:where(#source-code)::after {
+    @apply icon-[ph--git-fork-light];
+  }
+
+  #about h2 {
+    position: relative;
+    margin-top: 3rem;
+  }
+
+  #about h2:first-of-type {
+    margin-top: 1.5rem;
+  }
+
+  /* Default: a light icon sits just to the right of the heading text. The thin
+     Phosphor stroke stays subtle even at a larger size. */
+  #about h2::after {
+    content: "";
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-left: 0.75em;
+    font-size: 1.35rem;
+    vertical-align: -0.15em;
+    color: color-mix(in oklab, var(--color-foreground) 28%, transparent);
+  }
+
+  /* Very wide viewports: the icon floats out into the left gutter, aligned to
+     the heading. */
+  @media (min-width: 80rem) {
+    #about h2::after {
+      position: absolute;
+      top: 0.15em;
+      right: 100%;
+      margin: 0 1.6rem 0 0;
+      font-size: 1.5rem;
+      vertical-align: baseline;
+    }
+  }
+}
