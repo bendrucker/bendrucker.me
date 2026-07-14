@@ -17,16 +17,15 @@ const sourceUrl = sourcePath ? `${SITE.viewSource.url}${sourcePath}` : undefined
 <footer class:list={["w-full", { "mt-auto": !noMarginTop }]}>
   <Hr noPadding />
   <div
-    class="flex flex-col items-center justify-between py-6 sm:flex-row-reverse sm:py-4"
+    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-3"
   >
-    <Socials centered />
-    <div class="my-2 flex flex-col items-center whitespace-nowrap sm:flex-row">
-      <span>Copyright &#169; {currentYear}</span>
-      <span class="hidden sm:inline">&nbsp;|&nbsp;</span>
-      <span>All rights reserved.</span>
+    <div
+      class="flex items-center gap-1.5 whitespace-nowrap text-xs text-foreground/50"
+    >
+      <span>&#169; {currentYear} Ben Drucker</span>
       {sourceUrl && (
         <>
-          <span class="hidden sm:inline">&nbsp;|&nbsp;</span>
+          <span aria-hidden="true">&middot;</span>
           <a
             href={sourceUrl}
             target="_blank"
@@ -38,5 +37,6 @@ const sourceUrl = sourcePath ? `${SITE.viewSource.url}${sourcePath}` : undefined
         </>
       )}
     </div>
+    <Socials centered />
   </div>
 </footer>
