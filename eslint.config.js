@@ -7,6 +7,9 @@ export default [
   ...eslintPluginAstro.configs.recommended,
   {
     languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
       globals: {
         ...globals.browser,
         ...globals.node,
@@ -18,6 +21,7 @@ export default [
     ignores: [
       "dist/**",
       ".astro",
+      ".worktrees/**",
       "public/pagefind/**",
       "**/worker-configuration.d.ts",
     ],
