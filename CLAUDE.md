@@ -1,6 +1,6 @@
 # bendrucker.me
 
-Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Alpine.js, npm workspaces (`packages/*`, `workers/*`).
+Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm workspaces (`packages/*`, `workers/*`).
 
 ## Structure
 

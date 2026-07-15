@@ -1,7 +1,6 @@
 import { defineConfig, envField } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
-import alpinejs from "@astrojs/alpinejs";
 import sentry from "@sentry/astro";
 import vue from "@astrojs/vue";
 import cloudflare from "@astrojs/cloudflare";
@@ -53,7 +52,6 @@ export default defineConfig({
     sitemap({
       filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
     }),
-    alpinejs(),
     vue(),
     ...(isDev
       ? [
