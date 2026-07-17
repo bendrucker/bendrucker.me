@@ -16,6 +16,7 @@ const { centered = false } = Astro.props;
         href={social.href}
         class="p-1 text-foreground/50 hover:rotate-6"
         title={social.linkTitle}
+        newTab={social.href.startsWith("http")}
       >
         <social.icon class="inline-block size-4 fill-transparent stroke-current stroke-2 group-hover:fill-transparent" />
         <span class="sr-only">{social.linkTitle}</span>
