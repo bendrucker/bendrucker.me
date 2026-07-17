@@ -4,7 +4,7 @@ import type { User, SearchResultItemConnection } from "@octokit/graphql-schema";
 import { logger } from "@workspace/logger";
 import { aggregateActivityByRepository } from "./aggregate";
 
-export { aggregateActivityByRepository, createRepoActivity } from "./aggregate";
+export { aggregateActivityByRepository } from "./aggregate";
 
 export const GITHUB_EPOCH_YEAR = 2008;
 
