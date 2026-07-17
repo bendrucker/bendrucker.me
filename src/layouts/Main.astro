@@ -1,5 +1,4 @@
 ---
-import Breadcrumb from "@/components/Breadcrumb.astro";
 import { SITE } from "@/config";
 
 interface StringTitleProp {
@@ -20,11 +19,10 @@ const { props } = Astro;
 const backUrl = SITE.showBackButton ? Astro.url.pathname : "/";
 ---
 
-<Breadcrumb />
 <main
   data-backUrl={backUrl}
   id="main-content"
-  class="mx-auto w-full max-w-app px-4 pb-4"
+  class="mx-auto mt-8 w-full max-w-app px-4 pb-4"
 >
   {
     "titleTransition" in props ? (

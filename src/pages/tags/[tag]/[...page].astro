@@ -4,6 +4,8 @@ import type { GetStaticPathsOptions } from "astro";
 import Main from "@/layouts/Main.astro";
 import Layout from "@/layouts/Layout.astro";
 import Card from "@/components/Card.astro";
+import LinkButton from "@/components/LinkButton.astro";
+import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import Pagination from "@/components/Pagination.astro";
 import { getUniqueTags, getPostsByTag } from "@/blog/tags";
 import { SITE } from "@/config";
@@ -37,6 +39,13 @@ const { page, tagName } = Astro.props;
     pageDesc={`All the articles with the tag "${tagName}".`}
   >
     <h1 slot="title" transition:name={tag}>{`Tag:${tag}`}</h1>
+    <LinkButton
+      href="/tags"
+      class="focus-outline mb-6 inline-flex items-center text-foreground/75"
+    >
+      <IconChevronLeft class="inline-block size-5 rtl:rotate-180" />
+      <span>All tags</span>
+    </LinkButton>
     <ul>
       {page.data.map(data => <Card {...data} />)}
     </ul>
