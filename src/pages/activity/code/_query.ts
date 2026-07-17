@@ -4,14 +4,14 @@ import type { Database } from "@/db";
 import type { Repo } from "@/activity/types";
 import { SITE } from "@/config";
 
-export interface FilterParams {
+interface FilterParams {
   owner?: "personal" | "external";
   language?: string;
   search?: string;
   year?: number;
 }
 
-export function repoQuery(db: Kysely<Database>) {
+function repoQuery(db: Kysely<Database>) {
   return db
     .selectFrom("repos")
     .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
@@ -53,7 +53,7 @@ export function repoQuery(db: Kysely<Database>) {
 type FilterTables = "repos" | "repoActivity";
 type FilterableQuery = WhereInterface<Database, FilterTables>;
 
-export function applyFilters(
+function applyFilters(
   filters: FilterParams,
   options?: { excludeLanguage?: boolean },
 ) {
@@ -80,9 +80,9 @@ export function applyFilters(
   };
 }
 
-export const yearHaving = sql<number>`max(${sql.ref("repoActivity.year")})`;
+const yearHaving = sql<number>`max(${sql.ref("repoActivity.year")})`;
 
-export function mapRepoRow(row: {
+function mapRepoRow(row: {
   id: number;
   owner: string;
   name: string;
@@ -161,7 +161,7 @@ function parseOffsetCursor(cursor: string): number {
 
 type SortMode = "recent" | "active" | "stars" | "name";
 
-export interface ReposInput {
+interface ReposInput {
   cursor?: string | null;
   sort?: SortMode;
   owner?: "personal" | "external" | null;
@@ -171,14 +171,14 @@ export interface ReposInput {
   all?: boolean;
 }
 
-export interface LanguagesInput {
+interface LanguagesInput {
   owner?: "personal" | "external" | null;
   search?: string | null;
   year?: number | null;
   limit?: number;
 }
 
-export interface YearsInput {
+interface YearsInput {
   owner?: "personal" | "external" | null;
   language?: string | null;
   search?: string | null;

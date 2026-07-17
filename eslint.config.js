@@ -23,8 +23,6 @@ export default [
       ".worktrees/**",
       "tmp/**",
       ".astro",
-      ".worktrees/**",
-      "public/pagefind/**",
       "**/worker-configuration.d.ts",
     ],
   },

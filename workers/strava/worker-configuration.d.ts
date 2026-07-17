@@ -9,7 +9,6 @@ declare namespace Cloudflare {
 		KV: KVNamespace;
 		STRAVA_CLIENT_ID: "12215";
 		STRAVA_USER_ID: "5723594";
-		R2: R2Bucket;
 	}
 }
 interface Env extends Cloudflare.Env {}
