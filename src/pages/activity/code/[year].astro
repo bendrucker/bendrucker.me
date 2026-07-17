@@ -53,7 +53,7 @@ try {
   logger.error({ error, year }, "Failed to load year activity data");
 }
 
-const title = `GitHub Activity: ${year} | ${SITE.title}`;
+const title = `Code: ${year} | ${SITE.title}`;
 const description = `${initialTotal} repositories ${SITE.author} last contributed to in ${year}.`;
 ---
 
@@ -64,7 +64,7 @@ const description = `${initialTotal} repositories ${SITE.author} last contribute
   sourcePath="src/pages/activity/code/[year].astro"
 >
   <Main
-    pageTitle={`Activity: Code (${year})`}
+    pageTitle={`Code (${year})`}
     pageDesc={`Repositories last contributed to in ${year}.`}
   >
     <section>
