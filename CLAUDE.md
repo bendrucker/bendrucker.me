@@ -18,10 +18,29 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 
 ```bash
 npm run dev           # Spotlight + Astro dev server
+npm run dev:json      # Astro dev server with JSON logs (no Spotlight)
 npm run build         # packages → wrangler types → astro check → astro build
 npm run lint          # ESLint
 npm run format        # Prettier
 ```
+
+### Background Dev Server
+
+`npm run dev` wraps `spotlight run astro dev`, which holds the terminal. To
+drive the server without blocking, call the Astro CLI directly:
+
+```bash
+astro dev --background    # start detached
+astro dev status          # is one running?
+astro dev logs --follow   # tail its output
+astro dev stop            # shut it down
+curl localhost:4321/_astro/status
+```
+
+Astro detects agents and turns on background mode plus JSON logging by itself,
+so these flags are usually unnecessary. Set `ASTRO_DEV_BACKGROUND=0` to force a
+foreground run, which is the only way to see startup errors that kill the
+process before it is ready.
 
 ## Stop Hook
 
