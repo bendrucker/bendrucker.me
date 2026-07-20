@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activityMaxAge, cachePolicy, DEFAULT_CACHE_POLICY } from "./cache";
+import { activityCachePolicy, activityMaxAge, isActivityPath } from "./cache";
 
 describe("activityMaxAge", () => {
   it("expires at five past the next hour mid-hour", () => {
@@ -23,16 +23,22 @@ describe("activityMaxAge", () => {
   });
 });
 
-describe("cachePolicy", () => {
-  const now = new Date("2026-07-06T12:30:00Z");
-
-  it("uses the default policy outside /activity", () => {
-    expect(cachePolicy("/posts/some-post/", now)).toEqual(DEFAULT_CACHE_POLICY);
-    expect(cachePolicy("/", now)).toEqual(DEFAULT_CACHE_POLICY);
+describe("isActivityPath", () => {
+  it("matches the routes whose freshness tracks the sync", () => {
+    expect(isActivityPath("/activity/code")).toBe(true);
+    expect(isActivityPath("/activity/code/2024")).toBe(true);
   });
 
-  it("aligns /activity max-age to the next data sync", () => {
-    expect(cachePolicy("/activity/code", now)).toEqual({
+  it("leaves everything else to routeRules", () => {
+    expect(isActivityPath("/")).toBe(false);
+    expect(isActivityPath("/posts/some-post")).toBe(false);
+    expect(isActivityPath("/llms.txt")).toBe(false);
+  });
+});
+
+describe("activityCachePolicy", () => {
+  it("aligns max-age to the next data sync", () => {
+    expect(activityCachePolicy(new Date("2026-07-06T12:30:00Z"))).toEqual({
       maxAge: 2100,
       swr: 3600,
     });

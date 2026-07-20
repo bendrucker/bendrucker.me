@@ -20,6 +20,8 @@ import { join } from "node:path";
 
 const isDev = process.env.NODE_ENV === "development";
 
+const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
+
 function copyStaticFiles(src: string, dest: string) {
   try {
     mkdirSync(dest, { recursive: true });
@@ -50,6 +52,19 @@ export default defineConfig({
   }),
   cache: {
     provider: cacheCloudflare(),
+  },
+  // On-demand routes that only change on deploy. `/activity` is absent because
+  // its max-age is aligned to the hourly GitHub sync and computed per request
+  // in src/middleware.ts. Prerendered routes are not cached at runtime.
+  routeRules: {
+    "/": DEPLOY_SCOPED_CACHE,
+    "/404": DEPLOY_SCOPED_CACHE,
+    "/about": DEPLOY_SCOPED_CACHE,
+    "/about.md": DEPLOY_SCOPED_CACHE,
+    "/posts/[...slug]": DEPLOY_SCOPED_CACHE,
+    "/posts/[...slug].md": DEPLOY_SCOPED_CACHE,
+    "/og.png": DEPLOY_SCOPED_CACHE,
+    "/llms.txt": DEPLOY_SCOPED_CACHE,
   },
   integrations: [
     sitemap({

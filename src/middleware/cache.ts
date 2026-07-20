@@ -1,9 +1,9 @@
 // Activity pages render from D1 that the github worker cron ("0 * * * *")
 // refreshes at the top of every hour. Their max-age expires just after the
 // next sync completes, so cached responses only bust when new data can
-// actually exist. Everything else changes only on deploy, and the Workers
-// Cache key includes the Worker version, so deploys invalidate it
-// regardless of TTL.
+// actually exist. Everything else changes only on deploy and is covered by
+// `routeRules` in astro.config.ts, and the Workers Cache key includes the
+// Worker version, so deploys invalidate it regardless of TTL.
 const ACTIVITY_SYNC_BUFFER_SECONDS = 300;
 
 export interface CachePolicy {
@@ -11,15 +11,11 @@ export interface CachePolicy {
   swr: number;
 }
 
-export const DEFAULT_CACHE_POLICY: CachePolicy = {
-  maxAge: 3600,
-  swr: 86400,
-};
+export function isActivityPath(pathname: string): boolean {
+  return pathname.startsWith("/activity");
+}
 
-export function cachePolicy(pathname: string, now: Date): CachePolicy {
-  if (!pathname.startsWith("/activity")) {
-    return DEFAULT_CACHE_POLICY;
-  }
+export function activityCachePolicy(now: Date): CachePolicy {
   return { maxAge: activityMaxAge(now), swr: 3600 };
 }
 
