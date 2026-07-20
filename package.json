@@ -65,7 +65,7 @@
     "linguist-languages": "^9.4.0",
     "opentype.js": "^2.0.0",
     "png-to-ico": "^3.0.2",
-    "prettier": "^3.8.4",
+    "prettier": "^3.9.4",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tsx": "^4.22.4",
