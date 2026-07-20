@@ -42,7 +42,7 @@
     "reka-ui": "^2.10.0",
     "remark-collapse": "^0.1.2",
     "remark-toc": "^9.0.0",
-    "shiki": "^4.2.0",
+    "shiki": "^4.3.1",
     "tailwindcss": "^4.3.0",
     "vue": "^3.5.38"
   },
@@ -52,7 +52,7 @@
     "@iconify/tailwind4": "^1.2.3",
     "@lhci/cli": "^0.15.1",
     "@sentry/astro": "^10.63.0",
-    "@shikijs/transformers": "^4.3.0",
+    "@shikijs/transformers": "^4.3.1",
     "@spotlightjs/spotlight": "^4.11.7",
     "@tailwindcss/typography": "^0.5.20",
     "@types/better-sqlite3": "^7.6.13",
