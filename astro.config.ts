@@ -1,4 +1,4 @@
-import { defineConfig, envField } from "astro/config";
+import { defineConfig, envField, logHandlers } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
 import sentry from "@sentry/astro";
@@ -42,6 +42,9 @@ function copyStaticFiles(src: string, dest: string) {
 export default defineConfig({
   site: SITE.website,
   output: "server",
+  // Interactive runs stay human-readable. `npm run dev:json` opts into
+  // machine-readable logs for tools that parse them.
+  ...(process.env.ASTRO_LOG_JSON ? { logger: logHandlers.json() } : {}),
   adapter: cloudflare({
     imageService: "compile",
   }),

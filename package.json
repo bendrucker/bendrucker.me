@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "spotlight run astro dev",
+    "dev:json": "ASTRO_LOG_JSON=1 astro dev",
     "build": "npm run build:packages && npm run types:generate && astro check && astro build",
     "build:packages": "npm run build --workspace=packages/logger -- --force && npm run build --workspace=packages/github -- --force",
     "preview": "astro preview",
