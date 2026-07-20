@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "astro";
 import { sequence } from "astro:middleware";
-import { cachePolicy } from "./middleware/cache";
+import { activityCachePolicy, isActivityPath } from "./middleware/cache";
 import { negotiate, PRODUCES } from "./middleware/negotiate";
 import { MARKDOWN_CONTENT_TYPE, representationFor } from "./representations";
 
@@ -9,10 +9,19 @@ const cache: MiddlewareHandler = async (context, next) => {
   const { method } = context.request;
   if (method !== "GET" && method !== "HEAD") return response;
   if (context.isPrerendered) return response;
-  if (response.status !== 200) return response;
-  if (response.headers.has("Cache-Control")) return response;
 
-  context.cache.set(cachePolicy(context.url.pathname, new Date()));
+  // `routeRules` seeds a policy when the cache is created, before the response
+  // exists, and applies it with no regard for the status or an existing
+  // `Cache-Control`. Opt back out for responses that must not be cached.
+  if (response.status !== 200 || response.headers.has("Cache-Control")) {
+    context.cache.set(false);
+    return response;
+  }
+
+  if (isActivityPath(context.url.pathname)) {
+    context.cache.set(activityCachePolicy(new Date()));
+  }
+
   return response;
 };
 
