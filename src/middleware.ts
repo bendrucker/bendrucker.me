@@ -2,10 +2,7 @@ import type { MiddlewareHandler } from "astro";
 import { sequence } from "astro:middleware";
 import { cachePolicy } from "./middleware/cache";
 import { negotiate, PRODUCES } from "./middleware/negotiate";
-import {
-  hasMarkdownRepresentation,
-  resolveMarkdown,
-} from "./middleware/sources";
+import { representationFor } from "./representations";
 
 const cache: MiddlewareHandler = async (context, next) => {
   const response = await next();
@@ -25,14 +22,14 @@ const markdown: MiddlewareHandler = async (context, next) => {
     return next();
   }
 
-  const { pathname } = context.url;
-  if (!hasMarkdownRepresentation(pathname)) {
+  const representation = representationFor(context.routePattern);
+  if (!representation) {
     return next();
   }
 
   const chosen = negotiate(request.headers.get("accept"), PRODUCES);
   if (chosen === "text/markdown") {
-    const md = await resolveMarkdown(pathname);
+    const md = await representation.render(context);
     if (md !== null) {
       return new Response(request.method === "HEAD" ? null : md, {
         headers: {
