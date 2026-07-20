@@ -51,6 +51,16 @@ describe("activity", () => {
     expect(md).toContain("## bendrucker/cool-lib");
     expect(md).toContain("## bendrucker/newer-lib");
   });
+
+  it("lists itself once", async () => {
+    expect(await activity.list()).toEqual([
+      {
+        path: "/activity/code",
+        title: "Code Activity",
+        description: "Public GitHub activity, indexed by repository.",
+      },
+    ]);
+  });
 });
 
 describe("activityYear", () => {
@@ -68,5 +78,20 @@ describe("activityYear", () => {
 
   it("falls through to HTML for a non-numeric year", async () => {
     expect(await activityYear.render(context({ year: "og.png" }))).toBeNull();
+  });
+
+  it("lists one entry per year with activity", async () => {
+    expect(await activityYear.list()).toEqual([
+      {
+        path: "/activity/code/2025",
+        title: "Code Activity: 2025",
+        description: "1 repository last contributed to in 2025.",
+      },
+      {
+        path: "/activity/code/2024",
+        title: "Code Activity: 2024",
+        description: "1 repository last contributed to in 2024.",
+      },
+    ]);
   });
 });

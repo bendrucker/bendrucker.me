@@ -1,7 +1,18 @@
+import { SITE } from "@/config";
 import type { Representation } from "./types";
 import aboutMd from "../pages/about.md?raw";
 
+const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
+
 export const about: Representation = {
   route: "/about",
-  render: async () => aboutMd,
+  section: "Pages",
+  render: async () => aboutMd.replace(FRONTMATTER, "").trimStart(),
+  list: async () => [
+    {
+      path: "/about",
+      title: "About",
+      description: `About ${SITE.author}.`,
+    },
+  ],
 };
