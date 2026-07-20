@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from "astro";
 import { sequence } from "astro:middleware";
 import { cachePolicy } from "./middleware/cache";
 import { negotiate, PRODUCES } from "./middleware/negotiate";
-import { representationFor } from "./representations";
+import { MARKDOWN_CONTENT_TYPE, representationFor } from "./representations";
 
 const cache: MiddlewareHandler = async (context, next) => {
   const response = await next();
@@ -33,7 +33,7 @@ const markdown: MiddlewareHandler = async (context, next) => {
     if (md !== null) {
       return new Response(request.method === "HEAD" ? null : md, {
         headers: {
-          "Content-Type": "text/markdown; charset=utf-8",
+          "Content-Type": MARKDOWN_CONTENT_TYPE,
           Vary: "Accept",
         },
       });

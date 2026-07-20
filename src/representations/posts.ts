@@ -1,10 +1,12 @@
 import { getCollection } from "astro:content";
 import { getPath } from "@/blog/path";
-import { postFilter } from "@/blog/posts";
+import { getSortedPosts, postFilter } from "@/blog/posts";
 import type { Representation } from "./types";
 
 export const posts: Representation = {
   route: "/posts/[...slug]",
+  section: "Posts",
+
   async render({ params }) {
     const slug = params.slug?.replace(/\/$/, "");
     if (!slug) return null;
@@ -14,5 +16,14 @@ export const posts: Representation = {
       (post) => getPath(post.id, post.filePath) === `/posts/${slug}`,
     );
     return entry?.body ?? null;
+  },
+
+  async list() {
+    const entries = await getCollection("blog");
+    return getSortedPosts(entries).map((post) => ({
+      path: getPath(post.id, post.filePath),
+      title: post.data.title,
+      description: post.data.description,
+    }));
   },
 };

@@ -4,6 +4,7 @@ import { PUBLIC_GOOGLE_SITE_VERIFICATION } from "astro:env/client";
 import { SITE } from "@/config";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
+import { representationFor } from "@/representations";
 import "@/styles/global.css";
 
 export interface Props {
@@ -33,6 +34,10 @@ const {
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.url);
+
+const markdownURL = representationFor(Astro.routePattern)
+  ? new URL(`${Astro.url.pathname.replace(/\/$/, "")}.md`, Astro.site)
+  : null;
 
 const structuredData = pubDatetime
   ? {
@@ -126,6 +131,13 @@ const structuredData = pubDatetime
       title={SITE.title}
       href={new URL("rss.xml", Astro.site)}
     />
+
+    <!-- Point agents at the markdown representation of this page -->
+    {
+      markdownURL && (
+        <link rel="alternate" type="text/markdown" href={`${markdownURL}`} />
+      )
+    }
 
     <meta
       name="theme-color"
