@@ -58,7 +58,6 @@ export default defineConfig({
   // in src/middleware.ts. Prerendered routes are not cached at runtime.
   routeRules: {
     "/": DEPLOY_SCOPED_CACHE,
-    "/404": DEPLOY_SCOPED_CACHE,
     "/about": DEPLOY_SCOPED_CACHE,
     "/about.md": DEPLOY_SCOPED_CACHE,
     "/posts/[...slug]": DEPLOY_SCOPED_CACHE,
