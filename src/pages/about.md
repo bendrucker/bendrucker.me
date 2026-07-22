@@ -13,7 +13,7 @@ Find my rides on [Strava](https://www.strava.com/athletes/5723594). I am a longt
 
 ## Work
 
-Founding engineer at _Stealth_.
+Engineer at [Whirl AI](https://www.whirlai.com).
 
 ## Contact
 
