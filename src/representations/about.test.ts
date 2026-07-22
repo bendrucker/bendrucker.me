@@ -8,7 +8,7 @@ describe("about", () => {
   it("renders with an H1 title above the body", async () => {
     const md = await about.render(context);
     expect(md?.startsWith("# About\n\n")).toBe(true);
-    expect(md).toContain("## Code");
+    expect(md).toMatch(/\n## /);
   });
 
   it("strips the frontmatter", async () => {

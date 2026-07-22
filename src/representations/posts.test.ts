@@ -32,4 +32,15 @@ describe("posts", () => {
   it("falls through to HTML when no slug is given", async () => {
     expect(await posts.render(context(""))).toBeNull();
   });
+
+  it("lists each published post once", async () => {
+    const entries = await posts.list();
+    expect(entries).toEqual([
+      {
+        path: "/posts/hello-world",
+        title: "Hello, World",
+        description: undefined,
+      },
+    ]);
+  });
 });

@@ -15,7 +15,7 @@ export const posts: Representation = {
     const entry = entries.find(
       (post) => getPath(post.id, post.filePath) === `/posts/${slug}`,
     );
-    if (entry?.body === undefined) return null;
+    if (entry?.body == null) return null;
     return `# ${entry.data.title}\n\n${entry.body}`;
   },
 
