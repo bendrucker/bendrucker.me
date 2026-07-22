@@ -15,7 +15,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
   <main id="main-content" data-layout="index">
     <section id="hero" class="pt-8 pb-6 text-center">
       <figure class="portrait mx-auto mb-6">
-        <img src="/images/ben-drucker-cut.png" alt="Ben Drucker" width="384" height="384" />
+        <img src="/images/ben-drucker-cut.png" alt="Ben Drucker" width="512" height="512" />
       </figure>
       <p>
         <LinkButton href="/activity/code" class="underline decoration-dashed underline-offset-4">Programmer</LinkButton>, <LinkButton href="https://www.strava.com/athletes/5723594" class="underline decoration-dashed underline-offset-4">cyclist</LinkButton>, and photographer, living in San Francisco.
@@ -43,8 +43,10 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 <style>
   .portrait {
     position: relative;
-    width: 9rem;
-    height: 9rem;
+    /* Larger and viewport-driven so it fills more of a phone screen, capped so
+       it stays reasonable on desktop. */
+    width: clamp(10rem, 50vw, 14rem);
+    height: clamp(10rem, 50vw, 14rem);
     --shadow-rgb: 20, 28, 40;
     --shadow-a: 0.16;
     --sx: 0px;
