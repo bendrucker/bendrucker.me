@@ -7,7 +7,8 @@ const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
 export const about: Representation = {
   route: "/about",
   section: "Pages",
-  render: async () => aboutMd.replace(FRONTMATTER, "").trimStart(),
+  render: async () =>
+    `# About\n\n${aboutMd.replace(FRONTMATTER, "").trimStart()}`,
   list: async () => [
     {
       path: "/about",
