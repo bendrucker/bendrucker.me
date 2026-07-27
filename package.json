@@ -60,7 +60,7 @@
     "@types/opentype.js": "^1.3.10",
     "@typescript-eslint/parser": "^8.60.0",
     "better-sqlite3": "^12.11.1",
-    "eslint": "^10.6.0",
+    "eslint": "^10.7.0",
     "eslint-plugin-astro": "^2.1.1",
     "globals": "^17.7.0",
     "linguist-languages": "^9.4.0",
