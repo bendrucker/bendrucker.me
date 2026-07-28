@@ -16,6 +16,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     <section id="hero" class="pt-8 pb-6 text-center">
       <figure class="portrait mx-auto mb-6">
         <img src="/images/ben-drucker-cut.png" alt="Ben Drucker" width="512" height="512" />
+        <canvas class="dissolve" aria-hidden="true"></canvas>
       </figure>
       <p>
         <LinkButton href="/activity/code" class="underline decoration-dashed underline-offset-4">Programmer</LinkButton>, <LinkButton href="https://www.strava.com/athletes/5723594" class="underline decoration-dashed underline-offset-4">cyclist</LinkButton>, and photographer, living in San Francisco.
@@ -74,7 +75,8 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
       drop-shadow(var(--sx) var(--sy) 10px rgba(var(--shadow-rgb), var(--shadow-a)));
     transition: filter 150ms ease-out;
     /* Pronounced fade: solid through the face and shoulders, then the torso
-       dissolves into the page background. */
+       dissolves into the page background. This is also the resting state when
+       the canvas is unavailable or motion is reduced. */
     -webkit-mask-image: linear-gradient(
       to bottom,
       #000 42%,
@@ -89,6 +91,27 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
       rgba(0, 0, 0, 0.15) 85%,
       transparent 100%
     );
+  }
+
+  /* Once the canvas takes over the torso, the image stops where the voxels
+     start and hands off across a short overlap band. */
+  .portrait[data-dissolve] img {
+    -webkit-mask-image: linear-gradient(to bottom, #000 48%, transparent 64%);
+    mask-image: linear-gradient(to bottom, #000 48%, transparent 64%);
+  }
+
+  .dissolve {
+    position: absolute;
+    top: 0;
+    left: -12%;
+    width: 124%;
+    /* Runs well past the figure so cells stay alive as they drift down behind
+       the caption. */
+    height: 190%;
+    pointer-events: none;
+    /* Behind the caption that follows the figure, so drifting cells pass under
+       the text rather than over it. */
+    z-index: -1;
   }
 </style>
 
@@ -146,6 +169,231 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
         { signal },
       );
     }
+  });
+</script>
+
+<script>
+  // Below the cut line the portrait stops being an image and becomes a grid of
+  // voxels: cells wink out on their own slow cycles, and each one that goes
+  // dark releases a mote that drifts down the page and fades.
+  const CELL = 4; // css px per voxel
+  const ZONE_TOP = 0.48; // where the image hands the torso to the canvas
+  const HANDOFF = 0.16; // overlap band matching the image mask ramp
+  const INTACT = 0.25; // fraction of the zone that never erodes
+  const PAD = 0.12; // canvas overhang each side, as a fraction of the figure
+  const LIFE = 9; // seconds a drifting mote stays visible
+  const MOTE_LIMIT = 1400;
+
+  interface Cell {
+    x: number;
+    y: number;
+    v: number; // luminance
+    a: number; // resting alpha
+    t: number; // 0 at the cut line, 1 at the bottom of the portrait
+    phase: number;
+    rate: number;
+  }
+
+  interface Mote {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    v: number;
+    a: number;
+    age: number;
+  }
+
+  let teardown: (() => void) | undefined;
+
+  document.addEventListener("astro:page-load", () => {
+    teardown?.();
+    teardown = undefined;
+
+    const figure = document.querySelector<HTMLElement>(".portrait");
+    const img = figure?.querySelector("img");
+    const canvas = figure?.querySelector<HTMLCanvasElement>("canvas.dissolve");
+    const ctx = canvas?.getContext("2d");
+    if (!figure || !img || !canvas || !ctx) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let cells: Cell[] = [];
+    let lit = new Uint8Array(0);
+    const motes: Mote[] = [];
+    const grays = Array.from({ length: 64 }, (_, i) => `rgb(${i * 4},${i * 4},${i * 4})`);
+
+    let width = 0;
+    let height = 0;
+    let pad = 0;
+    let frame = 0;
+    let previous = 0;
+    let visible = true;
+
+    const build = () => {
+      width = figure.clientWidth;
+      height = figure.clientHeight;
+      pad = width * PAD;
+      if (!width || !height || !img.naturalWidth) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const canvasWidth = width * (1 + PAD * 2);
+      const canvasHeight = canvas.clientHeight;
+      canvas.width = Math.round(canvasWidth * dpr);
+      canvas.height = Math.round(canvasHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const source = document.createElement("canvas");
+      source.width = img.naturalWidth;
+      source.height = img.naturalHeight;
+      const sourceCtx = source.getContext("2d", { willReadFrequently: true });
+      if (!sourceCtx) return;
+      sourceCtx.drawImage(img, 0, 0);
+      const { data } = sourceCtx.getImageData(0, 0, source.width, source.height);
+
+      const scaleX = source.width / width;
+      const scaleY = source.height / height;
+      const top = height * ZONE_TOP;
+      const next: Cell[] = [];
+
+      for (let y = top; y < height; y += CELL) {
+        const yFraction = y / height;
+        const t = (yFraction - ZONE_TOP) / (1 - ZONE_TOP);
+        const seam = Math.min((yFraction - ZONE_TOP) / HANDOFF, 1);
+        const thinning = Math.pow(1 - t, 1.1);
+
+        for (let x = 0; x < width; x += CELL) {
+          // Average the source pixels this cell covers so the voxels read as a
+          // downsample of the photo rather than a noisy point sample.
+          let sum = 0;
+          let alpha = 0;
+          let count = 0;
+          const sx0 = Math.floor(x * scaleX);
+          const sy0 = Math.floor(y * scaleY);
+          const sx1 = Math.min(Math.ceil((x + CELL) * scaleX), source.width);
+          const sy1 = Math.min(Math.ceil((y + CELL) * scaleY), source.height);
+          for (let sy = sy0; sy < sy1; sy++) {
+            for (let sx = sx0; sx < sx1; sx++) {
+              const i = (sy * source.width + sx) * 4;
+              sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+              alpha += data[i + 3];
+              count++;
+            }
+          }
+          if (!count) continue;
+
+          const a = (alpha / count / 255) * seam * thinning;
+          if (a < 0.02) continue;
+
+          next.push({
+            x: x + pad,
+            y,
+            v: sum / count,
+            a,
+            // Erosion only starts partway down the zone, and neighbours share
+            // most of their phase so cells flake off in clumps.
+            t: Math.pow(Math.max((t - INTACT) / (1 - INTACT), 0), 1.5),
+            phase: Math.sin(x * 0.19) * 1.6 + Math.cos(y * 0.23) * 1.6 + Math.random() * 0.9,
+            rate: 0.25 + Math.random() * 0.4,
+          });
+        }
+      }
+
+      cells = next;
+      lit = new Uint8Array(cells.length).fill(1);
+    };
+
+    const release = (cell: Cell) => {
+      if (motes.length >= MOTE_LIMIT) return;
+      motes.push({
+        x: cell.x,
+        y: cell.y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: 10 + Math.random() * 16,
+        v: cell.v,
+        a: cell.a,
+        age: 0,
+      });
+    };
+
+    const draw = (now: number) => {
+      frame = requestAnimationFrame(draw);
+      const dt = Math.min((now - previous) / 1000, 0.05);
+      previous = now;
+      if (!visible || !cells.length) return;
+
+      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      const seconds = now / 1000;
+
+      for (let i = 0; i < cells.length; i++) {
+        const cell = cells[i];
+        // Cells lower in the torso spend more of their cycle dark, so the
+        // figure thins out from the bottom up.
+        const gate = 0.5 + 0.5 * Math.sin(cell.phase + seconds * cell.rate);
+        const on = gate > cell.t;
+        if (lit[i] && !on && Math.random() < 0.8) release(cell);
+        lit[i] = on ? 1 : 0;
+        if (!on) continue;
+
+        ctx.fillStyle = grays[Math.min(cell.v >> 2, 63)];
+        ctx.globalAlpha = cell.a;
+        ctx.fillRect(cell.x, cell.y, CELL, CELL);
+      }
+
+      for (let i = motes.length - 1; i >= 0; i--) {
+        const mote = motes[i];
+        mote.age += dt;
+        if (mote.age >= LIFE) {
+          motes.splice(i, 1);
+          continue;
+        }
+        mote.vy += 2 * dt;
+        mote.x += mote.vx * dt;
+        mote.y += mote.vy * dt;
+
+        ctx.fillStyle = grays[Math.min(mote.v >> 2, 63)];
+        ctx.globalAlpha = mote.a * Math.pow(1 - mote.age / LIFE, 1.2);
+        ctx.fillRect(mote.x, mote.y, CELL, CELL);
+      }
+
+      ctx.globalAlpha = 1;
+    };
+
+    const start = () => {
+      build();
+      if (!cells.length) return;
+      figure.dataset.dissolve = "on";
+      previous = performance.now();
+      frame = requestAnimationFrame(draw);
+    };
+
+    const resize = new ResizeObserver(() => {
+      if (!cells.length) return;
+      motes.length = 0;
+      build();
+    });
+    resize.observe(figure);
+
+    const observer = new IntersectionObserver(entries => {
+      visible = entries[entries.length - 1].isIntersecting;
+    });
+    observer.observe(figure);
+
+    const onVisibility = () => {
+      if (document.hidden) visible = false;
+      else visible = true;
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    if (img.complete) start();
+    else img.addEventListener("load", start, { once: true });
+
+    teardown = () => {
+      cancelAnimationFrame(frame);
+      resize.disconnect();
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+      delete figure.dataset.dissolve;
+    };
   });
 </script>
 
