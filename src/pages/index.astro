@@ -93,11 +93,11 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     );
   }
 
-  /* Once the canvas takes over the waist, the image stops where the voxels
-     start and hands off across a short overlap band. */
+  /* The canvas redraws the body from the chest down, so the image stops there
+     and hands off across a short overlap band. */
   .portrait[data-dissolve] img {
-    -webkit-mask-image: linear-gradient(to bottom, #000 66%, transparent 78%);
-    mask-image: linear-gradient(to bottom, #000 66%, transparent 78%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 48%);
+    mask-image: linear-gradient(to bottom, #000 42%, transparent 48%);
   }
 
   .dissolve {
@@ -105,11 +105,13 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     top: 0;
     left: -12%;
     width: 124%;
-    /* Runs well past the figure so cells stay alive as they drift down behind
+    /* Runs well past the figure so motes stay alive as they drift down behind
        the caption. */
     height: 190%;
     pointer-events: none;
-    /* Behind the caption that follows the figure, so drifting cells pass under
+    /* Matches the image, which the canvas has to blend into seamlessly. */
+    filter: grayscale(1);
+    /* Behind the caption that follows the figure, so falling motes pass under
        the text rather than over it. */
     z-index: -1;
   }
@@ -173,27 +175,29 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 </script>
 
 <script>
-  // From the waist down the portrait stops being an image and becomes a grid of
-  // voxels. Two noise fields drift across the grid at different scales, speeds,
-  // and headings. Where they fall below a cell's erosion threshold the cell goes
-  // dark and releases a mote that falls down the page. The fields never line
-  // back up, so the pattern reads as endless.
-  const CELL = 4; // css px per voxel
-  const ZONE_TOP = 0.66; // where the image hands the waist to the canvas
-  const HANDOFF = 0.12; // overlap band matching the image mask ramp
-  const INTACT = 0.24; // fraction of the zone that never erodes
+  // Below the chest the canvas draws the portrait instead of the image element,
+  // so the photo stays sharp while a ragged front eats it a grain at a time.
+  // Every grain that goes releases a mote that falls down the page. The front
+  // sits low and barely moves at first. Leave the page open and it climbs.
+  const CELL = 3; // css px per grain
+  const ZONE_TOP = 0.42; // where the image hands the body to the canvas
+  const HANDOFF = 0.06; // overlap band matching the image mask ramp
+  const REST_FRONT = 0.78; // where the front rests, as a fraction of the figure
+  const PEAK_FRONT = 0.5; // how far up it climbs once it gets going
+  const FEATHER = 0.1; // depth over which a grain goes from whole to gone
   const PAD = 0.12; // canvas overhang each side, as a fraction of the figure
   const LIFE = 9; // seconds a drifting mote stays visible
-  const MOTE_LIMIT = 1400;
+  const MOTE_LIMIT = 1600;
   const LATTICE = 64; // noise field resolution
-  const GRAIN = 20; // css px per noise lattice step
+  const GRAIN = 9; // css px per noise lattice step
+  const PATIENCE = 210; // seconds on the page before the front starts climbing
+  const CLIMB = 180; // seconds it then takes to reach the peak
 
   interface Cell {
     x: number;
     y: number;
     v: number; // luminance
-    a: number; // resting alpha
-    t: number; // erosion threshold, 0 where the waist is solid
+    a: number; // source alpha
     nx: number; // position in the noise field
     ny: number;
   }
@@ -228,6 +232,8 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     return top + (bottom - top) * fy;
   };
 
+  const clamp = (n: number) => Math.min(Math.max(n, 0), 1);
+
   let teardown: (() => void) | undefined;
 
   document.addEventListener("astro:page-load", () => {
@@ -242,7 +248,8 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let cells: Cell[] = [];
-    let lit = new Uint8Array(0);
+    let gone = new Uint8Array(0);
+    let fade: CanvasGradient | undefined;
     const motes: Mote[] = [];
     const grays = Array.from({ length: 64 }, (_, i) => `rgb(${i * 4},${i * 4},${i * 4})`);
 
@@ -251,6 +258,8 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     let pad = 0;
     let frame = 0;
     let previous = 0;
+    let elapsed = 0;
+    let settled = false;
     let visible = true;
 
     const build = () => {
@@ -260,11 +269,18 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
       if (!width || !height || !img.naturalWidth) return;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const canvasWidth = width * (1 + PAD * 2);
-      const canvasHeight = canvas.clientHeight;
-      canvas.width = Math.round(canvasWidth * dpr);
-      canvas.height = Math.round(canvasHeight * dpr);
+      canvas.width = Math.round(width * (1 + PAD * 2) * dpr);
+      canvas.height = Math.round(canvas.clientHeight * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Erasing the top of the drawn region completes the handoff from the
+      // image, and erasing the bottom keeps the resting fade into the page.
+      fade = ctx.createLinearGradient(0, height * ZONE_TOP, 0, height);
+      fade.addColorStop(0, "rgba(0,0,0,1)");
+      fade.addColorStop(HANDOFF / (1 - ZONE_TOP), "rgba(0,0,0,0)");
+      fade.addColorStop(0.38, "rgba(0,0,0,0.5)");
+      fade.addColorStop(0.74, "rgba(0,0,0,0.85)");
+      fade.addColorStop(1, "rgba(0,0,0,1)");
 
       const source = document.createElement("canvas");
       source.width = img.naturalWidth;
@@ -276,18 +292,13 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 
       const scaleX = source.width / width;
       const scaleY = source.height / height;
-      const top = height * ZONE_TOP;
       const next: Cell[] = [];
 
-      for (let y = top; y < height; y += CELL) {
-        const yFraction = y / height;
-        const t = (yFraction - ZONE_TOP) / (1 - ZONE_TOP);
-        const seam = Math.min((yFraction - ZONE_TOP) / HANDOFF, 1);
-        const thinning = Math.pow(1 - t, 1.1);
-
+      // Only the band the front can ever reach needs grains.
+      for (let y = height * (PEAK_FRONT - FEATHER); y < height; y += CELL) {
         for (let x = 0; x < width; x += CELL) {
-          // Average the source pixels this cell covers so the voxels read as a
-          // downsample of the photo rather than a noisy point sample.
+          // Average the source pixels this grain covers so a released mote
+          // carries the colour of what it came from.
           let sum = 0;
           let alpha = 0;
           let count = 0;
@@ -305,17 +316,14 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
           }
           if (!count) continue;
 
-          const a = (alpha / count / 255) * seam * thinning;
-          if (a < 0.02) continue;
+          const a = alpha / count / 255;
+          if (a < 0.05) continue;
 
           next.push({
             x: x + pad,
             y,
             v: sum / count,
             a,
-            // Erosion starts just below the handoff and takes hold as the
-            // silhouette runs out.
-            t: Math.pow(Math.max((t - INTACT) / (1 - INTACT), 0), 1.4),
             nx: x / GRAIN,
             ny: y / GRAIN,
           });
@@ -323,18 +331,21 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
       }
 
       cells = next;
-      lit = new Uint8Array(cells.length).fill(1);
+      gone = new Uint8Array(cells.length);
+      settled = false;
     };
 
-    const release = (cell: Cell) => {
+    const release = (cell: Cell, haste: number) => {
       if (motes.length >= MOTE_LIMIT) return;
       motes.push({
         x: cell.x,
         y: cell.y,
         vx: (Math.random() - 0.5) * 6,
-        vy: 10 + Math.random() * 16,
+        vy: (8 + Math.random() * 14) * haste,
         v: cell.v,
-        a: cell.a,
+        // Motes ignore the resting fade, so ash stays legible as it falls
+        // through the part of the figure that has already gone soft.
+        a: cell.a * 0.75,
         age: 0,
       });
     };
@@ -343,36 +354,71 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
       frame = requestAnimationFrame(draw);
       const dt = Math.min((now - previous) / 1000, 0.05);
       previous = now;
-      if (!visible || !cells.length) return;
+      if (!visible || !cells.length || !fade) return;
+      elapsed += dt;
+
+      // The easter egg: sit on the page long enough and the front starts
+      // climbing, faster as it goes.
+      const progress = clamp((elapsed - PATIENCE) / CLIMB);
+      const eased = progress * progress;
+      const front = height * (REST_FRONT - (REST_FRONT - PEAK_FRONT) * eased);
+      const reach = height * FEATHER;
+      const haste = 1 + eased * 1.5;
+      const seconds = elapsed * haste;
 
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      const seconds = now / 1000;
+      ctx.drawImage(
+        img,
+        0,
+        img.naturalHeight * ZONE_TOP,
+        img.naturalWidth,
+        img.naturalHeight * (1 - ZONE_TOP),
+        pad,
+        height * ZONE_TOP,
+        width,
+        height * (1 - ZONE_TOP),
+      );
 
-      // Coarse field sets where the waist is eating away, fine field breaks its
-      // edge into individual cells. Their drifts share no common period.
-      const coarseX = seconds * 0.041;
-      const coarseY = seconds * -0.067;
-      const fineX = seconds * -0.089;
-      const fineY = seconds * 0.113;
+      // Coarse field decides where the front bulges, fine field breaks its edge
+      // into individual grains. Their drifts share no common period.
+      const coarseX = seconds * 0.013;
+      const coarseY = seconds * -0.021;
+      const fineX = seconds * -0.037;
+      const fineY = seconds * 0.029;
 
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = fade;
+      ctx.fillRect(pad, height * ZONE_TOP, width, height * (1 - ZONE_TOP));
+
+      ctx.fillStyle = "#000";
       for (let i = 0; i < cells.length; i++) {
         const cell = cells[i];
-        const field =
-          noise(cell.nx + coarseX, cell.ny + coarseY) * 0.62 +
-          noise(cell.nx * 2.7 + fineX, cell.ny * 2.7 + fineY) * 0.38;
-        // Stretch the contrast so the field spends less time hovering at the
-        // threshold, which would leave cells flickering in place.
-        const gate = Math.min(Math.max((field - 0.5) * 1.9 + 0.5, 0), 1);
-        const on = gate > cell.t;
-        if (lit[i] && !on) release(cell);
-        lit[i] = on ? 1 : 0;
-        if (!on) continue;
+        const depth = (cell.y - front) / reach;
+        if (depth < -0.7) continue;
 
-        ctx.fillStyle = grays[Math.min(cell.v >> 2, 63)];
-        ctx.globalAlpha = cell.a;
+        const field =
+          noise(cell.nx * 0.34 + coarseX, cell.ny * 0.34 + coarseY) * 0.55 +
+          noise(cell.nx + fineX, cell.ny + fineY) * 0.45;
+        const eaten = clamp(depth + (field - 0.5) * 1.4);
+        if (eaten < 0.03) {
+          gone[i] = 0;
+          continue;
+        }
+
+        if (!gone[i] && eaten > 0.5) {
+          // Whatever the field has already eaten when the page opens is adopted
+          // silently. Only grains that go afterwards release a mote.
+          if (settled) release(cell, haste);
+          gone[i] = 1;
+        }
+
+        ctx.globalAlpha = eaten;
         ctx.fillRect(cell.x, cell.y, CELL, CELL);
       }
 
+      settled = true;
+
+      ctx.globalCompositeOperation = "source-over";
       for (let i = motes.length - 1; i >= 0; i--) {
         const mote = motes[i];
         mote.age += dt;
@@ -385,7 +431,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
         mote.y += mote.vy * dt;
 
         ctx.fillStyle = grays[Math.min(mote.v >> 2, 63)];
-        ctx.globalAlpha = mote.a * Math.pow(1 - mote.age / LIFE, 1.2);
+        ctx.globalAlpha = mote.a * Math.pow(1 - mote.age / LIFE, 1.4);
         ctx.fillRect(mote.x, mote.y, CELL, CELL);
       }
 
@@ -413,8 +459,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     observer.observe(figure);
 
     const onVisibility = () => {
-      if (document.hidden) visible = false;
-      else visible = true;
+      visible = !document.hidden;
     };
     document.addEventListener("visibilitychange", onVisibility);
 
