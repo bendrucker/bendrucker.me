@@ -93,11 +93,11 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     );
   }
 
-  /* Once the canvas takes over the torso, the image stops where the voxels
+  /* Once the canvas takes over the waist, the image stops where the voxels
      start and hands off across a short overlap band. */
   .portrait[data-dissolve] img {
-    -webkit-mask-image: linear-gradient(to bottom, #000 48%, transparent 64%);
-    mask-image: linear-gradient(to bottom, #000 48%, transparent 64%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 66%, transparent 78%);
+    mask-image: linear-gradient(to bottom, #000 66%, transparent 78%);
   }
 
   .dissolve {
@@ -173,25 +173,29 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 </script>
 
 <script>
-  // Below the cut line the portrait stops being an image and becomes a grid of
-  // voxels: cells wink out on their own slow cycles, and each one that goes
-  // dark releases a mote that drifts down the page and fades.
+  // From the waist down the portrait stops being an image and becomes a grid of
+  // voxels. Two noise fields drift across the grid at different scales, speeds,
+  // and headings. Where they fall below a cell's erosion threshold the cell goes
+  // dark and releases a mote that falls down the page. The fields never line
+  // back up, so the pattern reads as endless.
   const CELL = 4; // css px per voxel
-  const ZONE_TOP = 0.48; // where the image hands the torso to the canvas
-  const HANDOFF = 0.16; // overlap band matching the image mask ramp
-  const INTACT = 0.25; // fraction of the zone that never erodes
+  const ZONE_TOP = 0.66; // where the image hands the waist to the canvas
+  const HANDOFF = 0.12; // overlap band matching the image mask ramp
+  const INTACT = 0.24; // fraction of the zone that never erodes
   const PAD = 0.12; // canvas overhang each side, as a fraction of the figure
   const LIFE = 9; // seconds a drifting mote stays visible
   const MOTE_LIMIT = 1400;
+  const LATTICE = 64; // noise field resolution
+  const GRAIN = 20; // css px per noise lattice step
 
   interface Cell {
     x: number;
     y: number;
     v: number; // luminance
     a: number; // resting alpha
-    t: number; // 0 at the cut line, 1 at the bottom of the portrait
-    phase: number;
-    rate: number;
+    t: number; // erosion threshold, 0 where the waist is solid
+    nx: number; // position in the noise field
+    ny: number;
   }
 
   interface Mote {
@@ -203,6 +207,26 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     a: number;
     age: number;
   }
+
+  const lattice = Float32Array.from({ length: LATTICE * LATTICE }, () => Math.random());
+
+  // Value noise over a wrapping lattice, smoothstepped so the field flows
+  // instead of stepping between lattice points.
+  const noise = (x: number, y: number) => {
+    const xi = Math.floor(x);
+    const yi = Math.floor(y);
+    const xf = x - xi;
+    const yf = y - yi;
+    const fx = xf * xf * (3 - 2 * xf);
+    const fy = yf * yf * (3 - 2 * yf);
+    const x0 = xi & (LATTICE - 1);
+    const x1 = (xi + 1) & (LATTICE - 1);
+    const y0 = (yi & (LATTICE - 1)) * LATTICE;
+    const y1 = ((yi + 1) & (LATTICE - 1)) * LATTICE;
+    const top = lattice[y0 + x0] + (lattice[y0 + x1] - lattice[y0 + x0]) * fx;
+    const bottom = lattice[y1 + x0] + (lattice[y1 + x1] - lattice[y1 + x0]) * fx;
+    return top + (bottom - top) * fy;
+  };
 
   let teardown: (() => void) | undefined;
 
@@ -289,11 +313,11 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
             y,
             v: sum / count,
             a,
-            // Erosion only starts partway down the zone, and neighbours share
-            // most of their phase so cells flake off in clumps.
-            t: Math.pow(Math.max((t - INTACT) / (1 - INTACT), 0), 1.5),
-            phase: Math.sin(x * 0.19) * 1.6 + Math.cos(y * 0.23) * 1.6 + Math.random() * 0.9,
-            rate: 0.25 + Math.random() * 0.4,
+            // Erosion starts just below the handoff and takes hold as the
+            // silhouette runs out.
+            t: Math.pow(Math.max((t - INTACT) / (1 - INTACT), 0), 1.4),
+            nx: x / GRAIN,
+            ny: y / GRAIN,
           });
         }
       }
@@ -324,13 +348,23 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
       const seconds = now / 1000;
 
+      // Coarse field sets where the waist is eating away, fine field breaks its
+      // edge into individual cells. Their drifts share no common period.
+      const coarseX = seconds * 0.041;
+      const coarseY = seconds * -0.067;
+      const fineX = seconds * -0.089;
+      const fineY = seconds * 0.113;
+
       for (let i = 0; i < cells.length; i++) {
         const cell = cells[i];
-        // Cells lower in the torso spend more of their cycle dark, so the
-        // figure thins out from the bottom up.
-        const gate = 0.5 + 0.5 * Math.sin(cell.phase + seconds * cell.rate);
+        const field =
+          noise(cell.nx + coarseX, cell.ny + coarseY) * 0.62 +
+          noise(cell.nx * 2.7 + fineX, cell.ny * 2.7 + fineY) * 0.38;
+        // Stretch the contrast so the field spends less time hovering at the
+        // threshold, which would leave cells flickering in place.
+        const gate = Math.min(Math.max((field - 0.5) * 1.9 + 0.5, 0), 1);
         const on = gate > cell.t;
-        if (lit[i] && !on && Math.random() < 0.8) release(cell);
+        if (lit[i] && !on) release(cell);
         lit[i] = on ? 1 : 0;
         if (!on) continue;
 
