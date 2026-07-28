@@ -41,12 +41,18 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 </Layout>
 
 <style>
+  /* Centering puts the figure lower than it reads. Reserve space below it so
+     the group settles around the upper third of the open area. */
+  #main-content {
+    padding-bottom: 14svh;
+  }
+
   .portrait {
     position: relative;
     /* Larger and viewport-driven so it fills more of a phone screen, capped so
        it stays reasonable on desktop. */
-    width: clamp(10rem, 50vw, 14rem);
-    height: clamp(10rem, 50vw, 14rem);
+    width: clamp(11rem, 55vw, 16rem);
+    height: clamp(11rem, 55vw, 16rem);
     --shadow-rgb: 20, 28, 40;
     --shadow-a: 0.16;
     --sx: 0px;
