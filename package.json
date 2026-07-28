@@ -61,7 +61,7 @@
     "@typescript-eslint/parser": "^8.63.0",
     "better-sqlite3": "^12.11.1",
     "eslint": "^10.7.0",
-    "eslint-plugin-astro": "^2.1.1",
+    "eslint-plugin-astro": "^3.0.0",
     "globals": "^17.7.0",
     "linguist-languages": "^9.4.0",
     "opentype.js": "^2.0.0",
