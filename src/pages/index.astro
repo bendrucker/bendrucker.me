@@ -48,6 +48,12 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     padding-bottom: 14svh;
   }
 
+  /* The fog spills wider than the figure to give its edges room to fade, which
+     on a narrow viewport reaches past the content. */
+  #hero {
+    overflow-x: clip;
+  }
+
   .portrait {
     position: relative;
     /* Larger and viewport-driven so it fills more of a phone screen, capped so
@@ -99,15 +105,17 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
   .portrait[data-fog] img {
     -webkit-mask-image: linear-gradient(
       to bottom,
-      #000 58%,
+      #000 60%,
       rgba(0, 0, 0, 0.7) 78%,
-      transparent 95%
+      rgba(0, 0, 0, 0.25) 90%,
+      transparent 99%
     );
     mask-image: linear-gradient(
       to bottom,
-      #000 58%,
+      #000 60%,
       rgba(0, 0, 0, 0.7) 78%,
-      transparent 95%
+      rgba(0, 0, 0, 0.25) 90%,
+      transparent 99%
     );
   }
 
@@ -116,10 +124,10 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     /* Rolls in around the chest and spills well past the figure on every side,
        so the bank reads as weather rather than a panel behind the portrait.
        Stops short of the caption below. */
-    top: 46%;
-    left: -16%;
-    width: 132%;
-    height: 58%;
+    top: 44%;
+    left: -45%;
+    width: 190%;
+    height: 62%;
     pointer-events: none;
     z-index: 1;
   }
@@ -187,11 +195,12 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
   // the page. It is fractal noise sampled on a plane that drifts through a 3D
   // field, so the shapes churn as they pass instead of sliding by rigid. The
   // field origin is random per page load: no two visits get the same weather.
-  const BAND_TOP = 0.08; // canvas-relative height where the first wisps appear
-  const BAND_SOLID = 0.7; // and where the fog has taken everything
+  const BAND_TOP = 0.02; // canvas-relative height where the first wisps appear
+  const BAND_SOLID = 0.82; // and where the fog has taken everything
   const WISP = 0.045; // how far the visible wisps sit from the page background
+  const SHEER = 0.32; // most the fog can hide where it first meets the chest
   const DPR_CAP = 1.5; // the field is soft, so full retina buys nothing
-  const SPAN = 2.8; // noise cells down the canvas; fewer means larger shapes
+  const SPAN = 3.0; // noise cells down the canvas; fewer means larger shapes
 
   const VERTEX = `
     attribute vec2 aPos;
@@ -214,6 +223,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     uniform vec3 uOrigin;
     uniform vec2 uScale;
     uniform vec2 uBand;
+    uniform float uSheer;
     uniform vec3 uWisp;
     uniform vec3 uPage;
 
@@ -263,11 +273,16 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
       float depth = smoothstep(uBand.x, uBand.y, vUv.y);
       float density = smoothstep(0.68 - depth * 0.66, 0.92 - depth * 0.8, cloud);
 
+      // Capping how much it can hide near the top keeps the chest behind a
+      // cloud you can see through. The cap lifts as the fog deepens, so by the
+      // bottom of the band the page has taken over completely.
+      density = min(density, mix(uSheer, 1.0, depth * depth));
+
       // The bank has to end somewhere. Weighting the fade-out on each edge by
       // the field itself keeps that boundary from being the canvas rectangle.
-      float edge = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x) *
-        smoothstep(0.0, 0.1, vUv.y) * smoothstep(1.0, 0.88, vUv.y);
-      density *= smoothstep(0.0, 0.55, edge * (0.45 + cloud));
+      float edge = smoothstep(0.0, 0.32, vUv.x) * smoothstep(1.0, 0.68, vUv.x) *
+        smoothstep(0.0, 0.2, vUv.y);
+      density *= smoothstep(0.0, 0.8, edge * (0.55 + cloud * 0.9));
 
       // Thin fog carries a tint you can see against the page. Thick fog is the
       // page, which is what lets the body disappear into it. Keying the tint to
@@ -350,6 +365,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     const uPage = gl.getUniformLocation(program, "uPage");
 
     gl.uniform2f(gl.getUniformLocation(program, "uBand"), BAND_TOP, BAND_SOLID);
+    gl.uniform1f(gl.getUniformLocation(program, "uSheer"), SHEER);
     gl.uniform3f(
       uOrigin,
       Math.random() * 64,
