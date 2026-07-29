@@ -99,15 +99,15 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
   .portrait[data-fog] img {
     -webkit-mask-image: linear-gradient(
       to bottom,
-      #000 62%,
-      rgba(0, 0, 0, 0.75) 80%,
-      transparent 96%
+      #000 58%,
+      rgba(0, 0, 0, 0.7) 78%,
+      transparent 95%
     );
     mask-image: linear-gradient(
       to bottom,
-      #000 62%,
-      rgba(0, 0, 0, 0.75) 80%,
-      transparent 96%
+      #000 58%,
+      rgba(0, 0, 0, 0.7) 78%,
+      transparent 95%
     );
   }
 
@@ -116,10 +116,10 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     /* Rolls in around the chest and spills well past the figure on every side,
        so the bank reads as weather rather than a panel behind the portrait.
        Stops short of the caption below. */
-    top: 16%;
-    left: -35%;
-    width: 170%;
-    height: 88%;
+    top: 46%;
+    left: -16%;
+    width: 132%;
+    height: 58%;
     pointer-events: none;
     z-index: 1;
   }
@@ -187,11 +187,11 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
   // the page. It is fractal noise sampled on a plane that drifts through a 3D
   // field, so the shapes churn as they pass instead of sliding by rigid. The
   // field origin is random per page load: no two visits get the same weather.
-  const BAND_TOP = 0.05; // canvas-relative height where the first wisps appear
-  const BAND_SOLID = 0.88; // and where the fog has taken everything
-  const WISP = 0.09; // how far the visible wisps sit from the page background
+  const BAND_TOP = 0.08; // canvas-relative height where the first wisps appear
+  const BAND_SOLID = 0.7; // and where the fog has taken everything
+  const WISP = 0.045; // how far the visible wisps sit from the page background
   const DPR_CAP = 1.5; // the field is soft, so full retina buys nothing
-  const SPAN = 4.2; // noise cells down the canvas; fewer means larger shapes
+  const SPAN = 2.8; // noise cells down the canvas; fewer means larger shapes
 
   const VERTEX = `
     attribute vec2 aPos;
