@@ -11,15 +11,35 @@ const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 ---
 
-<Layout description="Programmer, cyclist, and photographer." sourcePath="src/pages/index.astro">
-  <main id="main-content" data-layout="index" class="flex flex-1 flex-col justify-center">
+<Layout
+  description="Programmer, cyclist, and photographer."
+  sourcePath="src/pages/index.astro"
+>
+  <main
+    id="main-content"
+    data-layout="index"
+    class="flex flex-1 flex-col justify-center"
+  >
     <section id="hero" class="pt-8 pb-6 text-center">
       <figure class="portrait mx-auto mb-6">
-        <img src="/images/ben-drucker-cut.png" alt="Ben Drucker" width="512" height="512" />
+        <img
+          src="/images/ben-drucker-cut.png"
+          alt="Ben Drucker"
+          width="512"
+          height="512"
+        />
         <canvas class="fog" aria-hidden="true"></canvas>
       </figure>
       <p>
-        <LinkButton href="/activity/code" class="underline decoration-dashed underline-offset-4">Programmer</LinkButton>, <LinkButton href="https://www.strava.com/athletes/5723594" class="underline decoration-dashed underline-offset-4">cyclist</LinkButton>, and photographer, living in San Francisco.
+        <LinkButton
+          href="/activity/code"
+          class="underline decoration-dashed underline-offset-4"
+          >Programmer</LinkButton
+        >, <LinkButton
+          href="https://www.strava.com/athletes/5723594"
+          class="underline decoration-dashed underline-offset-4"
+          >cyclist</LinkButton
+        >, and photographer, living in San Francisco.
       </p>
     </section>
 
@@ -29,7 +49,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
           <section id="featured" class="pt-12 pb-6">
             <h2 class="text-2xl font-semibold tracking-wide">Featured</h2>
             <ul>
-              {featuredPosts.map(data => (
+              {featuredPosts.map((data) => (
                 <Card variant="h3" {...data} />
               ))}
             </ul>
@@ -37,7 +57,6 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
         </>
       )
     }
-
   </main>
 </Layout>
 
@@ -78,7 +97,9 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     height: 100%;
     object-fit: contain;
     filter: grayscale(1)
-      drop-shadow(var(--sx) var(--sy) 10px rgba(var(--shadow-rgb), var(--shadow-a)));
+      drop-shadow(
+        var(--sx) var(--sy) 10px rgba(var(--shadow-rgb), var(--shadow-a))
+      );
     transition: filter 150ms ease-out;
     /* Fade the torso into the page background. This is the resting state for
        browsers that give us no WebGL context to fog it with instead. */
@@ -143,7 +164,10 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     tiltController = undefined;
 
     const portrait = document.querySelector<HTMLElement>(".portrait");
-    if (!portrait || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    if (
+      !portrait ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
       return;
 
     tiltController = new AbortController();
@@ -165,9 +189,10 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     // gates it behind DeviceOrientationEvent.requestPermission(), which pops a
     // system dialog on first tap; we skip that, so those visitors keep the
     // resting shadow.
-    const DOE = window.DeviceOrientationEvent as typeof DeviceOrientationEvent & {
-      requestPermission?: () => Promise<PermissionState>;
-    };
+    const DOE =
+      window.DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+        requestPermission?: () => Promise<PermissionState>;
+      };
     if (DOE && typeof DOE.requestPermission !== "function") {
       window.addEventListener("deviceorientation", onOrient, { signal });
     }
@@ -178,7 +203,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     if (window.matchMedia("(pointer: fine)").matches) {
       window.addEventListener(
         "pointermove",
-        e => {
+        (e) => {
           set(
             -clamp((e.clientX / window.innerWidth) * 2 - 1) * REACH,
             -clamp((e.clientY / window.innerHeight) * 2 - 1) * REACH,
@@ -192,13 +217,15 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 
 <script>
   // A fog bank rolls across the chest and carries the rest of the figure into
-  // the page. It is fractal noise sampled on a plane that drifts through a 3D
-  // field, so the shapes churn as they pass instead of sliding by rigid. The
-  // field origin is random per page load: no two visits get the same weather.
+  // the page. It is four planes of fractal noise stacked back to front, each
+  // drifting through the 3D field at its own scale and speed, so the parallax
+  // between them reads as a volume rather than a single texture. The field
+  // origin is random per page load: no two visits get the same weather.
   const BAND_TOP = 0.02; // canvas-relative height where the first wisps appear
   const BAND_SOLID = 0.82; // and where the fog has taken everything
-  const WISP = 0.045; // how far the visible wisps sit from the page background
   const SHEER = 0.32; // most the fog can hide where it first meets the chest
+  const VEIL = 0.2; // peak opacity of the faint haze hanging behind the bank
+  const FRONT = 0.2; // peak opacity of the streaks crossing in front of it
   const DPR_CAP = 1.5; // the field is soft, so full retina buys nothing
   const SPAN = 3.0; // noise cells down the canvas; fewer means larger shapes
 
@@ -224,7 +251,9 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     uniform vec2 uScale;
     uniform vec2 uBand;
     uniform float uSheer;
-    uniform vec3 uWisp;
+    uniform float uVeil;
+    uniform float uFront;
+    uniform vec3 uFore;
     uniform vec3 uPage;
 
     float hash(vec3 p) {
@@ -249,10 +278,21 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
         f.z);
     }
 
-    float fbm(vec3 p) {
+    float fbm3(vec3 p) {
       float sum = 0.0;
       float amp = 0.5;
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 3; i++) {
+        sum += amp * noise(p);
+        p = p * 2.03 + 7.1;
+        amp *= 0.5;
+      }
+      return sum;
+    }
+
+    float fbm4(vec3 p) {
+      float sum = 0.0;
+      float amp = 0.5;
+      for (int i = 0; i < 4; i++) {
         sum += amp * noise(p);
         p = p * 2.03 + 7.1;
         amp *= 0.5;
@@ -261,35 +301,94 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     }
 
     void main() {
-      vec3 p = vec3(vUv * uScale, uTime * 0.05) + uOrigin;
-
-      // Looking the field up through another octave of itself curls the bank.
-      // Without it the pattern reads as a texture being panned.
-      float warp = fbm(p * 0.5 - vec3(uTime * 0.02, 0.0, 0.0));
-      float cloud = fbm(p + vec3(warp * 1.5 - uTime * 0.04, warp * 0.9, 0.0));
-
-      // The cutoff sweeps down through the range of the field, so the top of
+      // The cutoff sweeps down through the range of each field, so the top of
       // the band passes only the densest cores and the bottom passes all of it.
       float depth = smoothstep(uBand.x, uBand.y, vUv.y);
-      float density = smoothstep(0.68 - depth * 0.66, 0.92 - depth * 0.8, cloud);
+      vec2 ground = vUv * uScale;
+
+      // Farthest plane: a broad slow haze too faint to have shapes of its own.
+      // It hangs behind the bank and gives the shapes in front something to
+      // stand out against.
+      vec3 pv = vec3(ground * 0.55, uTime * 0.012) + uOrigin + vec3(11.0, 5.0, 17.0);
+      pv.x += uTime * 0.006;
+      float veil = fbm3(pv);
+      float dVeil = smoothstep(0.3, 0.8, veil) * uVeil * smoothstep(0.05, 0.5, depth);
+
+      // Middle plane: distinct billows drifting against the near bank, which
+      // is where most of the parallax comes from.
+      vec3 pm = vec3(ground * 0.95, uTime * 0.03) + uOrigin + vec3(3.0, 23.0, 7.0);
+      pm.x -= uTime * 0.018;
+      float mid = fbm4(pm);
+      float dMid = smoothstep(0.6 - depth * 0.45, 0.95 - depth * 0.55, mid) *
+        mix(0.1, 0.7, depth);
+
+      // Near plane: the bank itself, and the only layer trusted to reach full
+      // cover by the bottom of the band. Looking the field up through another
+      // octave of itself curls it. Without that the pattern reads as a texture
+      // being panned.
+      vec3 pn = vec3(ground * 1.35, uTime * 0.055) + uOrigin + vec3(29.0, 13.0, 31.0);
+      float warp = fbm3(pn * 0.5 - vec3(uTime * 0.025, 0.0, 0.0));
+      vec3 curled = pn + vec3(warp * 1.5 - uTime * 0.05, warp * 0.9, 0.0);
+      float cloud = fbm4(curled);
+      float dNear = smoothstep(0.64 - depth * 0.62, 0.9 - depth * 0.78, cloud);
+
+      // Sampling the same field a step higher tells us whether this point sits
+      // under thicker fog than itself. Those undersides pick up extra tint, a
+      // cheap stand-in for skylight that gives the billows form.
+      float above = fbm4(curled - vec3(0.0, 0.35, 0.0));
+      float shade = clamp((cloud - above) * 2.5, 0.0, 1.0);
+
+      // Front plane: fine fast streaks crossing the bank. They stay sheer and
+      // die out before the bottom so the page takeover underneath stays exact.
+      vec3 pf = vec3(ground * 2.1, uTime * 0.07) + uOrigin + vec3(41.0, 2.0, 53.0);
+      pf.x += uTime * 0.045;
+      float streak = fbm3(pf);
+      float dFront = smoothstep(0.48, 0.8, streak) * uFront *
+        smoothstep(0.1, 0.45, depth) * (1.0 - smoothstep(0.7, 0.95, depth));
+
+      // Thin fog carries a tint you can see against the page. Thick fog is the
+      // page, which is what lets the body disappear into it. The tint step
+      // from page towards text colour differs per layer, which is what keeps
+      // the planes apart to the eye: the veil sits furthest from the page, the
+      // near bank barely leaves it. Keying each tint to its own field rather
+      // than the final alpha means the fade-out at the edges thins the fog
+      // instead of discolouring it. The shaded undersides lean further into
+      // the tint, fading out low in the band so they cannot stain the full
+      // cover there.
+      float tNear = 0.06 * (1.0 - smoothstep(0.3, 0.9, cloud)) +
+        shade * 0.12 * (1.0 - smoothstep(0.55, 0.85, depth));
+      vec3 toneNear = mix(uPage, uFore, tNear);
+
+      // Premultiplied over, composited back to front. The veil and the front
+      // streaks never thicken enough to go page-coloured, so their tint rises
+      // with their field instead. A flat tint there reads as a panel the exact
+      // shape of the canvas.
+      float tVeil = 0.2 * smoothstep(0.3, 0.9, veil);
+      vec3 rgb = mix(uPage, uFore, tVeil) * dVeil;
+      float a = dVeil;
+      float tMid = 0.09 * (1.0 - smoothstep(0.25, 0.85, mid));
+      rgb = mix(uPage, uFore, tMid) * dMid + rgb * (1.0 - dMid);
+      a = dMid + a * (1.0 - dMid);
+      rgb = toneNear * dNear + rgb * (1.0 - dNear);
+      a = dNear + a * (1.0 - dNear);
+      float tFront = 0.15 * smoothstep(0.45, 0.9, streak);
+      rgb = mix(uPage, uFore, tFront) * dFront + rgb * (1.0 - dFront);
+      a = dFront + a * (1.0 - dFront);
 
       // Capping how much it can hide near the top keeps the chest behind a
       // cloud you can see through. The cap lifts as the fog deepens, so by the
       // bottom of the band the page has taken over completely.
-      density = min(density, mix(uSheer, 1.0, depth * depth));
+      float cap = mix(uSheer, 1.0, depth * depth);
+      float capped = min(a, cap);
+      rgb *= capped / max(a, 0.0001);
+      a = capped;
 
       // The bank has to end somewhere. Weighting the fade-out on each edge by
       // the field itself keeps that boundary from being the canvas rectangle.
       float edge = smoothstep(0.0, 0.32, vUv.x) * smoothstep(1.0, 0.68, vUv.x) *
         smoothstep(0.0, 0.2, vUv.y);
-      density *= smoothstep(0.0, 0.8, edge * (0.55 + cloud * 0.9));
-
-      // Thin fog carries a tint you can see against the page. Thick fog is the
-      // page, which is what lets the body disappear into it. Keying the tint to
-      // the field rather than the final alpha means the fade-out at the edges
-      // thins the fog instead of discolouring it.
-      vec3 tone = mix(uWisp, uPage, smoothstep(0.35, 0.95, cloud));
-      gl_FragColor = vec4(tone * density, density);
+      float fade = smoothstep(0.0, 0.8, edge * (0.55 + cloud * 0.9));
+      gl_FragColor = vec4(rgb * fade, a * fade);
     }
   `;
 
@@ -322,7 +421,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
   // Computed colours arrive as rgb() strings, and the shader wants the same
   // sRGB values the page is painted with.
   const channels = (value: string) =>
-    (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(n => Number(n) / 255);
+    (value.match(/[\d.]+/g) ?? []).slice(0, 3).map((n) => Number(n) / 255);
 
   let teardown: (() => void) | undefined;
 
@@ -349,7 +448,11 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     // One oversized triangle covers the clip volume with no seam down the
     // middle for the noise to catch on.
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 3, -1, -1, 3]),
+      gl.STATIC_DRAW,
+    );
     const position = gl.getAttribLocation(program, "aPos");
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
@@ -361,11 +464,13 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     const uTime = gl.getUniformLocation(program, "uTime");
     const uOrigin = gl.getUniformLocation(program, "uOrigin");
     const uScale = gl.getUniformLocation(program, "uScale");
-    const uWisp = gl.getUniformLocation(program, "uWisp");
+    const uFore = gl.getUniformLocation(program, "uFore");
     const uPage = gl.getUniformLocation(program, "uPage");
 
     gl.uniform2f(gl.getUniformLocation(program, "uBand"), BAND_TOP, BAND_SOLID);
     gl.uniform1f(gl.getUniformLocation(program, "uSheer"), SHEER);
+    gl.uniform1f(gl.getUniformLocation(program, "uVeil"), VEIL);
+    gl.uniform1f(gl.getUniformLocation(program, "uFront"), FRONT);
     gl.uniform3f(
       uOrigin,
       Math.random() * 64,
@@ -379,12 +484,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
       const foreground = channels(style.color);
       if (page.length < 3 || foreground.length < 3) return;
       gl.uniform3f(uPage, page[0], page[1], page[2]);
-      gl.uniform3f(
-        uWisp,
-        page[0] + (foreground[0] - page[0]) * WISP,
-        page[1] + (foreground[1] - page[1]) * WISP,
-        page[2] + (foreground[2] - page[2]) * WISP,
-      );
+      gl.uniform3f(uFore, foreground[0], foreground[1], foreground[2]);
     };
 
     const measure = () => {
@@ -429,7 +529,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     });
     resize.observe(canvas);
 
-    const observer = new IntersectionObserver(entries => {
+    const observer = new IntersectionObserver((entries) => {
       visible = entries[entries.length - 1].isIntersecting;
     });
     observer.observe(figure);
