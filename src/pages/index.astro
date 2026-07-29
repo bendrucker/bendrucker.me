@@ -16,7 +16,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     <section id="hero" class="pt-8 pb-6 text-center">
       <figure class="portrait mx-auto mb-6">
         <img src="/images/ben-drucker-cut.png" alt="Ben Drucker" width="512" height="512" />
-        <canvas class="dissolve" aria-hidden="true"></canvas>
+        <canvas class="fog" aria-hidden="true"></canvas>
       </figure>
       <p>
         <LinkButton href="/activity/code" class="underline decoration-dashed underline-offset-4">Programmer</LinkButton>, <LinkButton href="https://www.strava.com/athletes/5723594" class="underline decoration-dashed underline-offset-4">cyclist</LinkButton>, and photographer, living in San Francisco.
@@ -74,9 +74,8 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     filter: grayscale(1)
       drop-shadow(var(--sx) var(--sy) 10px rgba(var(--shadow-rgb), var(--shadow-a)));
     transition: filter 150ms ease-out;
-    /* Pronounced fade: solid through the face and shoulders, then the torso
-       dissolves into the page background. This is also the resting state when
-       the canvas is unavailable or motion is reduced. */
+    /* Fade the torso into the page background. This is the resting state for
+       browsers that give us no WebGL context to fog it with instead. */
     -webkit-mask-image: linear-gradient(
       to bottom,
       #000 42%,
@@ -93,27 +92,36 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     );
   }
 
-  /* The canvas redraws the body from the chest down, so the image stops there
-     and hands off across a short overlap band. */
-  .portrait[data-dissolve] img {
-    -webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 48%);
-    mask-image: linear-gradient(to bottom, #000 42%, transparent 48%);
+  /* The fog does the work of the fade, but it thins out at its own edges and
+     can't be trusted to cover the bottom of the cutout. The image holds a late,
+     shallow ramp underneath so there is never a hard cut waiting behind a gap
+     in the weather. */
+  .portrait[data-fog] img {
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 62%,
+      rgba(0, 0, 0, 0.75) 80%,
+      transparent 96%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      #000 62%,
+      rgba(0, 0, 0, 0.75) 80%,
+      transparent 96%
+    );
   }
 
-  .dissolve {
+  .fog {
     position: absolute;
-    top: 0;
-    left: -12%;
-    width: 124%;
-    /* Runs well past the figure so motes stay alive as they drift down behind
-       the caption. */
-    height: 190%;
+    /* Rolls in around the chest and spills well past the figure on every side,
+       so the bank reads as weather rather than a panel behind the portrait.
+       Stops short of the caption below. */
+    top: 16%;
+    left: -35%;
+    width: 170%;
+    height: 88%;
     pointer-events: none;
-    /* Matches the image, which the canvas has to blend into seamlessly. */
-    filter: grayscale(1);
-    /* Behind the caption that follows the figure, so falling motes pass under
-       the text rather than over it. */
-    z-index: -1;
+    z-index: 1;
   }
 </style>
 
@@ -175,64 +183,131 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 </script>
 
 <script>
-  // Below the chest the canvas draws the portrait instead of the image element,
-  // so the photo stays sharp while a ragged front eats it a grain at a time.
-  // Every grain that goes releases a mote that falls down the page. The front
-  // sits low and barely moves at first. Leave the page open and it climbs.
-  const CELL = 3; // css px per grain
-  const ZONE_TOP = 0.42; // where the image hands the body to the canvas
-  const HANDOFF = 0.06; // overlap band matching the image mask ramp
-  const REST_FRONT = 0.78; // where the front rests, as a fraction of the figure
-  const PEAK_FRONT = 0.5; // how far up it climbs once it gets going
-  const FEATHER = 0.1; // depth over which a grain goes from whole to gone
-  const PAD = 0.12; // canvas overhang each side, as a fraction of the figure
-  const LIFE = 9; // seconds a drifting mote stays visible
-  const MOTE_LIMIT = 1600;
-  const LATTICE = 64; // noise field resolution
-  const GRAIN = 9; // css px per noise lattice step
-  const PATIENCE = 210; // seconds on the page before the front starts climbing
-  const CLIMB = 180; // seconds it then takes to reach the peak
+  // A fog bank rolls across the chest and carries the rest of the figure into
+  // the page. It is fractal noise sampled on a plane that drifts through a 3D
+  // field, so the shapes churn as they pass instead of sliding by rigid. The
+  // field origin is random per page load: no two visits get the same weather.
+  const BAND_TOP = 0.05; // canvas-relative height where the first wisps appear
+  const BAND_SOLID = 0.88; // and where the fog has taken everything
+  const WISP = 0.09; // how far the visible wisps sit from the page background
+  const DPR_CAP = 1.5; // the field is soft, so full retina buys nothing
+  const SPAN = 4.2; // noise cells down the canvas; fewer means larger shapes
 
-  interface Cell {
-    x: number;
-    y: number;
-    v: number; // luminance
-    a: number; // source alpha
-    nx: number; // position in the noise field
-    ny: number;
-  }
+  const VERTEX = `
+    attribute vec2 aPos;
+    varying vec2 vUv;
+    void main() {
+      vUv = vec2(aPos.x * 0.5 + 0.5, 0.5 - aPos.y * 0.5);
+      gl_Position = vec4(aPos, 0.0, 1.0);
+    }
+  `;
 
-  interface Mote {
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    v: number;
-    a: number;
-    age: number;
-  }
+  const FRAGMENT = `
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+      precision highp float;
+    #else
+      precision mediump float;
+    #endif
 
-  const lattice = Float32Array.from({ length: LATTICE * LATTICE }, () => Math.random());
+    varying vec2 vUv;
+    uniform float uTime;
+    uniform vec3 uOrigin;
+    uniform vec2 uScale;
+    uniform vec2 uBand;
+    uniform vec3 uWisp;
+    uniform vec3 uPage;
 
-  // Value noise over a wrapping lattice, smoothstepped so the field flows
-  // instead of stepping between lattice points.
-  const noise = (x: number, y: number) => {
-    const xi = Math.floor(x);
-    const yi = Math.floor(y);
-    const xf = x - xi;
-    const yf = y - yi;
-    const fx = xf * xf * (3 - 2 * xf);
-    const fy = yf * yf * (3 - 2 * yf);
-    const x0 = xi & (LATTICE - 1);
-    const x1 = (xi + 1) & (LATTICE - 1);
-    const y0 = (yi & (LATTICE - 1)) * LATTICE;
-    const y1 = ((yi + 1) & (LATTICE - 1)) * LATTICE;
-    const top = lattice[y0 + x0] + (lattice[y0 + x1] - lattice[y0 + x0]) * fx;
-    const bottom = lattice[y1 + x0] + (lattice[y1 + x1] - lattice[y1 + x0]) * fx;
-    return top + (bottom - top) * fy;
+    float hash(vec3 p) {
+      p = fract(p * 0.1031);
+      p += dot(p, p.zyx + 31.32);
+      return fract((p.x + p.y) * p.z);
+    }
+
+    float noise(vec3 x) {
+      vec3 i = floor(x);
+      vec3 f = x - i;
+      f = f * f * (3.0 - 2.0 * f);
+      return mix(
+        mix(
+          mix(hash(i), hash(i + vec3(1.0, 0.0, 0.0)), f.x),
+          mix(hash(i + vec3(0.0, 1.0, 0.0)), hash(i + vec3(1.0, 1.0, 0.0)), f.x),
+          f.y),
+        mix(
+          mix(hash(i + vec3(0.0, 0.0, 1.0)), hash(i + vec3(1.0, 0.0, 1.0)), f.x),
+          mix(hash(i + vec3(0.0, 1.0, 1.0)), hash(i + vec3(1.0, 1.0, 1.0)), f.x),
+          f.y),
+        f.z);
+    }
+
+    float fbm(vec3 p) {
+      float sum = 0.0;
+      float amp = 0.5;
+      for (int i = 0; i < 5; i++) {
+        sum += amp * noise(p);
+        p = p * 2.03 + 7.1;
+        amp *= 0.5;
+      }
+      return sum;
+    }
+
+    void main() {
+      vec3 p = vec3(vUv * uScale, uTime * 0.05) + uOrigin;
+
+      // Looking the field up through another octave of itself curls the bank.
+      // Without it the pattern reads as a texture being panned.
+      float warp = fbm(p * 0.5 - vec3(uTime * 0.02, 0.0, 0.0));
+      float cloud = fbm(p + vec3(warp * 1.5 - uTime * 0.04, warp * 0.9, 0.0));
+
+      // The cutoff sweeps down through the range of the field, so the top of
+      // the band passes only the densest cores and the bottom passes all of it.
+      float depth = smoothstep(uBand.x, uBand.y, vUv.y);
+      float density = smoothstep(0.68 - depth * 0.66, 0.92 - depth * 0.8, cloud);
+
+      // The bank has to end somewhere. Weighting the fade-out on each edge by
+      // the field itself keeps that boundary from being the canvas rectangle.
+      float edge = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x) *
+        smoothstep(0.0, 0.1, vUv.y) * smoothstep(1.0, 0.88, vUv.y);
+      density *= smoothstep(0.0, 0.55, edge * (0.45 + cloud));
+
+      // Thin fog carries a tint you can see against the page. Thick fog is the
+      // page, which is what lets the body disappear into it. Keying the tint to
+      // the field rather than the final alpha means the fade-out at the edges
+      // thins the fog instead of discolouring it.
+      vec3 tone = mix(uWisp, uPage, smoothstep(0.35, 0.95, cloud));
+      gl_FragColor = vec4(tone * density, density);
+    }
+  `;
+
+  const compile = (gl: WebGLRenderingContext, type: number, source: string) => {
+    const shader = gl.createShader(type);
+    if (!shader) return null;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
+    gl.deleteShader(shader);
+    return null;
   };
 
-  const clamp = (n: number) => Math.min(Math.max(n, 0), 1);
+  const link = (gl: WebGLRenderingContext) => {
+    const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
+    const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+    if (!vertex || !fragment) return null;
+    const program = gl.createProgram();
+    if (!program) return null;
+    gl.attachShader(program, vertex);
+    gl.attachShader(program, fragment);
+    gl.linkProgram(program);
+    gl.deleteShader(vertex);
+    gl.deleteShader(fragment);
+    if (gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
+    gl.deleteProgram(program);
+    return null;
+  };
+
+  // Computed colours arrive as rgb() strings, and the shader wants the same
+  // sRGB values the page is painted with.
+  const channels = (value: string) =>
+    (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(n => Number(n) / 255);
 
   let teardown: (() => void) | undefined;
 
@@ -241,217 +316,102 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     teardown = undefined;
 
     const figure = document.querySelector<HTMLElement>(".portrait");
-    const img = figure?.querySelector("img");
-    const canvas = figure?.querySelector<HTMLCanvasElement>("canvas.dissolve");
-    const ctx = canvas?.getContext("2d");
-    if (!figure || !img || !canvas || !ctx) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const canvas = figure?.querySelector<HTMLCanvasElement>("canvas.fog");
+    if (!figure || !canvas) return;
 
-    let cells: Cell[] = [];
-    let gone = new Uint8Array(0);
-    let fade: CanvasGradient | undefined;
-    const motes: Mote[] = [];
-    const grays = Array.from({ length: 64 }, (_, i) => `rgb(${i * 4},${i * 4},${i * 4})`);
+    const gl = canvas.getContext("webgl", {
+      alpha: true,
+      antialias: false,
+      depth: false,
+      premultipliedAlpha: true,
+    });
+    if (!gl) return;
 
-    let width = 0;
-    let height = 0;
-    let pad = 0;
+    const program = link(gl);
+    if (!program) return;
+
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    // One oversized triangle covers the clip volume with no seam down the
+    // middle for the noise to catch on.
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const position = gl.getAttribLocation(program, "aPos");
+    gl.enableVertexAttribArray(position);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+    gl.useProgram(program);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+    const uTime = gl.getUniformLocation(program, "uTime");
+    const uOrigin = gl.getUniformLocation(program, "uOrigin");
+    const uScale = gl.getUniformLocation(program, "uScale");
+    const uWisp = gl.getUniformLocation(program, "uWisp");
+    const uPage = gl.getUniformLocation(program, "uPage");
+
+    gl.uniform2f(gl.getUniformLocation(program, "uBand"), BAND_TOP, BAND_SOLID);
+    gl.uniform3f(
+      uOrigin,
+      Math.random() * 64,
+      Math.random() * 64,
+      Math.random() * 64,
+    );
+
+    const paint = () => {
+      const style = getComputedStyle(document.body);
+      const page = channels(style.backgroundColor);
+      const foreground = channels(style.color);
+      if (page.length < 3 || foreground.length < 3) return;
+      gl.uniform3f(uPage, page[0], page[1], page[2]);
+      gl.uniform3f(
+        uWisp,
+        page[0] + (foreground[0] - page[0]) * WISP,
+        page[1] + (foreground[1] - page[1]) * WISP,
+        page[2] + (foreground[2] - page[2]) * WISP,
+      );
+    };
+
+    const measure = () => {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      if (!width || !height) return false;
+      const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      // Banks are wider than they are tall, so the field is stretched across
+      // rather than sampled square.
+      gl.uniform2f(uScale, (SPAN * width) / height / 1.7, SPAN);
+      return true;
+    };
+
     let frame = 0;
     let previous = 0;
     let elapsed = 0;
-    let settled = false;
     let visible = true;
 
-    const build = () => {
-      width = figure.clientWidth;
-      height = figure.clientHeight;
-      pad = width * PAD;
-      if (!width || !height || !img.naturalWidth) return;
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(width * (1 + PAD * 2) * dpr);
-      canvas.height = Math.round(canvas.clientHeight * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // Erasing the top of the drawn region completes the handoff from the
-      // image, and erasing the bottom keeps the resting fade into the page.
-      fade = ctx.createLinearGradient(0, height * ZONE_TOP, 0, height);
-      fade.addColorStop(0, "rgba(0,0,0,1)");
-      fade.addColorStop(HANDOFF / (1 - ZONE_TOP), "rgba(0,0,0,0)");
-      fade.addColorStop(0.38, "rgba(0,0,0,0.5)");
-      fade.addColorStop(0.74, "rgba(0,0,0,0.85)");
-      fade.addColorStop(1, "rgba(0,0,0,1)");
-
-      const source = document.createElement("canvas");
-      source.width = img.naturalWidth;
-      source.height = img.naturalHeight;
-      const sourceCtx = source.getContext("2d", { willReadFrequently: true });
-      if (!sourceCtx) return;
-      sourceCtx.drawImage(img, 0, 0);
-      const { data } = sourceCtx.getImageData(0, 0, source.width, source.height);
-
-      const scaleX = source.width / width;
-      const scaleY = source.height / height;
-      const next: Cell[] = [];
-
-      // Only the band the front can ever reach needs grains.
-      for (let y = height * (PEAK_FRONT - FEATHER); y < height; y += CELL) {
-        for (let x = 0; x < width; x += CELL) {
-          // Average the source pixels this grain covers so a released mote
-          // carries the colour of what it came from.
-          let sum = 0;
-          let alpha = 0;
-          let count = 0;
-          const sx0 = Math.floor(x * scaleX);
-          const sy0 = Math.floor(y * scaleY);
-          const sx1 = Math.min(Math.ceil((x + CELL) * scaleX), source.width);
-          const sy1 = Math.min(Math.ceil((y + CELL) * scaleY), source.height);
-          for (let sy = sy0; sy < sy1; sy++) {
-            for (let sx = sx0; sx < sx1; sx++) {
-              const i = (sy * source.width + sx) * 4;
-              sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-              alpha += data[i + 3];
-              count++;
-            }
-          }
-          if (!count) continue;
-
-          const a = alpha / count / 255;
-          if (a < 0.05) continue;
-
-          next.push({
-            x: x + pad,
-            y,
-            v: sum / count,
-            a,
-            nx: x / GRAIN,
-            ny: y / GRAIN,
-          });
-        }
-      }
-
-      cells = next;
-      gone = new Uint8Array(cells.length);
-      settled = false;
-    };
-
-    const release = (cell: Cell, haste: number) => {
-      if (motes.length >= MOTE_LIMIT) return;
-      motes.push({
-        x: cell.x,
-        y: cell.y,
-        vx: (Math.random() - 0.5) * 6,
-        vy: (8 + Math.random() * 14) * haste,
-        v: cell.v,
-        // Motes ignore the resting fade, so ash stays legible as it falls
-        // through the part of the figure that has already gone soft.
-        a: cell.a * 0.75,
-        age: 0,
-      });
+    const render = () => {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform1f(uTime, elapsed);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
     const draw = (now: number) => {
       frame = requestAnimationFrame(draw);
       const dt = Math.min((now - previous) / 1000, 0.05);
       previous = now;
-      if (!visible || !cells.length || !fade) return;
+      if (!visible) return;
       elapsed += dt;
-
-      // The easter egg: sit on the page long enough and the front starts
-      // climbing, faster as it goes.
-      const progress = clamp((elapsed - PATIENCE) / CLIMB);
-      const eased = progress * progress;
-      const front = height * (REST_FRONT - (REST_FRONT - PEAK_FRONT) * eased);
-      const reach = height * FEATHER;
-      const haste = 1 + eased * 1.5;
-      const seconds = elapsed * haste;
-
-      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      ctx.drawImage(
-        img,
-        0,
-        img.naturalHeight * ZONE_TOP,
-        img.naturalWidth,
-        img.naturalHeight * (1 - ZONE_TOP),
-        pad,
-        height * ZONE_TOP,
-        width,
-        height * (1 - ZONE_TOP),
-      );
-
-      // Coarse field decides where the front bulges, fine field breaks its edge
-      // into individual grains. Their drifts share no common period.
-      const coarseX = seconds * 0.013;
-      const coarseY = seconds * -0.021;
-      const fineX = seconds * -0.037;
-      const fineY = seconds * 0.029;
-
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.fillStyle = fade;
-      ctx.fillRect(pad, height * ZONE_TOP, width, height * (1 - ZONE_TOP));
-
-      ctx.fillStyle = "#000";
-      for (let i = 0; i < cells.length; i++) {
-        const cell = cells[i];
-        const depth = (cell.y - front) / reach;
-        if (depth < -0.7) continue;
-
-        const field =
-          noise(cell.nx * 0.34 + coarseX, cell.ny * 0.34 + coarseY) * 0.55 +
-          noise(cell.nx + fineX, cell.ny + fineY) * 0.45;
-        const eaten = clamp(depth + (field - 0.5) * 1.4);
-        if (eaten < 0.03) {
-          gone[i] = 0;
-          continue;
-        }
-
-        if (!gone[i] && eaten > 0.5) {
-          // Whatever the field has already eaten when the page opens is adopted
-          // silently. Only grains that go afterwards release a mote.
-          if (settled) release(cell, haste);
-          gone[i] = 1;
-        }
-
-        ctx.globalAlpha = eaten;
-        ctx.fillRect(cell.x, cell.y, CELL, CELL);
-      }
-
-      settled = true;
-
-      ctx.globalCompositeOperation = "source-over";
-      for (let i = motes.length - 1; i >= 0; i--) {
-        const mote = motes[i];
-        mote.age += dt;
-        if (mote.age >= LIFE) {
-          motes.splice(i, 1);
-          continue;
-        }
-        mote.vy += 2 * dt;
-        mote.x += mote.vx * dt;
-        mote.y += mote.vy * dt;
-
-        ctx.fillStyle = grays[Math.min(mote.v >> 2, 63)];
-        ctx.globalAlpha = mote.a * Math.pow(1 - mote.age / LIFE, 1.4);
-        ctx.fillRect(mote.x, mote.y, CELL, CELL);
-      }
-
-      ctx.globalAlpha = 1;
+      render();
     };
 
-    const start = () => {
-      build();
-      if (!cells.length) return;
-      figure.dataset.dissolve = "on";
-      previous = performance.now();
-      frame = requestAnimationFrame(draw);
-    };
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const resize = new ResizeObserver(() => {
-      if (!cells.length) return;
-      motes.length = 0;
-      build();
+      if (!measure()) return;
+      if (still.matches) render();
     });
-    resize.observe(figure);
+    resize.observe(canvas);
 
     const observer = new IntersectionObserver(entries => {
       visible = entries[entries.length - 1].isIntersecting;
@@ -463,15 +423,36 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
     };
     document.addEventListener("visibilitychange", onVisibility);
 
-    if (img.complete) start();
-    else img.addEventListener("load", start, { once: true });
+    // The theme toggle swaps the page colour out from under the fog.
+    const theme = new MutationObserver(() => {
+      paint();
+      if (still.matches) render();
+    });
+    theme.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme", "class"],
+    });
+
+    paint();
+    if (!measure()) return;
+    figure.dataset.fog = "on";
+
+    // Reduced motion still gets fog, just a photograph of it.
+    if (still.matches) render();
+    else {
+      previous = performance.now();
+      frame = requestAnimationFrame(draw);
+    }
 
     teardown = () => {
       cancelAnimationFrame(frame);
       resize.disconnect();
       observer.disconnect();
+      theme.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
-      delete figure.dataset.dissolve;
+      gl.deleteProgram(program);
+      gl.deleteBuffer(buffer);
+      delete figure.dataset.fog;
     };
   });
 </script>
