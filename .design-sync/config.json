@@ -1,0 +1,8 @@
+{
+  "projectId": "698b5056-b116-4744-891c-ccae66e9b29b",
+  "shape": "package",
+  "pkg": "bendrucker.me",
+  "globalName": "BendruckerMe",
+  "cssEntry": "tmp/ds/compiled.css",
+  "readmeHeader": ".design-sync/conventions.md"
+}
