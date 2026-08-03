@@ -40,8 +40,42 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  migrate:
+    name: migrations
+    # Matches the cloudflare job so the two never disagree: a job skipped by its
+    # own condition also skips everything that needs it.
+    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: "☁️ Checkout repository"
+        uses: actions/checkout@v7.0.1
+
+      - name: "📦 Setup Node.js"
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: "📦 Install dependencies"
+        run: npm ci
+
+      # There is one D1 database, so a PR run would migrate production before
+      # review. Pull requests only upload preview versions, which take no
+      # traffic, so they never need the schema.
+      - name: "🗃️ Apply D1 migrations"
+        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+        uses: cloudflare/wrangler-action@v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations apply bendrucker-activity --remote
+
   cloudflare:
     name: ${{ matrix.name }}
+    needs: migrate
     if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
