@@ -13,7 +13,8 @@ import {
 } from "@workspace/github";
 import { logger } from "@workspace/logger";
 import { connectD1, formatSql, executeRemote } from "./d1";
-import { upsertRepo, upsertActivity } from "../src/activity/upsert";
+import { activityStatements } from "../src/activity/upsert";
+import { recordSync } from "../src/activity/sync-state";
 
 async function rateLimitBackoff(rateLimit: RateLimit): Promise<void> {
   const { remaining, cost, resetAt } = rateLimit;
@@ -177,25 +178,27 @@ async function main() {
   }
 
   const { db, dispose } = await connectD1();
+  const queries = activityStatements(db, allRepos);
+  // The backfill spans every year, so the hash the cron computes over the
+  // current year alone no longer describes what is stored. Clearing it makes
+  // the next cron run write, and reestablish, its own hash.
+  const sync = recordSync(db, { payloadHash: null, changed: true });
+
   try {
     if (remote) {
-      const statements = allRepos.flatMap((repo) => [
-        formatSql(upsertRepo(db, repo).compile()),
-        formatSql(upsertActivity(db, repo).compile()),
-      ]);
-      executeRemote(statements);
+      executeRemote([...queries, sync.compile()].map(formatSql));
     } else {
-      for (const repo of allRepos) {
-        await upsertRepo(db, repo).execute();
-        await upsertActivity(db, repo).execute();
+      for (const query of queries) {
+        await db.executeQuery(query);
       }
+      await sync.execute();
     }
   } finally {
     await dispose();
   }
 
   logger.info(
-    { statements: allRepos.length * 2, remote },
+    { statements: queries.length, remote },
     "Imported activity data to D1",
   );
 }
