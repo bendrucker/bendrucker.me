@@ -58,7 +58,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/lodash.kebabcase": "^4.1.9",
     "@types/opentype.js": "^1.3.10",
-    "@typescript-eslint/parser": "^8.63.0",
+    "@typescript-eslint/parser": "^8.64.0",
     "better-sqlite3": "^12.11.1",
     "eslint": "^10.7.0",
     "eslint-plugin-astro": "^3.0.0",
