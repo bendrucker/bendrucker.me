@@ -17,9 +17,9 @@ const sourceUrl = sourcePath ? `${SITE.viewSource.url}${sourcePath}` : undefined
   class:list={["w-full border-t border-border", { "mt-auto": !noMarginTop }]}
 >
   <div
-    class="flex items-center justify-between px-4 py-3.5 text-xs text-foreground/50 sm:px-10 sm:py-4 sm:text-sm"
+    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3.5 text-xs text-foreground/50 sm:px-10 sm:py-4 sm:text-sm"
   >
-    <div class="flex items-center gap-1.5 whitespace-nowrap sm:gap-2">
+    <div class="flex items-center gap-1.5 sm:gap-2">
       <span>&#169; {currentYear} Ben Drucker</span>
       {
         sourceUrl && (

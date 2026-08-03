@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import kebabcase from "lodash.kebabcase";
 import { format } from "date-fns";
 import { TZDate } from "@date-fns/tz";
 import { getPath } from "@/blog/path";
@@ -22,32 +23,37 @@ const dated = posts.map(({ id, filePath, data }) => ({
 }));
 ---
 
-<div class="mx-auto w-full max-w-home px-6 pt-6 sm:px-5 sm:pt-11">
+<div class="mx-auto w-full max-w-home px-5 pt-6 sm:pt-11">
   <div class="sm:grid sm:grid-cols-[9.375rem_1fr] sm:items-start sm:gap-8">
     <h2
       class="pb-2.5 text-xs tracking-[0.14em] text-foreground/45 uppercase sm:pt-4.5 sm:pb-0"
     >
       {label}
     </h2>
-    <div class="flex flex-col">
+    <ul class="flex flex-col">
       {
         dated.map(({ href, title, datetime }) => (
-          <a
-            {href}
-            class="flex items-baseline justify-between gap-4 border-t border-border py-3.5 hover:text-accent sm:gap-8"
-          >
-            <span class="text-sm leading-[1.4] text-pretty sm:text-base">
-              {title}
-            </span>
-            <time
-              class="text-xs whitespace-nowrap text-foreground/45 sm:text-sm"
-              datetime={datetime.toISOString()}
+          <li>
+            <a
+              {href}
+              class="flex items-baseline justify-between gap-4 border-t border-border py-3.5 hover:text-accent sm:gap-8"
             >
-              {format(datetime, "MMM yyyy")}
-            </time>
-          </a>
+              <h3
+                class="text-sm leading-[1.4] font-normal text-pretty sm:text-base"
+                transition:name={kebabcase(title)}
+              >
+                {title}
+              </h3>
+              <time
+                class="text-xs whitespace-nowrap text-foreground/45 sm:text-sm"
+                datetime={datetime.toISOString()}
+              >
+                {format(datetime, "MMM yyyy")}
+              </time>
+            </a>
+          </li>
         ))
       }
-    </div>
+    </ul>
   </div>
 </div>

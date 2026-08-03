@@ -3,6 +3,7 @@ import { Image } from "astro:assets";
 import backdrop from "@/assets/hero/backdrop.avif";
 import subject from "@/assets/hero/subject.avif";
 import IconBridge from "@/assets/icons/IconBridge.svg";
+import { SITE } from "@/config";
 ---
 
 <div class="relative isolate h-77 overflow-hidden bg-background sm:h-110">
@@ -14,6 +15,7 @@ import IconBridge from "@/assets/icons/IconBridge.svg";
       aria-hidden="true"
       layout="none"
       format="avif"
+      loading="eager"
       class="block size-full max-w-none object-cover object-[50%_20%] sm:object-[50%_16%]"
     />
   </div>
@@ -27,9 +29,10 @@ import IconBridge from "@/assets/icons/IconBridge.svg";
   <Image
     id="masthead-subject"
     src={subject}
-    alt="Ben Drucker"
+    alt=""
     layout="none"
     format="avif"
+    priority
     class="absolute bottom-[-10%] left-[4%] block h-[108%] w-auto max-w-none sm:left-auto sm:right-[17%] sm:h-[104%]"
   />
   <div
@@ -43,11 +46,11 @@ import IconBridge from "@/assets/icons/IconBridge.svg";
     <div
       class="flex w-full flex-col items-start gap-2 sm:max-w-home sm:gap-2.5 sm:px-5"
     >
-      <div
+      <h1
         class="rounded-sm bg-background/66 px-3 py-1.5 text-2xl leading-[1.15] font-semibold tracking-[-0.03em] whitespace-nowrap backdrop-blur-xs sm:px-4 sm:py-2 sm:text-6xl sm:tracking-[-0.035em]"
       >
-        Ben Drucker
-      </div>
+        {SITE.title}
+      </h1>
       <div
         class="flex w-full items-center justify-between gap-3 text-xs whitespace-nowrap sm:w-auto sm:justify-start sm:gap-3.5 sm:text-base"
       >

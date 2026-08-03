@@ -38,7 +38,7 @@ const isActive = (path: string) => {
   </a>
   {
     variant === "home" ? (
-      <div id="home-nav">
+      <div>
         <div class="mx-auto flex max-w-home items-center justify-between sm:px-5 sm:py-5.5">
           <nav class="hidden gap-6 sm:flex">
             <a href="/about" class="hover:text-accent">
@@ -54,7 +54,7 @@ const isActive = (path: string) => {
             {SITE.lightAndDarkMode && (
               <button
                 id="theme-btn"
-                class="focus-outline relative size-8 rounded-sm bg-background/70 backdrop-blur-xs hover:[&>svg]:stroke-accent sm:size-4 sm:rounded-none sm:bg-transparent sm:backdrop-blur-none"
+                class="focus-outline relative size-8 rounded-sm bg-background/70 backdrop-blur-xs hover:[&>svg]:stroke-accent sm:rounded-none sm:bg-transparent sm:backdrop-blur-none"
                 title="Toggles light & dark"
                 aria-label="auto"
                 aria-live="polite"
@@ -77,7 +77,7 @@ const isActive = (path: string) => {
         </div>
         <div id="menu-items" class="sm:hidden">
           <div>
-            <nav class="flex flex-col border-b border-border pt-2 pb-3">
+            <nav class="flex flex-col border-b border-border pt-14 pb-3">
               <a
                 href="/about"
                 class="flex min-h-12 items-center px-5 active:bg-muted"
@@ -194,8 +194,7 @@ const isActive = (path: string) => {
       transition: grid-template-rows 200ms ease-out;
     }
 
-    #menu-btn[aria-expanded="true"] ~ #menu-items,
-    #home-nav:has(#menu-btn[aria-expanded="true"]) #menu-items {
+    header:has(#menu-btn[aria-expanded="true"]) #menu-items {
       grid-template-rows: 1fr;
     }
 
@@ -209,8 +208,7 @@ const isActive = (path: string) => {
         visibility 200ms;
     }
 
-    #menu-btn[aria-expanded="true"] ~ #menu-items > div,
-    #home-nav:has(#menu-btn[aria-expanded="true"]) #menu-items > div {
+    header:has(#menu-btn[aria-expanded="true"]) #menu-items > div {
       opacity: 1;
       visibility: visible;
     }
