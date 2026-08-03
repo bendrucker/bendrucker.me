@@ -1,20 +1,14 @@
 ---
 import { SOCIALS } from "@/constants";
 import LinkButton from "./LinkButton.astro";
-
-export interface Props {
-  centered?: boolean;
-}
-
-const { centered = false } = Astro.props;
 ---
 
-<div class:list={["flex-wrap justify-center gap-0.5", { flex: centered }]}>
+<div class="flex items-center gap-3 sm:gap-4.5">
   {
     SOCIALS.map(social => (
       <LinkButton
         href={social.href}
-        class="p-1 text-foreground/50 hover:rotate-6"
+        class="-mx-1.5 -my-3.5 px-1.5 py-3.5 text-foreground/50"
         title={social.linkTitle}
         newTab={social.href.startsWith("http")}
       >

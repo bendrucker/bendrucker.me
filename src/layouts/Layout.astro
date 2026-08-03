@@ -18,6 +18,7 @@ export interface Props {
   modDatetime?: Date | null;
   scrollSmooth?: boolean;
   sourcePath?: string;
+  headerVariant?: "default" | "home";
 }
 
 const {
@@ -31,6 +32,7 @@ const {
   modDatetime,
   scrollSmooth = false,
   sourcePath,
+  headerVariant = "default",
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.url);
@@ -169,7 +171,7 @@ const structuredData = pubDatetime
     <script is:inline src="/relative-time.js"></script>
   </head>
   <body>
-    <Header />
+    <Header variant={headerVariant} />
     <slot />
     <Footer sourcePath={sourcePath} />
   </body>

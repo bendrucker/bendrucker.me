@@ -8,6 +8,12 @@ import IconMenuDeep from "@/assets/icons/IconMenuDeep.svg";
 import LinkButton from "./LinkButton.astro";
 import { SITE } from "@/config";
 
+export interface Props {
+  variant?: "default" | "home";
+}
+
+const { variant = "default" } = Astro.props;
+
 const { pathname } = Astro.url;
 
 // Remove trailing slash from current pathname if exists
@@ -22,103 +28,162 @@ const isActive = (path: string) => {
 };
 ---
 
-<header>
+<header class:list={{ relative: variant === "home" }}>
   <a
     id="skip-to-content"
     href="#main-content"
-    class="absolute start-16 -top-full z-50 bg-background px-3 py-2 text-accent backdrop-blur-lg transition-all focus:top-4"
+    class="absolute start-16 -top-16 z-50 bg-background px-3 py-2 text-accent backdrop-blur-lg transition-all focus:top-4"
   >
     Skip to content
   </a>
-  <div
-    id="nav-container"
-    class="mx-auto flex max-w-app flex-col items-center justify-between sm:flex-row"
-  >
-    <div
-      id="top-nav-wrap"
-      class="relative flex w-full items-baseline justify-between bg-background p-4 sm:items-center sm:py-6"
-    >
-      <a
-        href="/"
-        class="absolute py-1 text-xl leading-8 font-semibold whitespace-nowrap sm:static sm:my-auto sm:text-2xl sm:leading-none"
-      >
-        {SITE.title}
-      </a>
-      <nav
-        id="nav-menu"
-        class="flex w-full flex-col items-center sm:ms-2 sm:flex-row sm:justify-end sm:space-x-4 sm:py-0"
-      >
-        <button
-          id="menu-btn"
-          class="focus-outline self-end p-2 sm:hidden"
-          aria-label="Open Menu"
-          aria-expanded="false"
-          aria-controls="menu-items"
-        >
-          <IconX id="close-icon" class="hidden" />
-          <IconMenuDeep id="menu-icon" />
-        </button>
-        <div id="menu-items" class="sm:contents">
-          <div class="sm:contents">
-            <ul
-              class:list={[
-                "grid w-44 grid-cols-2 place-content-center gap-2 pt-4",
-                "[&>li>a]:block [&>li>a]:px-4 [&>li>a]:py-3 [&>li>a]:text-center [&>li>a]:font-medium [&>li>a]:hover:text-accent sm:[&>li>a]:px-2 sm:[&>li>a]:py-1",
-                "sm:flex sm:w-auto sm:gap-x-5 sm:gap-y-0 sm:pt-0",
-              ]}
+  {
+    variant === "home" ? (
+      <div id="home-nav">
+        <div class="mx-auto flex max-w-home items-center justify-between sm:px-5 sm:py-5.5">
+          <nav class="hidden gap-6 sm:flex">
+            <a href="/about" class="hover:text-accent">
+              About
+            </a>
+            {SITE.showArchives && (
+              <a href="/archives" class="hover:text-accent">
+                Archives
+              </a>
+            )}
+          </nav>
+          <div class="absolute top-3.5 right-3.5 z-20 flex items-center gap-2 sm:static">
+            {SITE.lightAndDarkMode && (
+              <button
+                id="theme-btn"
+                class="focus-outline relative size-8 rounded-sm bg-background/70 backdrop-blur-xs hover:[&>svg]:stroke-accent sm:size-4 sm:rounded-none sm:bg-transparent sm:backdrop-blur-none"
+                title="Toggles light & dark"
+                aria-label="auto"
+                aria-live="polite"
+              >
+                <IconMoon class="absolute top-[50%] left-[50%] size-4 -translate-[50%] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+                <IconSunHigh class="absolute top-[50%] left-[50%] size-4 -translate-[50%] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+              </button>
+            )}
+            <button
+              id="menu-btn"
+              class="focus-outline flex size-8 items-center justify-center rounded-sm bg-background/70 backdrop-blur-xs hover:[&>svg]:stroke-accent sm:hidden"
+              aria-label="Open Menu"
+              aria-expanded="false"
+              aria-controls="menu-items"
             >
-              <li class="col-span-2">
-                <a
-                  href="/about"
-                  class:list={{ "active-nav": isActive("/about") }}
-                >
-                  About
-                </a>
-              </li>
-              {
-                SITE.showArchives && (
-                  <li class="col-span-2">
-                    <LinkButton
-                      href="/archives"
-                      class:list={[
-                        "focus-outline flex justify-center p-3 sm:p-1",
-                        {
-                          "active-nav [&>svg]:stroke-accent":
-                            isActive("/archives"),
-                        },
-                      ]}
-                      ariaLabel="archives"
-                      title="Archives"
-                    >
-                      <IconArchive class="hidden sm:inline-block" />
-                      <span class="sm:sr-only">Archives</span>
-                    </LinkButton>
-                  </li>
-                )
-              }
-              {
-                SITE.lightAndDarkMode && (
-                  <li class="col-span-2 flex items-center justify-center">
-                    <button
-                      id="theme-btn"
-                      class="focus-outline relative size-12 p-4 sm:size-8 hover:[&>svg]:stroke-accent"
-                      title="Toggles light & dark"
-                      aria-label="auto"
-                      aria-live="polite"
-                    >
-                      <IconMoon class="absolute top-[50%] left-[50%] -translate-[50%] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-                      <IconSunHigh class="absolute top-[50%] left-[50%] -translate-[50%] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-                    </button>
-                  </li>
-                )
-              }
-            </ul>
+              <IconX id="close-icon" class="hidden size-4" />
+              <IconMenuDeep id="menu-icon" class="size-4" />
+            </button>
           </div>
         </div>
-      </nav>
-    </div>
-  </div>
-  <Hr />
+        <div id="menu-items" class="sm:hidden">
+          <div>
+            <nav class="flex flex-col border-b border-border pt-2 pb-3">
+              <a
+                href="/about"
+                class="flex min-h-12 items-center px-5 active:bg-muted"
+              >
+                About
+              </a>
+              {SITE.showArchives && (
+                <a
+                  href="/archives"
+                  class="flex min-h-12 items-center px-5 active:bg-muted"
+                >
+                  Archives
+                </a>
+              )}
+            </nav>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div
+        id="nav-container"
+        class="mx-auto flex max-w-app flex-col items-center justify-between sm:flex-row"
+      >
+        <div
+          id="top-nav-wrap"
+          class="relative flex w-full items-baseline justify-between bg-background p-4 sm:items-center sm:py-6"
+        >
+          <a
+            href="/"
+            class="absolute py-1 text-xl leading-8 font-semibold whitespace-nowrap sm:static sm:my-auto sm:text-2xl sm:leading-none"
+          >
+            {SITE.title}
+          </a>
+          <nav
+            id="nav-menu"
+            class="flex w-full flex-col items-center sm:ms-2 sm:flex-row sm:justify-end sm:space-x-4 sm:py-0"
+          >
+            <button
+              id="menu-btn"
+              class="focus-outline self-end p-2 sm:hidden"
+              aria-label="Open Menu"
+              aria-expanded="false"
+              aria-controls="menu-items"
+            >
+              <IconX id="close-icon" class="hidden" />
+              <IconMenuDeep id="menu-icon" />
+            </button>
+            <div id="menu-items" class="sm:contents">
+              <div class="sm:contents">
+                <ul
+                  class:list={[
+                    "grid w-44 grid-cols-2 place-content-center gap-2 pt-4",
+                    "[&>li>a]:block [&>li>a]:px-4 [&>li>a]:py-3 [&>li>a]:text-center [&>li>a]:font-medium [&>li>a]:hover:text-accent sm:[&>li>a]:px-2 sm:[&>li>a]:py-1",
+                    "sm:flex sm:w-auto sm:gap-x-5 sm:gap-y-0 sm:pt-0",
+                  ]}
+                >
+                  <li class="col-span-2">
+                    <a
+                      href="/about"
+                      class:list={{ "active-nav": isActive("/about") }}
+                    >
+                      About
+                    </a>
+                  </li>
+                  {SITE.showArchives && (
+                    <li class="col-span-2">
+                      <LinkButton
+                        href="/archives"
+                        class:list={[
+                          "focus-outline flex justify-center p-3 sm:p-1",
+                          {
+                            "active-nav [&>svg]:stroke-accent":
+                              isActive("/archives"),
+                          },
+                        ]}
+                        ariaLabel="archives"
+                        title="Archives"
+                      >
+                        <IconArchive class="hidden sm:inline-block" />
+                        <span class="sm:sr-only">Archives</span>
+                      </LinkButton>
+                    </li>
+                  )}
+                  {SITE.lightAndDarkMode && (
+                    <li class="col-span-2 flex items-center justify-center">
+                      <button
+                        id="theme-btn"
+                        class="focus-outline relative size-12 p-4 hover:[&>svg]:stroke-accent sm:size-8"
+                        title="Toggles light & dark"
+                        aria-label="auto"
+                        aria-live="polite"
+                      >
+                        <IconMoon class="absolute top-[50%] left-[50%] -translate-[50%] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+                        <IconSunHigh class="absolute top-[50%] left-[50%] -translate-[50%] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+                      </button>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
+    )
+  }
+  {variant === "default" && <Hr />}
 </header>
 
 <style>
@@ -129,7 +194,8 @@ const isActive = (path: string) => {
       transition: grid-template-rows 200ms ease-out;
     }
 
-    #menu-btn[aria-expanded="true"] ~ #menu-items {
+    #menu-btn[aria-expanded="true"] ~ #menu-items,
+    #home-nav:has(#menu-btn[aria-expanded="true"]) #menu-items {
       grid-template-rows: 1fr;
     }
 
@@ -143,7 +209,8 @@ const isActive = (path: string) => {
         visibility 200ms;
     }
 
-    #menu-btn[aria-expanded="true"] ~ #menu-items > div {
+    #menu-btn[aria-expanded="true"] ~ #menu-items > div,
+    #home-nav:has(#menu-btn[aria-expanded="true"]) #menu-items > div {
       opacity: 1;
       visibility: visible;
     }

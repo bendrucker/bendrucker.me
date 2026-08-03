@@ -1,45 +1,25 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
-import LinkButton from "@/components/LinkButton.astro";
-import Card from "@/components/Card.astro";
+import Masthead from "@/components/home/Masthead.astro";
+import PostList from "@/components/home/PostList.astro";
 import { getSortedPosts } from "@/blog/posts";
 
-const posts = await getCollection("blog");
-
-const sortedPosts = getSortedPosts(posts);
-const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
+const sorted = getSortedPosts(await getCollection("blog"));
+const featured = sorted.filter(({ data }) => data.featured);
+const [label, highlighted]: [string, CollectionEntry<"blog">[]] = featured.length
+  ? ["Featured", featured]
+  : ["Recent", sorted.slice(0, 3)];
 ---
 
-<Layout description="Programmer, cyclist, and photographer." sourcePath="src/pages/index.astro">
+<Layout
+  description="Programmer, cyclist, and photographer."
+  sourcePath="src/pages/index.astro"
+  headerVariant="home"
+>
   <main id="main-content" data-layout="index">
-    <section id="hero" class="pt-8 pb-6 text-center">
-      <img
-        src="/images/ben-drucker-sq.png"
-        srcset="/images/ben-drucker-sq.png 1x, /images/ben-drucker-sq@2x.png 2x"
-        alt="Ben Drucker"
-        class="w-32 h-32 rounded-lg mx-auto mb-6"
-      />
-      <p>
-        <LinkButton href="/activity/code" class="underline decoration-dashed underline-offset-4">Programmer</LinkButton>, <LinkButton href="https://www.strava.com/athletes/5723594" class="underline decoration-dashed underline-offset-4">cyclist</LinkButton>, and photographer, living in San Francisco.
-      </p>
-    </section>
-
-    {
-      featuredPosts.length > 0 && (
-        <>
-          <section id="featured" class="pt-12 pb-6">
-            <h2 class="text-2xl font-semibold tracking-wide">Featured</h2>
-            <ul>
-              {featuredPosts.map(data => (
-                <Card variant="h3" {...data} />
-              ))}
-            </ul>
-          </section>
-        </>
-      )
-    }
-
+    <Masthead />
+    <PostList {label} posts={highlighted} />
   </main>
 </Layout>
 
