@@ -2,7 +2,12 @@ import type { RepoActivity } from "@workspace/github";
 import { logger } from "@workspace/logger";
 import type { CompiledQuery } from "kysely";
 import { createDb } from "../../src/db";
-import { upsertRepo, upsertActivity } from "../../src/activity/upsert";
+import { activityStatements } from "../../src/activity/upsert";
+import {
+  hashStatements,
+  readSyncState,
+  recordSync,
+} from "../../src/activity/sync-state";
 import { fetchGitHubActivityWithConfig } from "../../src/services/github";
 
 type Env = Required<Cloudflare.Env> & {
@@ -21,23 +26,44 @@ async function upsertActivityToD1(
 ): Promise<void> {
   const db = createDb(d1);
 
-  const statements: D1PreparedStatement[] = [];
-  for (const repo of repos) {
-    statements.push(prepare(d1, upsertRepo(db, repo).compile()));
-    statements.push(prepare(d1, upsertActivity(db, repo).compile()));
+  const queries = activityStatements(db, repos);
+  const payloadHash = await hashStatements(queries);
+
+  const state = await readSyncState(db);
+  if (state?.payloadHash === payloadHash) {
+    logger.info(
+      { version: state.version, statements: queries.length },
+      "GitHub payload unchanged, skipped D1 write",
+    );
+    return;
   }
 
-  let totalResults = 0;
+  const statements = queries.map((query) => prepare(d1, query));
+
+  let changes = 0;
   for (let i = 0; i < statements.length; i += BATCH_SIZE) {
     const chunk = statements.slice(i, i + BATCH_SIZE);
     const results = await d1.batch(chunk);
-    totalResults += results.length;
+    changes += results.reduce(
+      (total, result) => total + result.meta.changes,
+      0,
+    );
   }
+
+  // A differing payload does not guarantee a differing database: dropping a
+  // repo from the fetch, or a change to an insert-only column like
+  // `created_at`, leaves every guarded statement a no-op. The version has to
+  // track the rows, since that is what the cached pages render.
+  const { version } = await recordSync(db, {
+    payloadHash,
+    changed: changes > 0,
+  }).executeTakeFirstOrThrow();
 
   logger.info(
     {
       statements: statements.length,
-      results: totalResults,
+      changes,
+      version,
     },
     "D1 upsert completed",
   );
