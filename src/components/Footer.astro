@@ -1,5 +1,4 @@
 ---
-import Hr from "./Hr.astro";
 import Socials from "./Socials.astro";
 import { SITE } from "@/config";
 
@@ -14,29 +13,30 @@ const { noMarginTop = false, sourcePath } = Astro.props;
 const sourceUrl = sourcePath ? `${SITE.viewSource.url}${sourcePath}` : undefined;
 ---
 
-<footer class:list={["w-full", { "mt-auto": !noMarginTop }]}>
-  <Hr noPadding />
+<footer
+  class:list={["w-full border-t border-border", { "mt-auto": !noMarginTop }]}
+>
   <div
-    class="flex flex-col-reverse items-center gap-y-1 py-3 sm:flex-row sm:flex-wrap sm:justify-between sm:gap-x-3"
+    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3.5 text-xs text-foreground/50 sm:px-10 sm:py-4 sm:text-sm"
   >
-    <div
-      class="flex items-center gap-1.5 whitespace-nowrap text-xs text-foreground/50"
-    >
+    <div class="flex items-center gap-1.5 sm:gap-2">
       <span>&#169; {currentYear} Ben Drucker</span>
-      {sourceUrl && (
-        <>
-          <span aria-hidden="true">&middot;</span>
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="hover:text-accent"
-          >
-            {SITE.viewSource.text}
-          </a>
-        </>
-      )}
+      {
+        sourceUrl && (
+          <>
+            <span aria-hidden="true">&middot;</span>
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline decoration-dashed underline-offset-2 hover:text-accent"
+            >
+              {SITE.viewSource.text}
+            </a>
+          </>
+        )
+      }
     </div>
-    <Socials centered />
+    <Socials />
   </div>
 </footer>

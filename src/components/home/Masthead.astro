@@ -1,0 +1,178 @@
+---
+import { Image } from "astro:assets";
+import backdrop from "@/assets/hero/backdrop.avif";
+import subject from "@/assets/hero/subject.avif";
+import IconBridge from "@/assets/icons/IconBridge.svg";
+import { SITE } from "@/config";
+---
+
+<div class="relative isolate h-77 overflow-hidden bg-background sm:h-110">
+  <div class="absolute -inset-5">
+    <Image
+      id="masthead-backdrop"
+      src={backdrop}
+      alt=""
+      aria-hidden="true"
+      layout="none"
+      format="avif"
+      loading="eager"
+      class="block size-full max-w-none object-cover object-[50%_20%] sm:object-[50%_16%]"
+    />
+  </div>
+  <div class="absolute inset-0 bg-muted opacity-92 mix-blend-color"></div>
+  <div id="masthead-wash" class="absolute inset-0"></div>
+  <div
+    id="masthead-top-fade"
+    class="absolute inset-x-0 top-0 hidden h-[26%] sm:block"
+  >
+  </div>
+  <Image
+    id="masthead-subject"
+    src={subject}
+    alt=""
+    layout="none"
+    format="avif"
+    priority
+    class="absolute bottom-[-10%] left-[4%] block h-[108%] w-auto max-w-none sm:left-auto sm:right-[17%] sm:h-[104%]"
+  />
+  <div
+    id="masthead-bottom-fade"
+    class="absolute inset-x-0 bottom-0 h-[46%] sm:h-[44%]"
+  >
+  </div>
+  <div
+    class="absolute inset-x-5 bottom-4.5 sm:inset-x-0 sm:bottom-11 sm:flex sm:justify-center"
+  >
+    <div
+      class="flex w-full flex-col items-start gap-2 sm:max-w-home sm:gap-2.5 sm:px-5"
+    >
+      <h1
+        class="rounded-sm bg-background/66 px-3 py-1.5 text-2xl leading-[1.15] font-semibold tracking-[-0.03em] whitespace-nowrap backdrop-blur-xs sm:px-4 sm:py-2 sm:text-6xl sm:tracking-[-0.035em]"
+      >
+        {SITE.title}
+      </h1>
+      <div
+        class="flex w-full items-center justify-between gap-3 text-xs whitespace-nowrap sm:w-auto sm:justify-start sm:gap-3.5 sm:text-base"
+      >
+        <span
+          class="flex items-center gap-1.5 rounded-sm bg-background/66 px-3 py-1.5 backdrop-blur-xs sm:gap-3 sm:px-4 sm:py-2"
+        >
+          <a
+            href="/activity/code"
+            class="underline decoration-dashed underline-offset-4 hover:text-accent"
+          >
+            Code
+          </a>
+          <span class="text-foreground/35" aria-hidden="true">&middot;</span>
+          <a
+            href="https://www.strava.com/athletes/5723594"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline decoration-dashed underline-offset-4 hover:text-accent"
+          >
+            Bikes
+          </a>
+        </span>
+        <span
+          class="flex items-center gap-1.5 rounded-sm bg-background/66 px-2.5 py-1.5 text-foreground/60 backdrop-blur-xs sm:gap-2 sm:px-3.5 sm:py-2"
+        >
+          <IconBridge class="size-3.5 shrink-0 text-bridge sm:size-4" />
+          <span class="sm:hidden">SF</span>
+          <span class="hidden sm:inline">San Francisco</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #masthead-backdrop {
+    filter: blur(3px) grayscale(0.7) contrast(0.92) brightness(1.04);
+    opacity: 0.78;
+  }
+
+  :global(html[data-theme="dark"]) #masthead-backdrop {
+    filter: blur(3px) grayscale(0.7) contrast(0.92) brightness(0.72);
+    opacity: 0.6;
+  }
+
+  #masthead-subject {
+    filter: grayscale(0.3) saturate(1.02) contrast(1.08) brightness(1.02)
+      drop-shadow(0 18px 30px rgb(0 0 0 / 0.26));
+  }
+
+  :global(html[data-theme="dark"]) #masthead-subject {
+    filter: grayscale(0.3) saturate(0.95) contrast(1.04) brightness(0.76)
+      drop-shadow(0 18px 30px rgb(0 0 0 / 0.4));
+  }
+
+  #masthead-wash {
+    background:
+      radial-gradient(
+        60% 55% at 10% -6%,
+        color-mix(in srgb, var(--background) 46%, transparent) 0%,
+        transparent 68%
+      ),
+      radial-gradient(
+        130% 120% at 6% -18%,
+        transparent 0%,
+        color-mix(in srgb, var(--background) 42%, transparent) 58%,
+        color-mix(in srgb, var(--background) 88%, transparent) 100%
+      );
+  }
+
+  #masthead-bottom-fade {
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--background) 88%, transparent) 0%,
+      color-mix(in srgb, var(--background) 52%, transparent) 46%,
+      transparent 100%
+    );
+  }
+
+  @media (width >= 40rem) {
+    #masthead-subject {
+      filter: grayscale(0.3) saturate(1.02) contrast(1.08) brightness(1.02)
+        drop-shadow(0 22px 40px rgb(0 0 0 / 0.28));
+    }
+
+    :global(html[data-theme="dark"]) #masthead-subject {
+      filter: grayscale(0.3) saturate(0.95) contrast(1.04) brightness(0.76)
+        drop-shadow(0 22px 40px rgb(0 0 0 / 0.42));
+    }
+
+    #masthead-wash {
+      background:
+        radial-gradient(
+          40% 72% at 8% -6%,
+          color-mix(in srgb, var(--background) 46%, transparent) 0%,
+          transparent 74%
+        ),
+        linear-gradient(
+          to right,
+          color-mix(in srgb, var(--background) 58%, transparent) 0%,
+          color-mix(in srgb, var(--background) 16%, transparent) 52%,
+          transparent 100%
+        );
+    }
+
+    #masthead-top-fade {
+      background: linear-gradient(
+        to bottom,
+        var(--background) 0%,
+        color-mix(in srgb, var(--background) 46%, transparent) 42%,
+        transparent 100%
+      );
+    }
+
+    #masthead-bottom-fade {
+      background: linear-gradient(
+        to top,
+        var(--background) 0%,
+        color-mix(in srgb, var(--background) 72%, transparent) 34%,
+        color-mix(in srgb, var(--background) 24%, transparent) 68%,
+        transparent 100%
+      );
+    }
+  }
+</style>
