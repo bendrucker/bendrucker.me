@@ -6,6 +6,7 @@ import { debounce } from "./composables/useActivityApi";
 import FilterControls from "./FilterControls.vue";
 import LanguageBar from "./LanguageBar.vue";
 import RepoCard from "./RepoCard.vue";
+import StickyHeader from "./StickyHeader.vue";
 import LoadingPulse from "./LoadingPulse.vue";
 
 const props = defineProps<{
@@ -198,9 +199,7 @@ onMounted(() => {
       <span v-else />
     </nav>
 
-    <div
-      class="sticky top-0 z-10 bg-background space-y-3 pt-3 -mt-3 pb-3 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none"
-    >
+    <StickyHeader>
       <FilterControls
         :filters="state.filters"
         :total="state.total"
@@ -213,7 +212,7 @@ onMounted(() => {
         :selected-language="state.filters.language"
         @select="selectLanguage"
       />
-    </div>
+    </StickyHeader>
 
     <div class="space-y-3">
       <RepoCard

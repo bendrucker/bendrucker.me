@@ -5,6 +5,7 @@ import type { Repo, YearCount } from "@/activity/types";
 import FilterControls from "./FilterControls.vue";
 import LanguageBar from "./LanguageBar.vue";
 import RepoCard from "./RepoCard.vue";
+import StickyHeader from "./StickyHeader.vue";
 import YearDivider from "./YearDivider.vue";
 import TimelineRail from "./TimelineRail.vue";
 import LoadingPulse from "./LoadingPulse.vue";
@@ -26,7 +27,7 @@ const { state, fetchRepos, fetchLanguages, fetchYears, prefetchNext } =
   );
 
 const rootRef = ref<HTMLDivElement | null>(null);
-const headerRef = ref<HTMLDivElement | null>(null);
+const headerRef = ref<InstanceType<typeof StickyHeader> | null>(null);
 const sentinelRef = ref<HTMLDivElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
@@ -100,7 +101,7 @@ onMounted(() => {
   fetchLanguages();
   fetchYears();
 
-  const headerHeight = headerRef.value?.offsetHeight ?? 0;
+  const headerHeight = headerRef.value?.root?.offsetHeight ?? 0;
   rootRef.value?.style.setProperty("--header-height", `${headerHeight}px`);
 
   const yearObserver = new IntersectionObserver(
@@ -149,10 +150,7 @@ onMounted(() => {
 
 <template>
   <div ref="rootRef" class="relative space-y-4">
-    <div
-      ref="headerRef"
-      class="sticky top-0 z-10 bg-background space-y-3 pt-3 -mt-3 pb-3 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none"
-    >
+    <StickyHeader ref="headerRef">
       <FilterControls
         :filters="state.filters"
         :total="state.total"
@@ -164,7 +162,7 @@ onMounted(() => {
         :selected-language="state.filters.language"
         @select="selectLanguage"
       />
-    </div>
+    </StickyHeader>
 
     <div class="space-y-3">
       <template v-for="item in reposWithDividers" :key="item.key">
