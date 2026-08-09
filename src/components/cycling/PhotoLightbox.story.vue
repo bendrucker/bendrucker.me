@@ -23,6 +23,10 @@ function openStrip(index: number) {
   fromStrip.value = index;
   fromStripOpen.value = true;
 }
+
+const shrinking = ref(3);
+const shrinkingOpen = ref(false);
+const shrinkingPhotos = ref(travelRide.photos);
 </script>
 
 <template>
@@ -108,6 +112,48 @@ function openStrip(index: number) {
         :ride-url="crowdedRide.stravaUrl"
         :open="fromStripOpen"
         @close="fromStripOpen = false"
+      />
+    </Variant>
+
+    <Variant title="Photos removed while open">
+      <div class="flex gap-2">
+        <button
+          type="button"
+          class="rounded border border-border px-2 py-1 text-[11px]"
+          @click="
+            shrinkingPhotos = travelRide.photos;
+            shrinking = 3;
+            shrinkingOpen = true;
+          "
+        >
+          open at photo 4
+        </button>
+        <button
+          type="button"
+          class="rounded border border-border px-2 py-1 text-[11px]"
+          @click="shrinkingPhotos = travelRide.photos.slice(0, 2)"
+        >
+          drop to 2 photos
+        </button>
+        <button
+          type="button"
+          class="rounded border border-border px-2 py-1 text-[11px]"
+          @click="shrinkingPhotos = []"
+        >
+          drop to none
+        </button>
+      </div>
+      <p class="mt-2 text-[11px] text-foreground/70">
+        index {{ shrinking }} · {{ shrinkingPhotos.length }} photos ·
+        {{ shrinkingOpen ? "open" : "closed" }}
+      </p>
+      <PhotoLightbox
+        v-model:index="shrinking"
+        :photos="shrinkingPhotos"
+        :ride-name="travelRide.name"
+        :ride-url="travelRide.stravaUrl"
+        :open="shrinkingOpen"
+        @close="shrinkingOpen = false"
       />
     </Variant>
   </Story>

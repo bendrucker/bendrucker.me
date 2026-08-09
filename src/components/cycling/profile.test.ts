@@ -30,6 +30,15 @@ describe("seededRandom", () => {
     }
     expect(new Set(values).size).toBe(values.length);
   });
+
+  it("still produces a usable sequence for an empty seed", () => {
+    const values = sequence("", 8);
+    for (const value of values) {
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThan(1);
+    }
+    expect(new Set(values).size).toBe(values.length);
+  });
 });
 
 describe("syntheticProfile", () => {
@@ -70,5 +79,31 @@ describe("syntheticProfile", () => {
     for (const sample of syntheticProfile("ride-1", 0, 64)) {
       expect(Math.abs(sample - 0.5)).toBeLessThan(0.15);
     }
+  });
+
+  it("draws a single sample at the baseline rather than an endpoint", () => {
+    expect(syntheticProfile("ride-1", HILLY_FEET_PER_MILE, 1)).toHaveLength(1);
+  });
+
+  it("stays finite for degenerate gradients", () => {
+    for (const feetPerMile of [NaN, Infinity, -Infinity, -500]) {
+      for (const sample of syntheticProfile("ride-1", feetPerMile, 16)) {
+        expect(sample).toBeGreaterThanOrEqual(0);
+        expect(sample).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  // Locks the generator constants, which the same-run comparisons above cannot.
+  it("matches a recorded sequence", () => {
+    expect(syntheticProfile("ride-1", 130.5, 5)).toMatchInlineSnapshot(`
+      [
+        0.4413533815235801,
+        0.676347026678222,
+        0.3005533907533429,
+        0.5827657037560426,
+        0.6040300551597427,
+      ]
+    `);
   });
 });

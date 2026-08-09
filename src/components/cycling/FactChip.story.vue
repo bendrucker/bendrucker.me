@@ -5,7 +5,8 @@ import type { RideFact } from "./types";
 
 const longFact: RideFact = {
   id: "long",
-  label: "▲ 3,204 ft climb · 8.4% average grade over 7.1 miles · 41 min",
+  icon: "▲",
+  label: "3,204 ft climb · 8.4% average grade over 7.1 miles · 41 min",
 };
 </script>
 
@@ -43,7 +44,7 @@ const longFact: RideFact = {
           <FactChip :fact="fact" />
         </li>
       </ul>
-      <p class="text-xs text-foreground/55">
+      <p class="text-xs text-foreground/70">
         bareRide has no facts, so the list renders nothing.
       </p>
     </Variant>

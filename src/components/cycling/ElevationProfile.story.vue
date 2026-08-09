@@ -20,6 +20,14 @@ import { bareRide, epicRide, raceRide } from "./fixtures";
       <ElevationProfile :samples="bareRide.elevationProfile ?? []" />
     </Variant>
 
+    <Variant title="One sample">
+      <ElevationProfile :samples="[0.7]" />
+    </Variant>
+
+    <Variant title="Two samples">
+      <ElevationProfile :samples="[0.2, 0.85]" />
+    </Variant>
+
     <Variant title="Empty">
       <ElevationProfile :samples="[]" />
     </Variant>
@@ -31,7 +39,7 @@ import { bareRide, epicRide, raceRide } from "./fixtures";
           :samples="epicRide.elevationProfile ?? []"
         />
         <p class="relative text-[13px] font-bold">{{ epicRide.name }}</p>
-        <p class="relative text-[11px] text-foreground/55">
+        <p class="relative text-[11px] text-foreground/70">
           the ride card stacks its text over the wash
         </p>
       </div>

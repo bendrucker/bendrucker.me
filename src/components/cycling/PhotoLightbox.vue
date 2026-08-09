@@ -8,7 +8,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from "reka-ui";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import StravaLink from "./StravaLink.vue";
 import type { RidePhoto } from "./types";
 
@@ -28,11 +28,26 @@ const emit = defineEmits<{
 const count = computed(() => props.photos.length);
 
 /** An out of range index still lands on a real photo rather than blanking. */
-const position = computed(() =>
-  count.value > 0
-    ? ((props.index % count.value) + count.value) % count.value
-    : 0,
-);
+const position = computed(() => {
+  if (count.value < 1) return 0;
+  const whole = Math.trunc(props.index);
+  if (!Number.isFinite(whole)) return 0;
+  return ((whole % count.value) + count.value) % count.value;
+});
+
+// A caller's index survives the photo list changing under it. Normalizing
+// silently would leave the parent holding a value the lightbox is not showing.
+watch([position, () => props.index], () => {
+  if (count.value > 0 && position.value !== props.index) {
+    emit("update:index", position.value);
+  }
+});
+
+// Emptying the list closes the dialog through the `open` binding, which reka
+// treats as caller-driven and reports nothing back.
+watch(count, (value) => {
+  if (value === 0 && props.open) emit("close");
+});
 
 const photo = computed<RidePhoto | undefined>(
   () => props.photos[position.value],
@@ -52,6 +67,23 @@ function step(delta: number) {
 function onOpenChange(value: boolean) {
   if (!value) emit("close");
 }
+
+/**
+ * One listener rather than two `@keydown.arrow-*` bindings. reka merges `$attrs`
+ * onto the content element twice, and two array-literal handlers are never
+ * reference-equal, so each arrow press would fire the handler twice.
+ */
+function onKeydown(event: KeyboardEvent) {
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (count.value < 2) return;
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    step(-1);
+  } else if (event.key === "ArrowRight") {
+    event.preventDefault();
+    step(1);
+  }
+}
 </script>
 
 <template>
@@ -60,8 +92,7 @@ function onOpenChange(value: boolean) {
       <DialogOverlay class="fixed inset-0 z-50 bg-background/95" />
       <DialogContent
         class="fixed inset-x-4 top-1/2 z-50 mx-auto flex w-fit max-w-3xl -translate-y-1/2 flex-col gap-2"
-        @keydown.arrow-left.prevent="step(-1)"
-        @keydown.arrow-right.prevent="step(1)"
+        @keydown="onKeydown"
       >
         <DialogTitle class="sr-only">{{ rideName }}</DialogTitle>
         <DialogDescription class="sr-only">
@@ -69,11 +100,13 @@ function onOpenChange(value: boolean) {
         </DialogDescription>
 
         <div class="relative">
+          <!-- Deliberately unkeyed. Remounting collapses the `w-fit` box while
+               the next photo loads, moving the arrow buttons under the pointer. -->
           <img
             v-if="photo"
-            :key="photo.id"
             :src="photo.fullUrl"
             :alt="photo.alt"
+            decoding="async"
             class="max-h-[75vh] max-w-full rounded-lg border border-border object-contain"
           />
 
@@ -98,19 +131,22 @@ function onOpenChange(value: boolean) {
           </button>
         </div>
 
-        <div class="flex items-center gap-3 text-[11px] text-foreground/60">
+        <div class="flex items-center gap-3 text-[11px] text-foreground/70">
           <p class="shrink-0">
             <span aria-hidden="true">{{ position + 1 }} / {{ count }}</span>
+            <!-- Carries the alt text too. A screen reader does not re-announce
+                 an unfocused image whose alt changed under it. -->
             <span class="sr-only" aria-live="polite">
-              Photo {{ position + 1 }} of {{ count }}
+              Photo {{ position + 1 }} of {{ count }}.
+              {{ photo?.alt }}
             </span>
           </p>
           <p class="min-w-0 max-w-[36ch] truncate text-foreground/80">
             {{ rideName }}
           </p>
           <div class="ml-auto flex items-center gap-3">
-            <StravaLink :href="rideUrl" />
-            <DialogClose class="text-foreground/60">
+            <StravaLink :href="rideUrl" :name="rideName" />
+            <DialogClose class="text-foreground/70">
               <span aria-hidden="true">✕</span>
               <span class="sr-only">Close photo viewer</span>
             </DialogClose>

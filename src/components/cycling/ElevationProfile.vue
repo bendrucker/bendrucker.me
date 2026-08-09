@@ -10,7 +10,15 @@ const path = computed(() => {
   const { samples } = props;
   if (samples.length === 0) return "";
 
-  const lastIndex = Math.max(1, samples.length - 1);
+  // A lone sample has no gradient to draw, so it spans the width as a level
+  // band. Dividing by its index would instead pin it to the left edge and
+  // render a wedge, reading as a descent the ride never made.
+  if (samples.length === 1) {
+    const y = ((1 - samples[0]) * VIEW_HEIGHT).toFixed(2);
+    return `M0 ${VIEW_HEIGHT}L0 ${y}L${VIEW_WIDTH} ${y}L${VIEW_WIDTH} ${VIEW_HEIGHT}Z`;
+  }
+
+  const lastIndex = samples.length - 1;
   const ridge = samples
     .map((sample, index) => {
       const x = ((index / lastIndex) * VIEW_WIDTH).toFixed(2);

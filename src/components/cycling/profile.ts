@@ -23,7 +23,9 @@ export function seededRandom(seed: string): () => number {
   };
 }
 
+/** Non-finite input falls back to the baseline, which SVG can still draw. */
 function clamp(value: number): number {
+  if (!Number.isFinite(value)) return BASELINE;
   return Math.min(1, Math.max(0, value));
 }
 
@@ -34,7 +36,8 @@ export function syntheticProfile(
   sampleCount: number = DEFAULT_SAMPLE_COUNT,
 ): number[] {
   const random = seededRandom(seed);
-  const hilliness = Math.min(1, Math.max(0, feetPerMile / STEEP_FEET_PER_MILE));
+  const ratio = feetPerMile / STEEP_FEET_PER_MILE;
+  const hilliness = Number.isNaN(ratio) ? 0 : Math.min(1, Math.max(0, ratio));
   const amplitude = FLAT_AMPLITUDE + HILLY_AMPLITUDE * hilliness;
 
   const waves = HARMONICS.map((harmonic) => ({

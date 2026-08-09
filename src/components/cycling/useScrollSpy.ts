@@ -1,46 +1,56 @@
 import { onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
 
-/** A band across the upper third of the viewport. A section becomes active as
- * its top crosses into the band rather than when it first appears. */
+/** A band across the upper third of the viewport. A section becomes active once
+ * its top reaches the band rather than when it first appears. */
 const DEFAULT_ROOT_MARGIN = "-20% 0px -70% 0px";
+
+/** Matches the bottom edge of the band above, as a fraction of the viewport. */
+const BAND_BOTTOM = 0.3;
 
 /**
  * Tracks which `[data-month-key]` section is in view. Callers own the sections:
  * the composable finds them by attribute, so the rail and the sections stay
- * independent components.
+ * independent components. Pass `root` when more than one spy shares a page,
+ * since an unscoped search would find the other instance's sections first.
  */
 export function useScrollSpy(
   keys: Ref<string[]>,
-  options: { rootMargin?: string } = {},
+  options: { rootMargin?: string; root?: Ref<HTMLElement | null> } = {},
 ): Ref<string | null> {
   const activeKey = ref<string | null>(null);
-  const sections = new Map<string, Element>();
-  const intersecting = new Set<string>();
+  const sections = new Map<Element, string>();
+  const intersecting = new Set<Element>();
   let observer: IntersectionObserver | null = null;
 
   function selectActive() {
     // Positions are read live rather than taken from the entries, because an
     // entry only records where its section sat when its visibility changed.
     const measured = [...sections]
-      .map(([key, element]) => ({
+      .map(([element, key]) => ({
+        element,
         key,
         top: element.getBoundingClientRect().top,
       }))
       .sort((a, b) => a.top - b.top);
 
-    const visible = measured.find((section) => intersecting.has(section.key));
+    const visible = measured.findLast((section) =>
+      intersecting.has(section.element),
+    );
     if (visible) {
       activeKey.value = visible.key;
       return;
     }
 
-    const passed = measured.filter((section) => section.top < 0).at(-1);
+    // At the foot of the page a short trailing section never reaches the band,
+    // so anything that started above the band still counts as passed.
+    const bandBottom = window.innerHeight * BAND_BOTTOM;
+    const passed = measured
+      .filter((section) => section.top < bandBottom)
+      .at(-1);
     activeKey.value = passed?.key ?? measured[0]?.key ?? null;
   }
 
   function observe() {
-    if (typeof document === "undefined") return;
-
     observer?.disconnect();
     sections.clear();
     intersecting.clear();
@@ -48,27 +58,32 @@ export function useScrollSpy(
     observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const key = (entry.target as HTMLElement).dataset.monthKey;
-          if (!key) continue;
-          if (entry.isIntersecting) intersecting.add(key);
-          else intersecting.delete(key);
+          if (!sections.has(entry.target)) continue;
+          if (entry.isIntersecting) intersecting.add(entry.target);
+          else intersecting.delete(entry.target);
         }
         selectActive();
       },
       { rootMargin: options.rootMargin ?? DEFAULT_ROOT_MARGIN },
     );
 
-    for (const key of keys.value) {
-      const element = document.querySelector(`[data-month-key="${key}"]`);
-      if (!element) continue;
-      sections.set(key, element);
+    const wanted = new Set(keys.value);
+    const scope = options.root?.value ?? document;
+    for (const element of scope.querySelectorAll<HTMLElement>(
+      "[data-month-key]",
+    )) {
+      const key = element.dataset.monthKey;
+      if (!key || !wanted.has(key)) continue;
+      sections.set(element, key);
       observer.observe(element);
     }
   }
 
   onMounted(observe);
 
-  watch(keys, observe, { flush: "post" });
+  // Watching content rather than identity, so a caller that mutates the array
+  // in place is tracked and one that rebuilds an identical array is not.
+  watch(() => keys.value.join("\n"), observe, { flush: "post" });
 
   onBeforeUnmount(() => {
     observer?.disconnect();

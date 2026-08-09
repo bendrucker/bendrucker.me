@@ -18,6 +18,15 @@ const longNames: RankedList = {
     index === 0 ? { ...row, name: crowdedRide.name } : row,
   ),
 };
+
+const mixedLinks: RankedList = {
+  ...distance,
+  rows: distance.rows.map((row, index) =>
+    index === 1 ? { ...row, href: undefined } : row,
+  ),
+};
+
+const emptyList: RankedList = { ...distance, rows: [] };
 </script>
 
 <template>
@@ -33,8 +42,12 @@ const longNames: RankedList = {
       <RankedListPanel :list="fixtureList('elevation')" />
     </Variant>
 
-    <Variant title="Duration (some rows linked)">
+    <Variant title="Duration (no links)">
       <RankedListPanel :list="fixtureList('duration')" />
+    </Variant>
+
+    <Variant title="Some rows linked">
+      <RankedListPanel :list="mixedLinks" />
     </Variant>
 
     <Variant title="Clock">
@@ -51,6 +64,10 @@ const longNames: RankedList = {
 
     <Variant title="Long names">
       <RankedListPanel :list="longNames" />
+    </Variant>
+
+    <Variant title="No rows">
+      <RankedListPanel :list="emptyList" />
     </Variant>
   </Story>
 </template>

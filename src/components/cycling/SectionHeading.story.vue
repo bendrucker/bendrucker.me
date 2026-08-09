@@ -24,11 +24,20 @@ const monthSummary = computed(
     </Variant>
 
     <Variant title="Ranked list (h3)">
-      <SectionHeading :label="rankedLists[0]!.title" as="h3" />
+      <SectionHeading
+        :label="rankedLists[0]!.title"
+        :icon="rankedLists[0]!.icon"
+        as="h3"
+      />
     </Variant>
 
     <Variant title="Plain span">
-      <SectionHeading label="best power" as="span" summary="last 90 days" />
+      <SectionHeading
+        label="best power"
+        icon="⚡"
+        as="span"
+        summary="last 90 days"
+      />
     </Variant>
 
     <Variant title="Long label and summary">
@@ -50,6 +59,7 @@ const monthSummary = computed(
           v-for="list in rankedLists.slice(0, 3)"
           :key="list.id"
           :label="list.title"
+          :icon="list.icon"
           as="h3"
           :summary="`${list.rows.length} rows`"
         />

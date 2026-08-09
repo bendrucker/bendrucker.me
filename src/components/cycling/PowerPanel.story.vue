@@ -40,5 +40,9 @@ const unmeasuredBests: PowerBest[] = powerBests.map((best) => ({
         source-note="no power meter on these rides"
       />
     </Variant>
+
+    <Variant title="No durations">
+      <PowerPanel :bests="[]" />
+    </Variant>
   </Story>
 </template>

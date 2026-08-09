@@ -10,7 +10,7 @@ import StravaLink from "./StravaLink.vue";
     </Variant>
 
     <Variant title="In a ride card header">
-      <div class="flex items-center gap-2 text-[11px] text-foreground/55">
+      <div class="flex items-center gap-2 text-[11px] text-foreground/70">
         <span class="text-[15px] font-bold text-foreground">{{
           epicRide.name
         }}</span>
@@ -27,7 +27,11 @@ import StravaLink from "./StravaLink.vue";
           class="flex items-center gap-2 text-[11px]"
         >
           <span class="truncate">{{ ride.name }}</span>
-          <StravaLink :href="ride.stravaUrl" class="ml-auto shrink-0" />
+          <StravaLink
+            :href="ride.stravaUrl"
+            :name="ride.name"
+            class="ml-auto shrink-0"
+          />
         </li>
       </ul>
     </Variant>

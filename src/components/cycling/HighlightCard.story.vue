@@ -2,6 +2,7 @@
 import { bareRide, crowdedRide, highlights } from "./fixtures";
 import HighlightCard from "./HighlightCard.vue";
 import type { Highlight } from "./types";
+import UnitsProvider from "./UnitsProvider.vue";
 
 const distanceHighlight = highlights[0]!;
 const elevationHighlight = highlights[1]!;
@@ -15,7 +16,7 @@ const crowdedHighlight: Highlight = {
 
 const bareHighlight: Highlight = {
   ride: bareRide,
-  badge: { kind: "longest", label: "→ longest" },
+  badge: { kind: "longest", icon: "→", label: "longest" },
   metric: "duration",
 };
 </script>
@@ -40,6 +41,16 @@ const bareHighlight: Highlight = {
 
     <Variant title="No route">
       <HighlightCard :highlight="bareHighlight" />
+    </Variant>
+
+    <Variant title="Wide map" :layout="{ type: 'grid', width: 400 }">
+      <HighlightCard :highlight="distanceHighlight" :map-width="360" />
+    </Variant>
+
+    <Variant title="Metric units">
+      <UnitsProvider units="metric">
+        <HighlightCard :highlight="elevationHighlight" />
+      </UnitsProvider>
     </Variant>
   </Story>
 </template>

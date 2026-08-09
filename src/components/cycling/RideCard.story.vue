@@ -8,8 +8,12 @@ import {
   raceRide,
 } from "./fixtures";
 import RideCard from "./RideCard.vue";
+import type { Ride } from "./types";
+import UnitsProvider from "./UnitsProvider.vue";
 
 const lastPhoto = ref<number | null>(null);
+
+const noProfileRide: Ride = { ...bareRide, elevationProfile: undefined };
 </script>
 
 <template>
@@ -34,6 +38,16 @@ const lastPhoto = ref<number | null>(null);
       <RideCard :ride="raceRide" />
     </Variant>
 
+    <Variant title="No elevation stream">
+      <RideCard :ride="noProfileRide" />
+    </Variant>
+
+    <Variant title="Metric units">
+      <UnitsProvider units="metric">
+        <RideCard :ride="epicRide" />
+      </UnitsProvider>
+    </Variant>
+
     <Variant title="Narrow" :layout="{ type: 'grid', width: 340 }">
       <RideCard :ride="crowdedRide" />
     </Variant>
@@ -44,7 +58,7 @@ const lastPhoto = ref<number | null>(null);
 
     <Variant title="Photo events">
       <RideCard :ride="epicRide" @open-photo="lastPhoto = $event" />
-      <p class="mt-2 text-[11px] text-foreground/60">
+      <p class="mt-2 text-[11px] text-foreground/70">
         last openPhoto: {{ lastPhoto ?? "none" }}
       </p>
     </Variant>

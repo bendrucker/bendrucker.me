@@ -34,7 +34,7 @@ const opened = ref<number | null>(null);
 
     <Variant title="Interactive">
       <PhotoStrip :photos="crowdedRide.photos" @open="opened = $event" />
-      <p class="pt-2 text-[11px] text-foreground/60">
+      <p class="pt-2 text-[11px] text-foreground/70">
         {{ opened === null ? "no photo opened yet" : `opened index ${opened}` }}
       </p>
     </Variant>

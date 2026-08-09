@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { format } from "date-fns";
 import { computed } from "vue";
+import { parseRideTime } from "./datetime";
 import ElevationProfile from "./ElevationProfile.vue";
 import FactChip from "./FactChip.vue";
 import PhotoStrip from "./PhotoStrip.vue";
@@ -16,8 +17,10 @@ const props = withDefaults(
     ride: Ride;
     mapWidth?: number;
     mapHeight?: number;
+    /** Heading level for the ride name, so callers own the document outline. */
+    headingAs?: "h2" | "h3" | "h4" | "h5" | "h6";
   }>(),
-  { mapWidth: 150, mapHeight: 140 },
+  { mapWidth: 150, mapHeight: 140, headingAs: "h3" },
 );
 
 defineEmits<{ openPhoto: [index: number] }>();
@@ -30,7 +33,7 @@ const {
   formatElevation,
 } = useUnits();
 
-const startedAt = computed(() => new Date(props.ride.startedAt));
+const startedAt = computed(() => parseRideTime(props.ride.startedAt));
 
 const dateLabel = computed(() =>
   format(startedAt.value, "EEE M/d").toLowerCase(),
@@ -38,7 +41,7 @@ const dateLabel = computed(() =>
 
 const fullDate = computed(() => format(startedAt.value, "PPPP"));
 
-const hasRoute = computed(() => (props.ride.route?.length ?? 0) > 1);
+const hasRoute = computed(() => (props.ride.route?.length ?? 0) >= 2);
 
 const metaLine = computed(() => {
   const { movingSeconds, averageWatts, companionCount } = props.ride;
@@ -80,14 +83,16 @@ const metaLine = computed(() => {
       <div class="relative flex flex-col gap-2">
         <div class="flex items-start justify-between gap-2">
           <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <a
-              :href="ride.stravaUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-[15px] font-bold hover:text-accent"
-            >
-              {{ ride.name }}
-            </a>
+            <component :is="headingAs" class="min-w-0">
+              <a
+                :href="ride.stravaUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-[15px] font-bold wrap-anywhere hover:text-accent"
+              >
+                {{ ride.name }}
+              </a>
+            </component>
             <ul v-if="ride.badges.length" class="flex flex-wrap gap-1">
               <li v-for="badge in ride.badges" :key="badge.kind">
                 <RideBadge :badge="badge" />
@@ -96,16 +101,14 @@ const metaLine = computed(() => {
           </div>
 
           <div
-            class="flex shrink-0 items-center gap-2 text-[11px] text-foreground/55"
+            class="flex shrink-0 items-center gap-2 text-[11px] text-foreground/70"
           >
-            <time :datetime="ride.startedAt" :title="fullDate">
-              {{ dateLabel }}
-            </time>
-            <StravaLink :href="ride.stravaUrl" />
+            <time :datetime="ride.startedAt">{{ dateLabel }}</time>
+            <StravaLink :href="ride.stravaUrl" :name="ride.name" />
           </div>
         </div>
 
-        <p class="text-[11px] text-foreground/60">{{ metaLine }}</p>
+        <p class="text-[11px] text-foreground/70">{{ metaLine }}</p>
 
         <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
           <StatValue
@@ -121,7 +124,7 @@ const metaLine = computed(() => {
             />
             <span
               aria-hidden="true"
-              class="text-xs font-semibold text-foreground/55"
+              class="text-xs font-semibold text-foreground/70"
             >
               ▲
             </span>

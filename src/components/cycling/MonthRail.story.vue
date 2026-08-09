@@ -38,7 +38,7 @@ const multiYearMonths = [
 
     <Variant title="Single month">
       <div
-        class="bg-background px-4 py-6 text-[11px] text-foreground/55 sm:pr-16"
+        class="bg-background px-4 py-6 text-[11px] text-foreground/70 sm:pr-16"
       >
         one month, no year to group against.
         <MonthRail
@@ -50,7 +50,7 @@ const multiYearMonths = [
 
     <Variant title="Nothing active">
       <div
-        class="bg-background px-4 py-6 text-[11px] text-foreground/55 sm:pr-16"
+        class="bg-background px-4 py-6 text-[11px] text-foreground/70 sm:pr-16"
       >
         every month muted, which is what the rail shows before the first section
         reaches the viewport.
@@ -60,7 +60,7 @@ const multiYearMonths = [
 
     <Variant title="Empty">
       <div
-        class="bg-background px-4 py-6 text-[11px] text-foreground/55 sm:pr-16"
+        class="bg-background px-4 py-6 text-[11px] text-foreground/70 sm:pr-16"
       >
         no months, so the rail renders nothing at all.
         <MonthRail :months="[]" />

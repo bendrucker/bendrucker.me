@@ -19,6 +19,8 @@ const {
 interface DisplayValue {
   display: string;
   unit?: string;
+  /** Names the number for a screen reader when no unit follows it. */
+  measure?: string;
 }
 
 interface DisplayRow extends RankedRow, DisplayValue {
@@ -32,9 +34,9 @@ function displayValue(value: number): DisplayValue {
     case "elevation":
       return { display: formatElevation(value), unit: elevationUnit.value };
     case "duration":
-      return { display: formatDuration(value) };
+      return { display: formatDuration(value), measure: "time" };
     case "clock":
-      return { display: formatClock(value) };
+      return { display: formatClock(value), measure: "time" };
   }
 }
 
@@ -49,8 +51,13 @@ const rows = computed<DisplayRow[]>(() =>
 
 <template>
   <div>
-    <SectionHeading :label="list.title" as="h3" />
-    <ol class="mt-2">
+    <SectionHeading :label="list.title" :icon="list.icon" as="h3" />
+    <p v-if="!rows.length" class="mt-2 text-[11px] text-foreground/70">
+      nothing here yet
+    </p>
+    <!-- Tailwind's reset removes the marker, and Safari drops list semantics
+         with it unless the role is stated. -->
+    <ol v-else role="list" class="mt-2">
       <li
         v-for="(row, index) in rows"
         :key="row.id"
@@ -59,7 +66,7 @@ const rows = computed<DisplayRow[]>(() =>
         <span
           aria-hidden="true"
           class="font-sans text-[11px] font-extrabold tracking-tight"
-          :class="index === 0 ? 'text-accent' : 'text-foreground/45'"
+          :class="index === 0 ? 'text-accent' : 'text-foreground/70'"
         >
           {{ row.rank }}
         </span>
@@ -74,11 +81,16 @@ const rows = computed<DisplayRow[]>(() =>
             {{ row.name }}
           </a>
           <template v-else>{{ row.name }}</template>
-          <span v-if="row.detail" class="ml-1.5 text-foreground/50">
+          <span v-if="row.detail" class="ml-1.5 text-foreground/70">
             {{ row.detail }}
           </span>
         </span>
-        <StatValue :value="row.display" :unit="row.unit" size="sm" />
+        <StatValue
+          :value="row.display"
+          :unit="row.unit"
+          :label="row.measure"
+          size="sm"
+        />
       </li>
     </ol>
   </div>

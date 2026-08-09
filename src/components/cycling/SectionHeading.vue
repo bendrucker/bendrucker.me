@@ -2,8 +2,10 @@
 withDefaults(
   defineProps<{
     label: string;
+    /** Decorative glyph ahead of the label, kept out of the accessible name. */
+    icon?: string;
     summary?: string;
-    as?: string;
+    as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span" | "div";
   }>(),
   { as: "h2" },
 );
@@ -15,7 +17,7 @@ withDefaults(
       :is="as"
       class="shrink-0 text-[11px] font-bold tracking-[.1em] whitespace-nowrap"
     >
-      {{ label }}
+      <span v-if="icon" aria-hidden="true">{{ icon }} </span>{{ label }}
     </component>
     <span
       aria-hidden="true"
@@ -23,7 +25,7 @@ withDefaults(
     />
     <span
       v-if="summary"
-      class="shrink-0 text-[11px] whitespace-nowrap text-foreground/55"
+      class="min-w-0 truncate text-[11px] text-foreground/70"
     >
       {{ summary }}
     </span>

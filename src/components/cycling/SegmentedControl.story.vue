@@ -4,6 +4,7 @@ import { prYears } from "./fixtures";
 import SegmentedControl from "./SegmentedControl.vue";
 
 const mode = ref("log");
+const defaultSizeMode = ref("log");
 const modes = [
   { value: "log", label: "log" },
   { value: "highlights", label: "highlights" },
@@ -38,7 +39,7 @@ const longOptions = [
         label="View mode"
         size="md"
       />
-      <p class="pt-2 text-xs text-foreground/55">selected: {{ mode }}</p>
+      <p class="pt-2 text-xs text-foreground/70">selected: {{ mode }}</p>
     </Variant>
 
     <Variant title="Units (sm)">
@@ -48,7 +49,7 @@ const longOptions = [
         label="Distance units"
         size="sm"
       />
-      <p class="pt-2 text-xs text-foreground/55">selected: {{ units }}</p>
+      <p class="pt-2 text-xs text-foreground/70">selected: {{ units }}</p>
     </Variant>
 
     <Variant title="Year pills (sm)">
@@ -61,7 +62,11 @@ const longOptions = [
     </Variant>
 
     <Variant title="Default size">
-      <SegmentedControl v-model="mode" :options="modes" label="View mode" />
+      <SegmentedControl
+        v-model="defaultSizeMode"
+        :options="modes"
+        label="View mode"
+      />
     </Variant>
 
     <Variant title="Long labels">
@@ -80,6 +85,13 @@ const longOptions = [
           label="Ride set"
         />
       </div>
+    </Variant>
+
+    <Variant title="No options">
+      <SegmentedControl v-model="mode" :options="[]" label="View mode" />
+      <p class="pt-2 text-xs text-foreground/70">
+        an empty control, sized by its own border
+      </p>
     </Variant>
 
     <Variant title="Single option">

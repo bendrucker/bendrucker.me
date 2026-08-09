@@ -27,7 +27,7 @@ const sizeClass = {
     :class="sizeClass[size]"
   >
     <span v-if="label" class="sr-only">{{ label }} </span>{{ value
-    }}<span v-if="unit" class="text-xs font-semibold text-foreground/55"
+    }}<span v-if="unit" class="text-xs font-semibold text-foreground/70"
       >&nbsp;{{ unit }}</span
     >
   </span>

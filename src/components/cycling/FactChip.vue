@@ -6,8 +6,9 @@ defineProps<{ fact: RideFact }>();
 
 <template>
   <span
-    class="inline-block rounded-full border border-border bg-background px-2 py-0.5 text-[10px] whitespace-nowrap text-foreground/65"
+    class="inline-block rounded-full border border-border px-2 py-0.5 text-[10px] whitespace-nowrap text-foreground/70"
   >
-    {{ fact.label }}
+    <span v-if="fact.icon" aria-hidden="true">{{ fact.icon }} </span
+    >{{ fact.label }}
   </span>
 </template>

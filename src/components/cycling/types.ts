@@ -16,14 +16,19 @@ export interface RidePhoto {
 export type RideBadgeKind =
   "new-climb" | "new-location" | "longest" | "most-climbing" | "race";
 
-export interface RideBadge {
+/**
+ * Decorative glyph rendered ahead of a label. It is kept out of the label so
+ * the label stays the accessible name and the glyph can be hidden, which stops
+ * a screen reader announcing "black up-pointing triangle 3,204 ft climb".
+ */
+type Decorated = { icon?: string; label: string };
+
+export interface RideBadge extends Decorated {
   kind: RideBadgeKind;
-  label: string;
 }
 
-export interface RideFact {
+export interface RideFact extends Decorated {
   id: string;
-  label: string;
 }
 
 export interface Ride {
@@ -91,6 +96,8 @@ export interface RankedRow {
 export interface RankedList {
   id: string;
   title: string;
+  /** See {@link RideBadge} for why the glyph travels beside the title. */
+  icon?: string;
   metric: RankedMetric;
   rows: RankedRow[];
 }

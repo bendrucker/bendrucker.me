@@ -63,10 +63,29 @@ const {
       </div>
     </Variant>
 
+    <Variant title="Labelled for assistive tech">
+      <div class="flex gap-6">
+        <StatValue
+          :value="formatDistance(epicRide.distanceMi)"
+          :unit="distanceUnit"
+          label="distance"
+        />
+        <StatValue
+          :value="formatClock(epicRide.movingSeconds)"
+          label="moving time"
+        />
+      </div>
+      <p class="pt-2 text-xs text-foreground/70">
+        the label is screen-reader only, so these look identical to the
+        unlabelled variants above
+      </p>
+    </Variant>
+
     <Variant title="Power">
       <div class="flex gap-6">
         <StatValue :value="String(epicRide.averageWatts)" unit="W" size="lg" />
-        <StatValue value="—" size="lg" />
+        <span aria-hidden="true"><StatValue value="—" size="lg" /></span>
+        <span class="sr-only">no data</span>
       </div>
     </Variant>
 
@@ -96,7 +115,7 @@ const {
           :unit="distanceUnit"
           size="sm"
         />
-        <span class="text-[11px] text-foreground/55">{{ epicRide.name }}</span>
+        <span class="text-[11px] text-foreground/70">{{ epicRide.name }}</span>
       </div>
     </Variant>
   </Story>

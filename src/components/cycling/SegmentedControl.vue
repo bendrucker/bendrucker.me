@@ -31,9 +31,7 @@ const selectedClass = {
  * payload is dropped and the current value stands.
  */
 function select(value: unknown) {
-  if (typeof value === "string" && value !== "") {
-    emit("update:modelValue", value);
-  }
+  if (typeof value === "string") emit("update:modelValue", value);
 }
 </script>
 
@@ -54,7 +52,7 @@ function select(value: unknown) {
         sizeClass[size],
         option.value === modelValue
           ? selectedClass[size]
-          : 'text-foreground/60 hover:text-foreground',
+          : 'text-foreground/70 hover:text-foreground',
       ]"
     >
       {{ option.label }}
