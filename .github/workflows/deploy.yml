@@ -86,6 +86,8 @@ jobs:
     outputs:
       www-preview-url: ${{ steps.set-outputs.outputs.www-preview-url }}
     strategy:
+      # One worker failing should not cancel the others' deployments.
+      fail-fast: false
       matrix:
         include:
           - name: www
@@ -142,6 +144,10 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ${{ matrix.path }}
+          # `versions upload` refuses to run against a Worker that does not
+          # exist yet, and the PR introducing one is the first place it runs.
+          # Creating it costs nothing: a story book has no production readers.
+          preCommands: ${{ matrix.name == 'stories' && 'npx wrangler versions list > /dev/null 2>&1 || npx wrangler deploy' || '' }}
           command: ${{ github.event_name == 'pull_request' && format('versions upload --tag PR-{0} --message "Preview for PR {0} - {1}" --preview-alias pr-{0}-{2}', github.event.number, github.event.pull_request.html_url, matrix.name) || 'deploy' }}
           gitHubToken: ${{ github.token }}
 
