@@ -35,19 +35,23 @@ const position = computed(() => {
   return ((whole % count.value) + count.value) % count.value;
 });
 
-// A caller's index survives the photo list changing under it. Normalizing
-// silently would leave the parent holding a value the lightbox is not showing.
-watch([position, () => props.index], () => {
-  if (count.value > 0 && position.value !== props.index) {
-    emit("update:index", position.value);
-  }
-});
-
-// Emptying the list closes the dialog through the `open` binding, which reka
-// treats as caller-driven and reports nothing back.
-watch(count, (value) => {
-  if (value === 0 && props.open) emit("close");
-});
+/**
+ * Keyed on the photo count rather than on the clamped position, so a caller
+ * that ignores these events gets one of them, not an endless stream. Emptying
+ * the list closes the dialog through the `open` binding, which reka reads as
+ * caller-driven and reports nothing back.
+ */
+watch(
+  count,
+  (value) => {
+    if (value === 0) {
+      if (props.open) emit("close");
+      return;
+    }
+    if (position.value !== props.index) emit("update:index", position.value);
+  },
+  { flush: "post" },
+);
 
 const photo = computed<RidePhoto | undefined>(
   () => props.photos[position.value],

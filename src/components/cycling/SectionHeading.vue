@@ -17,7 +17,8 @@ withDefaults(
       :is="as"
       class="shrink-0 text-[11px] font-bold tracking-[.1em] whitespace-nowrap"
     >
-      <span v-if="icon" aria-hidden="true">{{ icon }} </span>{{ label }}
+      <span v-if="icon" aria-hidden="true" class="mr-1">{{ icon }}</span
+      >{{ label }}
     </component>
     <span
       aria-hidden="true"

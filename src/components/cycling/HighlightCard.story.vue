@@ -44,7 +44,7 @@ const bareHighlight: Highlight = {
     </Variant>
 
     <Variant title="Wide map" :layout="{ type: 'grid', width: 400 }">
-      <HighlightCard :highlight="distanceHighlight" :map-width="360" />
+      <HighlightCard :highlight="distanceHighlight" :map-width="320" />
     </Variant>
 
     <Variant title="Metric units">
