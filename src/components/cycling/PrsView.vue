@@ -41,7 +41,12 @@ const periodOptions = computed(() =>
 
     <PowerPanel :bests="bests" :source-note="powerNote" />
 
-    <p v-if="!lists.length" class="text-[11px] text-foreground/70">
+    <!-- Reachable by changing the period, which leaves focus on the control. -->
+    <p
+      v-if="!lists.length"
+      role="status"
+      class="text-[11px] text-foreground/70"
+    >
       no records for this period
     </p>
     <ul

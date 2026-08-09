@@ -397,8 +397,6 @@ export const rankedLists: RankedList[] = [
   },
 ];
 
-export const prYears = ["all", "2026", "2025"];
-
 const rankedLists2025: RankedList[] = [
   {
     id: "distance",
@@ -450,16 +448,17 @@ export const activity: CyclingActivityData = {
     distanceMi: 4218.4,
     elevationFt: 312905,
     rideCount: 148,
-    note: "rides since january",
+    // The log runs past the year boundary, so the totals say which year they
+    // count rather than leaving the December rides below them ambiguous.
+    note: "rides in 2026",
   },
   months,
   highlightMonths,
-  records: {
-    all: rankedLists,
-    "2026": rankedLists,
-    "2025": rankedLists2025,
-  },
-  recordPeriods: prYears,
+  records: [
+    { period: "all", lists: rankedLists },
+    { period: "2026", lists: rankedLists },
+    { period: "2025", lists: rankedLists2025 },
+  ],
   powerBests,
   powerNote: "from rides with a power meter",
 };

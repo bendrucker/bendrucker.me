@@ -15,16 +15,7 @@ const MAP_WIDTH = 260;
  */
 const columns = `repeat(auto-fill, ${MAP_WIDTH + 2}px)`;
 
-const { distanceUnit, elevationUnit, formatDistance, formatElevation } =
-  useUnits();
-
-function summary(month: HighlightMonth): string {
-  return [
-    `${formatDistance(month.distanceMi)} ${distanceUnit.value}`,
-    `${formatElevation(month.elevationFt)} ${elevationUnit.value}`,
-    `${month.rideCount} rides`,
-  ].join(" · ");
-}
+const { formatMonthSummary } = useUnits();
 </script>
 
 <template>
@@ -33,15 +24,12 @@ function summary(month: HighlightMonth): string {
       nothing stood out yet
     </p>
 
-    <!-- The base layer styles every `section` as the centred page column, and
-         `mx-auto` on a flex item shrinks it to its content instead of filling
-         the row, so the page metrics are undone here. -->
-    <section
-      v-for="month in months"
-      :key="month.key"
-      class="mx-0 max-w-none px-0"
-    >
-      <SectionHeading :label="month.label" :summary="summary(month)" as="h2" />
+    <section v-for="month in months" :key="month.key">
+      <SectionHeading
+        :label="month.label"
+        :summary="formatMonthSummary(month)"
+        as="h2"
+      />
 
       <p
         v-if="!month.highlights.length"

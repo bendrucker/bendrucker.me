@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ToggleGroupItem, ToggleGroupRoot } from "reka-ui";
+import { RadioGroupItem, RadioGroupRoot } from "reka-ui";
+import type { SegmentedOption } from "./types";
 
 withDefaults(
   defineProps<{
     modelValue: string;
-    options: { value: string; label: string }[];
+    options: SegmentedOption[];
     label: string;
     size?: "sm" | "md";
   }>(),
@@ -26,9 +27,9 @@ const selectedClass = {
 };
 
 /**
- * A single-select toggle group clears itself when the pressed item is clicked
- * again, emitting `undefined`. This control has no unselected state, so that
- * payload is dropped and the current value stands.
+ * A radio group is what these segments behave like: one of a set is always
+ * chosen, and the arrow keys move between them. The payload is typed loosely
+ * enough to carry any value, so it is narrowed rather than asserted.
  */
 function select(value: unknown) {
   if (typeof value === "string") emit("update:modelValue", value);
@@ -36,17 +37,18 @@ function select(value: unknown) {
 </script>
 
 <template>
-  <ToggleGroupRoot
-    type="single"
+  <RadioGroupRoot
     :model-value="modelValue"
     :aria-label="label"
+    orientation="horizontal"
     class="inline-flex divide-x divide-border overflow-hidden rounded-md border border-border"
     @update:model-value="select"
   >
-    <ToggleGroupItem
+    <RadioGroupItem
       v-for="option in options"
       :key="option.value"
       :value="option.value"
+      :aria-label="option.name"
       class="text-center transition-colors focus-visible:-outline-offset-2"
       :class="[
         sizeClass[size],
@@ -56,6 +58,6 @@ function select(value: unknown) {
       ]"
     >
       {{ option.label }}
-    </ToggleGroupItem>
-  </ToggleGroupRoot>
+    </RadioGroupItem>
+  </RadioGroupRoot>
 </template>

@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { activity, powerBests, rankedLists } from "./fixtures";
 import PrsView from "./PrsView.vue";
 import UnitsProvider from "./UnitsProvider.vue";
 
-const period = ref(activity.recordPeriods[0]!);
+const periods = activity.records.map((entry) => entry.period);
+const period = ref(periods[0]!);
 const emptyPeriod = ref("2024");
+
+const lists = computed(
+  () => activity.records.find((entry) => entry.period === period.value)?.lists,
+);
 
 const measuredBests = powerBests.map((best, index) => ({
   ...best,
@@ -18,9 +23,9 @@ const measuredBests = powerBests.map((best, index) => ({
     <Variant title="All periods">
       <div class="bg-background p-4 text-foreground">
         <PrsView
-          :lists="activity.records[period] ?? []"
+          :lists="lists ?? []"
           :bests="measuredBests"
-          :periods="activity.recordPeriods"
+          :periods="periods"
           :period="period"
           power-note="from rides with a power meter"
           @update:period="period = $event"
@@ -34,7 +39,7 @@ const measuredBests = powerBests.map((best, index) => ({
           <PrsView
             :lists="rankedLists"
             :bests="powerBests"
-            :periods="activity.recordPeriods"
+            :periods="periods"
             period="all"
           />
         </UnitsProvider>

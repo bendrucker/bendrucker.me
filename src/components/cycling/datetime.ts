@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 /** `YYYY-MM-DD`, optionally followed by a time. Anything after it is ignored. */
 const WALL_CLOCK =
   /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/;
@@ -19,4 +21,24 @@ export function parseRideTime(value: string): Date {
     Number(minute),
     Number(second),
   );
+}
+
+export interface RideDate {
+  /** Beside the ride name: "tue 7/21". */
+  short: string;
+  /** Spelled out, for a card's accessible name. */
+  full: string;
+}
+
+/**
+ * A timestamp the regex above cannot read falls through as itself. date-fns
+ * throws on an invalid date, and one bad row should not blank the whole page.
+ */
+export function rideDate(value: string): RideDate {
+  const parsed = parseRideTime(value);
+  if (Number.isNaN(parsed.getTime())) return { short: value, full: value };
+  return {
+    short: format(parsed, "EEE M/d").toLowerCase(),
+    full: format(parsed, "PPPP"),
+  };
 }

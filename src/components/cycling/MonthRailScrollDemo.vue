@@ -26,7 +26,7 @@ const activeKey = useScrollSpy(keys, { root });
       :key="month.key"
       :data-month-key="month.key"
       tabindex="-1"
-      class="mx-0 min-h-[70vh] max-w-none scroll-mt-4 border-t border-border px-0 py-6"
+      class="min-h-[70vh] scroll-mt-4 border-t border-border py-6"
     >
       <h2 class="text-[13px] font-bold tracking-[.1em]">{{ month.label }}</h2>
       <p class="text-[11px] text-foreground/70">{{ month.key }}</p>

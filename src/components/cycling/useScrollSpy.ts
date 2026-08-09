@@ -8,12 +8,6 @@ const DEFAULT_ROOT_MARGIN = "-20% 0px -70% 0px";
 const BAND_BOTTOM = 0.3;
 
 /**
- * Tracks which `[data-month-key]` section is in view. Callers own the sections:
- * the composable finds them by attribute, so the rail and the sections stay
- * independent components. Pass `root` when more than one spy shares a page,
- * since an unscoped search would find the other instance's sections first.
- */
-/**
  * Moves to the section a rail button names. Focus follows the scroll, since
  * scrolling alone leaves the keyboard and the screen reader cursor on the rail,
  * making the jump imperceptible to anything but a sighted pointer. The section
@@ -26,6 +20,12 @@ export function scrollToSection(root: HTMLElement | null, key: string): void {
   section.focus({ preventScroll: true });
 }
 
+/**
+ * Tracks which `[data-month-key]` section is in view. Callers own the sections:
+ * the composable finds them by attribute, so the rail and the sections stay
+ * independent components. Pass `root` when more than one spy shares a page,
+ * since an unscoped search would find the other instance's sections first.
+ */
 export function useScrollSpy(
   keys: Ref<string[]>,
   options: { rootMargin?: string; root?: Ref<HTMLElement | null> } = {},
@@ -92,13 +92,19 @@ export function useScrollSpy(
     }
   }
 
-  onMounted(observe);
+  onMounted(() => {
+    observe();
+    // Resizing reflows the sections without crossing the band, so the observer
+    // stays quiet while the active section moves out from under it.
+    window.addEventListener("resize", selectActive);
+  });
 
   // Watching content rather than identity, so a caller that mutates the array
   // in place is tracked and one that rebuilds an identical array is not.
   watch(() => keys.value.join("\n"), observe, { flush: "post" });
 
   onBeforeUnmount(() => {
+    window.removeEventListener("resize", selectActive);
     observer?.disconnect();
     observer = null;
   });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { prYears } from "./fixtures";
+import { activity } from "./fixtures";
 import SegmentedControl from "./SegmentedControl.vue";
 
 const mode = ref("log");
@@ -17,8 +17,11 @@ const unitOptions = [
   { value: "metric", label: "km" },
 ];
 
-const year = ref(prYears[0]!);
-const yearOptions = prYears.map((value) => ({ value, label: value }));
+const yearOptions = activity.records.map(({ period }) => ({
+  value: period,
+  label: period,
+}));
+const year = ref(yearOptions[0]!.value);
 
 const surface = ref("everything");
 const longOptions = [

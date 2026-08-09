@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import HighlightsView from "./HighlightsView.vue";
 import LogView from "./LogView.vue";
 import PhotoLightbox from "./PhotoLightbox.vue";
 import PrsView from "./PrsView.vue";
 import SegmentedControl from "./SegmentedControl.vue";
-import type { CyclingActivityData, Ride, Units, ViewMode } from "./types";
+import type {
+  CyclingActivityData,
+  Ride,
+  SegmentedOption,
+  Units,
+  ViewMode,
+} from "./types";
 import { provideUnits } from "./useUnits";
 import YearSummary from "./YearSummary.vue";
 
@@ -13,19 +19,19 @@ const props = defineProps<{ data: CyclingActivityData }>();
 
 const mode = defineModel<ViewMode>("mode", { default: "log" });
 const units = defineModel<Units>("units", { default: "imperial" });
-const period = defineModel<string>("period", { default: "all" });
+const recordPeriod = defineModel<string>("recordPeriod", { default: "all" });
 
 provideUnits(units);
 
-const MODES: { value: ViewMode; label: string }[] = [
+const MODES: (SegmentedOption & { value: ViewMode })[] = [
   { value: "log", label: "log" },
   { value: "highlights", label: "highlights" },
-  { value: "prs", label: "prs" },
+  { value: "prs", label: "prs", name: "personal records" },
 ];
 
-const UNITS: { value: Units; label: string }[] = [
-  { value: "imperial", label: "mi" },
-  { value: "metric", label: "km" },
+const UNITS: (SegmentedOption & { value: Units })[] = [
+  { value: "imperial", label: "mi", name: "miles" },
+  { value: "metric", label: "km", name: "kilometers" },
 ];
 
 // The control speaks in strings, so the payload is matched back against the
@@ -40,18 +46,31 @@ function selectUnits(value: string) {
   if (next) units.value = next.value;
 }
 
-/** A period the data no longer carries falls back to the first one offered. */
-const activePeriod = computed(() =>
-  props.data.recordPeriods.includes(period.value)
-    ? period.value
-    : (props.data.recordPeriods[0] ?? ""),
+const periods = computed(() => props.data.records.map((entry) => entry.period));
+
+const records = computed(
+  () =>
+    props.data.records.find((entry) => entry.period === recordPeriod.value) ??
+    props.data.records[0],
 );
 
-const records = computed(() => props.data.records[activePeriod.value] ?? []);
-
-const modeLabel = computed(
-  () => MODES.find((option) => option.value === mode.value)?.label ?? "",
+// A period the data no longer carries falls back to the first one offered. The
+// model is corrected to match, so the control and whatever a page syncs it to
+// name the records actually on screen.
+watch(
+  records,
+  (entry) => {
+    if (entry && entry.period !== recordPeriod.value) {
+      recordPeriod.value = entry.period;
+    }
+  },
+  { immediate: true },
 );
+
+const modeLabel = computed(() => {
+  const option = MODES.find((entry) => entry.value === mode.value);
+  return option ? (option.name ?? option.label) : "";
+});
 
 const lightboxRide = ref<Ride | null>(null);
 const photoIndex = ref(0);
@@ -60,6 +79,12 @@ function openPhoto(ride: Ride, index: number) {
   lightboxRide.value = ride;
   photoIndex.value = index;
 }
+
+// The lightbox belongs to the ride that opened it. Leaving the log, or swapping
+// the data under it, would strand a dialog over a view that no longer shows it.
+watch([mode, () => props.data], () => {
+  lightboxRide.value = null;
+});
 </script>
 
 <template>
@@ -82,6 +107,10 @@ function openPhoto(ride: Ride, index: number) {
 
     <YearSummary v-bind="data.totals" />
 
+    <!-- Switching modes replaces everything below the controls without moving
+         focus, which a screen reader has no other way to notice. -->
+    <p role="status" class="sr-only">showing {{ modeLabel }}</p>
+
     <div role="region" :aria-label="`${modeLabel} view`">
       <LogView
         v-if="mode === 'log'"
@@ -94,12 +123,12 @@ function openPhoto(ride: Ride, index: number) {
       />
       <PrsView
         v-else
-        :lists="records"
+        :lists="records?.lists ?? []"
         :bests="data.powerBests"
-        :periods="data.recordPeriods"
-        :period="activePeriod"
+        :periods="periods"
+        :period="recordPeriod"
         :power-note="data.powerNote"
-        @update:period="period = $event"
+        @update:period="recordPeriod = $event"
       />
     </div>
 

@@ -11,12 +11,11 @@ const newcomer: CyclingActivityData = {
     distanceMi: 18.4,
     elevationFt: 620,
     rideCount: 1,
-    note: "ride since january",
+    note: "ride in 2026",
   },
   months: activity.months.slice(0, 1),
   highlightMonths: [],
-  records: {},
-  recordPeriods: ["2026"],
+  records: [{ period: "2026", lists: [] }],
   powerBests: [],
   powerNote: undefined,
 };
@@ -44,6 +43,14 @@ const newcomer: CyclingActivityData = {
     <Variant title="PRs">
       <div class="min-h-screen bg-background p-4">
         <CyclingActivity :data="activity" mode="prs" />
+      </div>
+    </Variant>
+
+    <!-- A period the data no longer carries: the view falls back to the first
+         one offered and the control moves with it. -->
+    <Variant title="Unknown record period">
+      <div class="min-h-screen bg-background p-4">
+        <CyclingActivity :data="activity" mode="prs" record-period="1997" />
       </div>
     </Variant>
 

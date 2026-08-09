@@ -1,4 +1,4 @@
-import type { Units } from "./types";
+import type { MonthStats, Units } from "./types";
 
 const KM_PER_MILE = 1.609344;
 const METERS_PER_FOOT = 0.3048;
@@ -31,6 +31,18 @@ export function formatElevation(feet: number, units: Units): string {
 export function formatSpeed(mph: number, units: Units): string {
   const value = units === "imperial" ? mph : mph * KM_PER_MILE;
   return value.toFixed(1);
+}
+
+/**
+ * The stat line beside a month heading. Shared so the log and the highlights
+ * cannot disagree about a month the reader toggles between.
+ */
+export function formatMonthSummary(month: MonthStats, units: Units): string {
+  return [
+    `${formatDistance(month.distanceMi, units)} ${distanceUnit(units)}`,
+    `${formatElevation(month.elevationFt, units)} ${elevationUnit(units)}`,
+    `${month.rideCount} rides`,
+  ].join(" · ");
 }
 
 /** Coarse ride length: `4:32` past an hour, `48 min` below it. */

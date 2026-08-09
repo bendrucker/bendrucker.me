@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { format } from "date-fns";
 import { computed } from "vue";
-import { parseRideTime } from "./datetime";
+import { rideDate } from "./datetime";
 import RideBadge from "./RideBadge.vue";
 import RouteMap from "./RouteMap.vue";
 import StatValue from "./StatValue.vue";
@@ -31,13 +30,9 @@ const {
 
 const ride = computed(() => props.highlight.ride);
 
-const startedAt = computed(() => parseRideTime(ride.value.startedAt));
+const started = computed(() => rideDate(ride.value.startedAt));
 
-const dateLabel = computed(() =>
-  format(startedAt.value, "EEE M/d").toLowerCase(),
-);
-
-const fullDate = computed(() => format(startedAt.value, "PPPP"));
+const hasRoute = computed(() => (ride.value.route?.length ?? 0) >= 2);
 
 const subParts = computed(() => {
   const parts = [];
@@ -90,9 +85,12 @@ const totals = computed(() => {
 <template>
   <article
     class="flex flex-col border border-border rounded-lg overflow-hidden bg-background"
-    :aria-label="`${ride.name}, ${fullDate}`"
+    :aria-label="`${ride.name}, ${started.full}`"
   >
-    <div class="flex justify-center overflow-hidden border-b border-border">
+    <div
+      v-if="hasRoute"
+      class="flex justify-center overflow-hidden border-b border-border"
+    >
       <div class="relative">
         <RouteMap
           :coordinates="ride.route"
@@ -107,6 +105,10 @@ const totals = computed(() => {
     </div>
 
     <div class="flex flex-col gap-2 p-3">
+      <!-- A trainer ride has no polyline to draw, and an empty map slab with a
+           badge floating on it reads as a failure rather than a highlight. -->
+      <RideBadge v-if="!hasRoute" :badge="highlight.badge" class="self-start" />
+
       <div class="flex items-start justify-between gap-2">
         <component :is="headingAs" class="min-w-0">
           <a
@@ -126,7 +128,7 @@ const totals = computed(() => {
       </div>
 
       <p class="text-[11px] text-foreground/70">
-        <time :datetime="ride.startedAt">{{ dateLabel }}</time
+        <time :datetime="ride.startedAt">{{ started.short }}</time
         ><template v-if="subParts"> · {{ subParts }}</template>
       </p>
 

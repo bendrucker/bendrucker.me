@@ -11,20 +11,11 @@ const props = defineProps<{ months: MonthGroup[] }>();
 
 defineEmits<{ openPhoto: [ride: Ride, index: number] }>();
 
-const { distanceUnit, elevationUnit, formatDistance, formatElevation } =
-  useUnits();
+const { formatMonthSummary } = useUnits();
 
 const root = ref<HTMLElement | null>(null);
 const keys = computed(() => props.months.map((month) => month.key));
 const activeKey = useScrollSpy(keys, { root });
-
-function summary(month: MonthGroup): string {
-  return [
-    `${formatDistance(month.distanceMi)} ${distanceUnit.value}`,
-    `${formatElevation(month.elevationFt)} ${elevationUnit.value}`,
-    `${month.rideCount} rides`,
-  ].join(" · ");
-}
 </script>
 
 <template>
@@ -33,17 +24,19 @@ function summary(month: MonthGroup): string {
       no rides logged yet
     </p>
 
-    <!-- The base layer styles every `section` as the centred page column, and
-         `mx-auto` on a flex item shrinks it to its content instead of filling
-         the row, so the page metrics are undone here. -->
     <section
       v-for="month in months"
       :key="month.key"
       :data-month-key="month.key"
+      :aria-label="month.label"
       tabindex="-1"
-      class="mx-0 max-w-none scroll-mt-4 px-0"
+      class="scroll-mt-4"
     >
-      <SectionHeading :label="month.label" :summary="summary(month)" as="h2" />
+      <SectionHeading
+        :label="month.label"
+        :summary="formatMonthSummary(month)"
+        as="h2"
+      />
 
       <ul
         v-if="month.rides.length"

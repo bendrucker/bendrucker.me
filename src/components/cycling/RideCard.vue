@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { format } from "date-fns";
 import { computed } from "vue";
-import { parseRideTime } from "./datetime";
+import { rideDate } from "./datetime";
 import ElevationProfile from "./ElevationProfile.vue";
 import FactChip from "./FactChip.vue";
 import PhotoStrip from "./PhotoStrip.vue";
@@ -33,13 +32,7 @@ const {
   formatElevation,
 } = useUnits();
 
-const startedAt = computed(() => parseRideTime(props.ride.startedAt));
-
-const dateLabel = computed(() =>
-  format(startedAt.value, "EEE M/d").toLowerCase(),
-);
-
-const fullDate = computed(() => format(startedAt.value, "PPPP"));
+const started = computed(() => rideDate(props.ride.startedAt));
 
 const hasRoute = computed(() => (props.ride.route?.length ?? 0) >= 2);
 
@@ -59,7 +52,7 @@ const metaLine = computed(() => {
     class="grid grid-cols-1 border border-border rounded-lg overflow-hidden bg-background"
     :class="hasRoute ? 'sm:grid-cols-[var(--map-width)_1fr]' : ''"
     :style="{ '--map-width': `${mapWidth}px` }"
-    :aria-label="`${ride.name}, ${fullDate}`"
+    :aria-label="`${ride.name}, ${started.full}`"
   >
     <div
       v-if="hasRoute"
@@ -103,7 +96,7 @@ const metaLine = computed(() => {
           <div
             class="flex shrink-0 items-center gap-2 text-[11px] text-foreground/70"
           >
-            <time :datetime="ride.startedAt">{{ dateLabel }}</time>
+            <time :datetime="ride.startedAt">{{ started.short }}</time>
             <StravaLink :href="ride.stravaUrl" :name="ride.name" />
           </div>
         </div>

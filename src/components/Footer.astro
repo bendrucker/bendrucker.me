@@ -14,7 +14,7 @@ const { noMarginTop = false, sourcePath } = Astro.props;
 const sourceUrl = sourcePath ? `${SITE.viewSource.url}${sourcePath}` : undefined;
 ---
 
-<footer class:list={["w-full", { "mt-auto": !noMarginTop }]}>
+<footer class:list={["page-column w-full", { "mt-auto": !noMarginTop }]}>
   <Hr noPadding />
   <div
     class="flex flex-col-reverse items-center gap-y-1 py-3 sm:flex-row sm:flex-wrap sm:justify-between sm:gap-x-3"

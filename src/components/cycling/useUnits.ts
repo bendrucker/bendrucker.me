@@ -7,7 +7,7 @@ import {
   type Ref,
 } from "vue";
 import * as format from "./format";
-import type { Units } from "./types";
+import type { MonthStats, Units } from "./types";
 
 const unitsKey: InjectionKey<Ref<Units>> = Symbol("cycling-units");
 
@@ -33,6 +33,8 @@ export function useUnits() {
     formatElevation: (feet: number) =>
       format.formatElevation(feet, units.value),
     formatSpeed: (mph: number) => format.formatSpeed(mph, units.value),
+    formatMonthSummary: (month: MonthStats) =>
+      format.formatMonthSummary(month, units.value),
     formatDuration: format.formatDuration,
     formatClock: format.formatClock,
   };

@@ -2,6 +2,17 @@ export type Units = "imperial" | "metric";
 
 export type ViewMode = "log" | "highlights" | "prs";
 
+/** One segment of a `SegmentedControl`. */
+export interface SegmentedOption {
+  value: string;
+  label: string;
+  /**
+   * Spoken instead of `label` where the visible text is an abbreviation the
+   * design shortens for width: "mi", "prs".
+   */
+  name?: string;
+}
+
 /** `[latitude, longitude]`, matching the order Strava's encoded polylines use. */
 export type Coordinate = [number, number];
 
@@ -53,14 +64,18 @@ export interface Ride {
   facts: RideFact[];
 }
 
-export interface MonthGroup {
+/** What every mode can say about a month, whichever rides it goes on to show. */
+export interface MonthStats {
   /** `YYYY-MM`, used for anchors and rail navigation. */
   key: string;
   label: string;
-  rides: Ride[];
   distanceMi: number;
   elevationFt: number;
   rideCount: number;
+}
+
+export interface MonthGroup extends MonthStats {
+  rides: Ride[];
   /** Rides too short to earn a card, summarized as a footnote instead. */
   commuteCount: number;
 }
@@ -73,12 +88,7 @@ export interface Highlight {
   metric: HighlightMetric;
 }
 
-export interface HighlightMonth {
-  key: string;
-  label: string;
-  distanceMi: number;
-  elevationFt: number;
-  rideCount: number;
+export interface HighlightMonth extends MonthStats {
   highlights: Highlight[];
 }
 
@@ -118,14 +128,19 @@ export interface YearTotals {
   note?: string;
 }
 
+export interface RecordPeriod {
+  /** The window the lists cover, shown on the period control: "all", "2026". */
+  period: string;
+  lists: RankedList[];
+}
+
 /** Everything the root view renders, in the shape a page would hand it. */
 export interface CyclingActivityData {
   totals: YearTotals;
   months: MonthGroup[];
   highlightMonths: HighlightMonth[];
-  /** Ranked lists per record period, keyed by an entry in `recordPeriods`. */
-  records: Record<string, RankedList[]>;
-  recordPeriods: string[];
+  /** In display order. The first is what an unknown period falls back to. */
+  records: RecordPeriod[];
   powerBests: PowerBest[];
   powerNote?: string;
 }
