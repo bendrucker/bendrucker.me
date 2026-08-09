@@ -71,12 +71,14 @@ const rows = computed<DisplayRow[]>(() =>
           {{ row.rank }}
         </span>
         <span class="min-w-0 text-[12px]">
+          <!-- A list mixes linked and unlinked rows, so the linked ones need a
+               mark that survives without a pointer and without color. -->
           <a
             v-if="row.href"
             :href="row.href"
             target="_blank"
             rel="noopener noreferrer"
-            class="hover:text-accent"
+            class="underline decoration-border decoration-dotted underline-offset-2 hover:text-accent"
           >
             {{ row.name }}
           </a>

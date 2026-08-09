@@ -20,7 +20,7 @@ defineProps<{ bests: PowerBest[]; sourceNote?: string }>();
       <li v-for="best in bests" :key="best.id">
         <template v-if="best.watts === null">
           <span aria-hidden="true"><StatValue value="—" size="lg" /></span>
-          <span class="sr-only">no data</span>
+          <span class="sr-only">no power data</span>
         </template>
         <StatValue v-else :value="String(best.watts)" unit="W" size="lg" />
         <p class="text-[10.5px] text-foreground/70">{{ best.label }}</p>
