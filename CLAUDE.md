@@ -22,7 +22,28 @@ npm run dev:json      # Astro dev server with JSON logs (no Spotlight)
 npm run build         # packages → wrangler types → astro check → astro build
 npm run lint          # ESLint
 npm run format        # Prettier
+npm run story:dev     # Histoire component stories on :6006
+npm run story:build   # Static story book into .histoire/dist
 ```
+
+### Component Stories
+
+Vue components are developed against Histoire (`*.story.vue`, colocated with the
+component). `histoire.config.ts` restates the parts of `astro.config.ts` that
+Histoire's own Vite server needs: `@vitejs/plugin-vue` for the SFC compiler,
+Tailwind, and the `@` alias. `src/histoire.setup.ts` imports `global.css` and
+mirrors Histoire's dark-mode class onto `data-theme`, so stories render in the
+site's real light and dark palettes.
+
+Two gotchas when running the story server:
+
+- Its ignore globs are matched without micromatch's `dot` option. Worktrees live
+  under `.worktrees/`, and a leading `**/` cannot cross that dot segment, so
+  `storyIgnored` also lists root-anchored absolute patterns. Without them the
+  watcher walks `node_modules` and dies with `EMFILE`.
+- The Claude Code sandbox blocks the macOS FSEvents recursive watch that Vite
+  relies on, which surfaces as the same `EMFILE`. Story and Astro dev servers
+  have to run outside it.
 
 ### Background Dev Server
 

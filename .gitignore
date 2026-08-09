@@ -5,6 +5,9 @@ public/
 # generated types
 .astro/
 
+# histoire story book output
+.histoire/
+
 # dependencies
 node_modules
 
