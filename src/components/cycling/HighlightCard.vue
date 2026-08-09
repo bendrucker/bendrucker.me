@@ -70,10 +70,21 @@ const metric = computed<{ value: string; unit?: string; label: string }>(
     })[props.highlight.metric],
 );
 
-const totals = computed(
-  () =>
-    `${formatDistance(ride.value.distanceMi)} ${distanceUnit.value} · ${formatElevation(ride.value.elevationFt)} ${elevationUnit.value}`,
-);
+/** Whichever of the two the headline is not already showing, or both. */
+const totals = computed(() => {
+  const parts = [];
+  if (props.highlight.metric !== "distance") {
+    parts.push(
+      `${formatDistance(ride.value.distanceMi)} ${distanceUnit.value}`,
+    );
+  }
+  if (props.highlight.metric !== "elevation") {
+    parts.push(
+      `${formatElevation(ride.value.elevationFt)} ${elevationUnit.value}`,
+    );
+  }
+  return parts.join(" · ");
+});
 </script>
 
 <template>

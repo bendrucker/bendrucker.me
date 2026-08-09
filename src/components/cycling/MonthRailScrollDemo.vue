@@ -3,7 +3,7 @@
 // `navigate` handler a real page has to supply.
 import { computed, ref } from "vue";
 import MonthRail from "./MonthRail.vue";
-import { useScrollSpy } from "./useScrollSpy";
+import { scrollToSection, useScrollSpy } from "./useScrollSpy";
 
 const props = defineProps<{
   months: { key: string; label: string }[];
@@ -12,15 +12,6 @@ const props = defineProps<{
 const root = ref<HTMLElement | null>(null);
 const keys = computed(() => props.months.map((month) => month.key));
 const activeKey = useScrollSpy(keys, { root });
-
-function scrollToMonth(key: string) {
-  const section = root.value?.querySelector(`[data-month-key="${key}"]`);
-  if (!(section instanceof HTMLElement)) return;
-  section.scrollIntoView({ block: "start" });
-  // Scrolling alone leaves the keyboard and the screen reader cursor back on
-  // the rail, so the jump is imperceptible to anything but a sighted pointer.
-  section.focus({ preventScroll: true });
-}
 </script>
 
 <template>
@@ -35,7 +26,7 @@ function scrollToMonth(key: string) {
       :key="month.key"
       :data-month-key="month.key"
       tabindex="-1"
-      class="min-h-[70vh] scroll-mt-4 border-t border-border py-6"
+      class="mx-0 min-h-[70vh] max-w-none scroll-mt-4 border-t border-border px-0 py-6"
     >
       <h2 class="text-[13px] font-bold tracking-[.1em]">{{ month.label }}</h2>
       <p class="text-[11px] text-foreground/70">{{ month.key }}</p>
@@ -44,7 +35,7 @@ function scrollToMonth(key: string) {
     <MonthRail
       :months="months"
       :active-key="activeKey"
-      @navigate="scrollToMonth"
+      @navigate="scrollToSection(root, $event)"
     />
   </div>
 </template>

@@ -108,3 +108,24 @@ export interface PowerBest {
   /** Null renders an em dash placeholder for a duration with no stream yet. */
   watts: number | null;
 }
+
+export interface YearTotals {
+  year: number;
+  distanceMi: number;
+  elevationFt: number;
+  rideCount: number;
+  /** Qualifies the ride count, such as "rides since may". */
+  note?: string;
+}
+
+/** Everything the root view renders, in the shape a page would hand it. */
+export interface CyclingActivityData {
+  totals: YearTotals;
+  months: MonthGroup[];
+  highlightMonths: HighlightMonth[];
+  /** Ranked lists per record period, keyed by an entry in `recordPeriods`. */
+  records: Record<string, RankedList[]>;
+  recordPeriods: string[];
+  powerBests: PowerBest[];
+  powerNote?: string;
+}

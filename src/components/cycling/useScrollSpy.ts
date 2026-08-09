@@ -13,6 +13,19 @@ const BAND_BOTTOM = 0.3;
  * independent components. Pass `root` when more than one spy shares a page,
  * since an unscoped search would find the other instance's sections first.
  */
+/**
+ * Moves to the section a rail button names. Focus follows the scroll, since
+ * scrolling alone leaves the keyboard and the screen reader cursor on the rail,
+ * making the jump imperceptible to anything but a sighted pointer. The section
+ * needs `tabindex="-1"` to accept it.
+ */
+export function scrollToSection(root: HTMLElement | null, key: string): void {
+  const section = (root ?? document).querySelector(`[data-month-key="${key}"]`);
+  if (!(section instanceof HTMLElement)) return;
+  section.scrollIntoView({ block: "start" });
+  section.focus({ preventScroll: true });
+}
+
 export function useScrollSpy(
   keys: Ref<string[]>,
   options: { rootMargin?: string; root?: Ref<HTMLElement | null> } = {},

@@ -1,6 +1,7 @@
 import { seededRandom, syntheticProfile } from "./profile";
 import type {
   Coordinate,
+  CyclingActivityData,
   Highlight,
   HighlightMonth,
   MonthGroup,
@@ -179,6 +180,34 @@ export const crowdedRide: Ride = ride({
   ],
 });
 
+export const springRide: Ride = ride({
+  id: "18211405572",
+  name: "Old La Honda repeats",
+  stravaUrl: strava("18211405572"),
+  startedAt: "2026-04-09T07:31:22",
+  distanceMi: 32.6,
+  elevationFt: 3910,
+  movingSeconds: 8455,
+  averageWatts: 212,
+  route: syntheticRoute("18211405572", PENINSULA, 0.04),
+  badges: [{ kind: "new-climb", icon: "✦", label: "new climb · old la honda" }],
+  facts: [{ id: "climb", icon: "▲", label: "1,290 ft climb · 7.3%" }],
+});
+
+export const winterRide: Ride = ride({
+  id: "17550120994",
+  name: "Paradise Loop",
+  stravaUrl: strava("17550120994"),
+  startedAt: "2025-12-14T09:12:40",
+  distanceMi: 41.8,
+  elevationFt: 2180,
+  movingSeconds: 9840,
+  averageWatts: 165,
+  companionCount: 2,
+  route: syntheticRoute("17550120994", MARIN, 0.06),
+  photos: photos("17550120994", 2),
+});
+
 export const rides: Ride[] = [
   epicRide,
   travelRide,
@@ -186,6 +215,8 @@ export const rides: Ride[] = [
   everydayRide,
   raceRide,
   bareRide,
+  springRide,
+  winterRide,
 ];
 
 export const julyMonth: MonthGroup = {
@@ -218,7 +249,33 @@ export const mayMonth: MonthGroup = {
   commuteCount: 0,
 };
 
-export const months: MonthGroup[] = [julyMonth, juneMonth, mayMonth];
+export const aprilMonth: MonthGroup = {
+  key: "2026-04",
+  label: "april 2026",
+  rides: [springRide],
+  distanceMi: 176.2,
+  elevationFt: 19340,
+  rideCount: 11,
+  commuteCount: 4,
+};
+
+export const decemberMonth: MonthGroup = {
+  key: "2025-12",
+  label: "december 2025",
+  rides: [winterRide],
+  distanceMi: 132.9,
+  elevationFt: 8115,
+  rideCount: 8,
+  commuteCount: 2,
+};
+
+export const months: MonthGroup[] = [
+  julyMonth,
+  juneMonth,
+  mayMonth,
+  aprilMonth,
+  decemberMonth,
+];
 
 export const highlights: Highlight[] = [
   { ride: epicRide, badge: epicRide.badges[0]!, metric: "distance" },
@@ -341,3 +398,68 @@ export const rankedLists: RankedList[] = [
 ];
 
 export const prYears = ["all", "2026", "2025"];
+
+const rankedLists2025: RankedList[] = [
+  {
+    id: "distance",
+    icon: "→",
+    title: "longest rides",
+    metric: "distance",
+    rows: [
+      {
+        id: "16820193344",
+        name: "Sierra to the Sea",
+        detail: "'25",
+        value: 142.03,
+      },
+      { id: "16114872210", name: "Hamilton Loop", detail: "'25", value: 88.7 },
+      { id: "15990284117", name: "Point Reyes", detail: "'25", value: 74.12 },
+    ],
+  },
+  {
+    id: "elevation",
+    icon: "▲",
+    title: "most climbing",
+    metric: "elevation",
+    rows: [
+      {
+        id: "16820193344",
+        name: "Sierra to the Sea",
+        detail: "'25",
+        value: 12480,
+      },
+      { id: "16114872210", name: "Hamilton Loop", detail: "'25", value: 8940 },
+    ],
+  },
+  {
+    id: "efforts",
+    icon: "⏱",
+    title: "best efforts",
+    metric: "clock",
+    rows: [
+      { id: "40k", name: "40k", value: 4498 },
+      { id: "10k", name: "10k", value: 1041 },
+      { id: "1-mile", name: "1 mile", value: 154 },
+    ],
+  },
+];
+
+export const activity: CyclingActivityData = {
+  totals: {
+    year: 2026,
+    distanceMi: 4218.4,
+    elevationFt: 312905,
+    rideCount: 148,
+    note: "rides since january",
+  },
+  months,
+  highlightMonths,
+  records: {
+    all: rankedLists,
+    "2026": rankedLists,
+    "2025": rankedLists2025,
+  },
+  recordPeriods: prYears,
+  powerBests,
+  powerNote: "from rides with a power meter",
+};
