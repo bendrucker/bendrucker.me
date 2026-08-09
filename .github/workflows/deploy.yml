@@ -82,6 +82,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      pull-requests: write
     outputs:
       www-preview-url: ${{ steps.set-outputs.outputs.www-preview-url }}
     strategy:
@@ -93,6 +94,8 @@ jobs:
             path: workers/github
           - name: strava
             path: workers/strava
+          - name: stories
+            path: workers/stories
 
     steps:
       - name: "☁️ Checkout repository"
@@ -118,6 +121,10 @@ jobs:
         if: matrix.path == '.'
         run: cp .assetsignore dist/
 
+      - name: "📖 Build story book"
+        if: matrix.name == 'stories'
+        run: npm run story:build
+
       - name: "📍 Start deployment"
         id: deployment
         uses: bobheadxi/deployments@v1
@@ -140,7 +147,7 @@ jobs:
 
       - name: "🔗 Extract preview URL"
         id: extract-url
-        if: github.event_name == 'pull_request' && matrix.path == '.'
+        if: github.event_name == 'pull_request'
         run: |
           # Extract the Version Preview Alias URL from wrangler output
           ALIAS_URL=$(echo "${{ steps.wrangler.outputs.command-output }}" | sed -n 's/.*Version Preview Alias URL: //p' | xargs)
@@ -165,7 +172,18 @@ jobs:
           status: ${{ steps.wrangler.outcome == 'success' && 'success' || 'failure' }}
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ matrix.path == '.' && (github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || steps.extract-deployment-url.outputs.formatted-url) || '' }}
+          env_url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || (matrix.path == '.' && steps.extract-deployment-url.outputs.formatted-url || '') }}
+
+      # A deployment's URL is buried in the PR timeline on a phone. The story
+      # book is meant to be reviewed from one, so its link gets a comment.
+      - name: "💬 Link the story book"
+        if: github.event_name == 'pull_request' && matrix.name == 'stories' && steps.extract-url.outputs.alias-url != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_URL: ${{ steps.extract-url.outputs.alias-url }}
+        run: |
+          gh pr comment "${{ github.event.number }}" --edit-last --create-if-none --body \
+            "📖 **[Component stories]($PREVIEW_URL)** · \`${GITHUB_SHA::7}\`"
 
       - name: "📤 Set job outputs"
         id: set-outputs

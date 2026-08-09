@@ -14,6 +14,11 @@ const root = import.meta.dirname;
 // are kept because story discovery matches the relative one.
 const IGNORED_DIRS = ["node_modules", "dist", ".git", ".histoire", "tmp"];
 
+// `.git` is a file rather than a directory in a worktree. Globby stats each
+// anchored pattern's base, and statting a path under a file throws ENOTDIR, so
+// only the entries that are always directories get the absolute form.
+const ANCHORED_DIRS = ["node_modules", "dist", ".histoire", "tmp"];
+
 // Histoire runs its own Vite server rather than Astro's. Everything Vue
 // components rely on has to be restated here: the SFC compiler that
 // @astrojs/vue would normally supply, Tailwind, and the `@` alias.
@@ -21,10 +26,10 @@ export default defineConfig({
   plugins: [HstVue()],
   setupFile: { browser: "/src/histoire.setup.ts" },
   storyMatch: ["src/**/*.story.vue"],
-  storyIgnored: IGNORED_DIRS.flatMap((dir) => [
-    `**/${dir}/**`,
-    path.join(root, dir, "**"),
-  ]),
+  storyIgnored: [
+    ...IGNORED_DIRS.map((dir) => `**/${dir}/**`),
+    ...ANCHORED_DIRS.map((dir) => path.join(root, dir, "**")),
+  ],
   theme: {
     title: "bendrucker.me",
     defaultColorScheme: "auto",

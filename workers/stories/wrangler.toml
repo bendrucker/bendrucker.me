@@ -1,0 +1,9 @@
+name = "bendrucker-me-stories"
+compatibility_date = "2025-07-28"
+preview_urls = true
+
+# The story book is a client-side router with no per-story HTML, so a deep link
+# to a story has to fall through to the shell rather than 404.
+[assets]
+directory = "../../.histoire/dist"
+not_found_handling = "single-page-application"

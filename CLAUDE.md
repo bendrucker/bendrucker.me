@@ -35,12 +35,20 @@ Tailwind, and the `@` alias. `src/histoire.setup.ts` imports `global.css` and
 mirrors Histoire's dark-mode class onto `data-theme`, so stories render in the
 site's real light and dark palettes.
 
-Two gotchas when running the story server:
+Every pull request deploys the story book to a Cloudflare preview alias and
+comments the link, so a component can be reviewed from a phone with nothing
+checked out. `workers/stories/wrangler.toml` serves `.histoire/dist` with a
+single-page-application fallback, since a story deep link has no HTML of its own.
+
+Three gotchas:
 
 - Its ignore globs are matched without micromatch's `dot` option. Worktrees live
   under `.worktrees/`, and a leading `**/` cannot cross that dot segment, so
   `storyIgnored` also lists root-anchored absolute patterns. Without them the
   watcher walks `node_modules` and dies with `EMFILE`.
+- Those anchored patterns cover directories only. `.git` is a file in a worktree,
+  and globby throws `ENOTDIR` statting a path beneath it, which fails the build
+  rather than the dev server.
 - The Claude Code sandbox blocks the macOS FSEvents recursive watch that Vite
   relies on, which surfaces as the same `EMFILE`. Story and Astro dev servers
   have to run outside it.
