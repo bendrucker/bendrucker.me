@@ -40,6 +40,10 @@ comments the link, so a component can be reviewed from a phone with nothing
 checked out. `workers/stories/wrangler.toml` serves `.histoire/dist` with a
 single-page-application fallback, since a story deep link has no HTML of its own.
 
+`.claude/skills/component-stories/SKILL.md` covers how to write one, including
+the layout widths that survive a phone and the several ways a story fails without
+reporting anything.
+
 Three gotchas:
 
 - Its ignore globs are matched without micromatch's `dot` option. Worktrees live
