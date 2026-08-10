@@ -35,6 +35,7 @@ export default [
   {
     ignores: [
       "dist/**",
+      ".histoire/**",
       ".worktrees/**",
       "tmp/**",
       ".astro",
