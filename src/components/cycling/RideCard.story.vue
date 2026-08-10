@@ -17,7 +17,7 @@ const noProfileRide: Ride = { ...bareRide, elevationProfile: undefined };
 </script>
 
 <template>
-  <Story title="Cycling/Ride card" :layout="{ type: 'grid', width: 720 }">
+  <Story title="Cycling/Ride card" :layout="{ type: 'grid', width: '100%' }">
     <Variant title="Everyday ride">
       <RideCard :ride="everydayRide" />
     </Variant>
@@ -48,8 +48,10 @@ const noProfileRide: Ride = { ...bareRide, elevationProfile: undefined };
       </UnitsProvider>
     </Variant>
 
-    <Variant title="Narrow" :layout="{ type: 'grid', width: 340 }">
-      <RideCard :ride="crowdedRide" />
+    <Variant title="Narrow">
+      <div class="w-[340px]">
+        <RideCard :ride="crowdedRide" />
+      </div>
     </Variant>
 
     <Variant title="Wide map">

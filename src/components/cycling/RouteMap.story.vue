@@ -26,7 +26,7 @@ const sizes = [
 </script>
 
 <template>
-  <Story title="Cycling/Route map" :layout="{ type: 'grid', width: 540 }">
+  <Story title="Cycling/Route map" :layout="{ type: 'grid', width: '100%' }">
     <Variant title="Log size">
       <RouteMap
         :coordinates="epicRide.route"

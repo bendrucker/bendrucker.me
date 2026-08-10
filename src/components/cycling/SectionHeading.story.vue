@@ -14,7 +14,10 @@ const monthSummary = computed(
 </script>
 
 <template>
-  <Story title="Cycling/Section heading" :layout="{ type: 'grid', width: 560 }">
+  <Story
+    title="Cycling/Section heading"
+    :layout="{ type: 'grid', width: '100%' }"
+  >
     <Variant title="Month with summary">
       <SectionHeading :label="julyMonth.label" :summary="monthSummary" />
     </Variant>

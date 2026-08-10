@@ -13,7 +13,7 @@ const season = months.reduce(
 </script>
 
 <template>
-  <Story title="Cycling/Year summary" :layout="{ type: 'grid', width: 720 }">
+  <Story title="Cycling/Year summary" :layout="{ type: 'grid', width: '100%' }">
     <Variant title="With note">
       <YearSummary
         :year="2026"

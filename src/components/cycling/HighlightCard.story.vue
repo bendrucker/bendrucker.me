@@ -22,7 +22,7 @@ const bareHighlight: Highlight = {
 </script>
 
 <template>
-  <Story title="Cycling/Highlight card" :layout="{ type: 'grid', width: 300 }">
+  <Story title="Cycling/Highlight card" :layout="{ type: 'grid', width: 380 }">
     <Variant title="Distance">
       <HighlightCard :highlight="distanceHighlight" />
     </Variant>
@@ -43,7 +43,7 @@ const bareHighlight: Highlight = {
       <HighlightCard :highlight="bareHighlight" />
     </Variant>
 
-    <Variant title="Wide map" :layout="{ type: 'grid', width: 400 }">
+    <Variant title="Wide map">
       <HighlightCard :highlight="distanceHighlight" :map-width="320" />
     </Variant>
 

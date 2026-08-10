@@ -13,7 +13,7 @@ const opened = ref<number | null>(null);
 </script>
 
 <template>
-  <Story title="Cycling/Photo strip" :layout="{ type: 'grid', width: 420 }">
+  <Story title="Cycling/Photo strip" :layout="{ type: 'grid', width: 380 }">
     <Variant title="Single photo">
       <PhotoStrip :photos="raceRide.photos" />
     </Variant>

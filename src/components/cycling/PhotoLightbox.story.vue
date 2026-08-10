@@ -30,7 +30,7 @@ const shrinkingPhotos = ref(travelRide.photos);
 </script>
 
 <template>
-  <Story title="Cycling/Photo lightbox" :layout="{ type: 'grid', width: 420 }">
+  <Story title="Cycling/Photo lightbox" :layout="{ type: 'grid', width: 380 }">
     <Variant title="Middle photo">
       <button
         type="button"

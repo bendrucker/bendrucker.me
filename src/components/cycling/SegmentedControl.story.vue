@@ -33,7 +33,7 @@ const longOptions = [
 <template>
   <Story
     title="Cycling/Segmented control"
-    :layout="{ type: 'grid', width: 420 }"
+    :layout="{ type: 'grid', width: 380 }"
   >
     <Variant title="Mode tabs (md)">
       <SegmentedControl

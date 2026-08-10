@@ -22,7 +22,7 @@ const unmeasuredBests: PowerBest[] = powerBests.map((best) => ({
 </script>
 
 <template>
-  <Story title="Cycling/Power panel" :layout="{ type: 'grid', width: 420 }">
+  <Story title="Cycling/Power panel" :layout="{ type: 'grid', width: 380 }">
     <Variant title="Mostly unmeasured">
       <PowerPanel :bests="powerBests" />
     </Variant>

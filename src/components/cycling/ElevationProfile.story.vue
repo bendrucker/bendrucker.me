@@ -6,7 +6,7 @@ import { bareRide, epicRide, raceRide } from "./fixtures";
 <template>
   <Story
     title="Cycling/Elevation profile"
-    :layout="{ type: 'grid', width: 420 }"
+    :layout="{ type: 'grid', width: 380 }"
   >
     <Variant title="Hilly ride">
       <ElevationProfile :samples="epicRide.elevationProfile ?? []" />

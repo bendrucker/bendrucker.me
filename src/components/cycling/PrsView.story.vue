@@ -19,7 +19,7 @@ const measuredBests = powerBests.map((best, index) => ({
 </script>
 
 <template>
-  <Story title="Cycling/PRs view" :layout="{ type: 'grid', width: 860 }">
+  <Story title="Cycling/PRs view" :layout="{ type: 'grid', width: '100%' }">
     <Variant title="All periods">
       <div class="bg-background p-4 text-foreground">
         <PrsView

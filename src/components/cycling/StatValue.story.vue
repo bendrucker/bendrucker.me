@@ -14,7 +14,7 @@ const {
 </script>
 
 <template>
-  <Story title="Cycling/Stat value" :layout="{ type: 'grid', width: 420 }">
+  <Story title="Cycling/Stat value" :layout="{ type: 'grid', width: 380 }">
     <Variant title="Sizes">
       <div class="flex items-end gap-6">
         <StatValue

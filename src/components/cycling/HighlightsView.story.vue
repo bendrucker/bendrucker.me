@@ -11,7 +11,10 @@ const quietMonth: HighlightMonth = {
 </script>
 
 <template>
-  <Story title="Cycling/Highlights view" :layout="{ type: 'grid', width: 860 }">
+  <Story
+    title="Cycling/Highlights view"
+    :layout="{ type: 'grid', width: '100%' }"
+  >
     <Variant title="Two months">
       <div class="bg-background p-4 text-foreground">
         <HighlightsView :months="highlightMonths" />
