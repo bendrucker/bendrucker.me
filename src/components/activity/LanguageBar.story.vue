@@ -18,7 +18,10 @@ const selected = ref<string | null>(null);
 </script>
 
 <template>
-  <Story title="Activity/Language bar" :layout="{ type: 'grid', width: 520 }">
+  <Story
+    title="Activity/Language bar"
+    :layout="{ type: 'grid', width: '100%' }"
+  >
     <Variant title="Interactive">
       <LanguageBar
         :languages="languages"
