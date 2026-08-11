@@ -13,7 +13,8 @@ const badges: Record<string, RideBadgeType> = {
   ...Object.fromEntries(everyKind.map((badge) => [badge.kind, badge])),
   long: {
     kind: "new-climb",
-    label: "✦ new climb · bolinas-fairfax over the ridge to alpine dam",
+    icon: "✦",
+    label: "bolinas-fairfax over the ridge to alpine dam",
   },
 };
 

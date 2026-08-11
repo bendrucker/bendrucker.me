@@ -89,11 +89,11 @@ export const epicRide: Ride = ride({
   photos: photos("19275831643", 3),
   badges: [
     { kind: "longest", icon: "→", label: "longest" },
-    { kind: "new-climb", icon: "✦", label: "new climb · atlas peak" },
+    { kind: "new-climb", icon: "✦", label: "atlas peak" },
   ],
   facts: [
     { id: "climb", icon: "▲", label: "3,204 ft climb · 8.4%" },
-    { id: "cal", icon: "◉", label: "4,820 cal" },
+    { id: "cal", icon: "🔥", label: "4,820 cal" },
   ],
 });
 
@@ -141,7 +141,7 @@ export const travelRide: Ride = ride({
     { kind: "new-location", icon: "✈", label: "new location" },
     { kind: "most-climbing", icon: "▲", label: "most climbing" },
   ],
-  facts: [{ id: "cal", icon: "◉", label: "6,140 cal" }],
+  facts: [{ id: "cal", icon: "🔥", label: "6,140 cal" }],
 });
 
 /** No route, no photos, no annotations. Exercises every empty branch at once. */
@@ -169,14 +169,14 @@ export const crowdedRide: Ride = ride({
   route: syntheticRoute("19090081916", MARIN, 0.09, 240),
   photos: photos("19090081916", 4),
   badges: [
-    { kind: "new-climb", icon: "✦", label: "new climb · mount vision" },
+    { kind: "new-climb", icon: "✦", label: "mount vision" },
     { kind: "longest", icon: "→", label: "longest" },
     { kind: "race", icon: "★", label: "race" },
   ],
   facts: [
     { id: "climb", icon: "▲", label: "1,890 ft climb · 6.1%" },
     { id: "fast", icon: "»", label: "fastest avg · 17.8 mph" },
-    { id: "cal", icon: "◉", label: "3,120 cal" },
+    { id: "cal", icon: "🔥", label: "3,120 cal" },
   ],
 });
 
@@ -190,7 +190,7 @@ export const springRide: Ride = ride({
   movingSeconds: 8455,
   averageWatts: 212,
   route: syntheticRoute("18211405572", PENINSULA, 0.04),
-  badges: [{ kind: "new-climb", icon: "✦", label: "new climb · old la honda" }],
+  badges: [{ kind: "new-climb", icon: "✦", label: "old la honda" }],
   facts: [{ id: "climb", icon: "▲", label: "1,290 ft climb · 7.3%" }],
 });
 
