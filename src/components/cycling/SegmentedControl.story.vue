@@ -1,109 +1,97 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { logEvent } from "histoire/client";
 import { activity } from "./fixtures";
 import SegmentedControl from "./SegmentedControl.vue";
+import type { SegmentedOption } from "./types";
 
-const mode = ref("log");
-const defaultSizeMode = ref("log");
-const modes = [
-  { value: "log", label: "log" },
-  { value: "highlights", label: "highlights" },
-  { value: "prs", label: "prs" },
-];
+const optionSets: Record<string, SegmentedOption[]> = {
+  modes: [
+    { value: "log", label: "log" },
+    { value: "highlights", label: "highlights" },
+    { value: "prs", label: "prs", name: "personal records" },
+  ],
+  units: [
+    { value: "imperial", label: "mi", name: "miles" },
+    { value: "metric", label: "km", name: "kilometers" },
+  ],
+  years: activity.records.map(({ period }) => ({
+    value: period,
+    label: period,
+  })),
+  long: [
+    { value: "everything", label: "everything since may 2024" },
+    { value: "commutes", label: "commutes only" },
+  ],
+  single: [{ value: "all", label: "all" }],
+  empty: [],
+};
 
-const units = ref("imperial");
-const unitOptions = [
-  { value: "imperial", label: "mi" },
-  { value: "metric", label: "km" },
-];
+/**
+ * Switching option sets strands whatever was selected in the last one, so the
+ * control is handed the first option of the new set until the reviewer picks
+ * again.
+ */
+function selected(state: { set: string; value: string }): string {
+  const options = optionSets[state.set]!;
+  return options.some((option) => option.value === state.value)
+    ? state.value
+    : (options[0]?.value ?? "");
+}
 
-const yearOptions = activity.records.map(({ period }) => ({
-  value: period,
-  label: period,
-}));
-const year = ref(yearOptions[0]!.value);
-
-const surface = ref("everything");
-const longOptions = [
-  { value: "everything", label: "everything since may 2024" },
-  { value: "commutes", label: "commutes only" },
-];
+function initState() {
+  return { set: "modes", value: "log", size: "md", width: 380 };
+}
 </script>
 
 <template>
   <Story
-    title="Cycling/Segmented control"
+    title="Segmented control"
+    group="primitives"
+    auto-props-disabled
     :layout="{ type: 'grid', width: 380 }"
+    :init-state="initState"
   >
-    <Variant title="Mode tabs (md)">
-      <SegmentedControl
-        v-model="mode"
-        :options="modes"
-        label="View mode"
-        size="md"
-      />
-      <p class="pt-2 text-xs text-foreground/70">selected: {{ mode }}</p>
-    </Variant>
+    <Variant title="Segmented control">
+      <template #default="{ state }">
+        <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
+          <SegmentedControl
+            :model-value="selected(state)"
+            :options="optionSets[state.set]!"
+            :size="state.size"
+            label="View mode"
+            @update:model-value="
+              state.value = $event;
+              logEvent('update:modelValue', { value: $event });
+            "
+          />
+        </div>
+      </template>
 
-    <Variant title="Units (sm)">
-      <SegmentedControl
-        v-model="units"
-        :options="unitOptions"
-        label="Distance units"
-        size="sm"
-      />
-      <p class="pt-2 text-xs text-foreground/70">selected: {{ units }}</p>
-    </Variant>
-
-    <Variant title="Year pills (sm)">
-      <SegmentedControl
-        v-model="year"
-        :options="yearOptions"
-        label="Personal record year"
-        size="sm"
-      />
-    </Variant>
-
-    <Variant title="Default size">
-      <SegmentedControl
-        v-model="defaultSizeMode"
-        :options="modes"
-        label="View mode"
-      />
-    </Variant>
-
-    <Variant title="Long labels">
-      <SegmentedControl
-        v-model="surface"
-        :options="longOptions"
-        label="Ride set"
-      />
-    </Variant>
-
-    <Variant title="Long labels, narrow container">
-      <div class="w-40">
-        <SegmentedControl
-          v-model="surface"
-          :options="longOptions"
-          label="Ride set"
+      <template #controls="{ state }">
+        <HstSelect
+          v-model="state.set"
+          title="options"
+          :options="{
+            modes: 'mode tabs',
+            units: 'units',
+            years: 'record years',
+            long: 'long labels',
+            single: 'one option',
+            empty: 'no options',
+          }"
         />
-      </div>
-    </Variant>
-
-    <Variant title="No options">
-      <SegmentedControl v-model="mode" :options="[]" label="View mode" />
-      <p class="pt-2 text-xs text-foreground/70">
-        an empty control, sized by its own border
-      </p>
-    </Variant>
-
-    <Variant title="Single option">
-      <SegmentedControl
-        v-model="year"
-        :options="[yearOptions[0]!]"
-        label="Personal record year"
-        size="sm"
-      />
+        <HstSelect v-model="state.size" title="size" :options="['sm', 'md']" />
+        <HstSlider v-model="state.width" title="width" :min="120" :max="380" />
+      </template>
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Segmented control
+
+The pill row behind the mode tabs, the units toggle, and the record years.
+
+`md` is the mode tabs, `sm` is everything else. Narrow the width with the long
+labels selected: the row has to stay tappable rather than shrink its targets.
+</docs>

@@ -3,50 +3,68 @@ import { bareRide, crowdedRide, epicRide, raceRide } from "./fixtures";
 import FactChip from "./FactChip.vue";
 import type { RideFact } from "./types";
 
-const longFact: RideFact = {
-  id: "long",
-  icon: "▲",
-  label: "3,204 ft climb · 8.4% average grade over 7.1 miles · 41 min",
+const factSets: Record<string, RideFact[]> = {
+  one: raceRide.facts,
+  two: epicRide.facts,
+  three: crowdedRide.facts,
+  long: [
+    {
+      id: "long",
+      icon: "▲",
+      label: "3,204 ft climb · 8.4% average grade over 7.1 miles · 41 min",
+    },
+  ],
+  none: bareRide.facts,
 };
+
+function initState() {
+  return { facts: "two", width: 380 };
+}
 </script>
 
 <template>
-  <Story title="Cycling/Fact chip" :layout="{ type: 'grid', width: 380 }">
-    <Variant title="Single fact">
-      <FactChip :fact="raceRide.facts[0]!" />
-    </Variant>
+  <Story
+    title="Fact chip"
+    group="ride"
+    auto-props-disabled
+    :layout="{ type: 'grid', width: 380 }"
+    :init-state="initState"
+  >
+    <Variant title="Fact chip">
+      <template #default="{ state }">
+        <ul
+          class="flex flex-wrap gap-1.5"
+          :style="{ width: `${state.width}px`, maxWidth: '100%' }"
+        >
+          <li v-for="fact in factSets[state.facts]!" :key="fact.id">
+            <FactChip :fact="fact" />
+          </li>
+        </ul>
+      </template>
 
-    <Variant title="Two facts">
-      <ul class="flex flex-wrap gap-1.5">
-        <li v-for="fact in epicRide.facts" :key="fact.id">
-          <FactChip :fact="fact" />
-        </li>
-      </ul>
-    </Variant>
-
-    <Variant title="Three facts">
-      <ul class="flex flex-wrap gap-1.5">
-        <li v-for="fact in crowdedRide.facts" :key="fact.id">
-          <FactChip :fact="fact" />
-        </li>
-      </ul>
-    </Variant>
-
-    <Variant title="Long fact, narrow container">
-      <div class="w-48">
-        <FactChip :fact="longFact" />
-      </div>
-    </Variant>
-
-    <Variant title="No facts">
-      <ul class="flex flex-wrap gap-1.5">
-        <li v-for="fact in bareRide.facts" :key="fact.id">
-          <FactChip :fact="fact" />
-        </li>
-      </ul>
-      <p class="text-xs text-foreground/70">
-        bareRide has no facts, so the list renders nothing.
-      </p>
+      <template #controls="{ state }">
+        <HstSelect
+          v-model="state.facts"
+          title="facts"
+          :options="{
+            one: 'one fact',
+            two: 'two facts',
+            three: 'three facts',
+            long: 'one long fact',
+            none: 'no facts',
+          }"
+        />
+        <HstSlider v-model="state.width" title="width" :min="120" :max="380" />
+      </template>
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Fact chip
+
+The small annotations under a ride: a climb, a calorie count, an average speed.
+
+Chips are laid out by the ride card, so the row here is the card's. Narrow the
+width to see where a long label wraps against a short one.
+</docs>

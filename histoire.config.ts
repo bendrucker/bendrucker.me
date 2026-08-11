@@ -30,6 +30,19 @@ export default defineConfig({
     ...IGNORED_DIRS.map((dir) => `**/${dir}/**`),
     ...ANCHORED_DIRS.map((dir) => path.join(root, dir, "**")),
   ],
+  // Groups are the only ordered level of the sidebar: Histoire renders them in
+  // the order declared here and sorts everything below them by title. Stories
+  // name their group rather than carrying a `Section/` title prefix, so the
+  // tree stays two deep and a component is one tap from the root on a phone.
+  tree: {
+    groups: [
+      { id: "cycling-views", title: "Cycling views" },
+      { id: "ride", title: "Ride" },
+      { id: "records", title: "Records" },
+      { id: "primitives", title: "Primitives" },
+      { id: "code", title: "Code activity" },
+    ],
+  },
   theme: {
     title: "bendrucker.me",
     defaultColorScheme: "auto",

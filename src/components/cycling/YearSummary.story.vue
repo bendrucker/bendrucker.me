@@ -1,58 +1,92 @@
 <script setup lang="ts">
 import { months } from "./fixtures";
+import UnitsProvider from "./UnitsProvider.vue";
 import YearSummary from "./YearSummary.vue";
 
-const season = months.reduce(
-  (totals, month) => ({
-    distanceMi: totals.distanceMi + month.distanceMi,
-    elevationFt: totals.elevationFt + month.elevationFt,
-    rideCount: totals.rideCount + month.rideCount,
+interface Totals {
+  year: number;
+  distanceMi: number;
+  elevationFt: number;
+  rideCount: number;
+}
+
+const season = months.reduce<Totals>(
+  (running, month) => ({
+    year: 2026,
+    distanceMi: running.distanceMi + month.distanceMi,
+    elevationFt: running.elevationFt + month.elevationFt,
+    rideCount: running.rideCount + month.rideCount,
   }),
-  { distanceMi: 0, elevationFt: 0, rideCount: 0 },
+  { year: 2026, distanceMi: 0, elevationFt: 0, rideCount: 0 },
 );
+
+const totals: Record<string, Totals> = {
+  season,
+  sixFigure: {
+    year: 2025,
+    distanceMi: 14382.6,
+    elevationFt: 1204877,
+    rideCount: 1348,
+  },
+};
+
+function initState() {
+  return {
+    totals: "season",
+    note: "rides since may",
+    units: "imperial",
+    width: 380,
+  };
+}
 </script>
 
 <template>
-  <Story title="Cycling/Year summary" :layout="{ type: 'grid', width: '100%' }">
-    <Variant title="With note">
-      <YearSummary
-        :year="2026"
-        :distance-mi="season.distanceMi"
-        :elevation-ft="season.elevationFt"
-        :ride-count="season.rideCount"
-        note="rides since may"
-      />
-    </Variant>
+  <Story
+    title="Year summary"
+    group="records"
+    auto-props-disabled
+    :layout="{ type: 'grid', width: '100%' }"
+    :init-state="initState"
+  >
+    <Variant title="Year summary">
+      <template #default="{ state }">
+        <UnitsProvider :units="state.units">
+          <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
+            <YearSummary
+              v-bind="totals[state.totals]!"
+              :note="state.note || undefined"
+            />
+          </div>
+        </UnitsProvider>
+      </template>
 
-    <Variant title="Without note">
-      <YearSummary
-        :year="2026"
-        :distance-mi="season.distanceMi"
-        :elevation-ft="season.elevationFt"
-        :ride-count="season.rideCount"
-      />
-    </Variant>
-
-    <Variant title="Six-figure totals">
-      <YearSummary
-        :year="2025"
-        :distance-mi="14382.6"
-        :elevation-ft="1204877"
-        :ride-count="1348"
-        note="rides, commutes included"
-      />
-    </Variant>
-
-    <Variant title="Narrow column">
-      <div class="max-w-[300px]">
-        <YearSummary
-          :year="2026"
-          :distance-mi="14382.6"
-          :elevation-ft="1204877"
-          :ride-count="1348"
-          note="rides, commutes included"
+      <template #controls="{ state }">
+        <HstSelect
+          v-model="state.totals"
+          title="totals"
+          :options="{
+            season: 'a season',
+            sixFigure: 'six-figure totals',
+          }"
         />
-      </div>
+        <HstText v-model="state.note" title="note" />
+        <HstSelect
+          v-model="state.units"
+          title="units"
+          :options="['imperial', 'metric']"
+        />
+        <HstSlider v-model="state.width" title="width" :min="240" :max="720" />
+      </template>
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Year summary
+
+The headline totals above the log: distance, climbing, rides.
+
+Clear the note to see the summary without its qualifier. The six-figure totals
+are what the numbers look like once a full year of climbing has accumulated, and
+the width slider is where they start to collide.
+</docs>

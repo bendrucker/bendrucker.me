@@ -1,59 +1,51 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { julyMonth, rankedLists } from "./fixtures";
+import * as format from "./format";
 import SectionHeading from "./SectionHeading.vue";
-import { useUnits } from "./useUnits";
 
-const { distanceUnit, elevationUnit, formatDistance, formatElevation } =
-  useUnits();
+const monthSummary = format.formatMonthSummary(julyMonth, "imperial");
 
-const monthSummary = computed(
-  () =>
-    `${formatDistance(julyMonth.distanceMi)} ${distanceUnit.value} · ${formatElevation(julyMonth.elevationFt)} ${elevationUnit.value} · ${julyMonth.rideCount} rides`,
-);
+function initState() {
+  return {
+    label: julyMonth.label,
+    summary: monthSummary,
+    icon: "",
+    as: "h2",
+    width: 380,
+  };
+}
 </script>
 
 <template>
   <Story
-    title="Cycling/Section heading"
+    title="Section heading"
+    group="primitives"
+    auto-props-disabled
     :layout="{ type: 'grid', width: '100%' }"
   >
-    <Variant title="Month with summary">
-      <SectionHeading :label="julyMonth.label" :summary="monthSummary" />
-    </Variant>
+    <Variant title="Section heading" :init-state="initState">
+      <template #default="{ state }">
+        <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
+          <SectionHeading
+            :label="state.label"
+            :summary="state.summary || undefined"
+            :icon="state.icon || undefined"
+            :as="state.as"
+          />
+        </div>
+      </template>
 
-    <Variant title="No summary">
-      <SectionHeading :label="julyMonth.label" />
-    </Variant>
-
-    <Variant title="Ranked list (h3)">
-      <SectionHeading
-        :label="rankedLists[0]!.title"
-        :icon="rankedLists[0]!.icon"
-        as="h3"
-      />
-    </Variant>
-
-    <Variant title="Plain span">
-      <SectionHeading
-        label="best power"
-        icon="⚡"
-        as="span"
-        summary="last 90 days"
-      />
-    </Variant>
-
-    <Variant title="Long label and summary">
-      <SectionHeading
-        label="september 2026 · the long way round"
-        summary="1,284.6 mi · 112,400 ft · 61 rides · 9 commutes"
-      />
-    </Variant>
-
-    <Variant title="Narrow container">
-      <div class="w-56">
-        <SectionHeading :label="julyMonth.label" :summary="monthSummary" />
-      </div>
+      <template #controls="{ state }">
+        <HstText v-model="state.label" title="label" />
+        <HstText v-model="state.summary" title="summary" />
+        <HstText v-model="state.icon" title="icon" />
+        <HstSelect
+          v-model="state.as"
+          title="as"
+          :options="['h2', 'h3', 'h4', 'p', 'span']"
+        />
+        <HstSlider v-model="state.width" title="width" :min="200" :max="720" />
+      </template>
     </Variant>
 
     <Variant title="Stacked sections">
@@ -70,3 +62,14 @@ const monthSummary = computed(
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Section heading
+
+A label, an optional glyph, and a summary that trails it.
+
+`as` is the document outline, not the size: a month is an `h2`, a ranked list
+inside it an `h3`, and a panel label that should not enter the outline at all is
+a `span`. All four look the same. Narrow the width to see where the summary
+drops below the label.
+</docs>

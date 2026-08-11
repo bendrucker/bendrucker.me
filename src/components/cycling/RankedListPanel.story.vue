@@ -2,6 +2,7 @@
 import { crowdedRide, rankedLists } from "./fixtures";
 import RankedListPanel from "./RankedListPanel.vue";
 import type { RankedList } from "./types";
+import UnitsProvider from "./UnitsProvider.vue";
 
 function fixtureList(id: string): RankedList {
   return rankedLists.find((list) => list.id === id)!;
@@ -10,64 +11,82 @@ function fixtureList(id: string): RankedList {
 const distance = fixtureList("distance");
 const efforts = fixtureList("efforts");
 
-const shortList: RankedList = { ...efforts, rows: efforts.rows.slice(0, 1) };
-
-const longNames: RankedList = {
-  ...distance,
-  rows: distance.rows.map((row, index) =>
-    index === 0 ? { ...row, name: crowdedRide.name } : row,
-  ),
+const lists: Record<string, RankedList> = {
+  distance,
+  elevation: fixtureList("elevation"),
+  duration: fixtureList("duration"),
+  climbs: fixtureList("climbs"),
+  efforts,
+  mixedLinks: {
+    ...distance,
+    rows: distance.rows.map((row, index) =>
+      index === 1 ? { ...row, href: undefined } : row,
+    ),
+  },
+  longNames: {
+    ...distance,
+    rows: distance.rows.map((row, index) =>
+      index === 0 ? { ...row, name: crowdedRide.name } : row,
+    ),
+  },
+  single: { ...efforts, rows: efforts.rows.slice(0, 1) },
+  empty: { ...distance, rows: [] },
 };
 
-const mixedLinks: RankedList = {
-  ...distance,
-  rows: distance.rows.map((row, index) =>
-    index === 1 ? { ...row, href: undefined } : row,
-  ),
-};
-
-const emptyList: RankedList = { ...distance, rows: [] };
+function initState() {
+  return { list: "distance", units: "imperial" };
+}
 </script>
 
 <template>
   <Story
-    title="Cycling/Ranked list panel"
+    title="Ranked list panel"
+    group="records"
+    auto-props-disabled
     :layout="{ type: 'grid', width: 380 }"
+    :init-state="initState"
   >
-    <Variant title="Distance (linked rows)">
-      <RankedListPanel :list="distance" />
-    </Variant>
+    <Variant title="Ranked list panel">
+      <template #default="{ state }">
+        <UnitsProvider :units="state.units">
+          <RankedListPanel :list="lists[state.list]!" />
+        </UnitsProvider>
+      </template>
 
-    <Variant title="Elevation">
-      <RankedListPanel :list="fixtureList('elevation')" />
-    </Variant>
-
-    <Variant title="Duration (no links)">
-      <RankedListPanel :list="fixtureList('duration')" />
-    </Variant>
-
-    <Variant title="Some rows linked">
-      <RankedListPanel :list="mixedLinks" />
-    </Variant>
-
-    <Variant title="Clock">
-      <RankedListPanel :list="efforts" />
-    </Variant>
-
-    <Variant title="Climbs">
-      <RankedListPanel :list="fixtureList('climbs')" />
-    </Variant>
-
-    <Variant title="Single row">
-      <RankedListPanel :list="shortList" />
-    </Variant>
-
-    <Variant title="Long names">
-      <RankedListPanel :list="longNames" />
-    </Variant>
-
-    <Variant title="No rows">
-      <RankedListPanel :list="emptyList" />
+      <template #controls="{ state }">
+        <HstSelect
+          v-model="state.list"
+          title="list"
+          :options="{
+            distance: 'longest rides',
+            elevation: 'most climbing',
+            duration: 'longest time',
+            climbs: 'largest climbs',
+            efforts: 'best efforts',
+            mixedLinks: 'some rows linked',
+            longNames: 'a long name',
+            single: 'a single row',
+            empty: 'no rows',
+          }"
+        />
+        <HstSelect
+          v-model="state.units"
+          title="units"
+          :options="['imperial', 'metric']"
+        />
+      </template>
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Ranked list panel
+
+A numbered top-five: longest rides, most climbing, best efforts.
+
+Each list carries its own metric, which decides whether a row reads as a
+distance, a height, a duration, or a clock time. Rows link back to Strava only
+when the row came from a ride: longest rides links every row, longest time links
+none, largest climbs ranks segments rather than rides, and the mixed list is the
+one to check.
+</docs>

@@ -1,53 +1,75 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { logEvent } from "histoire/client";
 import { juneMonth, months } from "./fixtures";
 import LogView from "./LogView.vue";
 import type { MonthGroup } from "./types";
 import UnitsProvider from "./UnitsProvider.vue";
-
-const opened = ref("none");
 
 const emptyMonth: MonthGroup = {
   ...juneMonth,
   rides: [],
   commuteCount: 1,
 };
+
+const monthSets: Record<string, MonthGroup[]> = {
+  season: months,
+  empty: [emptyMonth],
+  none: [],
+};
+
+function initState() {
+  return { months: "season", units: "imperial" };
+}
 </script>
 
 <template>
-  <Story title="Cycling/Log view" :layout="{ type: 'single', iframe: true }">
-    <Variant title="Months of rides">
-      <div class="min-h-screen bg-background p-4 pb-[60vh] text-foreground">
-        <LogView
-          :months="months"
-          @open-photo="
-            (ride, index) => (opened = `${ride.name} photo ${index + 1}`)
-          "
+  <Story
+    title="Log view"
+    group="cycling-views"
+    auto-props-disabled
+    :layout="{ type: 'single', iframe: true }"
+    :init-state="initState"
+  >
+    <Variant title="Log view">
+      <template #default="{ state }">
+        <div class="min-h-screen bg-background p-4 pb-[60vh] text-foreground">
+          <UnitsProvider :units="state.units">
+            <LogView
+              :months="monthSets[state.months]!"
+              @open-photo="
+                (ride, index) =>
+                  logEvent('openPhoto', { ride: ride.name, index })
+              "
+            />
+          </UnitsProvider>
+        </div>
+      </template>
+
+      <template #controls="{ state }">
+        <HstSelect
+          v-model="state.months"
+          title="months"
+          :options="{
+            season: 'five months of rides',
+            empty: 'a month with no cards',
+            none: 'no months',
+          }"
         />
-        <p class="mt-6 text-[11px] text-foreground/70">
-          last opened photo: {{ opened }}
-        </p>
-      </div>
-    </Variant>
-
-    <Variant title="Metric units">
-      <div class="min-h-screen bg-background p-4 pb-[60vh] text-foreground">
-        <UnitsProvider units="metric">
-          <LogView :months="months.slice(0, 2)" />
-        </UnitsProvider>
-      </div>
-    </Variant>
-
-    <Variant title="Month with no cards">
-      <div class="min-h-screen bg-background p-4 text-foreground">
-        <LogView :months="[emptyMonth]" />
-      </div>
-    </Variant>
-
-    <Variant title="No months">
-      <div class="min-h-screen bg-background p-4 text-foreground">
-        <LogView :months="[]" />
-      </div>
+        <HstSelect
+          v-model="state.units"
+          title="units"
+          :options="['imperial', 'metric']"
+        />
+      </template>
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Log view
+
+Rides grouped by month, each month headed by its own totals.
+
+Opening a photo logs to the Events tab. The empty-month case is the one to check
+on a phone: a month that carried only commutes still renders its heading.
+</docs>

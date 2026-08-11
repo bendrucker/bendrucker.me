@@ -1,122 +1,78 @@
 <script setup lang="ts">
-import { bareRide, epicRide, raceRide } from "./fixtures";
+import { epicRide } from "./fixtures";
+import * as format from "./format";
 import StatValue from "./StatValue.vue";
-import { useUnits } from "./useUnits";
 
-const {
-  distanceUnit,
-  elevationUnit,
-  formatClock,
-  formatDistance,
-  formatDuration,
-  formatElevation,
-} = useUnits();
+const distance = format.formatDistance(epicRide.distanceMi, "imperial");
+const elevation = format.formatElevation(epicRide.elevationFt, "imperial");
+const clock = format.formatClock(epicRide.movingSeconds);
+
+function initState() {
+  return { value: "112,400", unit: "ft", size: "md", label: "", width: 380 };
+}
 </script>
 
 <template>
-  <Story title="Cycling/Stat value" :layout="{ type: 'grid', width: 380 }">
+  <Story
+    title="Stat value"
+    group="primitives"
+    auto-props-disabled
+    :layout="{ type: 'grid', width: 380 }"
+  >
+    <Variant title="Stat value" :init-state="initState">
+      <template #default="{ state }">
+        <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
+          <StatValue
+            :value="state.value"
+            :unit="state.unit || undefined"
+            :size="state.size"
+            :label="state.label || undefined"
+          />
+        </div>
+      </template>
+
+      <template #controls="{ state }">
+        <HstText v-model="state.value" title="value" />
+        <HstText v-model="state.unit" title="unit" />
+        <HstSelect
+          v-model="state.size"
+          title="size"
+          :options="['sm', 'md', 'lg']"
+        />
+        <HstText v-model="state.label" title="label (screen reader only)" />
+        <HstSlider v-model="state.width" title="width" :min="64" :max="380" />
+      </template>
+    </Variant>
+
     <Variant title="Sizes">
       <div class="flex items-end gap-6">
-        <StatValue
-          :value="formatDistance(epicRide.distanceMi)"
-          :unit="distanceUnit"
-          size="lg"
-        />
-        <StatValue
-          :value="formatDistance(epicRide.distanceMi)"
-          :unit="distanceUnit"
-          size="md"
-        />
-        <StatValue
-          :value="formatDistance(epicRide.distanceMi)"
-          :unit="distanceUnit"
-          size="sm"
-        />
+        <StatValue :value="distance" unit="mi" size="lg" />
+        <StatValue :value="distance" unit="mi" size="md" />
+        <StatValue :value="distance" unit="mi" size="sm" />
       </div>
     </Variant>
 
-    <Variant title="Default size">
-      <StatValue
-        :value="formatElevation(epicRide.elevationFt)"
-        :unit="elevationUnit"
-      />
-    </Variant>
-
-    <Variant title="Ride card pair">
+    <Variant title="In a ride card">
       <div class="flex gap-6">
-        <StatValue
-          :value="formatDistance(epicRide.distanceMi)"
-          :unit="distanceUnit"
-        />
-        <StatValue
-          :value="formatElevation(epicRide.elevationFt)"
-          :unit="elevationUnit"
-        />
+        <StatValue :value="distance" unit="mi" label="distance" />
+        <StatValue :value="elevation" unit="ft" label="climbing" />
+        <StatValue :value="clock" label="moving time" />
+        <StatValue :value="String(epicRide.averageWatts)" unit="W" />
       </div>
-    </Variant>
-
-    <Variant title="No unit">
-      <div class="flex items-end gap-6">
-        <StatValue value="2026" size="lg" />
-        <StatValue :value="formatDuration(epicRide.movingSeconds)" />
-        <StatValue :value="formatClock(raceRide.movingSeconds)" size="sm" />
-      </div>
-    </Variant>
-
-    <Variant title="Labelled for assistive tech">
-      <div class="flex gap-6">
-        <StatValue
-          :value="formatDistance(epicRide.distanceMi)"
-          :unit="distanceUnit"
-          label="distance"
-        />
-        <StatValue
-          :value="formatClock(epicRide.movingSeconds)"
-          label="moving time"
-        />
-      </div>
-      <p class="pt-2 text-xs text-foreground/70">
-        the label is screen-reader only, so these look identical to the
-        unlabelled variants above
+      <p class="pt-2 text-[11px] text-foreground/70">
+        the design leaves stats unlabelled and lets the unit carry the meaning,
+        so each of these passes a label only a screen reader reads
       </p>
-    </Variant>
-
-    <Variant title="Power">
-      <div class="flex gap-6">
-        <StatValue :value="String(epicRide.averageWatts)" unit="W" size="lg" />
-        <span aria-hidden="true"><StatValue value="—" size="lg" /></span>
-        <span class="sr-only">no data</span>
-      </div>
-    </Variant>
-
-    <Variant title="Small values">
-      <div class="flex gap-6">
-        <StatValue
-          :value="formatDistance(bareRide.distanceMi)"
-          :unit="distanceUnit"
-        />
-        <StatValue
-          :value="formatElevation(bareRide.elevationFt)"
-          :unit="elevationUnit"
-        />
-      </div>
-    </Variant>
-
-    <Variant title="Long value in a narrow column">
-      <div class="w-24">
-        <StatValue value="112,400" :unit="elevationUnit" size="lg" />
-      </div>
-    </Variant>
-
-    <Variant title="Beside a label">
-      <div class="flex items-baseline gap-2">
-        <StatValue
-          :value="formatDistance(epicRide.distanceMi)"
-          :unit="distanceUnit"
-          size="sm"
-        />
-        <span class="text-[11px] text-foreground/70">{{ epicRide.name }}</span>
-      </div>
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Stat value
+
+A number and its unit, set at the three sizes the cards use.
+
+Type a long value or clear the unit to see how the pair holds together, and
+narrow the width to the column a ride card gives it. Sizes compares all three at
+once, which no single control can.
+</docs>

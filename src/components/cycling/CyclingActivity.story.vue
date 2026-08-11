@@ -19,51 +19,85 @@ const newcomer: CyclingActivityData = {
   powerBests: [],
   powerNote: undefined,
 };
+
+const datasets: Record<string, CyclingActivityData> = {
+  season: activity,
+  newcomer,
+};
+
+function initState() {
+  return {
+    data: "season",
+    mode: "log",
+    units: "imperial",
+    recordPeriod: "all",
+  };
+}
 </script>
 
 <template>
   <!-- Single layout, because the month rail is fixed: in a grid cell it would
        pin itself to the Histoire window and float over the UI. -->
   <Story
-    title="Cycling/Activity page"
+    title="Activity page"
+    group="cycling-views"
+    auto-props-disabled
     :layout="{ type: 'single', iframe: true }"
+    :init-state="initState"
   >
-    <Variant title="Log">
-      <div class="min-h-screen bg-background p-4 pb-[60vh]">
-        <CyclingActivity :data="activity" />
-      </div>
-    </Variant>
+    <Variant title="Activity page">
+      <template #default="{ state }">
+        <div class="min-h-screen bg-background p-4 pb-[60vh]">
+          <CyclingActivity
+            v-model:mode="state.mode"
+            v-model:units="state.units"
+            v-model:record-period="state.recordPeriod"
+            :data="datasets[state.data]!"
+          />
+        </div>
+      </template>
 
-    <Variant title="Highlights">
-      <div class="min-h-screen bg-background p-4">
-        <CyclingActivity :data="activity" mode="highlights" />
-      </div>
-    </Variant>
-
-    <Variant title="PRs">
-      <div class="min-h-screen bg-background p-4">
-        <CyclingActivity :data="activity" mode="prs" />
-      </div>
-    </Variant>
-
-    <!-- A period the data no longer carries: the view falls back to the first
-         one offered and the control moves with it. -->
-    <Variant title="Unknown record period">
-      <div class="min-h-screen bg-background p-4">
-        <CyclingActivity :data="activity" mode="prs" record-period="1997" />
-      </div>
-    </Variant>
-
-    <Variant title="Metric">
-      <div class="min-h-screen bg-background p-4 pb-[60vh]">
-        <CyclingActivity :data="activity" units="metric" />
-      </div>
-    </Variant>
-
-    <Variant title="Barely any data">
-      <div class="min-h-screen bg-background p-4">
-        <CyclingActivity :data="newcomer" mode="highlights" />
-      </div>
+      <template #controls="{ state }">
+        <HstSelect
+          v-model="state.data"
+          title="data"
+          :options="{
+            season: 'a full season',
+            newcomer: 'one ride, nothing ranked',
+          }"
+        />
+        <HstSelect
+          v-model="state.mode"
+          title="mode"
+          :options="['log', 'highlights', 'prs']"
+        />
+        <HstSelect
+          v-model="state.units"
+          title="units"
+          :options="['imperial', 'metric']"
+        />
+        <HstSelect
+          v-model="state.recordPeriod"
+          title="record period"
+          :options="{
+            all: 'all',
+            '2026': '2026',
+            '2025': '2025',
+            '1997': '1997 (not in the data)',
+          }"
+        />
+      </template>
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Activity page
+
+The whole cycling page: year totals, the mode tabs, and whichever view they
+select. Mode and units are two-way, so tapping the page's own controls moves the
+panel and vice versa.
+
+Set the record period to 1997 to watch the view fall back to the first period the
+data carries and correct the model to match.
+</docs>

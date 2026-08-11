@@ -27,6 +27,26 @@ uglier, but readable.
 
 The rest of this file covers what the types do not say.
 
+## Sidebar
+
+Groups are the only ordered level of the tree. `histoire.config.ts` declares them
+under `tree.groups`, Histoire renders them in that order, and everything below a
+group sorts by title. A story joins one with `group="<id>"`. Stories that name no
+group collect in a default group appended last.
+
+```ts
+tree: {
+  groups: [
+    { id: "cycling-views", title: "Cycling views" },
+    { id: "ride", title: "Ride" },
+  ],
+}
+```
+
+Prefer a group over a `Section/` prefix in the title. The prefix builds a third
+level of tree, and on a phone every level is another tap between the root and a
+component.
+
 ## Layout
 
 A grid story whose `width` exceeds the viewport never finishes measuring itself.
@@ -60,24 +80,30 @@ Grid stories cannot reach `responsivePresets` at all.
 
 ## Variants
 
-Name what the variant proves, not what it contains. "Photos removed while open"
-beats "Variant 3". Four kinds are worth covering, and most components need three
-of them:
+A variant costs a full screen of scrolling on a phone. Most differences belong in
+the controls instead. Anything a reader changes one axis at a time is a control:
+which fixture is loaded, units, size, container width. The empty list, the
+overflowing name, and the record period nothing in the data carries are all
+entries in an `HstSelect`, not three more variants.
 
-- **Canonical** — the ordinary case a reader should picture.
-- **State** — each meaningfully different configuration.
-- **Edge** — empty, single item, overflowing text, longest plausible value.
-- **Invalid** — data the component should survive rather than render, such as a
-  record period nothing in the data carries.
+Keep a separate variant where a control cannot reach:
 
-A variant that only restates another variant's props is noise on a phone, where
-every variant costs a full screen of scrolling.
+- **Comparison** — several renderings on screen at once, such as all three stat
+  sizes side by side.
+- **Composition** — the component inside the markup that surrounds it on the real
+  page, which is where spacing and alignment go wrong.
+- **Behavior** — a different harness driving it, such as a scroll spy setting the
+  active month rather than a control.
+
+Name what the variant proves. "Photos removed while open" beats "Variant 3".
 
 ## State and Controls
 
 `initState` seeds a reactive object shared by the default slot, the `#controls`
-slot, and the side panel. It runs once per variant mount and can be async. Set it
-on a `<Variant>` to override the `<Story>`-level one.
+slot, and the side panel. It runs once per variant mount and can be async. Put it
+on the variant that has the controls. A `<Story>`-level `initState` reaches the
+variants with no `#controls` slot too, and each of those renders a raw state
+editor in the panel where the reader expects "No controls available".
 
 ```vue
 <script setup lang="ts">
@@ -90,7 +116,9 @@ function initState() {
 
 <template>
   <Story
-    title="Cycling/Segmented control"
+    title="Segmented control"
+    group="primitives"
+    auto-props-disabled
     :layout="{ type: 'grid', width: 380 }"
   >
     <Variant title="Mode tabs" :init-state="initState">
@@ -115,11 +143,19 @@ function initState() {
 Prefer this over a local `ref` plus a hand-written readout. A reviewer on a phone
 can drive `state` from the panel. They cannot edit the file.
 
+An `HstSelect` truncates a label around 20 characters while the control is
+closed. Keep option labels short and let the docs block carry the explanation.
+
 Auto-props fills the panel when no `#controls` slot exists, and it does read
-type-only `defineProps<T>()`. It degrades in two ways worth knowing: it reports
-only the JavaScript constructor, so `size?: "sm" | "md"` becomes a free-text box
-rather than a picker, and it does not seed current values, so fields start empty.
-Write `#controls` explicitly for anything a reviewer should actually change.
+type-only `defineProps<T>()`. It degrades in two ways: it reports only the
+JavaScript constructor, so `size?: "sm" | "md"` becomes a free-text box rather
+than a picker, and it does not seed current values, so fields start empty.
+
+Writing `#controls` does not displace that panel. The two stack, so a component
+taking an object prop puts a full-height JSON editor above the controls you
+wrote. `auto-props-disabled` on the `<Story>` suppresses it and propagates to
+every variant. The prop is missing from `components.d.ts` but real at runtime,
+and HMR does not apply it, so reload the page before deciding it did nothing.
 
 ## Events
 
@@ -175,6 +211,8 @@ Each of these produces no error and no warning:
 - `layout` on a `<Variant>` is ignored.
 - A grid `width` over the viewport collapses the story to one pixel.
 - A sibling `.story.md` silently wins over an inline `<docs>` block.
+- A `<Story>`-level `initState` hands every uncontrolled variant a raw state
+  editor.
 - `provideUnits()` called from `setupApp` does nothing, because the Composition
   API `provide()` needs a component instance. Use `app.provide(key, value)`.
 
@@ -184,3 +222,7 @@ Each of these produces no error and no warning:
 fallback, since a story deep link has no HTML of its own. Check at 390x844 before
 claiming a story is reviewable. The dev server needs `dangerouslyDisableSandbox`,
 because the sandbox blocks the FSEvents watch Vite relies on.
+
+`astro check` skips `.vue` files, so nothing type-checks a story. ESLint and
+opening it are the only two things standing between a broken `state` key and a
+reviewer. Open every variant you touched.

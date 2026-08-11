@@ -1,35 +1,47 @@
 <script setup lang="ts">
 import ElevationProfile from "./ElevationProfile.vue";
 import { bareRide, epicRide, raceRide } from "./fixtures";
+
+const sampleSets: Record<string, number[]> = {
+  hilly: epicRide.elevationProfile ?? [],
+  flat: raceRide.elevationProfile ?? [],
+  short: bareRide.elevationProfile ?? [],
+  one: [0.7],
+  two: [0.2, 0.85],
+  none: [],
+};
+
+function initState() {
+  return { samples: "hilly" };
+}
 </script>
 
 <template>
   <Story
-    title="Cycling/Elevation profile"
+    title="Elevation profile"
+    group="ride"
+    auto-props-disabled
     :layout="{ type: 'grid', width: 380 }"
   >
-    <Variant title="Hilly ride">
-      <ElevationProfile :samples="epicRide.elevationProfile ?? []" />
-    </Variant>
+    <Variant title="Elevation profile" :init-state="initState">
+      <template #default="{ state }">
+        <ElevationProfile :samples="sampleSets[state.samples]!" />
+      </template>
 
-    <Variant title="Flat ride">
-      <ElevationProfile :samples="raceRide.elevationProfile ?? []" />
-    </Variant>
-
-    <Variant title="Short ride">
-      <ElevationProfile :samples="bareRide.elevationProfile ?? []" />
-    </Variant>
-
-    <Variant title="One sample">
-      <ElevationProfile :samples="[0.7]" />
-    </Variant>
-
-    <Variant title="Two samples">
-      <ElevationProfile :samples="[0.2, 0.85]" />
-    </Variant>
-
-    <Variant title="Empty">
-      <ElevationProfile :samples="[]" />
+      <template #controls="{ state }">
+        <HstSelect
+          v-model="state.samples"
+          title="samples"
+          :options="{
+            hilly: 'a hilly ride',
+            flat: 'a flat ride',
+            short: 'a short ride',
+            one: 'one sample',
+            two: 'two samples',
+            none: 'no samples',
+          }"
+        />
+      </template>
     </Variant>
 
     <Variant title="Behind card text">
@@ -46,3 +58,12 @@ import { bareRide, epicRide, raceRide } from "./fixtures";
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Elevation profile
+
+The wash of climbing behind a ride card, drawn from a normalized sample list.
+
+One and two samples are the cases with no width to interpolate across. An empty
+list should draw nothing rather than a flat line.
+</docs>
