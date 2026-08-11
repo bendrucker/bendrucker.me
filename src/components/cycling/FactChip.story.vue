@@ -10,7 +10,7 @@ const factSets: Record<string, RideFact[]> = {
   long: [
     {
       id: "long",
-      icon: "▲",
+      icon: "trending-up",
       label: "3,204 ft climb · 8.4% average grade over 7.1 miles · 41 min",
     },
   ],

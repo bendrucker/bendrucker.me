@@ -8,7 +8,7 @@ defineProps<{ bests: PowerBest[]; sourceNote?: string }>();
 
 <template>
   <div class="rounded-lg border border-accent/40 px-4 py-3">
-    <SectionHeading label="best power" icon="⚡" as="h3" />
+    <SectionHeading label="best power" icon="zap" as="h3" />
     <p v-if="!bests.length" class="mt-3 text-[10.5px] text-foreground/70">
       nothing here yet
     </p>

@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import LucideIcon from "./LucideIcon.vue";
+import type { IconName } from "./types";
+
 withDefaults(
   defineProps<{
     label: string;
-    /** Decorative glyph ahead of the label, kept out of the accessible name. */
-    icon?: string;
+    /** Decorative icon ahead of the label, kept out of the accessible name. */
+    icon?: IconName;
     summary?: string;
     as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span" | "div";
   }>(),
@@ -17,8 +20,7 @@ withDefaults(
       :is="as"
       class="shrink-0 text-[11px] font-bold tracking-[.1em] whitespace-nowrap"
     >
-      <span v-if="icon" aria-hidden="true" class="mr-1">{{ icon }}</span
-      >{{ label }}
+      <LucideIcon v-if="icon" :name="icon" class="mr-1" />{{ label }}
     </component>
     <span
       aria-hidden="true"

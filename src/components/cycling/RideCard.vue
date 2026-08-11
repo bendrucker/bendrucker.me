@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { rideDate } from "./datetime";
 import ElevationProfile from "./ElevationProfile.vue";
 import FactChip from "./FactChip.vue";
+import LucideIcon from "./LucideIcon.vue";
 import PhotoStrip from "./PhotoStrip.vue";
 import RideBadge from "./RideBadge.vue";
 import RouteMap from "./RouteMap.vue";
@@ -115,12 +116,7 @@ const metaLine = computed(() => {
               :unit="elevationUnit"
               label="climbing"
             />
-            <span
-              aria-hidden="true"
-              class="text-xs font-semibold text-foreground/70"
-            >
-              ▲
-            </span>
+            <LucideIcon name="trending-up" class="text-xs text-foreground/70" />
           </div>
         </div>
 

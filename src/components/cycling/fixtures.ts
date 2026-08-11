@@ -88,12 +88,12 @@ export const epicRide: Ride = ride({
   route: syntheticRoute("19275831643", MARIN, 0.16, 260),
   photos: photos("19275831643", 3),
   badges: [
-    { kind: "longest", icon: "→", label: "longest" },
-    { kind: "new-climb", icon: "✦", label: "atlas peak" },
+    { kind: "longest", icon: "ruler", label: "longest" },
+    { kind: "new-climb", icon: "mountain", label: "atlas peak" },
   ],
   facts: [
-    { id: "climb", icon: "▲", label: "3,204 ft climb · 8.4%" },
-    { id: "cal", icon: "🔥", label: "4,820 cal" },
+    { id: "climb", icon: "trending-up", label: "3,204 ft climb · 8.4%" },
+    { id: "cal", icon: "flame", label: "4,820 cal" },
   ],
 });
 
@@ -121,8 +121,8 @@ export const raceRide: Ride = ride({
   companionCount: 3,
   route: syntheticRoute("18582680583", PENINSULA, 0.03),
   photos: photos("18582680583", 1),
-  badges: [{ kind: "race", icon: "★", label: "race" }],
-  facts: [{ id: "fast", icon: "»", label: "fastest avg · 21.4 mph" }],
+  badges: [{ kind: "race", icon: "flag", label: "race" }],
+  facts: [{ id: "fast", icon: "gauge", label: "fastest avg · 21.4 mph" }],
 });
 
 export const travelRide: Ride = ride({
@@ -138,10 +138,10 @@ export const travelRide: Ride = ride({
   route: syntheticRoute("19170862418", NAPA, 0.2, 260),
   photos: photos("19170862418", 5),
   badges: [
-    { kind: "new-location", icon: "✈", label: "new location" },
-    { kind: "most-climbing", icon: "▲", label: "most climbing" },
+    { kind: "new-location", icon: "map-pin", label: "new location" },
+    { kind: "most-climbing", icon: "trending-up", label: "most climbing" },
   ],
-  facts: [{ id: "cal", icon: "🔥", label: "6,140 cal" }],
+  facts: [{ id: "cal", icon: "flame", label: "6,140 cal" }],
 });
 
 /** No route, no photos, no annotations. Exercises every empty branch at once. */
@@ -169,14 +169,14 @@ export const crowdedRide: Ride = ride({
   route: syntheticRoute("19090081916", MARIN, 0.09, 240),
   photos: photos("19090081916", 4),
   badges: [
-    { kind: "new-climb", icon: "✦", label: "mount vision" },
-    { kind: "longest", icon: "→", label: "longest" },
-    { kind: "race", icon: "★", label: "race" },
+    { kind: "new-climb", icon: "mountain", label: "mount vision" },
+    { kind: "longest", icon: "ruler", label: "longest" },
+    { kind: "race", icon: "flag", label: "race" },
   ],
   facts: [
-    { id: "climb", icon: "▲", label: "1,890 ft climb · 6.1%" },
-    { id: "fast", icon: "»", label: "fastest avg · 17.8 mph" },
-    { id: "cal", icon: "🔥", label: "3,120 cal" },
+    { id: "climb", icon: "trending-up", label: "1,890 ft climb · 6.1%" },
+    { id: "fast", icon: "gauge", label: "fastest avg · 17.8 mph" },
+    { id: "cal", icon: "flame", label: "3,120 cal" },
   ],
 });
 
@@ -190,8 +190,8 @@ export const springRide: Ride = ride({
   movingSeconds: 8455,
   averageWatts: 212,
   route: syntheticRoute("18211405572", PENINSULA, 0.04),
-  badges: [{ kind: "new-climb", icon: "✦", label: "old la honda" }],
-  facts: [{ id: "climb", icon: "▲", label: "1,290 ft climb · 7.3%" }],
+  badges: [{ kind: "new-climb", icon: "mountain", label: "old la honda" }],
+  facts: [{ id: "climb", icon: "trending-up", label: "1,290 ft climb · 7.3%" }],
 });
 
 export const winterRide: Ride = ride({
@@ -313,7 +313,7 @@ export const powerBests: PowerBest[] = [
 export const rankedLists: RankedList[] = [
   {
     id: "distance",
-    icon: "→",
+    icon: "ruler",
     title: "longest rides",
     metric: "distance",
     rows: [
@@ -342,7 +342,7 @@ export const rankedLists: RankedList[] = [
   },
   {
     id: "elevation",
-    icon: "▲",
+    icon: "trending-up",
     title: "most climbing",
     metric: "elevation",
     rows: [
@@ -353,7 +353,7 @@ export const rankedLists: RankedList[] = [
   },
   {
     id: "duration",
-    icon: "⏱",
+    icon: "clock",
     title: "longest days",
     metric: "duration",
     rows: [
@@ -374,7 +374,7 @@ export const rankedLists: RankedList[] = [
   },
   {
     id: "climbs",
-    icon: "▲",
+    icon: "mountain",
     title: "largest climbs",
     metric: "elevation",
     rows: [
@@ -385,7 +385,7 @@ export const rankedLists: RankedList[] = [
   },
   {
     id: "efforts",
-    icon: "⏱",
+    icon: "timer",
     title: "best efforts",
     metric: "clock",
     rows: [
@@ -400,7 +400,7 @@ export const rankedLists: RankedList[] = [
 const rankedLists2025: RankedList[] = [
   {
     id: "distance",
-    icon: "→",
+    icon: "ruler",
     title: "longest rides",
     metric: "distance",
     rows: [
@@ -416,7 +416,7 @@ const rankedLists2025: RankedList[] = [
   },
   {
     id: "elevation",
-    icon: "▲",
+    icon: "trending-up",
     title: "most climbing",
     metric: "elevation",
     rows: [
@@ -431,7 +431,7 @@ const rankedLists2025: RankedList[] = [
   },
   {
     id: "efforts",
-    icon: "⏱",
+    icon: "timer",
     title: "best efforts",
     metric: "clock",
     rows: [

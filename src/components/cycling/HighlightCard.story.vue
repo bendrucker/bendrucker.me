@@ -15,7 +15,7 @@ const cases: Record<string, Highlight> = {
   },
   noRoute: {
     ride: bareRide,
-    badge: { kind: "longest", icon: "→", label: "longest" },
+    badge: { kind: "longest", icon: "ruler", label: "longest" },
     metric: "duration",
   },
 };

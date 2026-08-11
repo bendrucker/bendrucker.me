@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LucideIcon from "./LucideIcon.vue";
 import type { RideBadge } from "./types";
 
 defineProps<{ badge: RideBadge }>();
@@ -8,9 +9,8 @@ defineProps<{ badge: RideBadge }>();
   <span
     class="inline-block rounded-sm border border-dashed border-accent px-1.5 py-px text-[10px] whitespace-nowrap text-accent"
   >
-    <span v-if="badge.icon" aria-hidden="true" class="mr-1">{{
-      badge.icon
-    }}</span
-    >{{ badge.label }}
+    <LucideIcon v-if="badge.icon" :name="badge.icon" class="mr-1" />{{
+      badge.label
+    }}
   </span>
 </template>

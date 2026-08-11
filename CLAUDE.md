@@ -83,6 +83,21 @@ process before it is ready.
 
 CSS vars in `global.css` → Tailwind: `bg-background`, `text-foreground`, `bg-accent`, `text-accent`, `bg-muted`, `text-muted`, `border-border`. Dark mode via `data-theme="dark"` / `dark:` prefix. No `skin-*` classes.
 
+## Icons
+
+Every icon comes from an Iconify collection through `@iconify/tailwind4`, as a
+class like `icon-[lucide--flame]`. Never an emoji, and never a Unicode glyph
+standing in for an icon: both inherit the reader's font and land at whatever
+weight and baseline that font gives them.
+
+Lucide is the collection for the cycling components, Phosphor (`ph`) for the
+about page. Stay within the collection already in use on a page.
+
+Tailwind extracts class candidates from source text, so an interpolated class
+name generates no CSS. Data carries a semantic name and a component maps it to a
+class written out in full. `src/components/cycling/LucideIcon.vue` is the
+pattern, and `IconName` in `types.ts` is the list of names it accepts.
+
 ## Workers
 
 All deploy via GitHub Actions matrix on push to `main`. Use `@workspace/logger` for logging.

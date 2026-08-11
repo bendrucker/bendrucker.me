@@ -27,12 +27,28 @@ export interface RidePhoto {
 export type RideBadgeKind =
   "new-climb" | "new-location" | "longest" | "most-climbing" | "race";
 
+/** Lucide icons the cycling components draw on. See `Icon.vue`. */
+export const iconNames = [
+  "clock",
+  "flag",
+  "flame",
+  "gauge",
+  "map-pin",
+  "mountain",
+  "ruler",
+  "timer",
+  "trending-up",
+  "zap",
+] as const;
+
+export type IconName = (typeof iconNames)[number];
+
 /**
- * Decorative glyph rendered ahead of a label. It is kept out of the label so
- * the label stays the accessible name and the glyph can be hidden, which stops
- * a screen reader announcing "black up-pointing triangle 3,204 ft climb".
+ * Decorative icon rendered ahead of a label. It is kept out of the label so the
+ * label stays the accessible name and the icon can be hidden, which stops a
+ * screen reader announcing the icon beside "3,204 ft climb".
  */
-type Decorated = { icon?: string; label: string };
+type Decorated = { icon?: IconName; label: string };
 
 export interface RideBadge extends Decorated {
   kind: RideBadgeKind;
@@ -106,8 +122,8 @@ export interface RankedRow {
 export interface RankedList {
   id: string;
   title: string;
-  /** See {@link RideBadge} for why the glyph travels beside the title. */
-  icon?: string;
+  /** See {@link RideBadge} for why the icon travels beside the title. */
+  icon?: IconName;
   metric: RankedMetric;
   rows: RankedRow[];
 }

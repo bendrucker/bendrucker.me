@@ -2,8 +2,14 @@
 import { julyMonth, rankedLists } from "./fixtures";
 import * as format from "./format";
 import SectionHeading from "./SectionHeading.vue";
+import { iconNames } from "./types";
 
 const monthSummary = format.formatMonthSummary(julyMonth, "imperial");
+
+const iconOptions = {
+  "": "no icon",
+  ...Object.fromEntries(iconNames.map((name) => [name, name])),
+};
 
 function initState() {
   return {
@@ -38,7 +44,7 @@ function initState() {
       <template #controls="{ state }">
         <HstText v-model="state.label" title="label" />
         <HstText v-model="state.summary" title="summary" />
-        <HstText v-model="state.icon" title="icon" />
+        <HstSelect v-model="state.icon" title="icon" :options="iconOptions" />
         <HstSelect
           v-model="state.as"
           title="as"

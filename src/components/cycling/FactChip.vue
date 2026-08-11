@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LucideIcon from "./LucideIcon.vue";
 import type { RideFact } from "./types";
 
 defineProps<{ fact: RideFact }>();
@@ -8,7 +9,8 @@ defineProps<{ fact: RideFact }>();
   <span
     class="inline-block rounded-full border border-border px-2 py-0.5 text-[10px] whitespace-nowrap text-foreground/70"
   >
-    <span v-if="fact.icon" aria-hidden="true" class="mr-1">{{ fact.icon }}</span
-    >{{ fact.label }}
+    <LucideIcon v-if="fact.icon" :name="fact.icon" class="mr-1" />{{
+      fact.label
+    }}
   </span>
 </template>
