@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { crowdedRide, rankedLists } from "./fixtures";
 import RankedListPanel from "./RankedListPanel.vue";
 import type { RankedList } from "./types";
@@ -33,6 +36,25 @@ const lists: Record<string, RankedList> = {
   empty: { ...distance, rows: [] },
 };
 
+const controls: StoryControlSet = {
+  list: {
+    type: "select",
+    title: "list",
+    options: {
+      distance: "longest rides",
+      elevation: "most climbing",
+      duration: "longest time",
+      climbs: "largest climbs",
+      efforts: "best efforts",
+      mixedLinks: "some rows linked",
+      longNames: "a long name",
+      single: "a single row",
+      empty: "no rows",
+    },
+  },
+  units: { type: "select", title: "units", options: ["imperial", "metric"] },
+};
+
 function initState() {
   return { list: "distance", units: "imperial" };
 }
@@ -43,37 +65,19 @@ function initState() {
     title="Ranked list panel"
     group="records"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
     :init-state="initState"
   >
     <Variant title="Ranked list panel">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <UnitsProvider :units="state.units">
           <RankedListPanel :list="lists[state.list]!" />
         </UnitsProvider>
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.list"
-          title="list"
-          :options="{
-            distance: 'longest rides',
-            elevation: 'most climbing',
-            duration: 'longest time',
-            climbs: 'largest climbs',
-            efforts: 'best efforts',
-            mixedLinks: 'some rows linked',
-            longNames: 'a long name',
-            single: 'a single row',
-            empty: 'no rows',
-          }"
-        />
-        <HstSelect
-          v-model="state.units"
-          title="units"
-          :options="['imperial', 'metric']"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

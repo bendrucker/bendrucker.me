@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { logEvent } from "histoire/client";
 import type { Language } from "@/activity/types";
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import LanguageBar from "./LanguageBar.vue";
 
 const everyLanguage: Language[] = [
@@ -25,6 +28,19 @@ const selectable = {
   ...Object.fromEntries(everyLanguage.map(({ name }) => [name, name])),
 };
 
+const controls: StoryControlSet = {
+  languages: {
+    type: "select",
+    title: "languages",
+    options: {
+      every: "eight languages",
+      single: "one language",
+      none: "no languages",
+    },
+  },
+  selected: { type: "select", title: "selected", options: selectable },
+};
+
 function initState() {
   return { languages: "every", selected: "" };
 }
@@ -40,6 +56,7 @@ function initState() {
   >
     <Variant title="Language bar">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <LanguageBar
           :languages="languageSets[state.languages]!"
           :selected-language="state.selected || null"
@@ -51,20 +68,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.languages"
-          title="languages"
-          :options="{
-            every: 'eight languages',
-            single: 'one language',
-            none: 'no languages',
-          }"
-        />
-        <HstSelect
-          v-model="state.selected"
-          title="selected"
-          :options="selectable"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

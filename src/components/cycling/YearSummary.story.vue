@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { months } from "./fixtures";
 import UnitsProvider from "./UnitsProvider.vue";
 import YearSummary from "./YearSummary.vue";
@@ -30,12 +33,23 @@ const totals: Record<string, Totals> = {
   },
 };
 
+const controls: StoryControlSet = {
+  totals: {
+    type: "select",
+    title: "totals",
+    options: { season: "a season", sixFigure: "six-figure totals" },
+  },
+  note: { type: "text", title: "note" },
+  units: { type: "select", title: "units", options: ["imperial", "metric"] },
+  width: { type: "slider", title: "width", min: 240, max: 720 },
+};
+
 function initState() {
   return {
     totals: "season",
     note: "rides since may",
     units: "imperial",
-    width: 380,
+    width: 358,
   };
 }
 </script>
@@ -50,6 +64,7 @@ function initState() {
   >
     <Variant title="Year summary">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <UnitsProvider :units="state.units">
           <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
             <YearSummary
@@ -61,21 +76,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.totals"
-          title="totals"
-          :options="{
-            season: 'a season',
-            sixFigure: 'six-figure totals',
-          }"
-        />
-        <HstText v-model="state.note" title="note" />
-        <HstSelect
-          v-model="state.units"
-          title="units"
-          :options="['imperial', 'metric']"
-        />
-        <HstSlider v-model="state.width" title="width" :min="240" :max="720" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

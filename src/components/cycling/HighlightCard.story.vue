@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { bareRide, crowdedRide, highlights } from "./fixtures";
 import HighlightCard from "./HighlightCard.vue";
 import type { Highlight } from "./types";
@@ -20,6 +23,23 @@ const cases: Record<string, Highlight> = {
   },
 };
 
+const controls: StoryControlSet = {
+  highlight: {
+    type: "select",
+    title: "highlight",
+    options: {
+      distance: "distance",
+      elevation: "elevation",
+      duration: "duration",
+      longName: "a long name",
+      noRoute: "no route",
+    },
+  },
+  units: { type: "select", title: "units", options: ["imperial", "metric"] },
+  mapWidth: { type: "slider", title: "map width", min: 120, max: 340 },
+  mapHeight: { type: "slider", title: "map height", min: 80, max: 240 },
+};
+
 function initState() {
   return {
     highlight: "distance",
@@ -35,11 +55,12 @@ function initState() {
     title="Highlight card"
     group="ride"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
     :init-state="initState"
   >
     <Variant title="Highlight card">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <UnitsProvider :units="state.units">
           <HighlightCard
             :highlight="cases[state.highlight]!"
@@ -50,34 +71,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.highlight"
-          title="highlight"
-          :options="{
-            distance: 'distance',
-            elevation: 'elevation',
-            duration: 'duration',
-            longName: 'a long name',
-            noRoute: 'no route',
-          }"
-        />
-        <HstSelect
-          v-model="state.units"
-          title="units"
-          :options="['imperial', 'metric']"
-        />
-        <HstSlider
-          v-model="state.mapWidth"
-          title="map width"
-          :min="120"
-          :max="340"
-        />
-        <HstSlider
-          v-model="state.mapHeight"
-          title="map height"
-          :min="80"
-          :max="240"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

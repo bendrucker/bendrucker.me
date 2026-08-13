@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { epicRide } from "./fixtures";
 import * as format from "./format";
 import StatValue from "./StatValue.vue";
@@ -7,8 +10,16 @@ const distance = format.formatDistance(epicRide.distanceMi, "imperial");
 const elevation = format.formatElevation(epicRide.elevationFt, "imperial");
 const clock = format.formatClock(epicRide.movingSeconds);
 
+const controls: StoryControlSet = {
+  value: { type: "text", title: "value" },
+  unit: { type: "text", title: "unit" },
+  size: { type: "select", title: "size", options: ["sm", "md", "lg"] },
+  label: { type: "text", title: "label (screen reader only)" },
+  width: { type: "slider", title: "width", min: 64, max: 340 },
+};
+
 function initState() {
-  return { value: "112,400", unit: "ft", size: "md", label: "", width: 380 };
+  return { value: "112,400", unit: "ft", size: "md", label: "", width: 340 };
 }
 </script>
 
@@ -17,10 +28,11 @@ function initState() {
     title="Stat value"
     group="primitives"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
   >
     <Variant title="Stat value" :init-state="initState">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
           <StatValue
             :value="state.value"
@@ -32,15 +44,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstText v-model="state.value" title="value" />
-        <HstText v-model="state.unit" title="unit" />
-        <HstSelect
-          v-model="state.size"
-          title="size"
-          :options="['sm', 'md', 'lg']"
-        />
-        <HstText v-model="state.label" title="label (screen reader only)" />
-        <HstSlider v-model="state.width" title="width" :min="64" :max="380" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
 

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import ElevationProfile from "./ElevationProfile.vue";
 import { bareRide, epicRide, raceRide } from "./fixtures";
 
@@ -11,6 +14,21 @@ const sampleSets: Record<string, number[]> = {
   none: [],
 };
 
+const controls: StoryControlSet = {
+  samples: {
+    type: "select",
+    title: "samples",
+    options: {
+      hilly: "a hilly ride",
+      flat: "a flat ride",
+      short: "a short ride",
+      one: "one sample",
+      two: "two samples",
+      none: "no samples",
+    },
+  },
+};
+
 function initState() {
   return { samples: "hilly" };
 }
@@ -21,26 +39,16 @@ function initState() {
     title="Elevation profile"
     group="ride"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
   >
     <Variant title="Elevation profile" :init-state="initState">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <ElevationProfile :samples="sampleSets[state.samples]!" />
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.samples"
-          title="samples"
-          :options="{
-            hilly: 'a hilly ride',
-            flat: 'a flat ride',
-            short: 'a short ride',
-            one: 'one sample',
-            two: 'two samples',
-            none: 'no samples',
-          }"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
 

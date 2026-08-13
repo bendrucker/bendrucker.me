@@ -40,6 +40,11 @@ comments the link, so a component can be reviewed from a phone with nothing
 checked out. `workers/stories/wrangler.toml` serves `.histoire/dist` with a
 single-page-application fallback, since a story deep link has no HTML of its own.
 
+Histoire hides its side panel below 640px, so a story declares its controls once
+in `src/stories/controls.ts` terms and renders them through both
+`PreviewControls` (inside the story, reachable on a phone) and `PanelControls`
+(in the `#controls` slot).
+
 `.claude/skills/component-stories/SKILL.md` covers how to write one, including
 the layout widths that survive a phone and the several ways a story fails without
 reporting anything.

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { logEvent } from "histoire/client";
 import { activity } from "./fixtures";
 import SegmentedControl from "./SegmentedControl.vue";
@@ -38,8 +41,25 @@ function selected(state: { set: string; value: string }): string {
     : (options[0]?.value ?? "");
 }
 
+const controls: StoryControlSet = {
+  set: {
+    type: "select",
+    title: "options",
+    options: {
+      modes: "mode tabs",
+      units: "units",
+      years: "record years",
+      long: "long labels",
+      single: "one option",
+      empty: "no options",
+    },
+  },
+  size: { type: "select", title: "size", options: ["sm", "md"] },
+  width: { type: "slider", title: "width", min: 120, max: 340 },
+};
+
 function initState() {
-  return { set: "modes", value: "log", size: "md", width: 380 };
+  return { set: "modes", value: "log", size: "md", width: 340 };
 }
 </script>
 
@@ -48,11 +68,12 @@ function initState() {
     title="Segmented control"
     group="primitives"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
     :init-state="initState"
   >
     <Variant title="Segmented control">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
           <SegmentedControl
             :model-value="selected(state)"
@@ -68,20 +89,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.set"
-          title="options"
-          :options="{
-            modes: 'mode tabs',
-            units: 'units',
-            years: 'record years',
-            long: 'long labels',
-            single: 'one option',
-            empty: 'no options',
-          }"
-        />
-        <HstSelect v-model="state.size" title="size" :options="['sm', 'md']" />
-        <HstSlider v-model="state.width" title="width" :min="120" :max="380" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

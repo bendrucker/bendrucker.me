@@ -43,6 +43,15 @@ export default defineConfig({
       { id: "code", title: "Code activity" },
     ],
   },
+  // The phone sizes the components are designed against. The dropdown these
+  // feed sits in the single-layout toolbar, which is how a story gets reviewed
+  // at a real phone width from a desktop browser.
+  responsivePresets: [
+    { label: "iPhone SE", width: 375, height: 667 },
+    { label: "iPhone 14", width: 390, height: 844 },
+    { label: "iPhone 14 Plus", width: 430, height: 932 },
+    { label: "iPad mini", width: 744, height: 1133 },
+  ],
   theme: {
     title: "bendrucker.me",
     defaultColorScheme: "auto",

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { ref } from "vue";
 import { crowdedRide, raceRide, travelRide } from "./fixtures";
 import PhotoLightbox from "./PhotoLightbox.vue";
@@ -20,6 +23,21 @@ function openStrip(index: number) {
   fromStripOpen.value = true;
 }
 
+const controls: StoryControlSet = {
+  photos: {
+    type: "select",
+    title: "photos",
+    options: {
+      five: "five photos",
+      two: "two photos",
+      one: "one photo, so no arrows",
+      none: "none left",
+    },
+  },
+  index: { type: "slider", title: "index", min: 0, max: 4 },
+  open: { type: "checkbox", title: "open" },
+};
+
 function initState() {
   return { photos: "five", index: 2, open: false };
 }
@@ -30,10 +48,11 @@ function initState() {
     title="Photo lightbox"
     group="ride"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
   >
     <Variant title="Photo lightbox" :init-state="initState">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <button
           type="button"
           class="rounded border border-border px-2 py-1 text-[11px]"
@@ -53,18 +72,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.photos"
-          title="photos"
-          :options="{
-            five: 'five photos',
-            two: 'two photos',
-            one: 'one photo, so no arrows',
-            none: 'none left',
-          }"
-        />
-        <HstSlider v-model="state.index" title="index" :min="0" :max="4" />
-        <HstCheckbox v-model="state.open" title="open" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
 

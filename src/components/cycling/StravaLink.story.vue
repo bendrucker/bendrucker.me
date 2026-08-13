@@ -1,6 +1,17 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { epicRide } from "./fixtures";
 import StravaLink from "./StravaLink.vue";
+
+const controls: StoryControlSet = {
+  surface: {
+    type: "select",
+    title: "surface",
+    options: { page: "the page", muted: "a muted panel" },
+  },
+};
 
 function initState() {
   return { surface: "page" };
@@ -12,10 +23,11 @@ function initState() {
     title="Strava link"
     group="ride"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
   >
     <Variant title="Strava link" :init-state="initState">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <div
           class="p-3"
           :class="state.surface === 'muted' ? 'rounded-md bg-muted' : ''"
@@ -25,11 +37,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.surface"
-          title="surface"
-          :options="{ page: 'the page', muted: 'a muted panel' }"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
 

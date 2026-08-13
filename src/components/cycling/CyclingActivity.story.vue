@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import CyclingActivity from "./CyclingActivity.vue";
 import { activity } from "./fixtures";
 import type { CyclingActivityData } from "./types";
@@ -25,6 +28,33 @@ const datasets: Record<string, CyclingActivityData> = {
   newcomer,
 };
 
+const controls: StoryControlSet = {
+  data: {
+    type: "select",
+    title: "data",
+    options: {
+      season: "a full season",
+      newcomer: "one ride, nothing ranked",
+    },
+  },
+  mode: {
+    type: "select",
+    title: "mode",
+    options: ["log", "highlights", "prs"],
+  },
+  units: { type: "select", title: "units", options: ["imperial", "metric"] },
+  recordPeriod: {
+    type: "select",
+    title: "record period",
+    options: {
+      all: "all",
+      "2026": "2026",
+      "2025": "2025",
+      "1997": "1997 (not in the data)",
+    },
+  },
+};
+
 function initState() {
   return {
     data: "season",
@@ -48,6 +78,7 @@ function initState() {
     <Variant title="Activity page">
       <template #default="{ state }">
         <div class="min-h-screen bg-background p-4 pb-[60vh]">
+          <PreviewControls :controls="controls" :state="state" />
           <CyclingActivity
             v-model:mode="state.mode"
             v-model:units="state.units"
@@ -58,34 +89,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.data"
-          title="data"
-          :options="{
-            season: 'a full season',
-            newcomer: 'one ride, nothing ranked',
-          }"
-        />
-        <HstSelect
-          v-model="state.mode"
-          title="mode"
-          :options="['log', 'highlights', 'prs']"
-        />
-        <HstSelect
-          v-model="state.units"
-          title="units"
-          :options="['imperial', 'metric']"
-        />
-        <HstSelect
-          v-model="state.recordPeriod"
-          title="record period"
-          :options="{
-            all: 'all',
-            '2026': '2026',
-            '2025': '2025',
-            '1997': '1997 (not in the data)',
-          }"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

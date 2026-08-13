@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { activity, powerBests } from "./fixtures";
 import PrsView from "./PrsView.vue";
 import type { RankedList } from "./types";
@@ -15,6 +18,16 @@ const measuredBests = powerBests.map((best, index) => ({
   watts: best.watts ?? [412, 348, 296, 254][index] ?? null,
 }));
 
+const controls: StoryControlSet = {
+  period: { type: "select", title: "period", options: periods },
+  units: { type: "select", title: "units", options: ["imperial", "metric"] },
+  power: {
+    type: "select",
+    title: "power",
+    options: { measured: "all durations", partial: "ride average only" },
+  },
+};
+
 function initState() {
   return { period: periods[0]!, units: "imperial", power: "measured" };
 }
@@ -30,6 +43,7 @@ function initState() {
     <Variant title="PRs view" :init-state="initState">
       <template #default="{ state }">
         <div class="bg-background p-4 text-foreground">
+          <PreviewControls :controls="controls" :state="state" />
           <UnitsProvider :units="state.units">
             <PrsView
               :lists="listsFor(state.period)"
@@ -44,20 +58,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect v-model="state.period" title="period" :options="periods" />
-        <HstSelect
-          v-model="state.units"
-          title="units"
-          :options="['imperial', 'metric']"
-        />
-        <HstSelect
-          v-model="state.power"
-          title="power"
-          :options="{
-            measured: 'all durations',
-            partial: 'ride average only',
-          }"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
 

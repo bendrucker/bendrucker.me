@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { logEvent } from "histoire/client";
 import { juneMonth, months } from "./fixtures";
 import LogView from "./LogView.vue";
@@ -17,6 +20,19 @@ const monthSets: Record<string, MonthGroup[]> = {
   none: [],
 };
 
+const controls: StoryControlSet = {
+  months: {
+    type: "select",
+    title: "months",
+    options: {
+      season: "five months of rides",
+      empty: "a month with no cards",
+      none: "no months",
+    },
+  },
+  units: { type: "select", title: "units", options: ["imperial", "metric"] },
+};
+
 function initState() {
   return { months: "season", units: "imperial" };
 }
@@ -33,6 +49,7 @@ function initState() {
     <Variant title="Log view">
       <template #default="{ state }">
         <div class="min-h-screen bg-background p-4 pb-[60vh] text-foreground">
+          <PreviewControls :controls="controls" :state="state" />
           <UnitsProvider :units="state.units">
             <LogView
               :months="monthSets[state.months]!"
@@ -46,20 +63,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.months"
-          title="months"
-          :options="{
-            season: 'five months of rides',
-            empty: 'a month with no cards',
-            none: 'no months',
-          }"
-        />
-        <HstSelect
-          v-model="state.units"
-          title="units"
-          :options="['imperial', 'metric']"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

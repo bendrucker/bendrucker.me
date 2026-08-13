@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { powerBests } from "./fixtures";
 import PowerPanel from "./PowerPanel.vue";
 import type { PowerBest } from "./types";
@@ -20,6 +23,20 @@ const bestSets: Record<string, PowerBest[]> = {
   none: [],
 };
 
+const controls: StoryControlSet = {
+  bests: {
+    type: "select",
+    title: "bests",
+    options: {
+      partial: "ride average only",
+      measured: "all durations",
+      unmeasured: "nothing measured",
+      none: "no durations at all",
+    },
+  },
+  note: { type: "text", title: "source note" },
+};
+
 function initState() {
   return { bests: "partial", note: "from rides with a power meter" };
 }
@@ -30,11 +47,12 @@ function initState() {
     title="Power panel"
     group="records"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
     :init-state="initState"
   >
     <Variant title="Power panel">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <PowerPanel
           :bests="bestSets[state.bests]!"
           :source-note="state.note || undefined"
@@ -42,17 +60,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.bests"
-          title="bests"
-          :options="{
-            partial: 'ride average only',
-            measured: 'all durations',
-            unmeasured: 'nothing measured',
-            none: 'no durations at all',
-          }"
-        />
-        <HstText v-model="state.note" title="source note" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

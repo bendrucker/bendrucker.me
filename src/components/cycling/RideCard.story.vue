@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { logEvent } from "histoire/client";
 import {
   bareRide,
@@ -29,11 +32,19 @@ const rideOptions = {
   flat: "no elevation stream",
 };
 
+const controls: StoryControlSet = {
+  ride: { type: "select", title: "ride", options: rideOptions },
+  units: { type: "select", title: "units", options: ["imperial", "metric"] },
+  width: { type: "slider", title: "card width", min: 280, max: 720 },
+  mapWidth: { type: "slider", title: "map width", min: 96, max: 340 },
+  mapHeight: { type: "slider", title: "map height", min: 80, max: 240 },
+};
+
 function initState() {
   return {
     ride: "everyday",
     units: "imperial" as Units,
-    width: 380,
+    width: 358,
     mapWidth: 150,
     mapHeight: 140,
   };
@@ -50,6 +61,7 @@ function initState() {
   >
     <Variant title="Ride card">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <UnitsProvider :units="state.units">
           <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
             <RideCard
@@ -63,30 +75,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect v-model="state.ride" title="ride" :options="rideOptions" />
-        <HstSelect
-          v-model="state.units"
-          title="units"
-          :options="['imperial', 'metric']"
-        />
-        <HstSlider
-          v-model="state.width"
-          title="card width"
-          :min="280"
-          :max="720"
-        />
-        <HstSlider
-          v-model="state.mapWidth"
-          title="map width"
-          :min="96"
-          :max="340"
-        />
-        <HstSlider
-          v-model="state.mapHeight"
-          title="map height"
-          :min="80"
-          :max="240"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

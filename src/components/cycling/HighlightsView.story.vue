@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { highlightMonths } from "./fixtures";
 import HighlightsView from "./HighlightsView.vue";
 import type { HighlightMonth } from "./types";
@@ -13,6 +16,19 @@ const monthSets: Record<string, HighlightMonth[]> = {
   season: highlightMonths,
   quiet: [quietMonth],
   none: [],
+};
+
+const controls: StoryControlSet = {
+  months: {
+    type: "select",
+    title: "months",
+    options: {
+      season: "two months",
+      quiet: "a quiet month",
+      none: "no months",
+    },
+  },
+  units: { type: "select", title: "units", options: ["imperial", "metric"] },
 };
 
 function initState() {
@@ -31,6 +47,7 @@ function initState() {
     <Variant title="Highlights view">
       <template #default="{ state }">
         <div class="bg-background p-4 text-foreground">
+          <PreviewControls :controls="controls" :state="state" />
           <UnitsProvider :units="state.units">
             <HighlightsView :months="monthSets[state.months]!" />
           </UnitsProvider>
@@ -38,20 +55,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.months"
-          title="months"
-          :options="{
-            season: 'two months',
-            quiet: 'a quiet month',
-            none: 'no months',
-          }"
-        />
-        <HstSelect
-          v-model="state.units"
-          title="units"
-          :options="['imperial', 'metric']"
-        />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

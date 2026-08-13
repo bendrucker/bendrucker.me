@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { bareRide, epicRide, everydayRide, raceRide } from "./fixtures";
 import RouteMap from "./RouteMap.vue";
 import type { Coordinate } from "./types";
@@ -28,6 +31,24 @@ const sizes = [
   { label: "480 × 260", width: 480, height: 260 },
 ];
 
+const controls: StoryControlSet = {
+  route: {
+    type: "select",
+    title: "route",
+    options: {
+      epic: "a long ride",
+      everyday: "a short loop",
+      race: "a tight circuit",
+      none: "no route",
+      single: "a single coordinate",
+      transcontinental: "coast to coast",
+      antimeridian: "across the antimeridian",
+    },
+  },
+  width: { type: "slider", title: "width", min: 64, max: 480 },
+  height: { type: "slider", title: "height", min: 64, max: 300 },
+};
+
 function initState() {
   return { route: "epic", width: 150, height: 140 };
 }
@@ -42,6 +63,7 @@ function initState() {
   >
     <Variant title="Route map" :init-state="initState">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <RouteMap
           :coordinates="routes[state.route]!"
           :width="state.width"
@@ -51,21 +73,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.route"
-          title="route"
-          :options="{
-            epic: 'a long ride',
-            everyday: 'a short loop',
-            race: 'a tight circuit',
-            none: 'no route',
-            single: 'a single coordinate',
-            transcontinental: 'coast to coast',
-            antimeridian: 'across the antimeridian',
-          }"
-        />
-        <HstSlider v-model="state.width" title="width" :min="64" :max="480" />
-        <HstSlider v-model="state.height" title="height" :min="64" :max="300" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
 

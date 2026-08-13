@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { logEvent } from "histoire/client";
 import {
   bareRide,
@@ -18,8 +21,23 @@ const photoSets: Record<string, RidePhoto[]> = {
   none: bareRide.photos,
 };
 
+const controls: StoryControlSet = {
+  photos: {
+    type: "select",
+    title: "photos",
+    options: {
+      one: "one photo",
+      three: "three photos",
+      four: "four photos",
+      five: "five photos",
+      none: "no photos",
+    },
+  },
+  width: { type: "slider", title: "width", min: 96, max: 340 },
+};
+
 function initState() {
-  return { photos: "three", width: 380 };
+  return { photos: "three", width: 340 };
 }
 </script>
 
@@ -28,11 +46,12 @@ function initState() {
     title="Photo strip"
     group="ride"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
     :init-state="initState"
   >
     <Variant title="Photo strip">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
           <PhotoStrip
             :photos="photoSets[state.photos]!"
@@ -42,18 +61,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.photos"
-          title="photos"
-          :options="{
-            one: 'one photo',
-            three: 'three photos',
-            four: 'four photos',
-            five: 'five photos',
-            none: 'no photos',
-          }"
-        />
-        <HstSlider v-model="state.width" title="width" :min="96" :max="380" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

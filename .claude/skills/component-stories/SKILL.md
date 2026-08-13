@@ -51,12 +51,12 @@ component.
 
 A grid story whose `width` exceeds the viewport never finishes measuring itself.
 `gridColumnWidth` and `viewWidth` stay at their initial `1` and the story renders
-as a one-pixel sliver. There is no error. At a 390px viewport the cliff sits
-between 380 and 420.
+as a one-pixel sliver. There is no error. The mobile grid gutters the row by
+16px a side, leaving 358px of the 390px viewport the book is reviewed at.
 
 Two safe choices:
 
-- `width: 380` or less renders everywhere and still gives two desktop columns.
+- `width: 340` or less renders everywhere and still gives two desktop columns.
 - `width: '100%'` resolves against the live view width, so it fits any viewport.
   It pins the story to a single column at every size, which costs nothing for
   content that was already too wide to pair up.
@@ -77,6 +77,13 @@ only. To constrain a single variant, wrap its content:
 
 The responsive-viewport toolbar renders only for `layout: { type: 'single' }`.
 Grid stories cannot reach `responsivePresets` at all.
+
+That toolbar is also the only way to change the stored responsive width, and it
+is hidden below 640px. A single-layout story therefore arrives on a phone pinned
+to whatever width the last desktop visit left in localStorage, defaulting to
+720px, and the reader sees the left 390px of it. `PreviewControls` renders a
+"full width" link out to `__sandbox.html`, which is the same story at the
+device's real width with no chrome around it.
 
 ## Variants
 
@@ -105,9 +112,23 @@ on the variant that has the controls. A `<Story>`-level `initState` reaches the
 variants with no `#controls` slot too, and each of those renders a raw state
 editor in the panel where the reader expects "No controls available".
 
+Below 640px Histoire drops the side panel entirely. Controls written only into
+`#controls` are unreachable on the device the book is reviewed from, so declare
+them once and render them twice: `PreviewControls` inside the story, where a
+phone can reach them, and `PanelControls` in `#controls`, where a desktop
+reviewer expects them. Both write the same `state` object, so the two stay in
+step.
+
 ```vue
 <script setup lang="ts">
 import { logEvent } from "histoire/client";
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
+
+const controls: StoryControlSet = {
+  size: { type: "select", title: "size", options: ["sm", "md"] },
+};
 
 function initState() {
   return { modelValue: "log", size: "md" as "sm" | "md" };
@@ -119,10 +140,11 @@ function initState() {
     title="Segmented control"
     group="primitives"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
   >
     <Variant title="Mode tabs" :init-state="initState">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <SegmentedControl
           v-model="state.modelValue"
           :options="modes"
@@ -133,15 +155,19 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect v-model="state.size" title="size" :options="['sm', 'md']" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>
 </template>
 ```
 
+`src/stories/controls.ts` defines the four descriptor types: `select`, `slider`,
+`checkbox`, and `text`. A control the descriptors cannot express belongs in the
+`#controls` slot as a raw `Hst*` component, with the phone case handled by hand.
+
 Prefer this over a local `ref` plus a hand-written readout. A reviewer on a phone
-can drive `state` from the panel. They cannot edit the file.
+can drive `state`. They cannot edit the file.
 
 An `HstSelect` truncates a label around 20 characters while the control is
 closed. Keep option labels short and let the docs block carry the explanation.
@@ -213,6 +239,8 @@ Each of these produces no error and no warning:
 - A sibling `.story.md` silently wins over an inline `<docs>` block.
 - A `<Story>`-level `initState` hands every uncontrolled variant a raw state
   editor.
+- Controls written only into `#controls` vanish below 640px, along with the whole
+  side panel.
 - `provideUnits()` called from `setupApp` does nothing, because the Composition
   API `provide()` needs a component instance. Use `app.provide(key, value)`.
 
@@ -222,6 +250,17 @@ Each of these produces no error and no warning:
 fallback, since a story deep link has no HTML of its own. Check at 390x844 before
 claiming a story is reviewable. The dev server needs `dangerouslyDisableSandbox`,
 because the sandbox blocks the FSEvents watch Vite relies on.
+
+Chrome cannot be resized below its minimum window width, so drive the book
+through a 390x844 iframe on a second port instead. A story id comes from its
+path: `src/components/cycling/RideCard.story.vue` becomes
+`src-components-cycling-ridecard-story-vue`, and its variants append `-0`, `-1`.
+Below 640px a story with several variants opens on a picker rather than a
+variant, so deep link with `?variantId=` to land on one.
+
+`responsivePresets` in `histoire.config.ts` covers the desktop half of this. It
+frames a single-layout story at a real phone size with the sidebar and panel
+still in reach.
 
 `astro check` skips `.vue` files, so nothing type-checks a story. ESLint and
 opening it are the only two things standing between a broken `state` key and a

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { bareRide, crowdedRide, epicRide, raceRide } from "./fixtures";
 import FactChip from "./FactChip.vue";
 import type { RideFact } from "./types";
@@ -17,8 +20,23 @@ const factSets: Record<string, RideFact[]> = {
   none: bareRide.facts,
 };
 
+const controls: StoryControlSet = {
+  facts: {
+    type: "select",
+    title: "facts",
+    options: {
+      one: "one fact",
+      two: "two facts",
+      three: "three facts",
+      long: "one long fact",
+      none: "no facts",
+    },
+  },
+  width: { type: "slider", title: "width", min: 120, max: 340 },
+};
+
 function initState() {
-  return { facts: "two", width: 380 };
+  return { facts: "two", width: 340 };
 }
 </script>
 
@@ -27,11 +45,12 @@ function initState() {
     title="Fact chip"
     group="ride"
     auto-props-disabled
-    :layout="{ type: 'grid', width: 380 }"
+    :layout="{ type: 'grid', width: 340 }"
     :init-state="initState"
   >
     <Variant title="Fact chip">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <ul
           class="flex flex-wrap gap-1.5"
           :style="{ width: `${state.width}px`, maxWidth: '100%' }"
@@ -43,18 +62,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.facts"
-          title="facts"
-          :options="{
-            one: 'one fact',
-            two: 'two facts',
-            three: 'three facts',
-            long: 'one long fact',
-            none: 'no facts',
-          }"
-        />
-        <HstSlider v-model="state.width" title="width" :min="120" :max="380" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>

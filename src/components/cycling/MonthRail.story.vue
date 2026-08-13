@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { months } from "./fixtures";
 import { formatMonthKey } from "./format";
 import MonthRail from "./MonthRail.vue";
@@ -35,6 +38,19 @@ const monthOptions = {
   none: "no months",
 };
 
+const monthControl: StoryControlSet = {
+  months: { type: "select", title: "months", options: monthOptions },
+};
+
+const fixedControls: StoryControlSet = {
+  ...monthControl,
+  active: {
+    type: "select",
+    title: "active month",
+    options: { first: "the first month", none: "nothing active" },
+  },
+};
+
 function initState() {
   return { months: "season", active: "first" };
 }
@@ -54,15 +70,14 @@ function initState() {
   >
     <Variant title="Scroll spy">
       <template #default="{ state }">
+        <div class="bg-background px-4 pt-4">
+          <PreviewControls :controls="monthControl" :state="state" />
+        </div>
         <MonthRailScrollDemo :months="monthSets[state.months]!" />
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.months"
-          title="months"
-          :options="monthOptions"
-        />
+        <PanelControls :controls="monthControl" :state="state" />
       </template>
     </Variant>
 
@@ -71,6 +86,7 @@ function initState() {
         <div
           class="bg-background px-4 py-6 text-[11px] text-foreground/70 sm:pr-16"
         >
+          <PreviewControls :controls="fixedControls" :state="state" />
           the rail with its active month set by hand, rather than by scrolling.
           <MonthRail
             :months="monthSets[state.months]!"
@@ -84,19 +100,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect
-          v-model="state.months"
-          title="months"
-          :options="monthOptions"
-        />
-        <HstSelect
-          v-model="state.active"
-          title="active month"
-          :options="{
-            first: 'the first month',
-            none: 'nothing active',
-          }"
-        />
+        <PanelControls :controls="fixedControls" :state="state" />
       </template>
     </Variant>
   </Story>

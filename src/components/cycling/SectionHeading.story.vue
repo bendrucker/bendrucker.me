@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import { julyMonth, rankedLists } from "./fixtures";
 import * as format from "./format";
 import SectionHeading from "./SectionHeading.vue";
@@ -11,13 +14,25 @@ const iconOptions = {
   ...Object.fromEntries(iconNames.map((name) => [name, name])),
 };
 
+const controls: StoryControlSet = {
+  label: { type: "text", title: "label" },
+  summary: { type: "text", title: "summary" },
+  icon: { type: "select", title: "icon", options: iconOptions },
+  as: {
+    type: "select",
+    title: "as",
+    options: ["h2", "h3", "h4", "p", "span"],
+  },
+  width: { type: "slider", title: "width", min: 200, max: 720 },
+};
+
 function initState() {
   return {
     label: julyMonth.label,
     summary: monthSummary,
     icon: "",
     as: "h2",
-    width: 380,
+    width: 358,
   };
 }
 </script>
@@ -31,6 +46,7 @@ function initState() {
   >
     <Variant title="Section heading" :init-state="initState">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
           <SectionHeading
             :label="state.label"
@@ -42,15 +58,7 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstText v-model="state.label" title="label" />
-        <HstText v-model="state.summary" title="summary" />
-        <HstSelect v-model="state.icon" title="icon" :options="iconOptions" />
-        <HstSelect
-          v-model="state.as"
-          title="as"
-          :options="['h2', 'h3', 'h4', 'p', 'span']"
-        />
-        <HstSlider v-model="state.width" title="width" :min="200" :max="720" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
 
