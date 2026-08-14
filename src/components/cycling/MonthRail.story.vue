@@ -114,4 +114,8 @@ The fixed month index down the side of the log.
 Scroll spy is the real thing: scroll the frame and watch the active month track
 the sections. Fixed state pins the active month instead, which is how the empty
 and single-month cases are easiest to read.
+
+The rail is `hidden sm:flex`, so it renders nothing below 640px. This story
+keeps the responsive preview rather than fitting the pane, since a phone-width
+frame would leave it correctly blank and unreviewable.
 </docs>

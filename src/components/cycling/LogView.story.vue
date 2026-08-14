@@ -43,6 +43,7 @@ function initState() {
     title="Log view"
     group="cycling-views"
     auto-props-disabled
+    responsive-disabled
     :layout="{ type: 'single', iframe: true }"
     :init-state="initState"
   >

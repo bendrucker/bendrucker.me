@@ -78,12 +78,22 @@ only. To constrain a single variant, wrap its content:
 The responsive-viewport toolbar renders only for `layout: { type: 'single' }`.
 Grid stories cannot reach `responsivePresets` at all.
 
-That toolbar is also the only way to change the stored responsive width, and it
-is hidden below 640px. A single-layout story therefore arrives on a phone pinned
-to whatever width the last desktop visit left in localStorage, defaulting to
-720px, and the reader sees the left 390px of it. `PreviewControls` renders a
-"full width" link out to `__sandbox.html`, which is the same story at the
-device's real width with no chrome around it.
+A `single` story ignores the viewport. Its preview opens at a `responsiveWidth`
+stored in localStorage, defaulting to 720, and the toolbar is the only way to
+change that number. Below 640px the toolbar is gone. The story lands on a phone
+pinned to whatever the last desktop visit left behind, and the reader sees the
+left 390px of it.
+
+`responsive-disabled` on the `<Story>` drops the toolbar and the resize handles
+and fits the frame to the pane. Set it on any single-layout story a phone
+reviewer needs to read.
+
+One case wants the opposite. A component that does not exist at phone width, a
+`hidden sm:flex` rail among them, renders correctly as nothing in a 390px frame,
+and nothing is not reviewable. Leave the responsive preview on and say so in the
+docs block. `PreviewControls` renders a "full width" link out to
+`__sandbox.html` for readers who want the story at their real width with no
+chrome around it.
 
 ## Variants
 
@@ -239,6 +249,7 @@ Each of these produces no error and no warning:
 - A sibling `.story.md` silently wins over an inline `<docs>` block.
 - A `<Story>`-level `initState` hands every uncontrolled variant a raw state
   editor.
+- A `single` story clips at 720px on a phone until `responsive-disabled` is set.
 - Controls written only into `#controls` vanish below 640px, along with the whole
   side panel.
 - `provideUnits()` called from `setupApp` does nothing, because the Composition

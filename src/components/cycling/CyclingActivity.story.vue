@@ -72,6 +72,7 @@ function initState() {
     title="Activity page"
     group="cycling-views"
     auto-props-disabled
+    responsive-disabled
     :layout="{ type: 'single', iframe: true }"
     :init-state="initState"
   >
