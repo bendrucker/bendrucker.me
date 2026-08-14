@@ -1,0 +1,32 @@
+---
+import { SITE } from "@/config";
+---
+
+<div class="mx-auto w-full max-w-home px-5 pt-6 sm:pt-11">
+  <div class="sm:grid sm:grid-cols-[9.375rem_1fr] sm:items-start sm:gap-8">
+    <h2
+      class="pb-2.5 text-xs tracking-[0.14em] text-foreground/45 uppercase sm:pt-4.5 sm:pb-0"
+    >
+      Writing
+    </h2>
+    <div
+      class="flex flex-col gap-1.5 border-t border-border py-3.5 text-sm leading-[1.5] text-foreground/60 sm:text-base"
+    >
+      <p>Under construction. New posts are on the way.</p>
+      {
+        SITE.showArchives && (
+          <p>
+            Older writing lives in the{" "}
+            <a
+              href="/archives"
+              class="underline decoration-dashed underline-offset-4 hover:text-accent"
+            >
+              archives
+            </a>
+            .
+          </p>
+        )
+      }
+    </div>
+  </div>
+</div>

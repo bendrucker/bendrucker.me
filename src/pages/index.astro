@@ -1,15 +1,7 @@
 ---
-import { getCollection, type CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import Masthead from "@/components/home/Masthead.astro";
-import PostList from "@/components/home/PostList.astro";
-import { getSortedPosts } from "@/blog/posts";
-
-const sorted = getSortedPosts(await getCollection("blog"));
-const featured = sorted.filter(({ data }) => data.featured);
-const [label, highlighted]: [string, CollectionEntry<"blog">[]] = featured.length
-  ? ["Featured", featured]
-  : ["Recent", sorted.slice(0, 3)];
+import WritingNote from "@/components/home/WritingNote.astro";
 ---
 
 <Layout
@@ -19,7 +11,7 @@ const [label, highlighted]: [string, CollectionEntry<"blog">[]] = featured.lengt
 >
   <main id="main-content" data-layout="index">
     <Masthead />
-    <PostList {label} posts={highlighted} />
+    <WritingNote />
   </main>
 </Layout>
 
