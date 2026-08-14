@@ -27,16 +27,36 @@ uglier, but readable.
 
 The rest of this file covers what the types do not say.
 
+## Sidebar
+
+Groups are the only ordered level of the tree. `histoire.config.ts` declares them
+under `tree.groups`, Histoire renders them in that order, and everything below a
+group sorts by title. A story joins one with `group="<id>"`. Stories that name no
+group collect in a default group appended last.
+
+```ts
+tree: {
+  groups: [
+    { id: "cycling-views", title: "Cycling views" },
+    { id: "ride", title: "Ride" },
+  ],
+}
+```
+
+Prefer a group over a `Section/` prefix in the title. The prefix builds a third
+level of tree, and on a phone every level is another tap between the root and a
+component.
+
 ## Layout
 
 A grid story whose `width` exceeds the viewport never finishes measuring itself.
 `gridColumnWidth` and `viewWidth` stay at their initial `1` and the story renders
-as a one-pixel sliver. There is no error. At a 390px viewport the cliff sits
-between 380 and 420.
+as a one-pixel sliver. There is no error. The mobile grid gutters the row by
+16px a side, leaving 358px of the 390px viewport the book is reviewed at.
 
 Two safe choices:
 
-- `width: 380` or less renders everywhere and still gives two desktop columns.
+- `width: 340` or less renders everywhere and still gives two desktop columns.
 - `width: '100%'` resolves against the live view width, so it fits any viewport.
   It pins the story to a single column at every size, which costs nothing for
   content that was already too wide to pair up.
@@ -58,30 +78,67 @@ only. To constrain a single variant, wrap its content:
 The responsive-viewport toolbar renders only for `layout: { type: 'single' }`.
 Grid stories cannot reach `responsivePresets` at all.
 
+A `single` story ignores the viewport. Its preview opens at a `responsiveWidth`
+stored in localStorage, defaulting to 720, and the toolbar is the only way to
+change that number. Below 640px the toolbar is gone. The story lands on a phone
+pinned to whatever the last desktop visit left behind, and the reader sees the
+left 390px of it.
+
+`responsive-disabled` on the `<Story>` drops the toolbar and the resize handles
+and fits the frame to the pane. Set it on any single-layout story a phone
+reviewer needs to read.
+
+One case wants the opposite. A component that does not exist at phone width, a
+`hidden sm:flex` rail among them, renders correctly as nothing in a 390px frame,
+and nothing is not reviewable. Leave the responsive preview on and say so in the
+docs block. `PreviewControls` renders a "full width" link out to
+`__sandbox.html` for readers who want the story at their real width with no
+chrome around it.
+
 ## Variants
 
-Name what the variant proves, not what it contains. "Photos removed while open"
-beats "Variant 3". Four kinds are worth covering, and most components need three
-of them:
+A variant costs a full screen of scrolling on a phone. Most differences belong in
+the controls instead. Anything a reader changes one axis at a time is a control:
+which fixture is loaded, units, size, container width. The empty list, the
+overflowing name, and the record period nothing in the data carries are all
+entries in an `HstSelect`, not three more variants.
 
-- **Canonical** — the ordinary case a reader should picture.
-- **State** — each meaningfully different configuration.
-- **Edge** — empty, single item, overflowing text, longest plausible value.
-- **Invalid** — data the component should survive rather than render, such as a
-  record period nothing in the data carries.
+Keep a separate variant where a control cannot reach:
 
-A variant that only restates another variant's props is noise on a phone, where
-every variant costs a full screen of scrolling.
+- **Comparison** — several renderings on screen at once, such as all three stat
+  sizes side by side.
+- **Composition** — the component inside the markup that surrounds it on the real
+  page, which is where spacing and alignment go wrong.
+- **Behavior** — a different harness driving it, such as a scroll spy setting the
+  active month rather than a control.
+
+Name what the variant proves. "Photos removed while open" beats "Variant 3".
 
 ## State and Controls
 
 `initState` seeds a reactive object shared by the default slot, the `#controls`
-slot, and the side panel. It runs once per variant mount and can be async. Set it
-on a `<Variant>` to override the `<Story>`-level one.
+slot, and the side panel. It runs once per variant mount and can be async. Put it
+on the variant that has the controls. A `<Story>`-level `initState` reaches the
+variants with no `#controls` slot too, and each of those renders a raw state
+editor in the panel where the reader expects "No controls available".
+
+Below 640px Histoire drops the side panel entirely. Controls written only into
+`#controls` are unreachable on the device the book is reviewed from, so declare
+them once and render them twice: `PreviewControls` inside the story, where a
+phone can reach them, and `PanelControls` in `#controls`, where a desktop
+reviewer expects them. Both write the same `state` object, so the two stay in
+step.
 
 ```vue
 <script setup lang="ts">
 import { logEvent } from "histoire/client";
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
+
+const controls: StoryControlSet = {
+  size: { type: "select", title: "size", options: ["sm", "md"] },
+};
 
 function initState() {
   return { modelValue: "log", size: "md" as "sm" | "md" };
@@ -90,11 +147,14 @@ function initState() {
 
 <template>
   <Story
-    title="Cycling/Segmented control"
-    :layout="{ type: 'grid', width: 380 }"
+    title="Segmented control"
+    group="primitives"
+    auto-props-disabled
+    :layout="{ type: 'grid', width: 340 }"
   >
     <Variant title="Mode tabs" :init-state="initState">
       <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
         <SegmentedControl
           v-model="state.modelValue"
           :options="modes"
@@ -105,21 +165,33 @@ function initState() {
       </template>
 
       <template #controls="{ state }">
-        <HstSelect v-model="state.size" title="size" :options="['sm', 'md']" />
+        <PanelControls :controls="controls" :state="state" />
       </template>
     </Variant>
   </Story>
 </template>
 ```
 
+`src/stories/controls.ts` defines the four descriptor types: `select`, `slider`,
+`checkbox`, and `text`. A control the descriptors cannot express belongs in the
+`#controls` slot as a raw `Hst*` component, with the phone case handled by hand.
+
 Prefer this over a local `ref` plus a hand-written readout. A reviewer on a phone
-can drive `state` from the panel. They cannot edit the file.
+can drive `state`. They cannot edit the file.
+
+An `HstSelect` truncates a label around 20 characters while the control is
+closed. Keep option labels short and let the docs block carry the explanation.
 
 Auto-props fills the panel when no `#controls` slot exists, and it does read
-type-only `defineProps<T>()`. It degrades in two ways worth knowing: it reports
-only the JavaScript constructor, so `size?: "sm" | "md"` becomes a free-text box
-rather than a picker, and it does not seed current values, so fields start empty.
-Write `#controls` explicitly for anything a reviewer should actually change.
+type-only `defineProps<T>()`. It degrades in two ways: it reports only the
+JavaScript constructor, so `size?: "sm" | "md"` becomes a free-text box rather
+than a picker, and it does not seed current values, so fields start empty.
+
+Writing `#controls` does not displace that panel. The two stack, so a component
+taking an object prop puts a full-height JSON editor above the controls you
+wrote. `auto-props-disabled` on the `<Story>` suppresses it and propagates to
+every variant. The prop is missing from `components.d.ts` but real at runtime,
+and HMR does not apply it, so reload the page before deciding it did nothing.
 
 ## Events
 
@@ -175,6 +247,11 @@ Each of these produces no error and no warning:
 - `layout` on a `<Variant>` is ignored.
 - A grid `width` over the viewport collapses the story to one pixel.
 - A sibling `.story.md` silently wins over an inline `<docs>` block.
+- A `<Story>`-level `initState` hands every uncontrolled variant a raw state
+  editor.
+- A `single` story clips at 720px on a phone until `responsive-disabled` is set.
+- Controls written only into `#controls` vanish below 640px, along with the whole
+  side panel.
 - `provideUnits()` called from `setupApp` does nothing, because the Composition
   API `provide()` needs a component instance. Use `app.provide(key, value)`.
 
@@ -184,3 +261,18 @@ Each of these produces no error and no warning:
 fallback, since a story deep link has no HTML of its own. Check at 390x844 before
 claiming a story is reviewable. The dev server needs `dangerouslyDisableSandbox`,
 because the sandbox blocks the FSEvents watch Vite relies on.
+
+Chrome cannot be resized below its minimum window width, so drive the book
+through a 390x844 iframe on a second port instead. A story id comes from its
+path: `src/components/cycling/RideCard.story.vue` becomes
+`src-components-cycling-ridecard-story-vue`, and its variants append `-0`, `-1`.
+Below 640px a story with several variants opens on a picker rather than a
+variant, so deep link with `?variantId=` to land on one.
+
+`responsivePresets` in `histoire.config.ts` covers the desktop half of this. It
+frames a single-layout story at a real phone size with the sidebar and panel
+still in reach.
+
+`astro check` skips `.vue` files, so nothing type-checks a story. ESLint and
+opening it are the only two things standing between a broken `state` key and a
+reviewer. Open every variant you touched.

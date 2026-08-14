@@ -40,6 +40,11 @@ comments the link, so a component can be reviewed from a phone with nothing
 checked out. `workers/stories/wrangler.toml` serves `.histoire/dist` with a
 single-page-application fallback, since a story deep link has no HTML of its own.
 
+Histoire hides its side panel below 640px, so a story declares its controls once
+in `src/stories/controls.ts` terms and renders them through both
+`PreviewControls` (inside the story, reachable on a phone) and `PanelControls`
+(in the `#controls` slot).
+
 `.claude/skills/component-stories/SKILL.md` covers how to write one, including
 the layout widths that survive a phone and the several ways a story fails without
 reporting anything.
@@ -82,6 +87,21 @@ process before it is ready.
 ## Theme
 
 CSS vars in `global.css` → Tailwind: `bg-background`, `text-foreground`, `bg-accent`, `text-accent`, `bg-muted`, `text-muted`, `border-border`. Dark mode via `data-theme="dark"` / `dark:` prefix. No `skin-*` classes.
+
+## Icons
+
+Every icon comes from an Iconify collection through `@iconify/tailwind4`, as a
+class like `icon-[lucide--flame]`. Never an emoji, and never a Unicode glyph
+standing in for an icon: both inherit the reader's font and land at whatever
+weight and baseline that font gives them.
+
+Lucide is the collection for the cycling components, Phosphor (`ph`) for the
+about page. Stay within the collection already in use on a page.
+
+Tailwind extracts class candidates from source text, so an interpolated class
+name generates no CSS. Data carries a semantic name and a component maps it to a
+class written out in full. `src/components/cycling/LucideIcon.vue` is the
+pattern, and `IconName` in `types.ts` is the list of names it accepts.
 
 ## Workers
 

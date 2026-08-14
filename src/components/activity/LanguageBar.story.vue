@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { logEvent } from "histoire/client";
 import type { Language } from "@/activity/types";
+import type { StoryControlSet } from "@/stories/controls";
+import PanelControls from "@/stories/PanelControls.vue";
+import PreviewControls from "@/stories/PreviewControls.vue";
 import LanguageBar from "./LanguageBar.vue";
 
-const languages: Language[] = [
+const everyLanguage: Language[] = [
   { name: "TypeScript", color: "#3178c6", extension: ".ts", count: 84 },
   { name: "Go", color: "#00ADD8", extension: ".go", count: 41 },
   { name: "Vue", color: "#41b883", extension: ".vue", count: 19 },
@@ -14,32 +17,69 @@ const languages: Language[] = [
   { name: "Dockerfile", color: "#384d54", extension: null, count: 1 },
 ];
 
-const selected = ref<string | null>(null);
+const languageSets: Record<string, Language[]> = {
+  every: everyLanguage,
+  single: everyLanguage.slice(0, 1),
+  none: [],
+};
+
+const selectable = {
+  "": "nothing selected",
+  ...Object.fromEntries(everyLanguage.map(({ name }) => [name, name])),
+};
+
+const controls: StoryControlSet = {
+  languages: {
+    type: "select",
+    title: "languages",
+    options: {
+      every: "eight languages",
+      single: "one language",
+      none: "no languages",
+    },
+  },
+  selected: { type: "select", title: "selected", options: selectable },
+};
+
+function initState() {
+  return { languages: "every", selected: "" };
+}
 </script>
 
 <template>
   <Story
-    title="Activity/Language bar"
+    title="Language bar"
+    group="code"
+    auto-props-disabled
     :layout="{ type: 'grid', width: '100%' }"
+    :init-state="initState"
   >
-    <Variant title="Interactive">
-      <LanguageBar
-        :languages="languages"
-        :selected-language="selected"
-        @select="selected = $event"
-      />
-    </Variant>
+    <Variant title="Language bar">
+      <template #default="{ state }">
+        <PreviewControls :controls="controls" :state="state" />
+        <LanguageBar
+          :languages="languageSets[state.languages]!"
+          :selected-language="state.selected || null"
+          @select="
+            state.selected = $event ?? '';
+            logEvent('select', { language: $event });
+          "
+        />
+      </template>
 
-    <Variant title="Selected">
-      <LanguageBar :languages="languages" selected-language="Go" />
-    </Variant>
-
-    <Variant title="Single language">
-      <LanguageBar :languages="[languages[0]!]" :selected-language="null" />
-    </Variant>
-
-    <Variant title="Empty">
-      <LanguageBar :languages="[]" :selected-language="null" />
+      <template #controls="{ state }">
+        <PanelControls :controls="controls" :state="state" />
+      </template>
     </Variant>
   </Story>
 </template>
+
+<docs lang="md">
+# Language bar
+
+The proportional bar of languages above the code activity feed.
+
+Selecting is two-way: tap a segment and the panel follows, or drive it from the
+panel. The tail languages are a pixel or two wide, which is the case to check on
+a phone.
+</docs>

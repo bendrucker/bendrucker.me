@@ -53,14 +53,19 @@ html[data-theme="dark"] {
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
-  section,
-  footer {
-    @apply mx-auto max-w-app px-4;
-  }
 }
 
 @utility max-w-app {
   @apply max-w-3xl;
+}
+
+/**
+ * The centred column a page's top-level content sits in. This is opt-in rather
+ * than a rule on `section`, which would also catch sections used for grouping
+ * inside a component and shrink them to their content as flex items.
+ */
+@utility page-column {
+  @apply mx-auto max-w-app px-4;
 }
 
 .active-nav {
