@@ -58,7 +58,7 @@
     "@lhci/cli": "^0.15.1",
     "@sentry/astro": "^10.69.0",
     "@shikijs/transformers": "^4.4.1",
-    "@spotlightjs/spotlight": "^4.11.7",
+    "@spotlightjs/spotlight": "^4.11.8",
     "@tailwindcss/typography": "^0.5.20",
     "@types/better-sqlite3": "^7.6.13",
     "@types/lodash.kebabcase": "^4.1.9",
