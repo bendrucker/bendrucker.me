@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useActivityApi } from "./composables/useActivityApi";
-import type { Repo, YearCount } from "@/activity/types";
+import type { Repo } from "@/activity/types";
 import FilterControls from "./FilterControls.vue";
 import LanguageBar from "./LanguageBar.vue";
 import RepoCard from "./RepoCard.vue";

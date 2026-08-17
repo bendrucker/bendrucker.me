@@ -31,10 +31,19 @@ export interface LanguageExtensionsTable {
   extension: string;
 }
 
+export interface SyncStateTable {
+  id: Generated<number>;
+  version: Generated<number>;
+  payloadHash: string | null;
+  changedAt: Generated<string>;
+  syncedAt: Generated<string>;
+}
+
 export interface Database {
   repos: ReposTable;
   repoActivity: RepoActivityTable;
   languageExtensions: LanguageExtensionsTable;
+  syncState: SyncStateTable;
 }
 
 export function createDb(d1: D1Database): Kysely<Database> {

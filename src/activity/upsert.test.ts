@@ -3,7 +3,12 @@ import type { Kysely } from "kysely";
 import type { Database } from "@/db";
 import { createTestDb } from "@/test/db";
 import type { RepoActivity } from "@workspace/github";
-import { upsertRepo, upsertActivity } from "./upsert";
+import {
+  activityStatements,
+  upsertActivity,
+  upsertLanguageExtension,
+  upsertRepo,
+} from "./upsert";
 
 function makeRepo(overrides: Partial<RepoActivity> = {}): RepoActivity {
   return {
@@ -108,5 +113,99 @@ describe("upsert builders", () => {
       .executeTakeFirstOrThrow();
     expect(stored.primaryLanguageName).toBeNull();
     expect(stored.primaryLanguageColor).toBeNull();
+  });
+
+  it("writes nothing when the incoming row is identical", async () => {
+    const repo = makeRepo();
+    await upsertRepo(db, repo).execute();
+    await upsertActivity(db, repo).execute();
+
+    // `updated_at` defaults to `datetime('now')`, whose one-second resolution
+    // would hide a rewrite within the same second. A sentinel cannot.
+    await db
+      .updateTable("repos")
+      .set({ updatedAt: "1999-12-31 23:59:59" })
+      .execute();
+
+    const [repoResult] = await upsertRepo(db, repo).execute();
+    const [activityResult] = await upsertActivity(db, repo).execute();
+
+    expect(repoResult.numInsertedOrUpdatedRows).toBe(0n);
+    expect(activityResult.numInsertedOrUpdatedRows).toBe(0n);
+
+    const stored = await db
+      .selectFrom("repos")
+      .selectAll()
+      .executeTakeFirstOrThrow();
+    expect(stored.updatedAt).toBe("1999-12-31 23:59:59");
+  });
+
+  it("writes when a primary language appears or disappears", async () => {
+    await upsertRepo(db, makeRepo({ primaryLanguage: null })).execute();
+
+    const [added] = await upsertRepo(
+      db,
+      makeRepo({ primaryLanguage: { name: "Go", color: "#00ADD8" } }),
+    ).execute();
+    expect(added.numInsertedOrUpdatedRows).toBe(1n);
+
+    const [removed] = await upsertRepo(
+      db,
+      makeRepo({ primaryLanguage: null }),
+    ).execute();
+    expect(removed.numInsertedOrUpdatedRows).toBe(1n);
+
+    const stored = await db
+      .selectFrom("repos")
+      .selectAll()
+      .executeTakeFirstOrThrow();
+    expect(stored.primaryLanguageName).toBeNull();
+  });
+
+  it("writes a language extension only when it changes", async () => {
+    await upsertLanguageExtension(db, "TypeScript", ".ts").execute();
+
+    const [same] = await upsertLanguageExtension(
+      db,
+      "TypeScript",
+      ".ts",
+    ).execute();
+    expect(same.numInsertedOrUpdatedRows).toBe(0n);
+
+    const [changed] = await upsertLanguageExtension(
+      db,
+      "TypeScript",
+      ".tsx",
+    ).execute();
+    expect(changed.numInsertedOrUpdatedRows).toBe(1n);
+  });
+});
+
+describe("activityStatements", () => {
+  let db: Kysely<Database>;
+
+  beforeEach(() => {
+    db = createTestDb();
+  });
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("orders statements by owner and name regardless of fetch order", () => {
+    const repos = [
+      makeRepo({ owner: "zed", name: "zed" }),
+      makeRepo({ owner: "bendrucker", name: "quibble" }),
+      makeRepo({ owner: "bendrucker", name: "cool-lib" }),
+    ];
+
+    const forward = activityStatements(db, repos);
+    const reversed = activityStatements(db, [...repos].reverse());
+
+    expect(forward.map((query) => query.parameters)).toEqual(
+      reversed.map((query) => query.parameters),
+    );
+    expect(forward).toHaveLength(repos.length * 2);
+    expect(forward[0].parameters).toContain("cool-lib");
   });
 });

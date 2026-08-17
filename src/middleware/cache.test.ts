@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { activityCachePolicy, activityMaxAge, isActivityPath } from "./cache";
+import {
+  activityCachePolicy,
+  activityETag,
+  activityMaxAge,
+  etagMatches,
+  isActivityPath,
+} from "./cache";
 
 describe("activityMaxAge", () => {
   it("expires at five past the next hour mid-hour", () => {
@@ -42,5 +48,36 @@ describe("activityCachePolicy", () => {
       maxAge: 2100,
       swr: 3600,
     });
+  });
+});
+
+describe("activityETag", () => {
+  it("separates the representations served at one URL", () => {
+    expect(activityETag(7, "html")).toBe('"7-html"');
+    expect(activityETag(7, "md")).toBe('"7-md"');
+  });
+});
+
+describe("etagMatches", () => {
+  const etag = activityETag(7, "html");
+
+  it("ignores a request with no validator", () => {
+    expect(etagMatches(null, etag)).toBe(false);
+    expect(etagMatches("", etag)).toBe(false);
+  });
+
+  it("matches the same version and representation", () => {
+    expect(etagMatches('"7-html"', etag)).toBe(true);
+    expect(etagMatches('"6-html"', etag)).toBe(false);
+    expect(etagMatches('"7-md"', etag)).toBe(false);
+  });
+
+  it("compares weakly", () => {
+    expect(etagMatches('W/"7-html"', etag)).toBe(true);
+  });
+
+  it("accepts any entry in a list, and the wildcard", () => {
+    expect(etagMatches('"6-html", "7-html"', etag)).toBe(true);
+    expect(etagMatches("*", etag)).toBe(true);
   });
 });

@@ -1,5 +1,9 @@
 export const PRODUCES = ["text/html", "text/markdown"] as const;
 
+export function prefersMarkdown(request: Request): boolean {
+  return negotiate(request.headers.get("accept"), PRODUCES) === "text/markdown";
+}
+
 type AcceptEntry = {
   type: string;
   subtype: string;
