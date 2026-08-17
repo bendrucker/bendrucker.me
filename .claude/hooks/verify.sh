@@ -31,8 +31,12 @@ if [[ -n "$changed_existing" ]]; then
   fi
 fi
 
-if ! lint_output=$(npx eslint . 2>&1); then
-  errors+="ESLint errors:\n${lint_output}\n\n"
+if ! oxlint_output=$(npx oxlint 2>&1); then
+  errors+="oxlint errors:\n${oxlint_output}\n\n"
+fi
+
+if ! eslint_output=$(npx eslint . 2>&1); then
+  errors+="ESLint errors:\n${eslint_output}\n\n"
 fi
 
 # Skip build if source files haven't changed since last successful build
