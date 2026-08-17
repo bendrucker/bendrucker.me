@@ -79,7 +79,7 @@
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tsx": "^4.23.5",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.10",
     "vue-eslint-parser": "^10.4.1",
     "wrangler": "^4.118.0"
