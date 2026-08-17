@@ -32,7 +32,10 @@ const { tag } = params;
 const { page, tagName } = Astro.props;
 ---
 
-<Layout title={`Tag: ${tagName} | ${SITE.title}`} sourcePath="src/pages/tags/[tag]/[...page].astro">
+<Layout
+  title={`Tag: ${tagName} | ${SITE.title}`}
+  sourcePath="src/pages/tags/[tag]/[...page].astro"
+>
   <Main
     pageTitle={[`Tag:`, `${tagName}`]}
     titleTransition={tag}
@@ -47,7 +50,7 @@ const { page, tagName } = Astro.props;
       <span>All tags</span>
     </LinkButton>
     <ul>
-      {page.data.map(data => <Card {...data} />)}
+      {page.data.map((data) => <Card {...data} />)}
     </ul>
   </Main>
 

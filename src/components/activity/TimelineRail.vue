@@ -54,15 +54,15 @@ const hasNewerYears = computed(() => {
 <template>
   <nav
     v-if="years.length > 0"
-    class="hidden lg:flex absolute -right-16 top-0 h-full"
+    class="absolute top-0 -right-16 hidden h-full lg:flex"
     aria-label="Year navigation"
   >
     <div
-      class="sticky top-1/2 -translate-y-1/2 flex flex-col items-end gap-1 h-fit"
+      class="sticky top-1/2 flex h-fit -translate-y-1/2 flex-col items-end gap-1"
     >
       <button
         v-if="hasNewerYears"
-        class="text-sm text-foreground/20 hover:text-foreground/40 transition-colors px-1.5"
+        class="px-1.5 text-sm text-foreground/20 transition-colors hover:text-foreground/40"
         aria-label="Show all years"
         @click="expanded = true"
       >
@@ -71,10 +71,10 @@ const hasNewerYears = computed(() => {
       <template v-for="y in visibleYears" :key="y.year">
         <button
           v-if="loadedYears.has(y.year)"
-          class="text-sm tabular-nums transition-colors px-1.5 py-0.5 rounded"
+          class="rounded px-1.5 py-0.5 text-sm tabular-nums transition-colors"
           :class="
             currentYear === y.year
-              ? 'text-accent font-semibold'
+              ? 'font-semibold text-accent'
               : 'text-foreground/30 hover:text-foreground/60'
           "
           @click="emit('navigate', y.year)"
@@ -84,10 +84,10 @@ const hasNewerYears = computed(() => {
         <a
           v-else
           :href="`/activity/code/${y.year}`"
-          class="text-sm tabular-nums transition-colors px-1.5 py-0.5 rounded"
+          class="rounded px-1.5 py-0.5 text-sm tabular-nums transition-colors"
           :class="
             currentYear === y.year
-              ? 'text-accent font-semibold'
+              ? 'font-semibold text-accent'
               : 'text-foreground/30 hover:text-foreground/60'
           "
         >
@@ -96,7 +96,7 @@ const hasNewerYears = computed(() => {
       </template>
       <button
         v-if="hasOlderYears"
-        class="text-sm text-foreground/20 hover:text-foreground/40 transition-colors px-1.5"
+        class="px-1.5 text-sm text-foreground/20 transition-colors hover:text-foreground/40"
         aria-label="Show all years"
         @click="expanded = true"
       >

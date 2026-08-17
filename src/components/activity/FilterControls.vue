@@ -46,10 +46,10 @@ function resetFilters() {
       :aria-pressed="(filters.owner === 'all').toString()"
       :class="
         filters.owner === 'all'
-          ? 'bg-accent text-background border-accent'
+          ? 'border-accent bg-accent text-background'
           : 'border-border text-foreground hover:border-accent'
       "
-      class="flex items-center h-8 px-3 rounded-full text-sm font-medium border transition-colors"
+      class="flex h-8 items-center rounded-full border px-3 text-sm font-medium transition-colors"
       @click="setOwner('all')"
     >
       All
@@ -58,15 +58,15 @@ function resetFilters() {
       :aria-pressed="(filters.owner === 'personal').toString()"
       :class="
         filters.owner === 'personal'
-          ? 'bg-accent text-background border-accent'
+          ? 'border-accent bg-accent text-background'
           : 'border-border text-foreground hover:border-accent'
       "
-      class="flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium border transition-colors"
+      class="flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
       title="Personal repositories"
       @click="setOwner('personal')"
     >
       <svg
-        class="w-3.5 h-3.5"
+        class="h-3.5 w-3.5"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="none"
@@ -84,15 +84,15 @@ function resetFilters() {
       :aria-pressed="(filters.owner === 'external').toString()"
       :class="
         filters.owner === 'external'
-          ? 'bg-accent text-background border-accent'
+          ? 'border-accent bg-accent text-background'
           : 'border-border text-foreground hover:border-accent'
       "
-      class="flex items-center gap-1.5 h-8 px-3 rounded-full text-sm font-medium border transition-colors"
+      class="flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
       title="External / organization repositories"
       @click="setOwner('external')"
     >
       <svg
-        class="w-3.5 h-3.5"
+        class="h-3.5 w-3.5"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="none"
@@ -111,7 +111,7 @@ function resetFilters() {
     <span class="ml-auto flex items-center gap-1.5 text-xs text-foreground/50">
       <button
         v-if="hasActiveFilter"
-        class="text-foreground/40 hover:text-foreground transition-colors"
+        class="text-foreground/40 transition-colors hover:text-foreground"
         aria-label="Reset filters"
         @click="resetFilters"
       >
@@ -124,7 +124,7 @@ function resetFilters() {
   <div class="flex items-center gap-2">
     <div class="relative flex-1">
       <svg
-        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none"
+        class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-foreground/40"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="none"
@@ -141,7 +141,7 @@ function resetFilters() {
         :value="filters.search"
         placeholder="Search"
         aria-label="Search repositories"
-        class="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-accent"
+        class="w-full rounded-md border border-border bg-background py-2 pr-3 pl-9 text-sm text-foreground placeholder:text-foreground/40 focus:border-accent focus:outline-none"
         @input="
           emit('update:filters', {
             search: ($event.target as HTMLInputElement).value,
@@ -152,7 +152,7 @@ function resetFilters() {
     </div>
     <div class="relative flex-shrink-0">
       <svg
-        class="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none"
+        class="pointer-events-none absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2 text-foreground/40"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="none"
@@ -170,7 +170,7 @@ function resetFilters() {
       <select
         :value="filters.sort"
         aria-label="Sort order"
-        class="h-9 pl-7 pr-6 text-sm border border-border rounded-md bg-background text-foreground/70 focus:outline-none focus:border-accent appearance-none cursor-pointer"
+        class="h-9 cursor-pointer appearance-none rounded-md border border-border bg-background pr-6 pl-7 text-sm text-foreground/70 focus:border-accent focus:outline-none"
         @change="
           emit('update:filters', {
             sort: ($event.target as HTMLSelectElement)

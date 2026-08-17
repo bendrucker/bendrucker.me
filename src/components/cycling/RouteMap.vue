@@ -35,7 +35,7 @@ const fitted = computed(() =>
       loading="lazy"
       :width="TILE_SIZE"
       :height="TILE_SIZE"
-      class="absolute max-w-none grayscale-[.9] contrast-[.92] opacity-85 dark:opacity-70 dark:invert"
+      class="absolute max-w-none opacity-85 contrast-[.92] grayscale-[.9] dark:opacity-70 dark:invert"
       :style="{ left: `${tile.left}px`, top: `${tile.top}px` }"
     />
     <svg
