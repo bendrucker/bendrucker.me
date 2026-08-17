@@ -2,6 +2,7 @@
 // kept out of `src/publish.ts` so they load outside the Workers runtime, where
 // `cloudflare:workers` does not resolve and a test cannot import the class.
 import type { CompiledQuery, Kysely } from "kysely";
+import { z } from "zod";
 import { createDb, type Database } from "../db";
 
 // The hub branches on this name to decide whether a failure is permanent. RPC
@@ -10,36 +11,55 @@ export class ValidationError extends Error {
   override readonly name = "ValidationError";
 }
 
-export type PowerSource = "measured" | "estimated" | "none";
+const text = z.string().min(1);
 
-const POWER_SOURCES: readonly string[] = ["measured", "estimated", "none"];
+// A field the hub may send as null or omit entirely, stored either way as the
+// null the column holds.
+function nullable<T extends z.ZodType>(schema: T) {
+  return schema.nullish().transform((value) => value ?? null);
+}
 
-// Hand-written on both sides rather than shared as a package. The hub's tests
-// assert the exact object it sends, so the two definitions are checked against
-// each other by those assertions rather than by a build step.
-export interface PublishedActivity {
-  activityId: string;
-  stravaId: string | null;
-  name: string | null;
-  sport: string;
-  startedAt: string;
-  timezone: string;
-  distanceM: number | null;
-  movingS: number | null;
-  elevationM: number | null;
-  averageWatts: number | null;
-  powerSource: PowerSource;
-  polyline: string | null;
+const powerSource = z.enum(["measured", "estimated", "none"]);
+
+// The schema is the definition: the type below is inferred from it, so a field
+// cannot be validated one way and typed another. The hub hand-writes its own
+// copy, and its tests assert the exact object it sends.
+const publishedActivity = z.object({
+  activityId: text,
+  stravaId: nullable(text),
+  name: nullable(z.string()),
+  sport: text,
+  startedAt: text.refine(
+    (value) => Number.isFinite(Date.parse(value)),
+    "must be a parseable timestamp",
+  ),
+  timezone: text,
+  distanceM: nullable(z.number()),
+  movingS: nullable(z.number()),
+  elevationM: nullable(z.number()),
+  averageWatts: nullable(z.number()),
+  powerSource,
+  polyline: nullable(z.string()),
   // Altitudes in metres, evenly spaced by distance. The site normalizes to
   // whatever range its chart wants and keeps these for the axis label.
-  elevationProfile: number[] | null;
-  photoKeys: string[];
-}
+  elevationProfile: nullable(z.array(z.number())),
+  photoKeys: z
+    .array(text)
+    .nullish()
+    .transform((value) => value ?? []),
+});
 
-export interface PowerBest {
-  durationS: number;
-  watts: number;
-}
+const powerBests = z
+  .array(z.object({ durationS: z.int().positive(), watts: z.number() }))
+  .refine(
+    (bests) =>
+      new Set(bests.map((best) => best.durationS)).size === bests.length,
+    "must not repeat a duration",
+  );
+
+export type PowerSource = z.infer<typeof powerSource>;
+export type PublishedActivity = z.infer<typeof publishedActivity>;
+export type PowerBest = z.infer<typeof powerBests>[number];
 
 // Kysely's D1 dialect throws on transactions, so a multi-statement write goes
 // through d1.batch() instead. The store names that as its own operation, which
@@ -66,7 +86,7 @@ export async function publishActivity(
   store: PublishStore,
   row: unknown,
 ): Promise<void> {
-  const activity = parseActivity(row);
+  const activity = parse(publishedActivity, row, "activity");
   await store.db
     .insertInto("activityFeed")
     .values({
@@ -119,8 +139,8 @@ export async function publishPowerCurve(
   activityId: unknown,
   bests: unknown,
 ): Promise<void> {
-  const id = requireId(activityId, "activityId");
-  const rows = parseBests(bests);
+  const id = parse(text, activityId, "activityId");
+  const rows = parse(powerBests, bests, "bests");
 
   const statements: CompiledQuery[] = [
     store.db
@@ -151,7 +171,7 @@ export async function deleteActivity(
   store: PublishStore,
   activityId: unknown,
 ): Promise<void> {
-  const id = requireId(activityId, "activityId");
+  const id = parse(text, activityId, "activityId");
   await store.batch([
     store.db
       .deleteFrom("activityPowerCurve")
@@ -161,130 +181,32 @@ export async function deleteActivity(
   ]);
 }
 
-// Every field is checked by name rather than by casting the object, because
-// the caller is any Worker holding the binding and a wrong shape should park
-// as a permanent failure instead of writing a half-formed row.
-function parseActivity(value: unknown): PublishedActivity {
-  const row = requireObject(value, "activity");
-  const powerSource = requireString(row.powerSource, "powerSource");
-  if (!POWER_SOURCES.includes(powerSource)) {
-    throw new ValidationError(
-      `powerSource must be one of ${POWER_SOURCES.join(", ")}`,
-    );
+// The caller is any Worker holding the binding, so a wrong shape has to park as
+// a permanent failure rather than write a half-formed row. Restating the
+// failure as a ValidationError is what tells the hub which of the two it is.
+function parse<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
+  const result = schema.safeParse(value);
+  if (result.success) {
+    return result.data;
   }
-
-  return {
-    activityId: requireId(row.activityId, "activityId"),
-    stravaId: optionalString(row.stravaId, "stravaId"),
-    name: optionalString(row.name, "name"),
-    sport: requireId(row.sport, "sport"),
-    startedAt: requireTimestamp(row.startedAt, "startedAt"),
-    timezone: requireId(row.timezone, "timezone"),
-    distanceM: optionalNumber(row.distanceM, "distanceM"),
-    movingS: optionalNumber(row.movingS, "movingS"),
-    elevationM: optionalNumber(row.elevationM, "elevationM"),
-    averageWatts: optionalNumber(row.averageWatts, "averageWatts"),
-    powerSource: powerSource as PowerSource,
-    polyline: optionalString(row.polyline, "polyline"),
-    elevationProfile: parseElevation(row.elevationProfile),
-    photoKeys: parsePhotoKeys(row.photoKeys),
-  };
+  throw new ValidationError(describe(result.error, label));
 }
 
-function parseElevation(value: unknown): number[] | null {
-  if (value === null || value === undefined) {
-    return null;
+// The first issue, addressed the way the hub names the field, so a rejection
+// reads as `bests[2].durationS: ...` in the derived row the hub records.
+function describe(error: z.ZodError, label: string): string {
+  const [issue] = error.issues;
+  if (issue === undefined) {
+    return `${label} is invalid`;
   }
-  if (!Array.isArray(value)) {
-    throw new ValidationError("elevationProfile must be an array or null");
-  }
-  return value.map((entry, index) =>
-    requireNumber(entry, `elevationProfile[${index}]`),
-  );
-}
-
-function parsePhotoKeys(value: unknown): string[] {
-  if (value === null || value === undefined) {
-    return [];
-  }
-  if (!Array.isArray(value)) {
-    throw new ValidationError("photoKeys must be an array");
-  }
-  return value.map((entry, index) => requireId(entry, `photoKeys[${index}]`));
-}
-
-function parseBests(value: unknown): PowerBest[] {
-  if (!Array.isArray(value)) {
-    throw new ValidationError("bests must be an array");
-  }
-  const seen = new Set<number>();
-  return value.map((entry, index) => {
-    const best = requireObject(entry, `bests[${index}]`);
-    const durationS = requireNumber(
-      best.durationS,
-      `bests[${index}].durationS`,
-    );
-    if (!Number.isInteger(durationS) || durationS <= 0) {
-      throw new ValidationError(
-        `bests[${index}].durationS must be a positive integer`,
-      );
-    }
-    if (seen.has(durationS)) {
-      throw new ValidationError(`bests repeats duration ${durationS}`);
-    }
-    seen.add(durationS);
-    return {
-      durationS,
-      watts: requireNumber(best.watts, `bests[${index}].watts`),
-    };
-  });
-}
-
-function requireObject(value: unknown, field: string): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ValidationError(`${field} must be an object`);
-  }
-  return value as Record<string, unknown>;
-}
-
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== "string") {
-    throw new ValidationError(`${field} must be a string`);
-  }
-  return value;
-}
-
-function requireId(value: unknown, field: string): string {
-  const text = requireString(value, field);
-  if (text.length === 0) {
-    throw new ValidationError(`${field} must not be empty`);
-  }
-  return text;
-}
-
-function optionalString(value: unknown, field: string): string | null {
-  return value === null || value === undefined
-    ? null
-    : requireString(value, field);
-}
-
-function requireNumber(value: unknown, field: string): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new ValidationError(`${field} must be a finite number`);
-  }
-  return value;
-}
-
-function optionalNumber(value: unknown, field: string): number | null {
-  return value === null || value === undefined
-    ? null
-    : requireNumber(value, field);
-}
-
-function requireTimestamp(value: unknown, field: string): string {
-  const text = requireId(value, field);
-  if (!Number.isFinite(Date.parse(text))) {
-    throw new ValidationError(`${field} must be a parseable timestamp`);
-  }
-  return text;
+  const path = issue.path
+    .map((segment, index) =>
+      typeof segment === "number"
+        ? `[${segment}]`
+        : index === 0
+          ? String(segment)
+          : `.${String(segment)}`,
+    )
+    .join("");
+  return `${path === "" ? label : path}: ${issue.message}`;
 }
