@@ -1,0 +1,98 @@
+/* Build entry for the claude.ai/design sync (see .design-sync/NOTES.md).
+   Wraps the site's real global.css and safelists the vocabulary the design
+   agent needs, since the uploaded stylesheet is precompiled and Tailwind
+   never runs again downstream. */
+
+@import "../src/styles/global.css";
+
+@source "../src";
+/* Tailwind's automatic detection scans the whole repo and honors only the repo
+   .gitignore, never the user's global one. `.worktrees/` and `tmp/` are ignored
+   globally here, so without these it scans them, reads class names quoted in
+   NOTES.md and conventions.md as real usage, and fails on the literal
+   `icon-[ph--*]` those files document. */
+@source not "../.design-sync";
+@source not "../.worktrees";
+@source not "../tmp";
+
+/* Semantic theme colors across every utility family that accepts a color. */
+@source inline(
+  "{bg,text,border,outline,decoration,fill,stroke,ring,divide,accent,caret,shadow}-{background,foreground,accent,muted,border}"
+);
+@source inline(
+  "{bg,text,border,outline,fill,ring}-{background,foreground,accent,muted,border}/{5,10,15,20,25,30,40,50,60,70,75,80,85,90,95}"
+);
+@source inline(
+  "{hover,focus-visible,dark,sm,md,lg}:{bg,text,border,outline}-{background,foreground,accent,muted,border}"
+);
+
+/* Spacing scale: padding, margin, gap, and the space-between helpers. */
+@source inline(
+  "{,sm:,md:,lg:}{p,px,py,pt,pr,pb,pl,m,mx,my,mt,mr,mb,ml,gap,gap-x,gap-y,space-x,space-y}-{0,px,0.5,1,1.5,2,2.5,3,3.5,4,5,6,7,8,9,10,11,12,14,16,20,24,28,32,40,48,56,64}"
+);
+@source inline("{mx,my,mt,mb}-auto");
+
+/* Sizing. */
+@source inline(
+  "{,sm:,md:,lg:}{w,h,min-w,min-h,max-w,max-h}-{0,px,1,2,3,4,5,6,8,10,12,16,20,24,32,40,48,56,64,full,screen,auto,fit,min,max}"
+);
+@source inline("max-w-{xs,sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,7xl,prose,app}");
+
+/* Layout, flexbox, and grid. */
+@source inline(
+  "{,sm:,md:,lg:}{block,inline-block,inline,flex,inline-flex,grid,inline-grid,contents,hidden}"
+);
+@source inline(
+  "{,sm:,md:,lg:}flex-{row,row-reverse,col,col-reverse,wrap,nowrap,1,auto,initial,none}"
+);
+@source inline("items-{start,end,center,baseline,stretch}");
+@source inline("justify-{start,end,center,between,around,evenly}");
+@source inline("self-{auto,start,end,center,stretch}");
+@source inline("{,sm:,md:,lg:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none}");
+@source inline("{,sm:,md:,lg:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full}");
+@source inline("{static,relative,absolute,fixed,sticky}");
+@source inline("{inset,top,right,bottom,left}-{0,px,1,2,3,4,6,8,auto,full}");
+@source inline("z-{0,10,20,30,40,50,auto}");
+@source inline("overflow-{auto,hidden,visible,scroll,clip}");
+@source inline("{overflow-x,overflow-y}-{auto,hidden,visible,scroll,clip}");
+
+/* Typography. */
+@source inline("{,sm:,md:,lg:}text-{xs,sm,base,lg,xl,2xl,3xl,4xl,5xl,6xl,7xl}");
+@source inline("font-{sans,serif,mono}");
+@source inline("font-{thin,light,normal,medium,semibold,bold,extrabold,black}");
+@source inline("text-{left,center,right,justify}");
+@source inline(
+  "{italic,not-italic,uppercase,lowercase,capitalize,normal-case,truncate}"
+);
+@source inline("{underline,line-through,no-underline,overline}");
+/* The site uses these in its own markup, so a source scan happens to emit them.
+   Safelist them anyway: conventions.md's example depends on them, and a markup
+   change elsewhere must not silently drop them. */
+@source inline("decoration-{solid,double,dotted,dashed,wavy,none}");
+@source inline("decoration-{0,1,2,4,8}");
+@source inline("underline-offset-{0,1,2,4,8,auto}");
+@source inline(
+  "leading-{none,tight,snug,normal,relaxed,loose,3,4,5,6,7,8,9,10}"
+);
+@source inline("tracking-{tighter,tight,normal,wide,wider,widest}");
+@source inline("whitespace-{normal,nowrap,pre,pre-line,pre-wrap}");
+@source inline("break-{normal,words,all,keep}");
+
+/* Borders, radius, shadow, and effects. */
+@source inline("border-{0,2,4,8}");
+@source inline(
+  "{border-t,border-r,border-b,border-l,border-x,border-y}-{0,2,4,8}"
+);
+@source inline("border-{solid,dashed,dotted,double,none}");
+@source inline("rounded-{none,sm,md,lg,xl,2xl,3xl,full}");
+@source inline(
+  "{rounded-t,rounded-r,rounded-b,rounded-l}-{none,sm,md,lg,xl,2xl,3xl,full}"
+);
+@source inline("shadow-{none,sm,md,lg,xl,2xl,inner}");
+@source inline("opacity-{0,5,10,20,25,30,40,50,60,70,75,80,90,95,100}");
+@source inline(
+  "{cursor-pointer,cursor-default,cursor-not-allowed,select-none,pointer-events-none}"
+);
+@source inline("transition-{none,all,colors,opacity,shadow,transform}");
+@source inline("duration-{75,100,150,200,300,500,700,1000}");
+@source inline("ease-{linear,in,out,in-out}");
