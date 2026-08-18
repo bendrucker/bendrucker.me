@@ -31,11 +31,14 @@ const months = [
 ];
 ---
 
-<Layout title={`Archives | ${SITE.title}`} sourcePath="src/pages/archives/index.astro">
+<Layout
+  title={`Archives | ${SITE.title}`}
+  sourcePath="src/pages/archives/index.astro"
+>
   <Main pageTitle="Archives" pageDesc="All the articles I've archived.">
     {
       Object.entries(
-        Object.groupBy(posts, post => post.data.pubDatetime.getFullYear())
+        Object.groupBy(posts, (post) => post.data.pubDatetime.getFullYear()),
       )
         .toSorted(([yearA], [yearB]) => Number(yearB) - Number(yearA))
         .map(([year, yearGroup = []]) => (
@@ -43,9 +46,10 @@ const months = [
             <span class="text-2xl font-bold">{year}</span>
             <sup class="text-sm">{yearGroup.length}</sup>
             {Object.entries(
-              Object.groupBy(yearGroup, post =>
-                post.data.pubDatetime.getMonth() + 1
-              )
+              Object.groupBy(
+                yearGroup,
+                (post) => post.data.pubDatetime.getMonth() + 1,
+              ),
             )
               .toSorted(([monthA], [monthB]) => Number(monthB) - Number(monthA))
               .map(([month, monthGroup = []]) => (
@@ -59,13 +63,13 @@ const months = [
                       .toSorted(
                         (a, b) =>
                           Math.floor(
-                            new Date(b.data.pubDatetime).getTime() / 1000
+                            new Date(b.data.pubDatetime).getTime() / 1000,
                           ) -
                           Math.floor(
-                            new Date(a.data.pubDatetime).getTime() / 1000
-                          )
+                            new Date(a.data.pubDatetime).getTime() / 1000,
+                          ),
                       )
-                      .map(data => (
+                      .map((data) => (
                         <Card {...data} />
                       ))}
                   </ul>

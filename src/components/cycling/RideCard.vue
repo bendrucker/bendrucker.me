@@ -50,14 +50,14 @@ const metaLine = computed(() => {
 
 <template>
   <article
-    class="grid grid-cols-1 border border-border rounded-lg overflow-hidden bg-background"
+    class="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-background"
     :class="hasRoute ? 'sm:grid-cols-[var(--map-width)_1fr]' : ''"
     :style="{ '--map-width': `${mapWidth}px` }"
     :aria-label="`${ride.name}, ${started.full}`"
   >
     <div
       v-if="hasRoute"
-      class="flex items-center justify-center border-b border-border sm:border-b-0 sm:border-r"
+      class="flex items-center justify-center border-b border-border sm:border-r sm:border-b-0"
     >
       <RouteMap
         :coordinates="ride.route"
@@ -71,7 +71,7 @@ const metaLine = computed(() => {
       <ElevationProfile
         v-if="ride.elevationProfile?.length"
         :samples="ride.elevationProfile"
-        class="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-12"
       />
 
       <div class="relative flex flex-col gap-2">

@@ -145,7 +145,7 @@ function onKeydown(event: KeyboardEvent) {
               {{ photo?.alt }}
             </span>
           </p>
-          <p class="min-w-0 max-w-[36ch] truncate text-foreground/80">
+          <p class="max-w-[36ch] min-w-0 truncate text-foreground/80">
             {{ rideName }}
           </p>
           <div class="ml-auto flex items-center gap-3">

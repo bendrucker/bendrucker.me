@@ -66,7 +66,7 @@ const yearGroups = computed(() => {
               class="w-full px-2 py-1 text-right text-[11px] leading-4 transition-colors"
               :class="
                 month.key === activeKey
-                  ? 'text-accent font-bold'
+                  ? 'font-bold text-accent'
                   : 'text-foreground/70 hover:text-foreground'
               "
               :aria-current="month.key === activeKey ? 'location' : undefined"

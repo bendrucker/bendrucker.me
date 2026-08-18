@@ -184,7 +184,7 @@ onMounted(() => {
       <span v-else />
       <a
         href="/activity/code"
-        class="text-foreground/60 hover:text-accent transition-colors"
+        class="text-foreground/60 transition-colors hover:text-accent"
       >
         View in timeline
       </a>
@@ -199,7 +199,7 @@ onMounted(() => {
     </nav>
 
     <div
-      class="sticky top-0 z-10 bg-background space-y-3 pt-3 -mt-3 pb-3 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none"
+      class="sticky top-0 z-10 -mt-3 space-y-3 bg-background pt-3 pb-3 after:pointer-events-none after:absolute after:top-full after:right-0 after:left-0 after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']"
     >
       <FilterControls
         :filters="state.filters"
@@ -228,19 +228,19 @@ onMounted(() => {
 
     <p
       v-if="!state.loading && state.repos.length === 0"
-      class="text-center text-muted py-8"
+      class="py-8 text-center text-muted"
     >
       No activity data for {{ year }}.
     </p>
 
     <nav
-      class="flex items-center justify-between text-sm pt-4 border-t border-border"
+      class="flex items-center justify-between border-t border-border pt-4 text-sm"
       aria-label="Year navigation"
     >
       <a
         v-if="prevYear"
         :href="`/activity/code/${prevYear}`"
-        class="text-accent hover:underline flex-shrink-0"
+        class="flex-shrink-0 text-accent hover:underline"
       >
         &larr; {{ prevYear }}
       </a>
@@ -254,9 +254,9 @@ onMounted(() => {
           :key="y.year"
           :href="`/activity/code/${y.year}`"
           :class="[
-            'px-2 py-1 rounded transition-colors',
+            'rounded px-2 py-1 transition-colors',
             y.year === year
-              ? 'bg-accent text-background font-medium'
+              ? 'bg-accent font-medium text-background'
               : 'text-foreground/60 hover:text-accent',
           ]"
           :aria-current="y.year === year ? 'page' : undefined"
@@ -271,7 +271,7 @@ onMounted(() => {
       <a
         v-if="nextYear"
         :href="`/activity/code/${nextYear}`"
-        class="text-accent hover:underline flex-shrink-0"
+        class="flex-shrink-0 text-accent hover:underline"
       >
         {{ nextYear }} &rarr;
       </a>

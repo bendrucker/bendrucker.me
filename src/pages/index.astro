@@ -11,17 +11,28 @@ const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 ---
 
-<Layout description="Programmer, cyclist, and photographer." sourcePath="src/pages/index.astro">
+<Layout
+  description="Programmer, cyclist, and photographer."
+  sourcePath="src/pages/index.astro"
+>
   <main id="main-content" data-layout="index">
     <section id="hero" class="page-column pt-8 pb-6 text-center">
       <img
         src="/images/ben-drucker-sq.png"
         srcset="/images/ben-drucker-sq.png 1x, /images/ben-drucker-sq@2x.png 2x"
         alt="Ben Drucker"
-        class="w-32 h-32 rounded-lg mx-auto mb-6"
+        class="mx-auto mb-6 h-32 w-32 rounded-lg"
       />
       <p>
-        <LinkButton href="/activity/code" class="underline decoration-dashed underline-offset-4">Programmer</LinkButton>, <LinkButton href="https://www.strava.com/athletes/5723594" class="underline decoration-dashed underline-offset-4">cyclist</LinkButton>, and photographer, living in San Francisco.
+        <LinkButton
+          href="/activity/code"
+          class="underline decoration-dashed underline-offset-4"
+          >Programmer</LinkButton
+        >, <LinkButton
+          href="https://www.strava.com/athletes/5723594"
+          class="underline decoration-dashed underline-offset-4"
+          >cyclist</LinkButton
+        >, and photographer, living in San Francisco.
       </p>
     </section>
 
@@ -31,7 +42,7 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
           <section id="featured" class="page-column pt-12 pb-6">
             <h2 class="text-2xl font-semibold tracking-wide">Featured</h2>
             <ul>
-              {featuredPosts.map(data => (
+              {featuredPosts.map((data) => (
                 <Card variant="h3" {...data} />
               ))}
             </ul>
@@ -39,7 +50,6 @@ const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
         </>
       )
     }
-
   </main>
 </Layout>
 

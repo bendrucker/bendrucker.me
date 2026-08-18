@@ -26,8 +26,16 @@ try {
 }
 ---
 
-<Layout title={`Code | ${SITE.title}`} description="My public GitHub activity." ogImage="/activity/code/og.png" sourcePath="src/pages/activity/code.astro">
-  <Main pageTitle="Code" pageDesc="This page summarizes my GitHub activity by last contribution to each repository. It is an index of software projects I work on in public.">
+<Layout
+  title={`Code | ${SITE.title}`}
+  description="My public GitHub activity."
+  ogImage="/activity/code/og.png"
+  sourcePath="src/pages/activity/code.astro"
+>
+  <Main
+    pageTitle="Code"
+    pageDesc="This page summarizes my GitHub activity by last contribution to each repository. It is an index of software projects I work on in public."
+  >
     <section class="page-column">
       <ActivityTimeline
         client:load
