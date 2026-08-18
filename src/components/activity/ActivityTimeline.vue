@@ -151,7 +151,7 @@ onMounted(() => {
   <div ref="rootRef" class="relative space-y-4">
     <div
       ref="headerRef"
-      class="sticky top-0 z-10 bg-background space-y-3 pt-3 -mt-3 pb-3 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none"
+      class="sticky top-0 z-10 -mt-3 space-y-3 bg-background pt-3 pb-3 after:pointer-events-none after:absolute after:top-full after:right-0 after:left-0 after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']"
     >
       <FilterControls
         :filters="state.filters"
@@ -179,7 +179,7 @@ onMounted(() => {
 
     <p
       v-if="!state.loading && state.repos.length === 0"
-      class="text-center text-muted py-8"
+      class="py-8 text-center text-muted"
     >
       No activity data available.
     </p>

@@ -35,10 +35,11 @@ Tailwind, and the `@` alias. `src/histoire.setup.ts` imports `global.css` and
 mirrors Histoire's dark-mode class onto `data-theme`, so stories render in the
 site's real light and dark palettes.
 
-Every pull request deploys the story book to a Cloudflare preview alias and
-comments the link, so a component can be reviewed from a phone with nothing
-checked out. `workers/stories/wrangler.toml` serves `.histoire/dist` with a
-single-page-application fallback, since a story deep link has no HTML of its own.
+Every pull request deploys the story book to a Cloudflare preview alias,
+reachable from the PR's deployments, so a component can be reviewed from a phone
+with nothing checked out. `workers/stories/wrangler.toml` serves `.histoire/dist`
+with a single-page-application fallback, since a story deep link has no HTML of
+its own.
 
 Histoire hides its side panel below 640px, so a story declares its controls once
 in `src/stories/controls.ts` terms and renders them through both

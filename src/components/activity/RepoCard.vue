@@ -93,24 +93,24 @@ function handleKeydown(e: KeyboardEvent) {
 
 <template>
   <div
-    class="group/card border border-border rounded-lg p-4 sm:p-6 bg-background focus-within:ring-1 focus-within:ring-accent"
+    class="group/card rounded-lg border border-border bg-background p-4 focus-within:ring-1 focus-within:ring-accent sm:p-6"
     tabindex="0"
     @keydown="handleKeydown"
   >
     <div
-      class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3"
+      class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
     >
-      <div class="flex-1 min-w-0">
-        <div class="flex flex-wrap items-center gap-2 mb-1">
+      <div class="min-w-0 flex-1">
+        <div class="mb-1 flex flex-wrap items-center gap-2">
           <h3 class="text-lg font-semibold">
             <a
               :href="repo.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-foreground hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
+              class="text-foreground transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
               <template v-if="isExternal">
-                <span class="text-foreground/60 font-normal"
+                <span class="font-normal text-foreground/60"
                   >{{ repo.owner }}/</span
                 >{{ repo.name }}
               </template>
@@ -119,7 +119,7 @@ function handleKeydown(e: KeyboardEvent) {
           </h3>
           <span
             v-if="repo.primaryLanguage"
-            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border border-border"
+            class="inline-flex items-center rounded-full border border-border px-2 py-1 text-xs font-medium"
             :style="{
               backgroundColor: repo.primaryLanguage.color + '20',
               color: repo.primaryLanguage.color,
@@ -129,13 +129,13 @@ function handleKeydown(e: KeyboardEvent) {
           </span>
           <span
             v-if="isNew"
-            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border border-green-500/30 bg-green-500/20 text-green-600"
+            class="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/20 px-2 py-1 text-xs font-bold text-green-600"
             :title="createdTitle"
           >
             New!
           </span>
         </div>
-        <p class="text-foreground text-sm mb-3 line-clamp-2">
+        <p class="mb-3 line-clamp-2 text-sm text-foreground">
           {{ repo.description }}
         </p>
         <div
@@ -146,11 +146,11 @@ function handleKeydown(e: KeyboardEvent) {
             :href="getGitHubSearchUrl('pr')"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
+            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             title="Pull requests authored"
           >
             <svg
-              class="w-4 h-4 flex-shrink-0"
+              class="h-4 w-4 flex-shrink-0"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
@@ -173,11 +173,11 @@ function handleKeydown(e: KeyboardEvent) {
             :href="getGitHubSearchUrl('review')"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
+            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             title="Pull request reviews submitted"
           >
             <svg
-              class="w-4 h-4 flex-shrink-0"
+              class="h-4 w-4 flex-shrink-0"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
@@ -200,11 +200,11 @@ function handleKeydown(e: KeyboardEvent) {
             :href="getGitHubSearchUrl('merge')"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
+            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             title="Pull requests merged"
           >
             <svg
-              class="w-4 h-4 flex-shrink-0"
+              class="h-4 w-4 flex-shrink-0"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
@@ -226,11 +226,11 @@ function handleKeydown(e: KeyboardEvent) {
             :href="getGitHubSearchUrl('issue')"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
+            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             title="Issues opened or commented"
           >
             <svg
-              class="w-4 h-4 flex-shrink-0"
+              class="h-4 w-4 flex-shrink-0"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
@@ -249,11 +249,11 @@ function handleKeydown(e: KeyboardEvent) {
             :href="`${repo.url}/stargazers`"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex items-center gap-1 hover:text-accent focus:text-accent focus:outline-none focus:underline transition-colors"
+            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             title="GitHub stars"
           >
             <svg
-              class="w-4 h-4 flex-shrink-0"
+              class="h-4 w-4 flex-shrink-0"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
@@ -270,15 +270,15 @@ function handleKeydown(e: KeyboardEvent) {
           </a>
         </div>
       </div>
-      <div class="text-sm text-foreground/60 flex-shrink-0 sm:text-right">
+      <div class="flex-shrink-0 text-sm text-foreground/60 sm:text-right">
         <time :datetime="lastActivityDate.toISOString()" :title="fullDate">
           {{ relativeDate }}
         </time>
         <div
-          class="hidden group-focus-within/card:flex items-center gap-1 mt-1 text-foreground/30 text-xs justify-end"
+          class="mt-1 hidden items-center justify-end gap-1 text-xs text-foreground/30 group-focus-within/card:flex"
         >
           <kbd
-            class="px-1 py-0.5 rounded border border-border bg-muted/50 text-[10px] font-mono leading-none"
+            class="rounded border border-border bg-muted/50 px-1 py-0.5 font-mono text-[10px] leading-none"
           >
             {{ isMac ? "\u2318O" : "Ctrl+O" }}
           </kbd>

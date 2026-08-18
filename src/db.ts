@@ -39,11 +39,40 @@ export interface SyncStateTable {
   syncedAt: Generated<string>;
 }
 
+// Written only by activity-hub through the Publish entrypoint. Distances are
+// metres, durations seconds, elevations metres. `elevationProfile` and
+// `photoKeys` are JSON text because D1 has no array type.
+export interface ActivityFeedTable {
+  activityId: string;
+  stravaId: string | null;
+  name: string | null;
+  sport: string;
+  startedAt: string;
+  timezone: string;
+  distanceM: number | null;
+  movingS: number | null;
+  elevationM: number | null;
+  averageWatts: number | null;
+  powerSource: string;
+  polyline: string | null;
+  elevationProfile: string | null;
+  photoKeys: string;
+  updatedAt: Generated<string>;
+}
+
+export interface ActivityPowerCurveTable {
+  activityId: string;
+  durationS: number;
+  watts: number;
+}
+
 export interface Database {
   repos: ReposTable;
   repoActivity: RepoActivityTable;
   languageExtensions: LanguageExtensionsTable;
   syncState: SyncStateTable;
+  activityFeed: ActivityFeedTable;
+  activityPowerCurve: ActivityPowerCurveTable;
 }
 
 export function createDb(d1: D1Database): Kysely<Database> {

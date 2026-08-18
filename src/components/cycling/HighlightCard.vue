@@ -84,7 +84,7 @@ const totals = computed(() => {
 
 <template>
   <article
-    class="flex flex-col border border-border rounded-lg overflow-hidden bg-background"
+    class="flex flex-col overflow-hidden rounded-lg border border-border bg-background"
     :aria-label="`${ride.name}, ${started.full}`"
   >
     <div

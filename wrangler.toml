@@ -1,5 +1,6 @@
 name = "bendrucker-me"
-main = "@astrojs/cloudflare/entrypoints/server"
+# The adapter's own default, wrapped so `Publish` can be exported alongside it.
+main = "src/worker.ts"
 compatibility_date = "2025-07-28"
 compatibility_flags = ["nodejs_compat"]
 upload_source_maps = true
@@ -24,6 +25,13 @@ migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "SESSION"
+
+# Read-only in practice: the only route that touches it serves ride photos, and
+# it rejects any key outside the photo prefix. The binding itself reaches every
+# raw telemetry file in the bucket.
+[[r2_buckets]]
+binding = "RAW"
+bucket_name = "activity-hub-raw"
 
 [observability]
 enabled = true

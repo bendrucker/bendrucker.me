@@ -10,7 +10,9 @@ export interface Props {
 }
 
 const { noMarginTop = false, sourcePath } = Astro.props;
-const sourceUrl = sourcePath ? `${SITE.viewSource.url}${sourcePath}` : undefined;
+const sourceUrl = sourcePath
+  ? `${SITE.viewSource.url}${sourcePath}`
+  : undefined;
 ---
 
 <footer

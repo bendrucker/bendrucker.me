@@ -111,12 +111,12 @@ function toggleChips() {
 
 <template>
   <div v-if="languages.length > 0">
-    <div class="flex h-6 rounded-full overflow-hidden">
+    <div class="flex h-6 overflow-hidden rounded-full">
       <button
         v-for="seg in primarySegments"
         :key="seg.name"
         :class="[
-          'h-full overflow-hidden flex items-center justify-center hover:opacity-80',
+          'flex h-full items-center justify-center overflow-hidden hover:opacity-80',
           selectedLanguage && selectedLanguage !== seg.name ? 'opacity-30' : '',
         ]"
         :style="{
@@ -130,7 +130,7 @@ function toggleChips() {
       >
         <span
           v-if="seg.pct >= 5"
-          class="text-[9px] font-medium truncate px-1 pointer-events-none"
+          class="pointer-events-none truncate px-1 text-[9px] font-medium"
           :style="{ color: seg.textColor }"
         >
           {{ seg.short }}
@@ -145,7 +145,7 @@ function toggleChips() {
         <HoverCardTrigger as-child>
           <button
             :class="[
-              'h-full overflow-hidden flex items-center justify-center hover:opacity-80',
+              'flex h-full items-center justify-center overflow-hidden hover:opacity-80',
               selectedLanguage && !isOverflowSelected ? 'opacity-30' : '',
             ]"
             :style="{
@@ -158,7 +158,7 @@ function toggleChips() {
           >
             <span
               v-if="overflowPct >= 5"
-              class="text-[9px] font-medium truncate px-1 pointer-events-none text-foreground/60"
+              class="pointer-events-none truncate px-1 text-[9px] font-medium text-foreground/60"
             >
               ...
             </span>
@@ -170,24 +170,24 @@ function toggleChips() {
             side="top"
             align="end"
             :side-offset="4"
-            class="bg-background border border-border rounded-lg shadow-lg p-1 z-10"
+            class="z-10 rounded-lg border border-border bg-background p-1 shadow-lg"
           >
             <button
               v-for="lang in overflowLangs.slice(0, 8)"
               :key="lang.name"
-              class="flex items-center gap-2 text-xs whitespace-nowrap py-1 px-1.5 rounded hover:bg-muted/20 w-full text-left"
+              class="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-xs whitespace-nowrap hover:bg-muted/20"
               @click="toggle(lang.name)"
             >
               <span
-                class="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                 :style="{ backgroundColor: lang.color }"
               />
               <span class="text-foreground">{{ lang.name }}</span>
-              <span class="text-muted ml-auto pl-3">{{ lang.count }}</span>
+              <span class="ml-auto pl-3 text-muted">{{ lang.count }}</span>
             </button>
             <div
               v-if="overflowLangs.length > 8"
-              class="text-xs text-muted py-0.5 px-1.5"
+              class="px-1.5 py-0.5 text-xs text-muted"
             >
               +{{ overflowLangs.length - 8 }} more
             </div>
@@ -206,7 +206,7 @@ function toggleChips() {
             v-for="seg in segments"
             :key="seg.name"
             :class="[
-              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-border hover:opacity-80',
+              'inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs hover:opacity-80',
               selectedLanguage && selectedLanguage !== seg.name
                 ? 'opacity-30'
                 : '',
@@ -215,7 +215,7 @@ function toggleChips() {
             @click="toggle(seg.name)"
           >
             <span
-              class="inline-block w-2 h-2 rounded-full"
+              class="inline-block h-2 w-2 rounded-full"
               :style="{ backgroundColor: seg.color }"
             />
             {{ seg.short }}

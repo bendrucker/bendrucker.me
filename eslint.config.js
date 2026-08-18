@@ -1,38 +1,53 @@
 import eslintPluginAstro from "eslint-plugin-astro";
 import eslintPluginVue from "eslint-plugin-vue";
-import globals from "globals";
-import tseslint from "typescript-eslint";
+import oxlint from "eslint-plugin-oxlint";
+import tsParser from "@typescript-eslint/parser";
 import vueParser from "vue-eslint-parser";
 
+// Both plugins ship at least one config entry with no `files` key, which
+// makes it apply to every linted file rather than just its own. Scope those
+// entries explicitly. Entries that already declare `files` (astro's virtual
+// `**/*.astro/*.ts` files, vue's own `**/*.vue` base) are left alone.
+const vueConfigs = eslintPluginVue.configs["flat/essential"].map((config) =>
+  config.files ? config : { ...config, files: ["**/*.vue"] },
+);
+const astroConfigs = eslintPluginAstro.configs.recommended.map((config) =>
+  config.files ? config : { ...config, files: ["*.astro", "**/*.astro"] },
+);
+
 export default [
-  ...tseslint.configs.recommended,
-  ...eslintPluginAstro.configs.recommended,
-  // Essential only. The stricter tiers are mostly formatting rules that
-  // disagree with Prettier, which already owns formatting in this repo.
-  ...eslintPluginVue.configs["flat/essential"],
+  ...vueConfigs,
+  ...astroConfigs,
   {
-    // typescript-eslint claims .vue, but its parser reads the whole file as
-    // TypeScript and chokes on the template. vue-eslint-parser has to own the
-    // file and hand only the script block down.
+    // vue-eslint-parser owns the whole .vue file and hands the script block
+    // to an inner parser. It has to be @typescript-eslint/parser: 53 of 54
+    // SFCs use <script setup lang="ts">, and the default (espree) can't read
+    // TypeScript syntax.
     files: ["**/*.vue"],
     languageOptions: {
       parser: vueParser,
-      parserOptions: { parser: tseslint.parser, extraFileExtensions: [".vue"] },
-    },
-  },
-  {
-    languageOptions: {
       parserOptions: {
+        parser: tsParser,
+        extraFileExtensions: [".vue"],
         tsconfigRootDir: import.meta.dirname,
       },
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
     },
   },
-  { rules: { "no-console": "error" } },
   {
+    // oxlint doesn't lint .astro at all, so no-console has to stay here. It's
+    // covered on every other file type by oxlint's own no-console rule.
+    files: ["*.astro", "**/*.astro"],
+    rules: { "no-console": "error" },
+  },
+  // Silences the 39 vue rules oxlint already covers, read straight from
+  // .oxlintrc.json so the two stay in lockstep.
+  ...oxlint.buildFromOxlintConfigFile("./.oxlintrc.json"),
+  {
+    // oxlint owns plain .ts/.js files entirely now. Without this, eslint-plugin-oxlint's
+    // generated config (which mirrors oxlint's file scope to turn off overlapping rules)
+    // makes ESLint's directory walk pick them up too, and it parses them with the default
+    // parser (espree), which chokes on TypeScript syntax. This doesn't affect the virtual
+    // `**/*.astro/*.ts` blocks astro's processor creates, since those never touch disk.
     ignores: [
       "dist/**",
       ".histoire/**",
@@ -40,6 +55,13 @@ export default [
       "tmp/**",
       ".astro",
       "**/worker-configuration.d.ts",
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.mts",
+      "**/*.cts",
+      "**/*.js",
+      "**/*.mjs",
+      "**/*.cjs",
     ],
   },
 ];

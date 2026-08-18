@@ -73,6 +73,31 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: d1 migrations apply bendrucker-activity --remote
 
+      # The apply step above never runs on a pull request, so nothing exercised
+      # the D1 token until merge. `list` takes the same auth and write path as
+      # `apply` without touching the schema, and prints what a merge would run.
+      - name: "🗃️ List unapplied D1 migrations"
+        id: list
+        if: github.event_name == 'pull_request'
+        uses: cloudflare/wrangler-action@v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations list bendrucker-activity --remote
+
+      - name: "📋 Summarize pending migrations"
+        if: github.event_name == 'pull_request'
+        env:
+          OUTPUT: ${{ steps.list.outputs.command-output }}
+        run: |
+          {
+            echo "## D1 migrations"
+            echo
+            echo '```'
+            printf '%s\n' "$OUTPUT" | sed 's/\x1b\[[0-9;]*m//g'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   cloudflare:
     name: ${{ matrix.name }}
     needs: migrate
@@ -82,7 +107,6 @@ jobs:
     permissions:
       contents: read
       deployments: write
-      pull-requests: write
     outputs:
       www-preview-url: ${{ steps.set-outputs.outputs.www-preview-url }}
     strategy:
@@ -179,17 +203,6 @@ jobs:
           env: ${{ steps.deployment.outputs.env }}
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
           env_url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || (matrix.path == '.' && steps.extract-deployment-url.outputs.formatted-url || '') }}
-
-      # A deployment's URL is buried in the PR timeline on a phone. The story
-      # book is meant to be reviewed from one, so its link gets a comment.
-      - name: "💬 Link the story book"
-        if: github.event_name == 'pull_request' && matrix.name == 'stories' && steps.extract-url.outputs.alias-url != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PREVIEW_URL: ${{ steps.extract-url.outputs.alias-url }}
-        run: |
-          gh pr comment "${{ github.event.number }}" --edit-last --create-if-none --body \
-            "📖 **[Component stories]($PREVIEW_URL)** · \`${GITHUB_SHA::7}\`"
 
       - name: "📤 Set job outputs"
         id: set-outputs
