@@ -14,6 +14,7 @@ html[data-theme="light"] {
   --accent: #006cac;
   --muted: #e6e6e6;
   --border: #ece9e9;
+  --bridge: #c0362c;
 }
 
 html[data-theme="dark"] {
@@ -23,6 +24,7 @@ html[data-theme="dark"] {
   --accent: #ff6b01;
   --muted: #343f60;
   --border: #ab4b08;
+  --bridge: #e0594a;
 }
 
 @theme inline {
@@ -31,6 +33,7 @@ html[data-theme="dark"] {
   --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-bridge: var(--bridge);
 }
 
 @layer base {
@@ -57,6 +60,10 @@ html[data-theme="dark"] {
 
 @utility max-w-app {
   @apply max-w-3xl;
+}
+
+@utility max-w-home {
+  @apply max-w-[70rem];
 }
 
 /**
