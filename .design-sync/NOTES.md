@@ -61,7 +61,7 @@ entry even with zero components. Recreate it if `tmp/` was cleaned.
 
 ## Known validate warns
 
-Both are expected. A warn *not* on this list is new.
+Both are expected. A warn _not_ on this list is new.
 
 - `[TOKENS_MISSING]`: `--shiki-light`, `--shiki-dark`, `--shiki-light-bg`,
   `--shiki-dark-bg`, `--file-name-offset`. All five are injected inline per code

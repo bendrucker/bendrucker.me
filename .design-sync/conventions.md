@@ -38,13 +38,13 @@ Don't re-declare them on a wrapper.
 Five semantic colors, and only five. There is no numeric palette. Never write
 `bg-gray-100`, `text-slate-700`, or any other Tailwind default color.
 
-| Token         | Utility root | Light     | Dark      | Use                       |
-| ------------- | ------------ | --------- | --------- | ------------------------- |
-| `--background`| `background` | `#fdfdfd` | `#212737` | Page and surface fills    |
-| `--foreground`| `foreground` | `#282728` | `#eaedf3` | Body text                 |
-| `--accent`    | `accent`     | `#006cac` | `#ff6b01` | Links, focus, emphasis    |
-| `--muted`     | `muted`      | `#e6e6e6` | `#343f60` | Secondary fills, chips    |
-| `--border`    | `border`     | `#ece9e9` | `#ab4b08` | Rules, dividers, outlines |
+| Token          | Utility root | Light     | Dark      | Use                       |
+| -------------- | ------------ | --------- | --------- | ------------------------- |
+| `--background` | `background` | `#fdfdfd` | `#212737` | Page and surface fills    |
+| `--foreground` | `foreground` | `#282728` | `#eaedf3` | Body text                 |
+| `--accent`     | `accent`     | `#006cac` | `#ff6b01` | Links, focus, emphasis    |
+| `--muted`      | `muted`      | `#e6e6e6` | `#343f60` | Secondary fills, chips    |
+| `--border`     | `border`     | `#ece9e9` | `#ab4b08` | Rules, dividers, outlines |
 
 **The accent shifts hue between themes**: blue in light, orange in dark. That is
 deliberate. Never hardcode either hex; always go through `accent` so both themes
@@ -105,7 +105,10 @@ samples with `bg-muted` and `text-foreground` instead.
 
   <ul class="flex flex-col gap-6">
     <li class="border-b border-border pb-6">
-      <a href="#" class="text-xl text-foreground decoration-dashed underline-offset-4 hover:text-accent">
+      <a
+        href="#"
+        class="text-xl text-foreground decoration-dashed underline-offset-4 hover:text-accent"
+      >
         Caching at the edge
       </a>
       <p class="mt-1 text-sm text-foreground/60">March 2026</p>
@@ -115,7 +118,9 @@ samples with `bg-muted` and `text-foreground` instead.
     </li>
   </ul>
 
-  <button class="mt-8 rounded border border-border bg-muted px-4 py-2 text-foreground hover:bg-accent hover:text-background">
+  <button
+    class="mt-8 rounded border border-border bg-muted px-4 py-2 text-foreground hover:bg-accent hover:text-background"
+  >
     Load more
   </button>
 </section>

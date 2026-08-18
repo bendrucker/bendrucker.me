@@ -42,7 +42,9 @@
 @source inline(
   "{,sm:,md:,lg:}{block,inline-block,inline,flex,inline-flex,grid,inline-grid,contents,hidden}"
 );
-@source inline("{,sm:,md:,lg:}flex-{row,row-reverse,col,col-reverse,wrap,nowrap,1,auto,initial,none}");
+@source inline(
+  "{,sm:,md:,lg:}flex-{row,row-reverse,col,col-reverse,wrap,nowrap,1,auto,initial,none}"
+);
 @source inline("items-{start,end,center,baseline,stretch}");
 @source inline("justify-{start,end,center,between,around,evenly}");
 @source inline("self-{auto,start,end,center,stretch}");
@@ -59,7 +61,9 @@
 @source inline("font-{sans,serif,mono}");
 @source inline("font-{thin,light,normal,medium,semibold,bold,extrabold,black}");
 @source inline("text-{left,center,right,justify}");
-@source inline("{italic,not-italic,uppercase,lowercase,capitalize,normal-case,truncate}");
+@source inline(
+  "{italic,not-italic,uppercase,lowercase,capitalize,normal-case,truncate}"
+);
 @source inline("{underline,line-through,no-underline,overline}");
 /* The site uses these in its own markup, so a source scan happens to emit them.
    Safelist them anyway: conventions.md's example depends on them, and a markup
@@ -67,20 +71,28 @@
 @source inline("decoration-{solid,double,dotted,dashed,wavy,none}");
 @source inline("decoration-{0,1,2,4,8}");
 @source inline("underline-offset-{0,1,2,4,8,auto}");
-@source inline("leading-{none,tight,snug,normal,relaxed,loose,3,4,5,6,7,8,9,10}");
+@source inline(
+  "leading-{none,tight,snug,normal,relaxed,loose,3,4,5,6,7,8,9,10}"
+);
 @source inline("tracking-{tighter,tight,normal,wide,wider,widest}");
 @source inline("whitespace-{normal,nowrap,pre,pre-line,pre-wrap}");
 @source inline("break-{normal,words,all,keep}");
 
 /* Borders, radius, shadow, and effects. */
 @source inline("border-{0,2,4,8}");
-@source inline("{border-t,border-r,border-b,border-l,border-x,border-y}-{0,2,4,8}");
+@source inline(
+  "{border-t,border-r,border-b,border-l,border-x,border-y}-{0,2,4,8}"
+);
 @source inline("border-{solid,dashed,dotted,double,none}");
 @source inline("rounded-{none,sm,md,lg,xl,2xl,3xl,full}");
-@source inline("{rounded-t,rounded-r,rounded-b,rounded-l}-{none,sm,md,lg,xl,2xl,3xl,full}");
+@source inline(
+  "{rounded-t,rounded-r,rounded-b,rounded-l}-{none,sm,md,lg,xl,2xl,3xl,full}"
+);
 @source inline("shadow-{none,sm,md,lg,xl,2xl,inner}");
 @source inline("opacity-{0,5,10,20,25,30,40,50,60,70,75,80,90,95,100}");
-@source inline("{cursor-pointer,cursor-default,cursor-not-allowed,select-none,pointer-events-none}");
+@source inline(
+  "{cursor-pointer,cursor-default,cursor-not-allowed,select-none,pointer-events-none}"
+);
 @source inline("transition-{none,all,colors,opacity,shadow,transform}");
 @source inline("duration-{75,100,150,200,300,500,700,1000}");
 @source inline("ease-{linear,in,out,in-out}");
