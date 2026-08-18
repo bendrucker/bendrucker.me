@@ -7,8 +7,8 @@ paths: src/**/*.story.vue
 # Component Stories
 
 Stories are reviewed from a phone. Every pull request deploys the book to a
-Cloudflare preview alias and comments the link, so the reader has no checkout,
-no dev server, and a 390px viewport. That reader is the audience.
+Cloudflare preview alias, linked from the PR's deployments, so the reader has no
+checkout, no dev server, and a 390px viewport. That reader is the audience.
 
 ## Current API
 
