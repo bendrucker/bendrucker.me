@@ -67,7 +67,7 @@
     "@typescript-eslint/parser": "^8.64.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "better-sqlite3": "^13.0.3",
-    "eslint": "^10.7.0",
+    "eslint": "^10.8.1",
     "eslint-plugin-astro": "^3.0.0",
     "eslint-plugin-oxlint": "^1.78.0",
     "eslint-plugin-vue": "^10.10.0",
