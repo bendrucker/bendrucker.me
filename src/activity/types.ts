@@ -33,11 +33,17 @@ export interface YearCount {
   count: number;
 }
 
+// The sort control renders its options from this list and narrows the value it
+// reads back against it, so an option and the type cannot drift apart.
+export const SORT_ORDERS = ["recent", "active", "stars", "name"] as const;
+
+export type SortOrder = (typeof SORT_ORDERS)[number];
+
 export interface FilterState {
   owner: "all" | "personal" | "external";
   language: string | null;
   search: string;
-  sort: "recent" | "active" | "stars" | "name";
+  sort: SortOrder;
   year: number | null;
 }
 

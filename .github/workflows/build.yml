@@ -27,7 +27,7 @@ jobs:
         run: npm ci
 
       - name: Run oxlint
-        run: npx oxlint
+        run: npm run lint:types
 
       - name: Run ESLint
         run: npx eslint .

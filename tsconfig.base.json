@@ -14,7 +14,6 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "paths": {
       "@workspace/*": ["./packages/*/src"]
     }

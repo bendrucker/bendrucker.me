@@ -76,6 +76,9 @@ function applyFilters(
         sql<SqlBool>`${sql.ref("repos.name")} like ${`%${escaped}%`} escape '\\'`,
       );
     }
+    // Kysely's `where` returns the interface rather than `this`, so the
+    // builder's concrete type is lost on the first call and has to be restored.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return q as T;
   };
 }

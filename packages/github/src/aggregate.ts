@@ -1,8 +1,9 @@
 import type {
-  Repository,
   ContributionsCollection,
-  SearchResultItemConnection,
-} from "@octokit/graphql-schema";
+  IssueNode,
+  MergedPullRequestNode,
+  Repository,
+} from "./schema";
 import type { RepoActivity } from "./index";
 
 export function createRepoActivity(
@@ -47,10 +48,20 @@ function getOrCreateRepo(
   return repoMap.get(repoKey)!;
 }
 
+// Issue counts come from the search below rather than from
+// `issueContributionsByRepository`, which only feeds a truncation warning.
+export type AggregatedContributions = Pick<
+  ContributionsCollection,
+  | "commitContributionsByRepository"
+  | "pullRequestContributionsByRepository"
+  | "pullRequestReviewContributionsByRepository"
+  | "repositoryContributions"
+>;
+
 export function aggregateActivityByRepository(
-  contributions: ContributionsCollection,
-  issueSearch?: SearchResultItemConnection | null,
-  mergedPRSearch?: SearchResultItemConnection | null,
+  contributions: AggregatedContributions,
+  issueNodes: IssueNode[] = [],
+  mergedPRNodes: MergedPullRequestNode[] = [],
   username?: string,
 ): RepoActivity[] {
   const repoMap = new Map<string, RepoActivity>();
@@ -148,43 +159,21 @@ export function aggregateActivityByRepository(
     getOrCreateRepo(repoMap, contribution.repository, contributionDate);
   });
 
-  if (issueSearch?.nodes) {
-    issueSearch.nodes.forEach((node) => {
-      if (!node || node.__typename !== "Issue") return;
-      if (
-        !node.repository ||
-        !node.number ||
-        !node.title ||
-        !node.url ||
-        !node.createdAt
-      )
-        return;
+  issueNodes.forEach((node) => {
+    const issueDate = new Date(node.createdAt);
 
-      const issueDate = new Date(node.createdAt);
+    if (node.repository.isFork) return;
 
-      if (node.repository.isFork) return;
+    const repo = getOrCreateRepo(repoMap, node.repository, issueDate);
+    repo.activitySummary.issueCount++;
 
-      const repo = getOrCreateRepo(repoMap, node.repository, issueDate);
-      repo.activitySummary.issueCount++;
+    if (issueDate > repo.lastActivity) {
+      repo.lastActivity = issueDate;
+    }
+  });
 
-      if (issueDate > repo.lastActivity) {
-        repo.lastActivity = issueDate;
-      }
-    });
-  }
-
-  if (mergedPRSearch?.nodes && username) {
-    mergedPRSearch.nodes.forEach((node) => {
-      if (!node || node.__typename !== "PullRequest") return;
-      if (
-        !node.repository ||
-        !node.number ||
-        !node.title ||
-        !node.url ||
-        !node.createdAt
-      )
-        return;
-
+  if (username) {
+    mergedPRNodes.forEach((node) => {
       if (!node.merged || node.mergedBy?.login !== username) return;
 
       if (node.author?.login === username) return;

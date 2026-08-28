@@ -3,6 +3,7 @@
 import { createRequire } from "node:module";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { z } from "zod";
 import { logger } from "@workspace/logger";
 import { connectD1, formatSql, executeRemote } from "./d1";
 import { upsertLanguageExtension } from "../src/activity/upsert";
@@ -11,6 +12,14 @@ const require = createRequire(import.meta.url);
 const pkgDir = join(require.resolve("linguist-languages"), "..");
 const dataDir = join(pkgDir, "data");
 
+// Each data file is evaluated rather than imported, so what comes back is
+// whatever the expression built. Only `name` is guaranteed across all of them.
+const language = z.object({
+  name: z.string(),
+  type: z.string().optional(),
+  extensions: z.array(z.string()).default([]),
+});
+
 const map: Record<string, string> = {};
 
 for (const file of readdirSync(dataDir)) {
@@ -18,12 +27,8 @@ for (const file of readdirSync(dataDir)) {
   const raw = readFileSync(join(dataDir, file), "utf-8");
   const match = raw.match(/export default ({[\s\S]*})/);
   if (!match) continue;
-  const data = new Function(`return ${match[1]}`)() as {
-    name?: string;
-    type?: string;
-    extensions?: string[];
-  };
-  if (data.name && data.type === "programming" && data.extensions?.length) {
+  const data = language.parse(new Function(`return ${match[1]}`)());
+  if (data.type === "programming" && data.extensions.length) {
     map[data.name] = data.extensions[0];
   }
 }

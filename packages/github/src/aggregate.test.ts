@@ -1,25 +1,25 @@
 import { describe, expect, it } from "vitest";
+import {
+  aggregateActivityByRepository,
+  type AggregatedContributions,
+} from "./aggregate";
 import type {
-  CommitContributionsByRepository,
   ContributionsCollection,
-  CreatedCommitContribution,
-  CreatedCommitContributionConnection,
-  CreatedPullRequestContribution,
-  CreatedPullRequestContributionConnection,
-  CreatedPullRequestReviewContribution,
-  CreatedPullRequestReviewContributionConnection,
-  CreatedRepositoryContribution,
-  CreatedRepositoryContributionConnection,
-  Issue,
-  PullRequest,
-  PullRequestContributionsByRepository,
-  PullRequestReviewContributionsByRepository,
+  IssueNode,
+  MergedPullRequestNode,
   Repository,
-  SearchResultItemConnection,
-} from "@octokit/graphql-schema";
-import { aggregateActivityByRepository } from "./aggregate";
+} from "./schema";
 
 const USERNAME = "bendrucker";
+
+type CommitRepo =
+  ContributionsCollection["commitContributionsByRepository"][number];
+type PrRepo =
+  ContributionsCollection["pullRequestContributionsByRepository"][number];
+type PrContribution = PrRepo["contributions"]["nodes"][number];
+type ReviewRepo =
+  ContributionsCollection["pullRequestReviewContributionsByRepository"][number];
+type ReviewContribution = ReviewRepo["contributions"]["nodes"][number];
 
 interface RepoOptions {
   owner?: string;
@@ -33,16 +33,7 @@ interface RepoOptions {
 function makeRepo(options: RepoOptions = {}): Repository {
   const owner = options.owner ?? USERNAME;
   const name = options.name ?? "repo";
-  const repo: {
-    name: string;
-    owner: { login: string };
-    description: string | null;
-    url: string;
-    createdAt: string;
-    isFork: boolean;
-    stargazerCount: number;
-    primaryLanguage: { name: string; color: string | null } | null;
-  } = {
+  return {
     name,
     owner: { login: owner },
     description: options.description ?? null,
@@ -52,42 +43,20 @@ function makeRepo(options: RepoOptions = {}): Repository {
     stargazerCount: options.stargazerCount ?? 0,
     primaryLanguage: options.primaryLanguage ?? null,
   };
-  return repo as Repository;
-}
-
-function makeCommitConnection(
-  occurredAts: string[],
-  totalCount = occurredAts.length,
-): CreatedCommitContributionConnection {
-  const nodes: CreatedCommitContributionConnection["nodes"] = occurredAts.map(
-    (occurredAt) => {
-      const node: { commitCount: number; occurredAt: string } = {
-        commitCount: 1,
-        occurredAt,
-      };
-      return node as CreatedCommitContribution;
-    },
-  );
-  const connection: {
-    totalCount: number;
-    nodes: CreatedCommitContributionConnection["nodes"];
-  } = { totalCount, nodes };
-  return connection as CreatedCommitContributionConnection;
 }
 
 function makeCommitRepo(
   repository: Repository,
   occurredAts: string[],
   totalCount = occurredAts.length,
-): CommitContributionsByRepository {
-  const contrib: {
-    repository: Repository;
-    contributions: CreatedCommitContributionConnection;
-  } = {
+): CommitRepo {
+  return {
     repository,
-    contributions: makeCommitConnection(occurredAts, totalCount),
+    contributions: {
+      totalCount,
+      nodes: occurredAts.map((occurredAt) => ({ occurredAt })),
+    },
   };
-  return contrib as CommitContributionsByRepository;
 }
 
 interface PrContributionOptions {
@@ -96,35 +65,18 @@ interface PrContributionOptions {
   mergedAt?: string | null;
 }
 
-function makePrContribution(
-  options: PrContributionOptions,
-): CreatedPullRequestContribution {
-  const pullRequest: { merged: boolean; mergedAt: string | null } = {
-    merged: options.merged ?? false,
-    mergedAt: options.mergedAt ?? null,
-  };
-  const node: { occurredAt: string; pullRequest: PullRequest } = {
+function makePrContribution(options: PrContributionOptions): PrContribution {
+  return {
     occurredAt: options.occurredAt,
-    pullRequest: pullRequest as PullRequest,
+    pullRequest: {
+      merged: options.merged ?? false,
+      mergedAt: options.mergedAt ?? null,
+    },
   };
-  return node as CreatedPullRequestContribution;
 }
 
-function makePrRepo(
-  repository: Repository,
-  nodes: CreatedPullRequestContribution[],
-): PullRequestContributionsByRepository {
-  const connection: {
-    nodes: CreatedPullRequestContributionConnection["nodes"];
-  } = { nodes };
-  const contrib: {
-    repository: Repository;
-    contributions: CreatedPullRequestContributionConnection;
-  } = {
-    repository,
-    contributions: connection as CreatedPullRequestContributionConnection,
-  };
-  return contrib as PullRequestContributionsByRepository;
+function makePrRepo(repository: Repository, nodes: PrContribution[]): PrRepo {
+  return { repository, contributions: { nodes } };
 }
 
 interface ReviewContributionOptions {
@@ -135,101 +87,54 @@ interface ReviewContributionOptions {
 
 function makeReviewContribution(
   options: ReviewContributionOptions,
-): CreatedPullRequestReviewContribution {
-  const author: { login: string; __typename?: string } = {
-    login: options.authorLogin,
-    __typename: options.authorTypename ?? "User",
-  };
-  const pullRequest: {
-    author: { login: string; __typename?: string } | null;
-  } = { author };
-  const node: { occurredAt: string; pullRequest: PullRequest } = {
+): ReviewContribution {
+  return {
     occurredAt: options.occurredAt,
-    pullRequest: pullRequest as PullRequest,
+    pullRequest: {
+      author: {
+        login: options.authorLogin,
+        __typename: options.authorTypename ?? "User",
+      },
+    },
   };
-  return node as CreatedPullRequestReviewContribution;
 }
 
 function makeReviewRepo(
   repository: Repository,
-  nodes: CreatedPullRequestReviewContribution[],
-): PullRequestReviewContributionsByRepository {
-  const connection: {
-    nodes: CreatedPullRequestReviewContributionConnection["nodes"];
-  } = { nodes };
-  const contrib: {
-    repository: Repository;
-    contributions: CreatedPullRequestReviewContributionConnection;
-  } = {
-    repository,
-    contributions: connection as CreatedPullRequestReviewContributionConnection,
-  };
-  return contrib as PullRequestReviewContributionsByRepository;
-}
-
-function makeRepositoryContributionConnection(
-  entries: { repository: Repository; occurredAt: string }[],
-): CreatedRepositoryContributionConnection {
-  const nodes: CreatedRepositoryContributionConnection["nodes"] = entries.map(
-    (entry) => entry as CreatedRepositoryContribution,
-  );
-  const connection: {
-    nodes: CreatedRepositoryContributionConnection["nodes"];
-  } = { nodes };
-  return connection as CreatedRepositoryContributionConnection;
+  nodes: ReviewContribution[],
+): ReviewRepo {
+  return { repository, contributions: { nodes } };
 }
 
 interface ContributionsParts {
-  commit?: CommitContributionsByRepository[];
-  pullRequest?: PullRequestContributionsByRepository[];
-  review?: PullRequestReviewContributionsByRepository[];
+  commit?: CommitRepo[];
+  pullRequest?: PrRepo[];
+  review?: ReviewRepo[];
   repositoryContributions?: { repository: Repository; occurredAt: string }[];
 }
 
 function makeContributions(
   parts: ContributionsParts = {},
-): ContributionsCollection {
-  const collection: {
-    commitContributionsByRepository: CommitContributionsByRepository[];
-    pullRequestContributionsByRepository: PullRequestContributionsByRepository[];
-    pullRequestReviewContributionsByRepository: PullRequestReviewContributionsByRepository[];
-    repositoryContributions: CreatedRepositoryContributionConnection;
-  } = {
+): AggregatedContributions {
+  return {
     commitContributionsByRepository: parts.commit ?? [],
     pullRequestContributionsByRepository: parts.pullRequest ?? [],
     pullRequestReviewContributionsByRepository: parts.review ?? [],
-    repositoryContributions: makeRepositoryContributionConnection(
-      parts.repositoryContributions ?? [],
-    ),
+    repositoryContributions: { nodes: parts.repositoryContributions ?? [] },
   };
-  return collection as ContributionsCollection;
 }
 
 interface IssueNodeOptions {
   repository: Repository;
   createdAt?: string;
-  number?: number;
-  title?: string;
-  url?: string;
 }
 
-function makeIssueNode(options: IssueNodeOptions): Issue {
-  const node: {
-    __typename?: "Issue";
-    number: number;
-    title: string;
-    url: string;
-    createdAt: string;
-    repository: Repository;
-  } = {
+function makeIssueNode(options: IssueNodeOptions): IssueNode {
+  return {
     __typename: "Issue",
-    number: options.number ?? 1,
-    title: options.title ?? "An issue",
-    url: options.url ?? "https://github.com/x/y/issues/1",
     createdAt: options.createdAt ?? "2024-01-01T00:00:00Z",
     repository: options.repository,
   };
-  return node as Issue;
 }
 
 interface MergedPrNodeOptions {
@@ -238,27 +143,11 @@ interface MergedPrNodeOptions {
   merged?: boolean;
   mergedByLogin?: string | null;
   authorLogin?: string | null;
-  number?: number;
-  title?: string;
-  url?: string;
 }
 
-function makeMergedPrNode(options: MergedPrNodeOptions): PullRequest {
-  const node: {
-    __typename?: "PullRequest";
-    number: number;
-    title: string;
-    url: string;
-    createdAt: string;
-    merged: boolean;
-    mergedBy: { login: string } | null;
-    author: { login: string } | null;
-    repository: Repository;
-  } = {
+function makeMergedPrNode(options: MergedPrNodeOptions): MergedPullRequestNode {
+  return {
     __typename: "PullRequest",
-    number: options.number ?? 1,
-    title: options.title ?? "A pull request",
-    url: options.url ?? "https://github.com/x/y/pull/1",
     createdAt: options.createdAt ?? "2024-01-01T00:00:00Z",
     merged: options.merged ?? true,
     mergedBy:
@@ -271,14 +160,6 @@ function makeMergedPrNode(options: MergedPrNodeOptions): PullRequest {
         : { login: options.authorLogin ?? "someone-else" },
     repository: options.repository,
   };
-  return node as PullRequest;
-}
-
-function makeSearch(
-  nodes: SearchResultItemConnection["nodes"],
-): SearchResultItemConnection {
-  const connection: { nodes: SearchResultItemConnection["nodes"] } = { nodes };
-  return connection as SearchResultItemConnection;
 }
 
 function names(repos: { name: string }[]): string[] {
@@ -313,12 +194,10 @@ describe("aggregateActivityByRepository", () => {
         ],
       });
 
-      const issueSearch = makeSearch([
-        makeIssueNode({ repository: fork("issue-fork") }),
-      ]);
-      const mergedPRSearch = makeSearch([
+      const issueSearch = [makeIssueNode({ repository: fork("issue-fork") })];
+      const mergedPRSearch = [
         makeMergedPrNode({ repository: fork("merged-fork") }),
-      ]);
+      ];
 
       const result = aggregateActivityByRepository(
         contributions,
@@ -364,14 +243,14 @@ describe("aggregateActivityByRepository", () => {
     });
 
     it("excludes an issue-only repository", () => {
-      const issueSearch = makeSearch([
+      const issueSearch = [
         makeIssueNode({ repository: makeRepo({ name: "issue-only" }) }),
-      ]);
+      ];
 
       const result = aggregateActivityByRepository(
         makeContributions(),
         issueSearch,
-        undefined,
+        [],
         USERNAME,
       );
 
@@ -409,8 +288,8 @@ describe("aggregateActivityByRepository", () => {
 
       const result = aggregateActivityByRepository(
         contributions,
-        undefined,
-        undefined,
+        [],
+        [],
         USERNAME,
       );
 
@@ -419,13 +298,13 @@ describe("aggregateActivityByRepository", () => {
     });
 
     it("keeps a repository with only attributed merges", () => {
-      const mergedPRSearch = makeSearch([
+      const mergedPRSearch = [
         makeMergedPrNode({ repository: makeRepo({ name: "merges-only" }) }),
-      ]);
+      ];
 
       const result = aggregateActivityByRepository(
         makeContributions(),
-        undefined,
+        [],
         mergedPRSearch,
         USERNAME,
       );
@@ -480,8 +359,8 @@ describe("aggregateActivityByRepository", () => {
 
       const result = aggregateActivityByRepository(
         contributions,
-        undefined,
-        undefined,
+        [],
+        [],
         USERNAME,
       );
 
@@ -503,8 +382,8 @@ describe("aggregateActivityByRepository", () => {
 
       const result = aggregateActivityByRepository(
         contributions,
-        undefined,
-        undefined,
+        [],
+        [],
         USERNAME,
       );
 
@@ -516,8 +395,8 @@ describe("aggregateActivityByRepository", () => {
     const attributed = (options: MergedPrNodeOptions) =>
       aggregateActivityByRepository(
         makeContributions(),
-        undefined,
-        makeSearch([makeMergedPrNode(options)]),
+        [],
+        [makeMergedPrNode(options)],
         USERNAME,
       );
 
@@ -589,10 +468,8 @@ describe("aggregateActivityByRepository", () => {
     it("sets hasMergedPRs from the merged-PR search", () => {
       const result = aggregateActivityByRepository(
         makeContributions(),
-        undefined,
-        makeSearch([
-          makeMergedPrNode({ repository: makeRepo({ name: "from-search" }) }),
-        ]),
+        [],
+        [makeMergedPrNode({ repository: makeRepo({ name: "from-search" }) })],
         USERNAME,
       );
 

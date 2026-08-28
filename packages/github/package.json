@@ -10,8 +10,8 @@
   "dependencies": {
     "@octokit/auth-token": "^6.0.0",
     "@octokit/graphql": "^9.0.4",
-    "@octokit/graphql-schema": "^15.26.1",
-    "@workspace/logger": "*"
+    "@workspace/logger": "*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

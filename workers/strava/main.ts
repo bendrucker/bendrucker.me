@@ -1,16 +1,21 @@
 import { Strava, type RefreshTokenResponse } from "strava";
+import { z } from "zod";
 import { logger } from "@workspace/logger";
 
 type Env = Required<Cloudflare.Env> & {
   STRAVA_CLIENT_SECRET: string;
 };
 
-interface StoredTokens {
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
-  updated_at: string;
-}
+// KV hands back whatever was written to it, including by an older version of
+// this worker, so the shape is checked rather than assumed.
+const storedTokens = z.object({
+  access_token: z.string(),
+  refresh_token: z.string(),
+  expires_at: z.number(),
+  updated_at: z.string(),
+});
+
+type StoredTokens = z.infer<typeof storedTokens>;
 
 function serializeTokens(response: RefreshTokenResponse): string {
   return JSON.stringify({
@@ -25,16 +30,15 @@ async function getStravaClient(
   env: Env,
   ctx: ExecutionContext,
 ): Promise<Strava> {
-  const storedTokens = (await env.KV.get(
-    "tokens",
-    "json",
-  )) as StoredTokens | null;
+  const stored = await env.KV.get("tokens", "json");
 
-  if (!storedTokens) {
+  if (stored === null) {
     throw new Error(
       "No Strava tokens available. Complete OAuth flow at /authorize",
     );
   }
+
+  const tokens = storedTokens.parse(stored);
 
   return new Strava(
     {
@@ -63,9 +67,9 @@ async function getStravaClient(
       },
     },
     {
-      access_token: storedTokens.access_token,
-      expires_at: storedTokens.expires_at,
-      refresh_token: storedTokens.refresh_token,
+      access_token: tokens.access_token,
+      expires_at: tokens.expires_at,
+      refresh_token: tokens.refresh_token,
     },
   );
 }

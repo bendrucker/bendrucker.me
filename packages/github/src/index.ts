@@ -1,8 +1,15 @@
 import { graphql } from "@octokit/graphql";
 import { createTokenAuth } from "@octokit/auth-token";
-import type { User, SearchResultItemConnection } from "@octokit/graphql-schema";
+import { z } from "zod";
 import { logger } from "@workspace/logger";
 import { aggregateActivityByRepository } from "./aggregate";
+import {
+  contributionsResponse,
+  issueSearchPage,
+  mergedPullRequestSearchPage,
+  type RateLimit,
+  type SearchPage,
+} from "./schema";
 
 export { aggregateActivityByRepository } from "./aggregate";
 
@@ -39,11 +46,7 @@ export interface GitHubConfig {
   to?: Date;
 }
 
-export interface RateLimit {
-  remaining: number;
-  cost: number;
-  resetAt: string;
-}
+export type { RateLimit } from "./schema";
 
 export interface GitHubActivityResult {
   repos: RepoActivity[];
@@ -188,6 +191,7 @@ const ISSUE_SEARCH_QUERY = gql`
         endCursor
       }
       nodes {
+        __typename
         ... on Issue {
           number
           title
@@ -226,6 +230,7 @@ const MERGED_PR_SEARCH_QUERY = gql`
         endCursor
       }
       nodes {
+        __typename
         ... on PullRequest {
           number
           title
@@ -250,41 +255,31 @@ const MERGED_PR_SEARCH_QUERY = gql`
 const SEARCH_PAGE_SIZE = 100;
 const SEARCH_MAX_RESULTS = 1000;
 
-interface SearchPage {
-  search: {
-    pageInfo: { hasNextPage: boolean; endCursor: string | null };
-    nodes: SearchResultItemConnection["nodes"];
-  };
-}
-
-async function paginateSearch(
+async function paginateSearch<T>(
   graphqlWithAuth: typeof graphql,
   query: string,
   searchQuery: string,
-): Promise<SearchResultItemConnection["nodes"]> {
-  const allNodes: NonNullable<SearchResultItemConnection["nodes"]> = [];
+  page: z.ZodType<SearchPage<T>>,
+): Promise<T[]> {
+  const allNodes: T[] = [];
   let after: string | null = null;
 
   while (allNodes.length < SEARCH_MAX_RESULTS) {
-    const data = (await graphqlWithAuth(query, {
-      searchQuery,
-      first: SEARCH_PAGE_SIZE,
-      after,
-    })) as SearchPage;
+    const { search } = page.parse(
+      await graphqlWithAuth(query, {
+        searchQuery,
+        first: SEARCH_PAGE_SIZE,
+        after,
+      }),
+    );
 
-    const nodes = data.search.nodes ?? [];
-    allNodes.push(...nodes);
+    allNodes.push(...search.nodes);
 
-    if (!data.search.pageInfo.hasNextPage) break;
-    after = data.search.pageInfo.endCursor;
+    if (!search.pageInfo.hasNextPage) break;
+    after = search.pageInfo.endCursor;
   }
 
   return allNodes;
-}
-
-interface ContributionsResponse {
-  user: Pick<User, "contributionsCollection"> | null;
-  rateLimit: { remaining: number; cost: number; resetAt: string } | null;
 }
 
 export async function fetchGitHubActivity(
@@ -322,36 +317,39 @@ export async function fetchGitHubActivity(
   const mergedPRSearchQuery = `is:pr is:merged user:${config.username} -author:${config.username} -author:app/dependabot -author:app/renovate merged:>${from.toISOString().split("T")[0]}`;
 
   try {
-    const data = (await graphqlWithAuth(GET_USER_CONTRIBUTIONS_QUERY, {
-      username: config.username,
-      from: from.toISOString(),
-      to: to.toISOString(),
-    })) as ContributionsResponse;
+    const data = contributionsResponse.parse(
+      await graphqlWithAuth(GET_USER_CONTRIBUTIONS_QUERY, {
+        username: config.username,
+        from: from.toISOString(),
+        to: to.toISOString(),
+      }),
+    );
 
-    if (!data?.user?.contributionsCollection) {
+    if (!data.user) {
       throw new Error("Invalid response structure from GitHub API");
     }
 
     const contributionsCollection = data.user.contributionsCollection;
 
     const [issueNodes, mergedPRNodes] = await Promise.all([
-      paginateSearch(graphqlWithAuth, ISSUE_SEARCH_QUERY, issueSearchQuery),
+      paginateSearch(
+        graphqlWithAuth,
+        ISSUE_SEARCH_QUERY,
+        issueSearchQuery,
+        issueSearchPage,
+      ),
       paginateSearch(
         graphqlWithAuth,
         MERGED_PR_SEARCH_QUERY,
         mergedPRSearchQuery,
+        mergedPullRequestSearchPage,
       ),
     ]);
 
-    const issueSearch = { nodes: issueNodes } as SearchResultItemConnection;
-    const mergedPRSearch = {
-      nodes: mergedPRNodes,
-    } as SearchResultItemConnection;
-
     const result = aggregateActivityByRepository(
       contributionsCollection,
-      issueSearch,
-      mergedPRSearch,
+      issueNodes,
+      mergedPRNodes,
       config.username,
     );
 
@@ -371,11 +369,11 @@ export async function fetchGitHubActivity(
       },
       {
         name: "issueContributionsByRepository",
-        count: cc.issueContributionsByRepository?.length ?? 0,
+        count: cc.issueContributionsByRepository.length,
       },
       {
         name: "repositoryContributions",
-        count: cc.repositoryContributions.nodes?.length ?? 0,
+        count: cc.repositoryContributions.nodes.length,
       },
     ];
 

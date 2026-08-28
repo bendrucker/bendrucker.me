@@ -26,7 +26,8 @@ jobs:
           node-version: 22
           cache: "npm"
       - run: npm ci
-      - run: npm run lint
+      - run: npm run lint:types
+      - run: npx eslint .
 
   test:
     runs-on: ubuntu-latest

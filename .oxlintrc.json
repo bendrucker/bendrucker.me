@@ -85,15 +85,14 @@
     "typescript/no-namespace": "error",
     "typescript/no-require-imports": "error",
     "typescript/no-unsafe-function-type": "error",
-    // The categories pull these in, but they need a type checker oxlint has no
-    // access to without oxlint-tsgolint, so they report as "deny" and then
-    // silently never fire. Off here so the local rule set is what it claims to
-    // be. There is no category-level way to exclude type-aware rules, so this
-    // list needs revisiting whenever oxlint adds one.
+    // Type-aware, so it needs `npm run lint:types`. Parse external data with a
+    // zod schema and infer the type from it rather than asserting the shape.
+    "typescript/no-unsafe-type-assertion": "error",
+    // Type-aware too, and reachable now, but each has its own backlog. Turning
+    // one on belongs with the cleanup that makes it pass.
     "typescript/no-floating-promises": "off",
     "typescript/no-implied-eval": "off",
     "typescript/no-unnecessary-type-assertion": "off",
-    "typescript/no-unsafe-type-assertion": "off",
     "typescript/restrict-template-expressions": "off"
   },
   "overrides": [
@@ -116,6 +115,13 @@
         "no-unreachable": "off",
         "no-unsafe-negation": "off",
         "no-with": "off"
+      }
+    },
+    {
+      // Fixtures assert partial shapes of types too large to build whole.
+      "files": ["**/*.test.ts", "**/fixtures.ts", "**/*.story.vue"],
+      "rules": {
+        "typescript/no-unsafe-type-assertion": "off"
       }
     }
   ]
