@@ -6,15 +6,14 @@ import vueParser from "vue-eslint-parser";
 
 const ASTRO_FILES = ["*.astro", "**/*.astro"];
 
+// Matches .oxlintrc.json, so the same comparison isn't an error in a template
+// and fine everywhere else. `== null` is the deliberate null-or-undefined idiom.
+const EQEQEQ = ["error", "always", { null: "ignore" }];
+
 // Both plugins ship at least one config entry with no `files` key, which
 // makes it apply to every linted file rather than just its own. Scope those
 // entries explicitly. Entries that already declare `files` (astro's virtual
 // `**/*.astro/*.ts` files, vue's own `**/*.vue` base) are left alone.
-//
-// Scoping astro's unscoped entries to ASTRO_FILES also takes them off the
-// virtual `*.astro/0_0.js` files the processor emits for `<script>` blocks.
-// That is why the rule block below covers frontmatter and template
-// expressions but not `<script>`.
 const vueConfigs = eslintPluginVue.configs["flat/essential"].map((config) =>
   config.files ? config : { ...config, files: ["**/*.vue"] },
 );
@@ -52,23 +51,8 @@ export default [
     //
     // It must stay after the spread above. In flat config the last matching
     // entry wins, and the spread's unscoped entry turns these rules off.
-    //
-    // Measured coverage, one violation per region:
-    //   frontmatter         -> oxlint and eslint (double-reported)
-    //   <script> block      -> oxlint only
-    //   template expression -> eslint only
-    // The double report on frontmatter buys the template coverage. Dropping
-    // .astro from oxlint so ESLint owned the file type outright would lose
-    // every typescript/* and unicorn/* rule in frontmatter, since neither
-    // @typescript-eslint/eslint-plugin nor eslint-plugin-unicorn is installed.
-    //
-    // These patterns do not reach the virtual `*.astro/0_0.js` files emitted
-    // for <script> blocks, for two independent and individually sufficient
-    // reasons: the astroConfigs scoping map above, and the `**/*.js` /
-    // `**/*.ts` entries in the ignores block below. An ESLint-only rule added
-    // here will not fire inside a <script> tag.
     files: ASTRO_FILES,
-    rules: { "no-console": "error", eqeqeq: "error" },
+    rules: { "no-console": "error", eqeqeq: EQEQEQ },
   },
   {
     // Same blind spot in .vue: oxlint's vue plugin reads <script>, never
@@ -77,7 +61,7 @@ export default [
     // that .oxlintrc.json enables. The rest of what oxlint checks in <script>
     // has no config-only path into <template>.
     files: ["**/*.vue"],
-    rules: { "vue/no-console": "error", "vue/eqeqeq": "error" },
+    rules: { "vue/no-console": "error", "vue/eqeqeq": EQEQEQ },
   },
   {
     // oxlint owns plain .ts/.js files entirely. Without this, eslint-plugin-oxlint's
@@ -86,9 +70,8 @@ export default [
     // parser (espree), which chokes on TypeScript syntax.
     //
     // The `**/*.js` and `**/*.ts` globs also match the virtual `foo.astro/0_0.js`
-    // paths the astro processor emits, so they ignore .astro <script> blocks as
-    // well. Removing just those two globs makes a <script>-block violation
-    // reappear. oxlint covers <script>, so the coverage stands either way.
+    // paths the astro processor emits, so ESLint contributes nothing inside an
+    // .astro <script> block. oxlint covers those.
     ignores: [
       "dist/**",
       ".histoire/**",

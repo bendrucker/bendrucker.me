@@ -12,6 +12,15 @@ interface StoredTokens {
   updated_at: string;
 }
 
+function serializeTokens(response: RefreshTokenResponse): string {
+  return JSON.stringify({
+    access_token: response.access_token,
+    refresh_token: response.refresh_token || "",
+    expires_at: response.expires_at,
+    updated_at: new Date().toISOString(),
+  } satisfies StoredTokens);
+}
+
 async function getStravaClient(env: Env): Promise<Strava> {
   const storedTokens = (await env.KV.get(
     "tokens",
@@ -35,20 +44,14 @@ async function getStravaClient(env: Env): Promise<Strava> {
       // and the next run authenticates with a stale one.
       on_token_refresh: (response) => {
         logger.info("Token refreshed automatically by Strava client");
-        env.KV.put(
-          "tokens",
-          JSON.stringify({
-            access_token: response.access_token,
-            refresh_token: response.refresh_token || "",
-            expires_at: response.expires_at,
-            updated_at: new Date().toISOString(),
-          }),
-        ).catch((error: unknown) => {
-          logger.error(
-            { error: error instanceof Error ? error.message : String(error) },
-            "Failed to persist refreshed Strava tokens",
-          );
-        });
+        env.KV.put("tokens", serializeTokens(response)).catch(
+          (error: unknown) => {
+            logger.error(
+              { error: error instanceof Error ? error.message : String(error) },
+              "Failed to persist refreshed Strava tokens",
+            );
+          },
+        );
       },
     },
     {
@@ -172,15 +175,7 @@ export default {
             throw new Error("Strava token exchange returned no tokens");
           }
 
-          await env.KV.put(
-            "tokens",
-            JSON.stringify({
-              access_token: issuedTokens.access_token,
-              refresh_token: issuedTokens.refresh_token || "",
-              expires_at: issuedTokens.expires_at,
-              updated_at: new Date().toISOString(),
-            }),
-          );
+          await env.KV.put("tokens", serializeTokens(issuedTokens));
 
           // Get athlete info to verify user ID
           const athlete = await strava.athletes.getLoggedInAthlete();
