@@ -42,7 +42,7 @@
     "date-fns": "^4.4.0",
     "kysely": "^0.29.4",
     "lodash.kebabcase": "^4.1.1",
-    "reka-ui": "^2.10.1",
+    "reka-ui": "^2.10.3",
     "remark-collapse": "^0.1.2",
     "remark-toc": "^9.0.0",
     "shiki": "^4.4.2",
