@@ -21,12 +21,12 @@ export function formatSql(compiled: CompiledQuery): string {
   const sql = compiled.sql.replace(/\?/g, () =>
     String(quote.get(compiled.parameters[i++])),
   );
-  return sql + ";";
+  return `${sql};`;
 }
 
 export function executeRemote(statements: string[]) {
   const sqlFile = join(process.cwd(), "tmp", "d1-import.sql");
-  writeFileSync(sqlFile, statements.join("\n") + "\n");
+  writeFileSync(sqlFile, `${statements.join("\n")}\n`);
   execSync(
     `wrangler d1 execute bendrucker-activity --remote --file=${sqlFile}`,
     { encoding: "utf-8" },

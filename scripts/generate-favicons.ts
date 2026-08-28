@@ -90,7 +90,7 @@ async function main() {
   // swaps to this explicit light-ink variant when the OS switches to dark.
   writeFileSync(
     join(STATIC, "favicon-dark.svg"),
-    inkSvg(favicon, INK.dark) + "\n",
+    `${inkSvg(favicon, INK.dark)}\n`,
   );
   logger.info("Wrote favicon-dark.svg");
 

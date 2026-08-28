@@ -1,4 +1,4 @@
-import { Strava } from "strava";
+import { Strava, type RefreshTokenResponse } from "strava";
 import { logger } from "@workspace/logger";
 
 type Env = Required<Cloudflare.Env> & {
@@ -12,7 +12,19 @@ interface StoredTokens {
   updated_at: string;
 }
 
-async function getStravaClient(env: Env): Promise<Strava> {
+function serializeTokens(response: RefreshTokenResponse): string {
+  return JSON.stringify({
+    access_token: response.access_token,
+    refresh_token: response.refresh_token || "",
+    expires_at: response.expires_at,
+    updated_at: new Date().toISOString(),
+  } satisfies StoredTokens);
+}
+
+async function getStravaClient(
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Strava> {
   const storedTokens = (await env.KV.get(
     "tokens",
     "json",
@@ -28,16 +40,25 @@ async function getStravaClient(env: Env): Promise<Strava> {
     {
       client_id: env.STRAVA_CLIENT_ID,
       client_secret: env.STRAVA_CLIENT_SECRET,
-      on_token_refresh: async (response) => {
+      // The client types this callback as returning void, so anything async
+      // here is dropped on the floor. The refresh happens lazily inside an
+      // API call, with no caller able to await it. waitUntil keeps the worker
+      // alive for the write, which would otherwise race the request that
+      // triggered the refresh and lose the rotated token. The catch reports a
+      // rejection that has nowhere else to surface.
+      on_token_refresh: (response) => {
         logger.info("Token refreshed automatically by Strava client");
-        await env.KV.put(
-          "tokens",
-          JSON.stringify({
-            access_token: response.access_token,
-            refresh_token: response.refresh_token || "",
-            expires_at: response.expires_at,
-            updated_at: new Date().toISOString(),
-          }),
+        ctx.waitUntil(
+          env.KV.put("tokens", serializeTokens(response)).catch(
+            (error: unknown) => {
+              logger.error(
+                {
+                  error: error instanceof Error ? error.message : String(error),
+                },
+                "Failed to persist refreshed Strava tokens",
+              );
+            },
+          ),
         );
       },
     },
@@ -49,8 +70,8 @@ async function getStravaClient(env: Env): Promise<Strava> {
   );
 }
 
-async function fetchStravaData(env: Env) {
-  const strava = await getStravaClient(env);
+async function fetchStravaData(env: Env, ctx: ExecutionContext) {
+  const strava = await getStravaClient(env, ctx);
 
   try {
     // Fetch athlete info
@@ -100,7 +121,7 @@ export default {
       (async () => {
         try {
           logger.info(
-            await fetchStravaData(env),
+            await fetchStravaData(env, ctx),
             "Strava data refresh completed",
           );
         } catch (error) {
@@ -141,30 +162,33 @@ export default {
         }
 
         try {
+          // The callback's return value is discarded by the client, so an
+          // await inside it cannot fail the request. The exchange is the only
+          // source of these tokens, so the write happens below, where a
+          // rejection can surface as a 500.
+          let issuedTokens: RefreshTokenResponse | undefined;
           const strava = await Strava.createFromTokenExchange(
             {
               client_id: env.STRAVA_CLIENT_ID,
               client_secret: env.STRAVA_CLIENT_SECRET,
-              on_token_refresh: async (response) => {
+              on_token_refresh: (response) => {
                 logger.info("Initial token received via OAuth");
-                await env.KV.put(
-                  "tokens",
-                  JSON.stringify({
-                    access_token: response.access_token,
-                    refresh_token: response.refresh_token || "",
-                    expires_at: response.expires_at,
-                    updated_at: new Date().toISOString(),
-                  }),
-                );
+                issuedTokens = response;
               },
             },
             url.searchParams.get("code")!,
           );
 
-          // Get athlete info to verify user ID
+          if (!issuedTokens) {
+            throw new Error("Strava token exchange returned no tokens");
+          }
+
           const athlete = await strava.athletes.getLoggedInAthlete();
 
-          // Verify this is your user ID
+          // Anyone can hand this endpoint a code for their own Strava account.
+          // The identity check has to clear before the write, or authorizing
+          // with a different account overwrites the stored credentials and the
+          // 403 below reports a rejection that already took effect.
           if (athlete.id !== parseInt(env.STRAVA_USER_ID)) {
             logger.warn(
               { athlete_id: athlete.id, expected: env.STRAVA_USER_ID },
@@ -172,6 +196,8 @@ export default {
             );
             return new Response("Unauthorized athlete", { status: 403 });
           }
+
+          await env.KV.put("tokens", serializeTokens(issuedTokens));
 
           logger.info(
             { athlete_id: athlete.id },

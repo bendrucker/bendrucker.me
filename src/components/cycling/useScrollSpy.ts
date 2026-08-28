@@ -44,7 +44,7 @@ export function useScrollSpy(
         key,
         top: element.getBoundingClientRect().top,
       }))
-      .sort((a, b) => a.top - b.top);
+      .toSorted((a, b) => a.top - b.top);
 
     const visible = measured.findLast((section) =>
       intersecting.has(section.element),
@@ -57,9 +57,7 @@ export function useScrollSpy(
     // At the foot of the page a short trailing section never reaches the band,
     // so anything that started above the band still counts as passed.
     const bandBottom = window.innerHeight * BAND_BOTTOM;
-    const passed = measured
-      .filter((section) => section.top < bandBottom)
-      .at(-1);
+    const passed = measured.findLast((section) => section.top < bandBottom);
     activeKey.value = passed?.key ?? measured[0]?.key ?? null;
   }
 

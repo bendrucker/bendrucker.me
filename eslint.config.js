@@ -4,6 +4,12 @@ import oxlint from "eslint-plugin-oxlint";
 import tsParser from "@typescript-eslint/parser";
 import vueParser from "vue-eslint-parser";
 
+const ASTRO_FILES = ["*.astro", "**/*.astro"];
+
+// Matches .oxlintrc.json, so the same comparison isn't an error in a template
+// and fine everywhere else. `== null` is the deliberate null-or-undefined idiom.
+const EQEQEQ = ["error", "always", { null: "ignore" }];
+
 // Both plugins ship at least one config entry with no `files` key, which
 // makes it apply to every linted file rather than just its own. Scope those
 // entries explicitly. Entries that already declare `files` (astro's virtual
@@ -12,7 +18,7 @@ const vueConfigs = eslintPluginVue.configs["flat/essential"].map((config) =>
   config.files ? config : { ...config, files: ["**/*.vue"] },
 );
 const astroConfigs = eslintPluginAstro.configs.recommended.map((config) =>
-  config.files ? config : { ...config, files: ["*.astro", "**/*.astro"] },
+  config.files ? config : { ...config, files: ASTRO_FILES },
 );
 
 export default [
@@ -33,21 +39,39 @@ export default [
       },
     },
   },
-  {
-    // oxlint doesn't lint .astro at all, so no-console has to stay here. It's
-    // covered on every other file type by oxlint's own no-console rule.
-    files: ["*.astro", "**/*.astro"],
-    rules: { "no-console": "error" },
-  },
-  // Silences the 39 vue rules oxlint already covers, read straight from
-  // .oxlintrc.json so the two stay in lockstep.
+  // Silences the rules oxlint already covers, read straight from
+  // .oxlintrc.json so the two stay in lockstep. This emits an entry with no
+  // `files` key, so it switches those rules off for every file type, .astro
+  // and .vue included. Anything below that re-enables one is deliberate.
   ...oxlint.buildFromOxlintConfigFile("./.oxlintrc.json"),
   {
-    // oxlint owns plain .ts/.js files entirely now. Without this, eslint-plugin-oxlint's
+    // oxlint parses .astro frontmatter and <script> blocks, but not template
+    // expressions: `{items.sort()}` and `class={a == b ? ... }` are invisible
+    // to it. This block covers the template.
+    //
+    // It must stay after the spread above. In flat config the last matching
+    // entry wins, and the spread's unscoped entry turns these rules off.
+    files: ASTRO_FILES,
+    rules: { "no-console": "error", eqeqeq: EQEQEQ },
+  },
+  {
+    // Same blind spot in .vue: oxlint's vue plugin reads <script>, never
+    // <template>. eslint-plugin-vue only offers template-body traversal for a
+    // fixed list of hand-wrapped core rules, and these are the two of them
+    // that .oxlintrc.json enables. The rest of what oxlint checks in <script>
+    // has no config-only path into <template>.
+    files: ["**/*.vue"],
+    rules: { "vue/no-console": "error", "vue/eqeqeq": EQEQEQ },
+  },
+  {
+    // oxlint owns plain .ts/.js files entirely. Without this, eslint-plugin-oxlint's
     // generated config (which mirrors oxlint's file scope to turn off overlapping rules)
     // makes ESLint's directory walk pick them up too, and it parses them with the default
-    // parser (espree), which chokes on TypeScript syntax. This doesn't affect the virtual
-    // `**/*.astro/*.ts` blocks astro's processor creates, since those never touch disk.
+    // parser (espree), which chokes on TypeScript syntax.
+    //
+    // The `**/*.js` and `**/*.ts` globs also match the virtual `foo.astro/0_0.js`
+    // paths the astro processor emits, so ESLint contributes nothing inside an
+    // .astro <script> block. oxlint covers those.
     ignores: [
       "dist/**",
       ".histoire/**",

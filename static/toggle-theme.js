@@ -49,7 +49,7 @@ function reflectPreference() {
 // set early so no page flashes / CSS is made aware
 reflectPreference();
 
-window.onload = () => {
+window.addEventListener("load", () => {
   function setThemeFeature() {
     // set on load so screen readers can get the latest value on the button
     reflectPreference();
@@ -65,7 +65,7 @@ window.onload = () => {
 
   // Runs on view transitions navigation
   document.addEventListener("astro:after-swap", setThemeFeature);
-};
+});
 
 // Set theme-color value before page transition
 // to avoid navigation bar color flickering in Android dark mode

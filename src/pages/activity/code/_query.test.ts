@@ -194,7 +194,7 @@ describe("queryRepos", () => {
   it("filters by year", async () => {
     const result = await queryRepos(db, { year: 2025 });
     expect(result.total).toBe(4);
-    expect(result.repos.map((r) => r.name).sort()).toEqual([
+    expect(result.repos.map((r) => r.name).toSorted()).toEqual([
       "big-project",
       "cool-lib",
       "new-thing",
@@ -205,14 +205,14 @@ describe("queryRepos", () => {
   it("sorts by stars descending", async () => {
     const result = await queryRepos(db, { sort: "stars" });
     const stars = result.repos.map((r) => r.stargazerCount);
-    expect(stars).toEqual([...stars].sort((a, b) => b - a));
+    expect(stars).toEqual(stars.toSorted((a, b) => b - a));
     expect(result.repos[0].name).toBe("big-project");
   });
 
   it("sorts by name ascending", async () => {
     const result = await queryRepos(db, { sort: "name" });
     const names = result.repos.map((r) => r.name);
-    expect(names).toEqual([...names].sort());
+    expect(names).toEqual(names.toSorted());
   });
 
   it("sorts by total activity descending", async () => {
@@ -224,7 +224,7 @@ describe("queryRepos", () => {
         r.activitySummary.issueCount +
         r.activitySummary.mergeCount,
     );
-    expect(totals).toEqual([...totals].sort((a, b) => b - a));
+    expect(totals).toEqual(totals.toSorted((a, b) => b - a));
   });
 
   it("maps repo row fields correctly", async () => {
@@ -366,7 +366,7 @@ describe("queryYears", () => {
   it("returns years with repo counts in descending order", async () => {
     const result = await queryYears(db, {});
     const years = result.years.map((y) => y.year);
-    expect(years).toEqual([...years].sort((a, b) => b - a));
+    expect(years).toEqual(years.toSorted((a, b) => b - a));
     expect(result.years.length).toBeGreaterThanOrEqual(3);
   });
 
@@ -403,7 +403,7 @@ describe("queryLanguages with limit", () => {
     expect(limited.languages[0].name).toBe("TypeScript");
     expect(limited.languages[0].count).toBe(2);
     const counts = limited.languages.map((l) => l.count);
-    expect(counts).toEqual([...counts].sort((a, b) => b - a));
+    expect(counts).toEqual(counts.toSorted((a, b) => b - a));
   });
 });
 

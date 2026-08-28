@@ -186,7 +186,9 @@ async function main() {
 
   try {
     if (remote) {
-      executeRemote([...queries, sync.compile()].map(formatSql));
+      executeRemote(
+        [...queries, sync.compile()].map((query) => formatSql(query)),
+      );
     } else {
       for (const query of queries) {
         await db.executeQuery(query);

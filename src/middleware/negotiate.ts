@@ -37,7 +37,7 @@ function parseAccept(header: string): AcceptEntry[] {
     .split(",")
     .map((part) => part.trim())
     .filter((part) => part.length > 0)
-    .map(parseEntry)
+    .map((part) => parseEntry(part))
     .filter((entry): entry is AcceptEntry => entry !== null);
 }
 

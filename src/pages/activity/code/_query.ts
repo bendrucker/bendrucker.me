@@ -225,7 +225,7 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
       .$if(!!filters.year, (qb) => qb.having(yearHaving, "=", filters.year!))
       .orderBy(sql`last_activity`, "desc")
       .execute();
-    const repos = rows.map(mapRepoRow);
+    const repos = rows.map((row) => mapRepoRow(row));
     return { repos, nextCursor: null, hasMore: false, total };
   }
 
@@ -292,7 +292,7 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
     }
   }
 
-  const repos = pageResults.map(mapRepoRow);
+  const repos = pageResults.map((row) => mapRepoRow(row));
 
   return { repos, nextCursor, hasMore, total };
 }

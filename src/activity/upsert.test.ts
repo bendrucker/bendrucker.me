@@ -200,7 +200,7 @@ describe("activityStatements", () => {
     ];
 
     const forward = activityStatements(db, repos);
-    const reversed = activityStatements(db, [...repos].reverse());
+    const reversed = activityStatements(db, repos.toReversed());
 
     expect(forward.map((query) => query.parameters)).toEqual(
       reversed.map((query) => query.parameters),
