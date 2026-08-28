@@ -13,6 +13,7 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 - `packages/logger` — shared pino logger; `packages/github` — GitHub API client
 - `workers/github` — cron (hourly): GitHub API → D1
 - `workers/strava` — cron (6h): Strava API → KV
+- `infra/` — Terraform root for this zone's apex DNS record and apex→www redirect
 
 ## Commands
 
@@ -118,3 +119,17 @@ Run `npx wrangler types` after changing any `wrangler.toml`. The `types` CI job
 regenerates types at the root and in each worker and fails on any diff, so
 commit regenerated `worker-configuration.d.ts` files whenever `wrangler` is
 bumped or a `wrangler.toml` changes.
+
+## Infrastructure
+
+`infra/` is a Terraform root module applied by the `bendrucker-me` HCP Terraform
+workspace in the `bendrucker` organization. The workspace is defined in
+[bendrucker/infrastructure](https://github.com/bendrucker/infrastructure), watches
+`infra/**`, and auto-applies on merge to `main`. There is no local apply path.
+
+Its Cloudflare token is scoped to the `bendrucker.me` zone. The zone itself, the
+`things` and TXT records, and the activity-hub resources stay in
+`bendrucker/infrastructure`.
+
+`terraform fmt` and `terraform validate` both work locally. So does
+`terraform init -backend=false`, despite the `cloud` block.
