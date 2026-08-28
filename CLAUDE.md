@@ -13,7 +13,7 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 - `packages/logger` — shared pino logger; `packages/github` — GitHub API client
 - `workers/github` — cron (hourly): GitHub API → D1
 - `workers/strava` — cron (6h): Strava API → KV
-- `infra/` — Terraform root: Cloudflare DNS and redirect rules
+- `terraform/` — Terraform root: Cloudflare DNS and redirect rules
 
 ## Commands
 
@@ -122,7 +122,7 @@ bumped or a `wrangler.toml` changes.
 
 ## Infrastructure
 
-`infra/` is a Terraform root holding the apex A record and the apex→www redirect
+`terraform/` is a Terraform root holding the apex A record and the apex→www redirect
 ruleset. The `bendrucker-me` HCP Terraform workspace applies it on merge to
 `main`, so there is no local apply path. `terraform fmt`, `terraform validate`,
 and `terraform init -backend=false` all work locally.
