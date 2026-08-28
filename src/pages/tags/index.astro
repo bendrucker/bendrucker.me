@@ -10,7 +10,7 @@ import { SITE } from "@/config";
 
 const posts = await getCollection("blog");
 
-let tags = getUniqueTags(posts);
+const tags = getUniqueTags(posts);
 ---
 
 <Layout title={`Tags | ${SITE.title}`} sourcePath="src/pages/tags/index.astro">

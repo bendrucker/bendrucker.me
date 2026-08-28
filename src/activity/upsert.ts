@@ -146,8 +146,8 @@ export function activityStatements(
   db: Kysely<Database>,
   repos: RepoActivity[],
 ): CompiledQuery[] {
-  return [...repos]
-    .sort(
+  return repos
+    .toSorted(
       (a, b) => a.owner.localeCompare(b.owner) || a.name.localeCompare(b.name),
     )
     .flatMap((repo) => [

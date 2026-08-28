@@ -14,7 +14,7 @@ type Tag = {
 
 export const getUniqueTags = (posts: CollectionEntry<"blog">[]) =>
   posts
-    .filter(postFilter)
+    .filter((post) => postFilter(post))
     .flatMap((post) => post.data.tags)
     .map((tag): Tag => ({ tag: kebabcase(tag), tagName: tag }))
     .filter(

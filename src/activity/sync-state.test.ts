@@ -99,7 +99,7 @@ describe("hashStatements", () => {
     ];
 
     expect(await hashStatements(activityStatements(db, repos))).toBe(
-      await hashStatements(activityStatements(db, [...repos].reverse())),
+      await hashStatements(activityStatements(db, repos.toReversed())),
     );
   });
 

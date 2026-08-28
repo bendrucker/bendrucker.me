@@ -1,8 +1,9 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "vue"],
+  "plugins": ["typescript", "vue", "unicorn", "oxc"],
   "categories": {
-    "correctness": "off"
+    "correctness": "error",
+    "suspicious": "error"
   },
   "env": {
     "builtin": true,
@@ -18,9 +19,89 @@
     "**/worker-configuration.d.ts"
   ],
   "rules": {
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
+    "max-depth": "error",
     "no-array-constructor": "error",
-    "no-unused-expressions": "error",
-    "no-unused-vars": "error",
+    "no-console": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@workspace/*/src",
+              "@workspace/*/src/*",
+              "**/packages/*/src/*"
+            ],
+            "message": "Import the package entry point. Packages are consumed from dist/, not src/."
+          }
+        ]
+      }
+    ],
+    "no-template-curly-in-string": "warn",
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allow": ["_exhaustive", "__typename", "__raw", "__dirname"]
+      }
+    ],
+    "no-unused-expressions": [
+      "error",
+      {
+        "allowTernary": true
+      }
+    ],
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "after-used",
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ],
+    "no-var": "error",
+    "prefer-const": "error",
+    "prefer-rest-params": "error",
+    "prefer-spread": "error",
+    "prefer-template": "error",
+    "oxc/no-accumulating-spread": "error",
+    "unicorn/no-array-callback-reference": "error",
+    "unicorn/no-array-reverse": "error",
+    "unicorn/no-array-sort": "error",
+    "unicorn/no-useless-spread": "error",
+    "unicorn/prefer-array-find": "error",
+    "unicorn/prefer-set-has": "error",
+    "unicorn/prefer-structured-clone": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-namespace": "error",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-this-alias": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/no-wrapper-object-types": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/prefer-namespace-keyword": "error",
+    "typescript/triple-slash-reference": "error",
+    "typescript/no-floating-promises": "off",
+    "typescript/no-implied-eval": "off",
+    "typescript/no-unnecessary-type-assertion": "off",
+    "typescript/no-unsafe-type-assertion": "off",
+    "typescript/restrict-template-expressions": "off",
     "vue/no-arrow-functions-in-watch": "error",
     "vue/no-async-in-computed-properties": "error",
     "vue/no-computed-properties-in-data": "error",
@@ -50,29 +131,11 @@
     "vue/valid-define-emits": "error",
     "vue/valid-define-options": "error",
     "vue/valid-define-props": "error",
-    "vue/valid-next-tick": "error",
-    "no-console": "error",
-    "typescript/ban-ts-comment": "error",
-    "typescript/no-duplicate-enum-values": "error",
-    "typescript/no-empty-object-type": "error",
-    "typescript/no-explicit-any": "error",
-    "typescript/no-extra-non-null-assertion": "error",
-    "typescript/no-misused-new": "error",
-    "typescript/no-namespace": "error",
-    "typescript/no-non-null-asserted-optional-chain": "error",
-    "typescript/no-require-imports": "error",
-    "typescript/no-this-alias": "error",
-    "typescript/no-unnecessary-type-constraint": "error",
-    "typescript/no-unsafe-declaration-merging": "error",
-    "typescript/no-unsafe-function-type": "error",
-    "typescript/no-wrapper-object-types": "error",
-    "typescript/prefer-as-const": "error",
-    "typescript/prefer-namespace-keyword": "error",
-    "typescript/triple-slash-reference": "error"
+    "vue/valid-next-tick": "error"
   },
   "overrides": [
     {
-      "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+      "files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts", "**/*.vue"],
       "rules": {
         "constructor-super": "off",
         "getter-return": "off",
@@ -89,11 +152,7 @@
         "no-this-before-super": "off",
         "no-unreachable": "off",
         "no-unsafe-negation": "off",
-        "no-var": "error",
-        "no-with": "off",
-        "prefer-const": "error",
-        "prefer-rest-params": "error",
-        "prefer-spread": "error"
+        "no-with": "off"
       }
     }
   ]

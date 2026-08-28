@@ -10,7 +10,7 @@ export const postFilter = ({ data }: CollectionEntry<"blog">) => {
 
 export const getSortedPosts = (posts: CollectionEntry<"blog">[]) =>
   posts
-    .filter(postFilter)
+    .filter((post) => postFilter(post))
     .toSorted(
       (a, b) =>
         Math.floor(

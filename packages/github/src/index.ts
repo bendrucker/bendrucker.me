@@ -431,6 +431,8 @@ export async function fetchGitHubActivity(
       );
       throw error;
     }
-    throw new Error("Unknown error occurred while fetching GitHub activity");
+    throw new Error("Unknown error occurred while fetching GitHub activity", {
+      cause: error,
+    });
   }
 }

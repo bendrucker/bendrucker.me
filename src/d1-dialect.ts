@@ -44,6 +44,9 @@ class D1Connection implements DatabaseConnection {
     };
   }
 
+  // Kysely's DatabaseConnection requires a generator here. D1 has no
+  // streaming API, so this one only ever throws and has nothing to yield.
+  // oxlint-disable-next-line require-yield
   async *streamQuery<R>(): AsyncIterableIterator<QueryResult<R>> {
     throw new Error("D1 does not support streaming");
   }

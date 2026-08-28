@@ -11,7 +11,7 @@ export function createTestDb(): Kysely<Database> {
 
   const files = readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.endsWith(".sql"))
-    .sort();
+    .toSorted();
   for (const file of files) {
     sqlite.exec(readFileSync(path.join(MIGRATIONS_DIR, file), "utf-8"));
   }
