@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { FilterState } from "@/activity/types";
+import {
+  SORT_ORDERS,
+  type FilterState,
+  type SortOrder,
+} from "@/activity/types";
+
+const SORT_LABELS: Record<SortOrder, string> = {
+  recent: "Recent",
+  active: "Most active",
+  stars: "Stars",
+  name: "Name",
+};
 
 const props = defineProps<{
   filters: FilterState;
@@ -28,6 +39,14 @@ const countLabel = computed(() => {
 
 function setOwner(owner: FilterState["owner"]) {
   emit("update:filters", { owner, language: null });
+}
+
+function setSort(event: Event) {
+  const select = event.target;
+  if (!(select instanceof HTMLSelectElement)) return;
+
+  const sort = SORT_ORDERS.find((order) => order === select.value);
+  if (sort) emit("update:filters", { sort });
 }
 
 function resetFilters() {
@@ -171,17 +190,11 @@ function resetFilters() {
         :value="filters.sort"
         aria-label="Sort order"
         class="h-9 cursor-pointer appearance-none rounded-md border border-border bg-background pr-6 pl-7 text-sm text-foreground/70 focus:border-accent focus:outline-none"
-        @change="
-          emit('update:filters', {
-            sort: ($event.target as HTMLSelectElement)
-              .value as FilterState['sort'],
-          })
-        "
+        @change="setSort"
       >
-        <option value="recent">Recent</option>
-        <option value="active">Most active</option>
-        <option value="stars">Stars</option>
-        <option value="name">Name</option>
+        <option v-for="order in SORT_ORDERS" :key="order" :value="order">
+          {{ SORT_LABELS[order] }}
+        </option>
       </select>
     </div>
   </div>

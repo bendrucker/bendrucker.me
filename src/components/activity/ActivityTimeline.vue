@@ -107,7 +107,8 @@ onMounted(() => {
     (entries) => {
       let maxYear = -Infinity;
       for (const entry of entries) {
-        const year = Number((entry.target as HTMLElement).dataset.year);
+        if (!(entry.target instanceof HTMLElement)) continue;
+        const year = Number(entry.target.dataset.year);
         if (!year) continue;
 
         let candidate: number;

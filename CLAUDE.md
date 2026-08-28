@@ -21,11 +21,22 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 npm run dev           # Spotlight + Astro dev server
 npm run dev:json      # Astro dev server with JSON logs (no Spotlight)
 npm run build         # packages → wrangler types → astro check → astro build
-npm run lint          # ESLint
+npm run lint          # oxlint + ESLint
+npm run lint:types    # oxlint's type-aware rules, via tsgolint
 npm run format        # Prettier
 npm run story:dev     # Histoire component stories on :6006
 npm run story:build   # Static story book into .histoire/dist
 ```
+
+`lint` is the tight local loop. `lint:types` runs that same rule set with a type
+checker attached, several seconds rather than a fraction of one, so CI runs it
+in place of `lint` rather than after it.
+
+`typescript/no-unsafe-type-assertion` is what needs the type checker: data
+arriving from KV, a GraphQL response, or a file is parsed with a zod schema and
+typed from it via `z.infer`, rather than asserted with `as`. tsgolint reads only
+`.ts`, so a cast in a `.vue` or `.astro` file reaches no linter and is the
+reviewer's to catch.
 
 ### Component Stories
 

@@ -38,7 +38,10 @@ class D1Connection implements DatabaseConnection {
         results.meta.last_row_id == null
           ? undefined
           : BigInt(results.meta.last_row_id),
-      rows: (results?.results as R[]) || [],
+      // Kysely declares the row type at the call site, so a dialect has no
+      // schema of its own to check these against.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      rows: (results.results as R[]) || [],
       numAffectedRows:
         results.meta.changes > 0 ? BigInt(results.meta.changes) : undefined,
     };

@@ -45,13 +45,19 @@ export interface SelectEntry {
   label: string;
 }
 
+// `Array.isArray` narrows a readonly array to `any[]` and leaves the union
+// intact in the other branch, so the check is written as a predicate instead.
+function isValueList(
+  options: readonly string[] | Record<string, string>,
+): options is readonly string[] {
+  return Array.isArray(options);
+}
+
 export function selectEntries(
   options: readonly string[] | Record<string, string>,
 ): SelectEntry[] {
-  if (Array.isArray(options)) {
+  if (isValueList(options)) {
     return options.map((value) => ({ value, label: value }));
   }
-  return Object.entries(options as Record<string, string>).map(
-    ([value, label]) => ({ value, label }),
-  );
+  return Object.entries(options).map(([value, label]) => ({ value, label }));
 }

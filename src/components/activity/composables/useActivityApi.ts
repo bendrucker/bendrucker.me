@@ -2,24 +2,21 @@ import { reactive, watch } from "vue";
 import { actions } from "astro:actions";
 import type { Repo, FilterState, ActivityState } from "@/activity/types";
 
-export function debounce<T extends (...args: unknown[]) => void>(
-  fn: T,
+export function debounce<A extends unknown[]>(
+  fn: (...args: A) => void,
   ms: number,
-): T {
+): (...args: A) => void {
   let timer: ReturnType<typeof setTimeout>;
-  return ((...args: unknown[]) => {
+  return (...args: A) => {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), ms);
-  }) as unknown as T;
+  };
 }
 
 function actionInput(filters: FilterState) {
   return {
     sort: filters.sort === "recent" ? undefined : filters.sort,
-    owner:
-      filters.owner === "all"
-        ? undefined
-        : (filters.owner as "personal" | "external"),
+    owner: filters.owner === "all" ? undefined : filters.owner,
     language: filters.language,
     search: filters.search || undefined,
     year: filters.year,

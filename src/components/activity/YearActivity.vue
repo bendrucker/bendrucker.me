@@ -39,10 +39,7 @@ const state = reactive<{
 function actionInput() {
   return {
     sort: state.filters.sort === "recent" ? undefined : state.filters.sort,
-    owner:
-      state.filters.owner === "all"
-        ? undefined
-        : (state.filters.owner as "personal" | "external"),
+    owner: state.filters.owner === "all" ? undefined : state.filters.owner,
     language: state.filters.language,
     search: state.filters.search || undefined,
     year: state.filters.year,
