@@ -21,7 +21,10 @@ function serializeTokens(response: RefreshTokenResponse): string {
   } satisfies StoredTokens);
 }
 
-async function getStravaClient(env: Env): Promise<Strava> {
+async function getStravaClient(
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Strava> {
   const storedTokens = (await env.KV.get(
     "tokens",
     "json",
@@ -39,18 +42,23 @@ async function getStravaClient(env: Env): Promise<Strava> {
       client_secret: env.STRAVA_CLIENT_SECRET,
       // The client types this callback as returning void, so anything async
       // here is dropped on the floor. The refresh happens lazily inside an
-      // API call, with no caller able to await it, so the write has to
-      // handle its own rejection or a failed put loses the token silently
-      // and the next run authenticates with a stale one.
+      // API call, with no caller able to await it. waitUntil keeps the worker
+      // alive for the write, which would otherwise race the request that
+      // triggered the refresh and lose the rotated token. The catch reports a
+      // rejection that has nowhere else to surface.
       on_token_refresh: (response) => {
         logger.info("Token refreshed automatically by Strava client");
-        env.KV.put("tokens", serializeTokens(response)).catch(
-          (error: unknown) => {
-            logger.error(
-              { error: error instanceof Error ? error.message : String(error) },
-              "Failed to persist refreshed Strava tokens",
-            );
-          },
+        ctx.waitUntil(
+          env.KV.put("tokens", serializeTokens(response)).catch(
+            (error: unknown) => {
+              logger.error(
+                {
+                  error: error instanceof Error ? error.message : String(error),
+                },
+                "Failed to persist refreshed Strava tokens",
+              );
+            },
+          ),
         );
       },
     },
@@ -62,8 +70,8 @@ async function getStravaClient(env: Env): Promise<Strava> {
   );
 }
 
-async function fetchStravaData(env: Env) {
-  const strava = await getStravaClient(env);
+async function fetchStravaData(env: Env, ctx: ExecutionContext) {
+  const strava = await getStravaClient(env, ctx);
 
   try {
     // Fetch athlete info
@@ -113,7 +121,7 @@ export default {
       (async () => {
         try {
           logger.info(
-            await fetchStravaData(env),
+            await fetchStravaData(env, ctx),
             "Strava data refresh completed",
           );
         } catch (error) {
@@ -154,10 +162,10 @@ export default {
         }
 
         try {
-          // Capture rather than persist here: the callback's return value is
-          // discarded by the client, so an await inside it cannot fail the
-          // request. The exchange is the only source of these tokens, so the
-          // write is done below where a rejection can surface as a 500.
+          // The callback's return value is discarded by the client, so an
+          // await inside it cannot fail the request. The exchange is the only
+          // source of these tokens, so the write happens below, where a
+          // rejection can surface as a 500.
           let issuedTokens: RefreshTokenResponse | undefined;
           const strava = await Strava.createFromTokenExchange(
             {
@@ -175,12 +183,12 @@ export default {
             throw new Error("Strava token exchange returned no tokens");
           }
 
-          await env.KV.put("tokens", serializeTokens(issuedTokens));
-
-          // Get athlete info to verify user ID
           const athlete = await strava.athletes.getLoggedInAthlete();
 
-          // Verify this is your user ID
+          // Anyone can hand this endpoint a code for their own Strava account.
+          // The identity check has to clear before the write, or authorizing
+          // with a different account overwrites the stored credentials and the
+          // 403 below reports a rejection that already took effect.
           if (athlete.id !== parseInt(env.STRAVA_USER_ID)) {
             logger.warn(
               { athlete_id: athlete.id, expected: env.STRAVA_USER_ID },
@@ -188,6 +196,8 @@ export default {
             );
             return new Response("Unauthorized athlete", { status: 403 });
           }
+
+          await env.KV.put("tokens", serializeTokens(issuedTokens));
 
           logger.info(
             { athlete_id: athlete.id },
