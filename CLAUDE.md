@@ -13,7 +13,7 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 - `packages/logger` — shared pino logger; `packages/github` — GitHub API client
 - `workers/github` — cron (hourly): GitHub API → D1
 - `workers/strava` — cron (6h): Strava API → KV
-- `infra/` — Terraform root for this zone's apex DNS record and apex→www redirect
+- `infra/` — Terraform root: Cloudflare DNS and redirect rules
 
 ## Commands
 
@@ -122,14 +122,13 @@ bumped or a `wrangler.toml` changes.
 
 ## Infrastructure
 
-`infra/` is a Terraform root module applied by the `bendrucker-me` HCP Terraform
-workspace in the `bendrucker` organization. The workspace is defined in
-[bendrucker/infrastructure](https://github.com/bendrucker/infrastructure), watches
-`infra/**`, and auto-applies on merge to `main`. There is no local apply path.
+`infra/` is a Terraform root holding the apex A record and the apex→www redirect
+ruleset. The `bendrucker-me` HCP Terraform workspace applies it on merge to
+`main`, so there is no local apply path. `terraform fmt`, `terraform validate`,
+and `terraform init -backend=false` all work locally.
 
-Its Cloudflare token is scoped to the `bendrucker.me` zone. The zone itself, the
-`things` and TXT records, and the activity-hub resources stay in
-`bendrucker/infrastructure`.
-
-`terraform fmt` and `terraform validate` both work locally. So does
-`terraform init -backend=false`, despite the `cloud` block.
+Its Cloudflare token covers Zone Read, DNS Write, and Dynamic URL Redirects
+Write on the `bendrucker.me` zone. Account-scoped resources (Workers, R2, D1)
+need a wider token, minted in
+[bendrucker/infrastructure](https://github.com/bendrucker/infrastructure), which
+also defines the workspace and holds the zone and its other records.
