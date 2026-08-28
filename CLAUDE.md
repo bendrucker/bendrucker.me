@@ -114,4 +114,7 @@ All deploy via GitHub Actions matrix on push to `main`. Use `@workspace/logger` 
 | github | `workers/github/wrangler.toml` | GitHub activity → D1 |
 | strava | `workers/strava/wrangler.toml` | Strava activity → KV |
 
-Run `npx wrangler types` after changing any `wrangler.toml`.
+Run `npx wrangler types` after changing any `wrangler.toml`. The `types` CI job
+regenerates types at the root and in each worker and fails on any diff, so
+commit regenerated `worker-configuration.d.ts` files whenever `wrangler` is
+bumped or a `wrangler.toml` changes.
