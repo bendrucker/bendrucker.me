@@ -43,9 +43,13 @@ jobs:
 
   migrate:
     name: migrations
-    # Matches the cloudflare job so the two never disagree: a job skipped by its
-    # own condition also skips everything that needs it.
-    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
+    # Matches the cloudflare job so the two never disagree.
+    #
+    # A Dependabot pull request gets no preview deployment. The PR author is
+    # what identifies one: `github.actor` is whoever pushed last, so a fixup
+    # commit on a Dependabot branch would opt it back in and deploy a branch
+    # automerge is about to delete.
+    if: (github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]') || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -102,7 +106,7 @@ jobs:
   cloudflare:
     name: ${{ matrix.name }}
     needs: migrate
-    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) && github.actor != 'dependabot[bot]'
+    if: (github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]') || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
