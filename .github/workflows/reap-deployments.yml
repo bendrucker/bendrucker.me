@@ -1,0 +1,122 @@
+name: Reap deployments
+
+# cleanup.yml deactivates a PR's deployments when it closes, but it races the
+# deploy job. PR 640 merged while two of its four matrix workers were still
+# deploying, and those two deployments stayed active. A cleanup run that fails
+# outright leaves the same residue. This is the nightly backstop for both.
+#
+# It cannot delete the environments themselves. GITHUB_TOKEN has no
+# environments or administration permission and the delete endpoint requires
+# repository admin, so environments still accumulate and are pruned by hand.
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List what would be deactivated without changing anything"
+        type: boolean
+        default: true
+
+concurrency:
+  group: reap-deployments
+
+permissions: {}
+
+jobs:
+  reap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: read
+    steps:
+      - name: "🧹 Deactivate deployments for closed pull requests"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          # Null on a scheduled run, so only a manual dispatch can be a
+          # rehearsal and the nightly run always acts.
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          # A deploy job that started before its PR closed can still be
+          # writing to the environment. Waiting out the overlap keeps the
+          # reaper from losing the race that cleanup.yml loses.
+          GRACE_SECONDS: "7200"
+        run: |
+          set -uo pipefail
+
+          # The REST deployment list omits state, and re-marking an already
+          # inactive deployment would append a redundant status every night.
+          # GraphQL reports state inline, so only live ones are touched.
+          #
+          # $owner, $name and $endCursor below belong to GraphQL, and the
+          # single quotes keep the shell from expanding them before the
+          # query reaches the API.
+          # shellcheck disable=SC2016
+          gh api graphql --paginate \
+            -f owner="${REPO%/*}" -f name="${REPO#*/}" \
+            -f query='
+              query($owner: String!, $name: String!, $endCursor: String) {
+                repository(owner: $owner, name: $name) {
+                  deployments(first: 100, after: $endCursor) {
+                    pageInfo { hasNextPage endCursor }
+                    nodes { databaseId environment state }
+                  }
+                }
+              }' \
+            --jq '.data.repository.deployments.nodes[]
+                  | select(.state == "ACTIVE")
+                  | select(.environment | test("^pr-[0-9]+(-|$)"))
+                  | [.databaseId, .environment] | @tsv' > active.tsv || exit 1
+
+          echo "Active pull request deployments: $(wc -l < active.tsv)"
+
+          now=$(date -u +%s)
+          declare -A verdict
+          status=0
+          reaped=0
+
+          while IFS=$'\t' read -r id env; do
+            pr=${env#pr-}
+            pr=${pr%%-*}
+
+            # Every worker of a PR shares one verdict, so a PR with four
+            # environments still costs a single pulls API call.
+            if [ -z "${verdict[$pr]:-}" ]; then
+              if ! meta=$(gh api "repos/$REPO/pulls/$pr" \
+                            --jq '[.state, (.closed_at // "")] | @tsv'); then
+                echo "::warning::cannot read PR $pr; leaving $env alone"
+                verdict[$pr]=skip
+              else
+                pr_state=${meta%%$'\t'*}
+                closed_at=${meta#*$'\t'}
+                if [ "$pr_state" = "open" ] || [ -z "$closed_at" ]; then
+                  verdict[$pr]=skip
+                elif [ $(( now - $(date -u -d "$closed_at" +%s) )) -lt "$GRACE_SECONDS" ]; then
+                  echo "PR $pr closed within the grace period; leaving $env alone"
+                  verdict[$pr]=skip
+                else
+                  verdict[$pr]=reap
+                fi
+              fi
+            fi
+
+            [ "${verdict[$pr]}" = "reap" ] || continue
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "would deactivate deployment $id ($env, PR $pr)"
+            else
+              echo "Deactivating deployment $id ($env, PR $pr)"
+              gh api --method POST "repos/$REPO/deployments/$id/statuses" \
+                -f state=inactive --silent || status=1
+              # Several hundred writes on the first run would trip GitHub's
+              # secondary rate limit. A nightly run pays this on ~4 records.
+              sleep 1
+            fi
+            reaped=$((reaped+1))
+          done < active.tsv
+
+          echo "Deactivated $reaped deployment(s) (dry run: $DRY_RUN)" >> "$GITHUB_STEP_SUMMARY"
+          exit $status
