@@ -156,15 +156,18 @@ jobs:
         if: matrix.name == 'stories'
         run: npm run story:build
 
+      # A branch deleted between the push and this step is not a ref the
+      # deployments API can resolve. The head SHA always is, and it is the
+      # commit the deployment records anyway.
       - name: "📍 Start deployment"
         id: deployment
-        uses: bobheadxi/deployments@v1
+        uses: chrnorm/deployment-action@v2.0.8
         with:
-          step: start
           token: ${{ github.token }}
-          ref: ${{ github.head_ref || github.ref_name }}
-          env: ${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.number, matrix.name) || format('{0}-production', matrix.name) }}
-          desc: ${{ github.event_name == 'pull_request' && format('Preview deployment for PR {0} - {1}', github.event.number, matrix.name) || format('Production deployment for {0}', matrix.name) }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          environment: ${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.number, matrix.name) || format('{0}-production', matrix.name) }}
+          initial-status: in_progress
+          description: ${{ github.event_name == 'pull_request' && format('Preview deployment for PR {0} - {1}', github.event.number, matrix.name) || format('Production deployment for {0}', matrix.name) }}
 
       - name: "🌐 Deploy to Cloudflare"
         id: wrangler
@@ -199,15 +202,12 @@ jobs:
 
       - name: "📍 Finish deployment"
         if: always() && steps.deployment.outcome == 'success'
-        uses: bobheadxi/deployments@v1
+        uses: chrnorm/deployment-status@v2.0.4
         with:
-          step: finish
           token: ${{ github.token }}
-          ref: ${{ github.head_ref || github.ref_name }}
-          status: ${{ steps.wrangler.outcome == 'success' && 'success' || 'failure' }}
-          env: ${{ steps.deployment.outputs.env }}
-          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-          env_url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || (matrix.path == '.' && steps.extract-deployment-url.outputs.formatted-url || '') }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: ${{ steps.wrangler.outcome == 'success' && 'success' || 'failure' }}
+          environment-url: ${{ github.event_name == 'pull_request' && steps.extract-url.outputs.alias-url || (matrix.path == '.' && steps.extract-deployment-url.outputs.formatted-url || '') }}
 
       - name: "📤 Set job outputs"
         id: set-outputs
