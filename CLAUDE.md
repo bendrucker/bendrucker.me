@@ -127,9 +127,22 @@ All deploy via GitHub Actions matrix on push to `main`. Use `@workspace/logger` 
 | strava | `workers/strava/wrangler.toml` | Strava activity → KV |
 
 Run `npx wrangler types` after changing any `wrangler.toml`. The `types` CI job
-regenerates types at the root and in each worker and fails on any diff, so
-commit regenerated `worker-configuration.d.ts` files whenever `wrangler` is
-bumped or a `wrangler.toml` changes.
+regenerates types at the root and in each worker. On a pull request from a
+branch in this repository it commits and pushes any drift back to the branch,
+which is what keeps Dependabot's `wrangler` bumps mergeable without a local
+checkout. Elsewhere (pushes to `main`, pull requests from forks) it still fails
+on any diff, so commit regenerated `worker-configuration.d.ts` files whenever
+`wrangler` is bumped or a `wrangler.toml` changes.
+
+A push authenticated with `GITHUB_TOKEN` creates workflow runs that wait on
+approval, so the four required checks stay pending on the pushed commit until
+someone with write access approves them from the pull request page. That
+approval is the whole manual step, and it replaces the local checkout the job
+used to require.
+
+Dependabot treats a branch carrying someone else's commit as manually edited and
+stops rebasing it on its own, so a bumped pull request that picks up a types
+commit needs `@dependabot rebase` if it later falls behind `main`.
 
 ## Infrastructure
 

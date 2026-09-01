@@ -55,9 +55,22 @@ jobs:
 
   types:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # A same-repo pull request is checked out at its branch rather than
+          # the merge commit, so regenerated types can be pushed back to it.
+          # Everything else takes the default ref, which is the merge commit on
+          # a pull request. A fork's head_ref does not exist in this repository
+          # and would either fail the checkout or match an unrelated branch of
+          # the same name.
+          ref: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
+          # Keep the token out of .git/config, where every later step could
+          # reach it. Only the push step below is given one.
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -73,8 +86,42 @@ jobs:
           npm run types:generate
           npm run types:generate --workspaces --if-present
 
+      - name: Push regenerated types
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # --all rather than --update: a newly added worker generates a
+          # worker-configuration.d.ts that no commit tracks yet.
+          git add --all '*worker-configuration.d.ts'
+
+          if git diff --cached --quiet; then
+            echo "Committed types are current."
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --message 'Regenerate Cloudflare Worker types'
+          git push "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY" "HEAD:refs/heads/$HEAD_REF"
+
+          # A push authenticated with GITHUB_TOKEN creates workflow runs that
+          # wait on approval, so the required checks stay pending on the new
+          # commit until someone with write access approves them.
+          {
+            echo '### Regenerated Cloudflare Worker types'
+            echo
+            echo "Pushed a types commit to \`$HEAD_REF\`. Approve its workflow runs to get the required checks onto the new commit."
+          } >>"$GITHUB_STEP_SUMMARY"
+
       - name: Verify committed types are current
-        run: git diff --exit-code
+        run: |
+          # git diff ignores untracked files, so record a newly generated one as
+          # intent-to-add. The pathspec keeps an unrelated stray file from
+          # failing a check that reports itself as a types failure.
+          git add --intent-to-add '*worker-configuration.d.ts'
+          git diff --exit-code
 
   build:
     runs-on: ubuntu-latest
