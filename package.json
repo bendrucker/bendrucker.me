@@ -33,7 +33,7 @@
     "@astrojs/rss": "4.0.19",
     "@astrojs/sitemap": "3.7.3",
     "@astrojs/vue": "7.0.1",
-    "@cf-wasm/resvg": "^0.3.5",
+    "@cf-wasm/resvg": "^0.4.0",
     "@cf-wasm/satori": "^0.3.6",
     "@date-fns/tz": "^1.5.0",
     "@sentry/cloudflare": "^10.70.0",
