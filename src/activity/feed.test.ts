@@ -133,6 +133,25 @@ describe("queryCyclingActivity", () => {
     expect(startedAt.get("b")).toBe("2026-07-11T14:30:00");
   });
 
+  it("orders the log by local date across a year boundary", async () => {
+    await seed(
+      // 08:00 on 1 January in Tokyo, still 31 December in UTC.
+      ride("tokyo", {
+        startedAt: "2025-12-31T23:00:00Z",
+        timezone: "Asia/Tokyo",
+      }),
+      // 20:00 on 31 December in Los Angeles, already 1 January in UTC.
+      ride("la", {
+        startedAt: "2026-01-01T04:00:00Z",
+        timezone: "America/Los_Angeles",
+      }),
+    );
+
+    const { months, totals } = await queryCyclingActivity(db, NOW);
+    expect(months.map((month) => month.key)).toEqual(["2026-01", "2025-12"]);
+    expect(totals.year).toBe(2026);
+  });
+
   it("falls back to UTC for a timezone the runtime does not know", async () => {
     await seed(
       ride("a", { startedAt: "2026-07-11T05:30:00Z", timezone: "Not/AZone" }),

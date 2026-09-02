@@ -114,7 +114,6 @@ interface Entry {
   distanceM: number;
   elevationM: number;
   measuredWatts: number | null;
-  startedAtMs: number;
 }
 
 export function buildCyclingActivity(
@@ -122,9 +121,12 @@ export function buildCyclingActivity(
   curve: readonly PowerCurvePoint[],
   now: Date,
 ): CyclingActivityData {
+  // Ordered on the wall clock the months are keyed on, so a ride sits in the
+  // log by its own date rather than by the instant, which can fall on the
+  // other side of a month or year boundary in another zone.
   const entries = rows
     .map((row) => toEntry(row))
-    .toSorted((a, b) => b.startedAtMs - a.startedAtMs);
+    .toSorted((a, b) => b.ride.startedAt.localeCompare(a.ride.startedAt));
   const months = groupMonths(entries);
   const bests = powerBests(entries, curve);
 
@@ -180,7 +182,6 @@ function toEntry(row: FeedRow): Entry {
     distanceM: row.distanceM ?? 0,
     elevationM: row.elevationM ?? 0,
     measuredWatts,
-    startedAtMs: Date.parse(row.startedAt),
   };
 }
 
