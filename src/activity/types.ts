@@ -70,7 +70,6 @@ export interface RidePhoto {
   id: string;
   thumbnailUrl: string;
   fullUrl: string;
-  /** Describes what the photo shows. */
   alt: string;
 }
 
@@ -178,7 +177,6 @@ export interface RankedRow {
 export interface RankedList {
   id: string;
   title: string;
-  /** See {@link RideBadge} for why the icon travels beside the title. */
   icon?: IconName;
   metric: RankedMetric;
   rows: RankedRow[];

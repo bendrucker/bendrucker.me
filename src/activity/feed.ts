@@ -400,8 +400,8 @@ function ranked(
 }
 
 /**
- * Measured rides only, matching the note beneath the panel: an estimated
- * curve is Strava's guess at a rider without a meter, not a best.
+ * Measured rides only: an estimated curve is Strava's guess at a rider
+ * without a meter, not a best.
  */
 function powerBests(
   entries: readonly Entry[],
