@@ -11,5 +11,5 @@
     "../../src/config.ts",
     "../../src/activity/**/*.ts"
   ],
-  "exclude": ["../../src/**/*.test.ts"]
+  "exclude": ["../../src/**/*.test.ts", "../../src/activity/feed.ts"]
 }
