@@ -22,26 +22,23 @@ function cleared<T extends z.ZodType>(schema: T) {
 
 // Text the controls clear to an empty string, which filters nothing and so is
 // the same as no filter at all.
-const text = z
-  .string()
-  .nullish()
-  .transform((value) => value?.trim() || undefined)
-  .optional();
+const text = cleared(
+  z.string().transform((value) => value.trim() || undefined),
+);
 
 // "all" is the owner control's value for an unfiltered owner, and an omitted
 // owner means the same to the query, so the schema takes either and the
 // controls hand their state to an action untranslated.
-const owner = z
-  .enum(OWNER_FILTERS)
-  .nullish()
-  .transform((value) => (value == null || value === "all" ? undefined : value))
-  .optional();
+const owner = cleared(
+  z
+    .enum(OWNER_FILTERS)
+    .transform((value) => (value === "all" ? undefined : value)),
+);
 
 // GitHub predates the site by a long way, but nothing in this database does.
 export const MIN_ACTIVITY_YEAR = 2000;
 
-// The upper bound moves with the clock rather than being a constant: a
-// contribution lands in next year as soon as a timezone ahead of the server
+// A contribution lands in next year as soon as a timezone ahead of the server
 // crosses into it.
 export const activityYear = z
   .int()
