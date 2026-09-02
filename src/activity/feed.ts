@@ -188,17 +188,16 @@ function toEntry(row: FeedRow): Entry {
  * The ride's own wall clock, which is what a reader means by "when". A
  * timezone the runtime does not know falls back to UTC rather than dropping
  * the ride, and a timestamp that never parsed passes through for the date
- * formatter to show as-is.
+ * formatter to show as-is. `TZDate` accepts any zone name and yields an
+ * invalid date for one it cannot resolve, so the check is on the result.
  */
 function wallClock(startedAt: string, timezone: string): string {
   const instant = new Date(startedAt);
   if (Number.isNaN(instant.getTime())) return startedAt;
-  let local: TZDate;
-  try {
-    local = new TZDate(instant, timezone);
-  } catch {
-    local = new TZDate(instant, "UTC");
-  }
+  const zoned = new TZDate(instant, timezone);
+  const local = Number.isNaN(zoned.getTime())
+    ? new TZDate(instant, "UTC")
+    : zoned;
   return format(local, "yyyy-MM-dd'T'HH:mm:ss");
 }
 

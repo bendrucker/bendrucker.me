@@ -140,6 +140,15 @@ describe("queryCyclingActivity", () => {
     expect(startedAt.get("b")).toBe("2026-07-11T14:30:00");
   });
 
+  it("falls back to UTC for a timezone the runtime does not know", async () => {
+    await seed(
+      ride("a", { startedAt: "2026-07-11T05:30:00Z", timezone: "Not/AZone" }),
+    );
+
+    const { months } = await queryCyclingActivity(db, NOW);
+    expect(months[0]!.rides[0]!.startedAt).toBe("2026-07-11T05:30:00");
+  });
+
   it("carries a ride with only the registry fields", async () => {
     await seed(
       ride("bare", {

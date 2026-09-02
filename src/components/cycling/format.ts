@@ -89,7 +89,7 @@ export function monthKeyOf(startedAt: string): string {
   return startedAt.slice(0, 7);
 }
 
-const METERS_PER_MILE = 1609.344;
+const METERS_PER_MILE = KM_PER_MILE * 1000;
 
 /** The feed stores SI. The view carries the imperial values these produce. */
 export function metersToMiles(meters: number): number {
