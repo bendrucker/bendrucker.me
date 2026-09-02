@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import SQLite from "better-sqlite3";
 import { CamelCasePlugin, Kysely, SqliteDialect } from "kysely";
+import type { ActivityStore } from "@/activity/store";
 import type { Database } from "@/db";
 
 const MIGRATIONS_DIR = path.resolve(import.meta.dirname, "../../migrations");
@@ -20,6 +21,25 @@ export function createTestDb(): Kysely<Database> {
     dialect: new SqliteDialect({ database: sqlite }),
     plugins: [new CamelCasePlugin()],
   });
+}
+
+/**
+ * The store seam over SQLite. D1 runs a batch as one unit and reports the rows
+ * it changed, so this runs the statements in a transaction and sums theirs.
+ */
+export function testStore(db: Kysely<Database>): ActivityStore {
+  return {
+    db,
+    batch: (statements) =>
+      db.transaction().execute(async (trx) => {
+        let changes = 0;
+        for (const statement of statements) {
+          const { numAffectedRows } = await trx.executeQuery(statement);
+          changes += Number(numAffectedRows ?? 0n);
+        }
+        return changes;
+      }),
+  };
 }
 
 export interface SeedRepo {

@@ -2,34 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { Kysely } from "kysely";
 import type { Database } from "@/db";
 import { createTestDb } from "@/test/db";
-import type { RepoActivity } from "@workspace/github";
-import {
-  activityStatements,
-  upsertActivity,
-  upsertLanguageExtension,
-  upsertRepo,
-} from "./upsert";
-
-function makeRepo(overrides: Partial<RepoActivity> = {}): RepoActivity {
-  return {
-    owner: "bendrucker",
-    name: "cool-lib",
-    description: "A cool library",
-    url: "https://github.com/bendrucker/cool-lib",
-    lastActivity: new Date("2025-06-01T00:00:00.000Z"),
-    createdAt: new Date("2020-01-01T00:00:00.000Z"),
-    primaryLanguage: { name: "TypeScript", color: "#3178c6" },
-    stargazerCount: 100,
-    activitySummary: {
-      prCount: 5,
-      reviewCount: 2,
-      issueCount: 1,
-      mergeCount: 3,
-      hasMergedPRs: true,
-    },
-    ...overrides,
-  };
-}
+import { makeRepo } from "@/test/repos";
+import { upsertActivity, upsertLanguageExtension, upsertRepo } from "./upsert";
 
 describe("upsert builders", () => {
   let db: Kysely<Database>;
@@ -178,34 +152,5 @@ describe("upsert builders", () => {
       ".tsx",
     ).execute();
     expect(changed.numInsertedOrUpdatedRows).toBe(1n);
-  });
-});
-
-describe("activityStatements", () => {
-  let db: Kysely<Database>;
-
-  beforeEach(() => {
-    db = createTestDb();
-  });
-
-  afterEach(async () => {
-    await db.destroy();
-  });
-
-  it("orders statements by owner and name regardless of fetch order", () => {
-    const repos = [
-      makeRepo({ owner: "zed", name: "zed" }),
-      makeRepo({ owner: "bendrucker", name: "quibble" }),
-      makeRepo({ owner: "bendrucker", name: "cool-lib" }),
-    ];
-
-    const forward = activityStatements(db, repos);
-    const reversed = activityStatements(db, repos.toReversed());
-
-    expect(forward.map((query) => query.parameters)).toEqual(
-      reversed.map((query) => query.parameters),
-    );
-    expect(forward).toHaveLength(repos.length * 2);
-    expect(forward[0].parameters).toContain("cool-lib");
   });
 });

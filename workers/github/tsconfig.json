@@ -9,8 +9,7 @@
     "../../src/db.ts",
     "../../src/d1-dialect.ts",
     "../../src/config.ts",
-    "../../src/activity/**/*.ts",
-    "../../src/services/github.ts"
+    "../../src/activity/**/*.ts"
   ],
   "exclude": ["../../src/**/*.test.ts"]
 }

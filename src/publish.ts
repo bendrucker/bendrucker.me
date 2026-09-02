@@ -5,11 +5,11 @@
 // activity and nothing else. No bulk write, no truncate, no read.
 import { WorkerEntrypoint } from "cloudflare:workers";
 import {
-  d1Store,
   deleteActivity,
   publishActivity,
   publishPowerCurve,
 } from "./activity/publish";
+import { d1Store } from "./activity/store";
 
 export { ValidationError } from "./activity/publish";
 export type { PowerBest, PublishedActivity } from "./activity/publish";

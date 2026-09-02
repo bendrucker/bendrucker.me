@@ -1,9 +1,9 @@
 // What activity-hub's Publish entrypoint writes: the validation and the SQL,
 // kept out of `src/publish.ts` so they load outside the Workers runtime, where
 // `cloudflare:workers` does not resolve and a test cannot import the class.
-import type { CompiledQuery, Kysely } from "kysely";
+import type { CompiledQuery } from "kysely";
 import { z } from "zod";
-import { createDb, type Database } from "../db";
+import type { ActivityStore } from "./store";
 
 // The hub branches on this name to decide whether a failure is permanent. RPC
 // carries a thrown error's name and message and drops its stack.
@@ -61,29 +61,8 @@ export type PowerSource = z.infer<typeof powerSource>;
 export type PublishedActivity = z.infer<typeof publishedActivity>;
 export type PowerBest = z.infer<typeof powerBests>[number];
 
-// Kysely's D1 dialect throws on transactions, so a multi-statement write goes
-// through d1.batch() instead. The store names that as its own operation, which
-// is also what lets a test run these against SQLite.
-export interface PublishStore {
-  db: Kysely<Database>;
-  batch(statements: readonly CompiledQuery[]): Promise<void>;
-}
-
-export function d1Store(d1: D1Database): PublishStore {
-  return {
-    db: createDb(d1),
-    batch: async (statements) => {
-      await d1.batch(
-        statements.map((statement) =>
-          d1.prepare(statement.sql).bind(...statement.parameters),
-        ),
-      );
-    },
-  };
-}
-
 export async function publishActivity(
-  store: PublishStore,
+  store: ActivityStore,
   row: unknown,
 ): Promise<void> {
   const activity = parse(publishedActivity, row, "activity");
@@ -135,7 +114,7 @@ export async function publishActivity(
 // and the insert travel together because a delete that landed alone would
 // blank the curve.
 export async function publishPowerCurve(
-  store: PublishStore,
+  store: ActivityStore,
   activityId: unknown,
   bests: unknown,
 ): Promise<void> {
@@ -168,7 +147,7 @@ export async function publishPowerCurve(
 // The power curve goes explicitly rather than through the foreign key's
 // cascade, which only fires where D1 has foreign keys enabled.
 export async function deleteActivity(
-  store: PublishStore,
+  store: ActivityStore,
   activityId: unknown,
 ): Promise<void> {
   const id = parse(text, activityId, "activityId");

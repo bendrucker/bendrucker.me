@@ -1,29 +1,22 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type { Kysely } from "kysely";
 import type { Database } from "@/db";
-import { createTestDb } from "@/test/db";
+import { createTestDb, testStore } from "@/test/db";
 import {
   deleteActivity,
   publishActivity,
   publishPowerCurve,
   ValidationError,
-  type PublishStore,
   type PublishedActivity,
 } from "./publish";
+import type { ActivityStore } from "./store";
 
 let db: Kysely<Database>;
-let store: PublishStore;
+let store: ActivityStore;
 
 beforeEach(() => {
   db = createTestDb();
-  store = {
-    db,
-    batch: async (statements) => {
-      for (const statement of statements) {
-        await db.executeQuery(statement);
-      }
-    },
-  };
+  store = testStore(db);
 });
 
 function activity(
