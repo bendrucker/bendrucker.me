@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 import type { Kysely } from "kysely";
 import { activity as fixture } from "@/components/cycling/fixtures";
 import type { Database } from "@/db";
-import { createTestDb } from "@/test/db";
+import { createTestDb, testStore } from "@/test/db";
 import {
   buildCyclingActivity,
   queryCyclingActivity,
@@ -12,9 +12,9 @@ import {
   deleteActivity,
   publishActivity,
   publishPowerCurve,
-  type PublishStore,
   type PublishedActivity,
 } from "./publish";
+import type { ActivityStore } from "./store";
 import type { CyclingActivityData } from "./types";
 
 /** Google's documented polyline example. */
@@ -23,18 +23,11 @@ const GOOGLE_EXAMPLE = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 const NOW = new Date("2026-08-15T12:00:00Z");
 
 let db: Kysely<Database>;
-let store: PublishStore;
+let store: ActivityStore;
 
 beforeEach(() => {
   db = createTestDb();
-  store = {
-    db,
-    batch: async (statements) => {
-      for (const statement of statements) {
-        await db.executeQuery(statement);
-      }
-    },
-  };
+  store = testStore(db);
 });
 
 function ride(
