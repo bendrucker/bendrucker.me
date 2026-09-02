@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { getDb } from "@/db";
 import { generateOgImageForActivity } from "@/og/generate";
-import { queryActivityTotals, queryLanguages } from "./_query";
+import { queryActivityTotals, queryLanguages } from "@/activity/query";
 
 export const GET: APIRoute = async () => {
   const db = await getDb();

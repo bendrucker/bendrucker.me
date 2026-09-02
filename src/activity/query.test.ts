@@ -6,10 +6,11 @@ import {
   queryRepos,
   queryLanguages,
   queryYears,
+  queryYearRepos,
   queryYearsByLastActivity,
   queryActivityTotals,
   InvalidCursorError,
-} from "./_query";
+} from "./query";
 
 const LANGUAGE_EXTENSIONS = [
   { name: "TypeScript", extension: ".ts" },
@@ -248,6 +249,45 @@ describe("queryRepos", () => {
   it("returns null primaryLanguage when repo has no language", async () => {
     const result = await queryRepos(db, { search: "big" });
     expect(result.repos[0].primaryLanguage).toBeNull();
+  });
+});
+
+describe("queryYearRepos", () => {
+  let db: Kysely<Database>;
+
+  beforeEach(async () => {
+    db = createTestDb();
+    await seed(db, FIXTURES, LANGUAGE_EXTENSIONS);
+  });
+
+  afterEach(async () => {
+    await db.destroy();
+  });
+
+  it("returns every repo for the year rather than a page of them", async () => {
+    const result = await queryYearRepos(db, 2025);
+    if (!result.found) throw new Error("expected 2025 to be found");
+    expect(result).toMatchObject({ year: 2025, total: 4 });
+    expect(result.repos).toHaveLength(4);
+  });
+
+  it("reports a year with no activity as not found", async () => {
+    expect(await queryYearRepos(db, 2001)).toEqual({ found: false });
+  });
+
+  it("reports a year below the recorded range as not found", async () => {
+    expect(await queryYearRepos(db, 1999)).toEqual({ found: false });
+  });
+
+  it("reports a year beyond next year as not found", async () => {
+    const beyond = new Date().getFullYear() + 2;
+    expect(await queryYearRepos(db, beyond)).toEqual({ found: false });
+  });
+
+  it("reports an unparseable year as not found", async () => {
+    expect(await queryYearRepos(db, Number("nonsense"))).toEqual({
+      found: false,
+    });
   });
 });
 

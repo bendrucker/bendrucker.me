@@ -1,6 +1,6 @@
 import { reactive, watch } from "vue";
 import { actions } from "astro:actions";
-import type { Repo, FilterState, ActivityState } from "@/activity/types";
+import type { Repo, ActivityState } from "@/activity/types";
 
 export function debounce<A extends unknown[]>(
   fn: (...args: A) => void,
@@ -10,16 +10,6 @@ export function debounce<A extends unknown[]>(
   return (...args: A) => {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), ms);
-  };
-}
-
-function actionInput(filters: FilterState) {
-  return {
-    sort: filters.sort === "recent" ? undefined : filters.sort,
-    owner: filters.owner === "all" ? undefined : filters.owner,
-    language: filters.language,
-    search: filters.search || undefined,
-    year: filters.year,
   };
 }
 
@@ -69,7 +59,7 @@ export function useActivityApi(
     state.loading = true;
     try {
       const { data, error } = await actions.fetchRepos({
-        ...actionInput(state.filters),
+        ...state.filters,
         cursor: state.cursor,
       });
       if (error) throw error;
@@ -89,9 +79,7 @@ export function useActivityApi(
     prefetchedData = null;
     state.loading = true;
     try {
-      const { data, error } = await actions.fetchRepos(
-        actionInput(state.filters),
-      );
+      const { data, error } = await actions.fetchRepos({ ...state.filters });
       if (error) throw error;
       state.repos = data.repos;
       state.cursor = data.nextCursor;
@@ -109,7 +97,7 @@ export function useActivityApi(
 
   async function fetchLanguages() {
     try {
-      const { owner, search, year } = actionInput(state.filters);
+      const { owner, search, year } = state.filters;
       const { data, error } = await actions.fetchLanguages({
         owner,
         search,
@@ -124,7 +112,7 @@ export function useActivityApi(
 
   async function fetchYears() {
     try {
-      const { owner, language, search } = actionInput(state.filters);
+      const { owner, language, search } = state.filters;
       const { data, error } = await actions.fetchYears({
         owner,
         language,
@@ -147,7 +135,7 @@ export function useActivityApi(
     schedule(async () => {
       try {
         const { data, error } = await actions.fetchRepos({
-          ...actionInput(state.filters),
+          ...state.filters,
           cursor,
         });
         if (error) return;
