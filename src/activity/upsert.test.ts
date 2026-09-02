@@ -2,29 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { Kysely } from "kysely";
 import type { Database } from "@/db";
 import { createTestDb } from "@/test/db";
-import type { RepoActivity } from "@workspace/github";
+import { makeRepo } from "@/test/repos";
 import { upsertActivity, upsertLanguageExtension, upsertRepo } from "./upsert";
-
-function makeRepo(overrides: Partial<RepoActivity> = {}): RepoActivity {
-  return {
-    owner: "bendrucker",
-    name: "cool-lib",
-    description: "A cool library",
-    url: "https://github.com/bendrucker/cool-lib",
-    lastActivity: new Date("2025-06-01T00:00:00.000Z"),
-    createdAt: new Date("2020-01-01T00:00:00.000Z"),
-    primaryLanguage: { name: "TypeScript", color: "#3178c6" },
-    stargazerCount: 100,
-    activitySummary: {
-      prCount: 5,
-      reviewCount: 2,
-      issueCount: 1,
-      mergeCount: 3,
-      hasMergedPRs: true,
-    },
-    ...overrides,
-  };
-}
 
 describe("upsert builders", () => {
   let db: Kysely<Database>;

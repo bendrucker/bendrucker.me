@@ -1,14 +1,11 @@
 import { execSync } from "child_process";
+import { logger } from "@workspace/logger";
 import { writeFileSync } from "fs";
 import { join } from "path";
 import { getPlatformProxy } from "wrangler";
 import type { RepoActivity } from "@workspace/github";
 import { d1Store } from "../src/activity/store";
-import {
-  syncActivity,
-  syncStatements,
-  type SyncResult,
-} from "../src/activity/sync";
+import { syncActivity, syncStatements } from "../src/activity/sync";
 import type { CompiledQuery } from "kysely";
 import SQLite from "better-sqlite3";
 
@@ -46,16 +43,21 @@ export function executeRemote(statements: string[]) {
 export async function importActivity(
   repos: RepoActivity[],
   remote: boolean,
-): Promise<SyncResult | { statements: number }> {
+): Promise<void> {
   const { store, dispose } = await connectD1();
   try {
-    if (!remote) {
-      return await syncActivity(store, repos, { recordHash: false });
+    if (remote) {
+      const statements = syncStatements(store.db, repos);
+      executeRemote(statements.map((statement) => formatSql(statement)));
+      logger.info(
+        { statements: statements.length, remote },
+        "Imported activity data to D1",
+      );
+      return;
     }
 
-    const statements = syncStatements(store.db, repos);
-    executeRemote(statements.map((statement) => formatSql(statement)));
-    return { statements: statements.length };
+    const result = await syncActivity(store, repos, { recordHash: false });
+    logger.info({ ...result, remote }, "Imported activity data to D1");
   } finally {
     await dispose();
   }

@@ -174,12 +174,7 @@ async function main() {
     allRepos.push(...JSON.parse(readFileSync(cacheFile, "utf-8")));
   }
 
-  const imported = await importActivity(allRepos, values.remote);
-
-  logger.info(
-    { ...imported, remote: values.remote },
-    "Imported activity data to D1",
-  );
+  await importActivity(allRepos, values.remote);
 }
 
 main().catch((error) => {

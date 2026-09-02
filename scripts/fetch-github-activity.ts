@@ -30,9 +30,7 @@ async function main() {
     const outputPath = join(process.cwd(), "tmp", "github-activity.json");
     writeFileSync(outputPath, JSON.stringify(activityData, null, 2));
 
-    const remote = process.argv.includes("--remote");
-    const imported = await importActivity(activityData, remote);
-    logger.info({ ...imported, remote }, "Imported activity data to D1");
+    await importActivity(activityData, process.argv.includes("--remote"));
 
     const duration = Date.now() - startTime;
     logger.info(

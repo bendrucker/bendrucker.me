@@ -26,8 +26,9 @@ export interface SyncOptions {
   /**
    * Leave this payload's hash behind, so an identical next payload can skip the
    * write. False for a writer covering a different window than the hourly cron:
-   * it clears the hash instead, and the next cron finds nothing to match,
-   * writes, and establishes a hash over its own dataset.
+   * that run compares against nothing and always writes, and it clears the
+   * hash, so the next cron also finds nothing to match, writes, and
+   * establishes a hash over its own dataset.
    */
   recordHash?: boolean;
 }
@@ -40,8 +41,9 @@ export async function syncActivity(
   const statements = activityStatements(store.db, repos);
   const payloadHash = recordHash ? await hashStatements(statements) : null;
 
-  const state = await readSyncState(store.db);
-  if (payloadHash !== null && state?.payloadHash === payloadHash) {
+  const state =
+    payloadHash === null ? undefined : await readSyncState(store.db);
+  if (state?.payloadHash === payloadHash) {
     return {
       skipped: true,
       statements: statements.length,
@@ -71,8 +73,9 @@ export async function syncActivity(
  * The same write as `syncActivity`, compiled for a caller that can only hand
  * SQL to `wrangler d1 execute --remote`. Skipping and the change count both
  * need answers to come back from the database, which over that route they
- * cannot, so this always writes and always bumps the version. It clears the
- * hash for the same reason `recordHash: false` does.
+ * cannot, so this always writes and always bumps the version. The hash it
+ * leaves is null, since these repos are not the window the hourly cron
+ * fetches and a hash over them would make the cron skip a write it owes.
  */
 export function syncStatements(
   db: Kysely<Database>,
