@@ -3,12 +3,7 @@ import type { Kysely } from "kysely";
 import type { Database } from "@/db";
 import { createTestDb } from "@/test/db";
 import type { RepoActivity } from "@workspace/github";
-import {
-  activityStatements,
-  upsertActivity,
-  upsertLanguageExtension,
-  upsertRepo,
-} from "./upsert";
+import { upsertActivity, upsertLanguageExtension, upsertRepo } from "./upsert";
 
 function makeRepo(overrides: Partial<RepoActivity> = {}): RepoActivity {
   return {
@@ -178,34 +173,5 @@ describe("upsert builders", () => {
       ".tsx",
     ).execute();
     expect(changed.numInsertedOrUpdatedRows).toBe(1n);
-  });
-});
-
-describe("activityStatements", () => {
-  let db: Kysely<Database>;
-
-  beforeEach(() => {
-    db = createTestDb();
-  });
-
-  afterEach(async () => {
-    await db.destroy();
-  });
-
-  it("orders statements by owner and name regardless of fetch order", () => {
-    const repos = [
-      makeRepo({ owner: "zed", name: "zed" }),
-      makeRepo({ owner: "bendrucker", name: "quibble" }),
-      makeRepo({ owner: "bendrucker", name: "cool-lib" }),
-    ];
-
-    const forward = activityStatements(db, repos);
-    const reversed = activityStatements(db, repos.toReversed());
-
-    expect(forward.map((query) => query.parameters)).toEqual(
-      reversed.map((query) => query.parameters),
-    );
-    expect(forward).toHaveLength(repos.length * 2);
-    expect(forward[0].parameters).toContain("cool-lib");
   });
 });

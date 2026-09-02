@@ -3,11 +3,9 @@
 import { execSync } from "child_process";
 import { writeFileSync } from "fs";
 import { join } from "path";
-import type { RepoActivity } from "@workspace/github";
-import { fetchGitHubActivityWithConfig } from "../src/services/github";
+import { fetchActivity } from "../src/activity/github";
 import { logger } from "@workspace/logger";
-import { connectD1, formatSql, executeRemote } from "./d1";
-import { upsertRepo, upsertActivity } from "../src/activity/upsert";
+import { importActivity } from "./d1";
 
 async function main() {
   const startTime = Date.now();
@@ -27,13 +25,14 @@ async function main() {
     }
 
     logger.info("Fetching GitHub activity data");
-    const { repos: activityData } = await fetchGitHubActivityWithConfig(token);
+    const { repos: activityData } = await fetchActivity(token);
 
     const outputPath = join(process.cwd(), "tmp", "github-activity.json");
     writeFileSync(outputPath, JSON.stringify(activityData, null, 2));
 
     const remote = process.argv.includes("--remote");
-    await importToD1(activityData, remote);
+    const imported = await importActivity(activityData, remote);
+    logger.info({ ...imported, remote }, "Imported activity data to D1");
 
     const duration = Date.now() - startTime;
     logger.info(
@@ -86,28 +85,6 @@ async function main() {
     );
     process.exit(1);
   }
-}
-
-async function importToD1(activityData: RepoActivity[], remote: boolean) {
-  const { db, dispose } = await connectD1();
-  try {
-    if (remote) {
-      const statements = activityData.flatMap((repo) => [
-        formatSql(upsertRepo(db, repo).compile()),
-        formatSql(upsertActivity(db, repo).compile()),
-      ]);
-      executeRemote(statements);
-    } else {
-      for (const repo of activityData) {
-        await upsertRepo(db, repo).execute();
-        await upsertActivity(db, repo).execute();
-      }
-    }
-  } finally {
-    await dispose();
-  }
-
-  logger.info({ remote }, "Imported activity data to D1");
 }
 
 main();

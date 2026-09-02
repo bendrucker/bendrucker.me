@@ -37,16 +37,16 @@ const entries = Object.entries(map);
 const remote = process.argv.includes("--remote");
 
 async function main() {
-  const { db, dispose } = await connectD1();
+  const { store, dispose } = await connectD1();
   try {
     if (remote) {
       const statements = entries.map(([name, ext]) =>
-        formatSql(upsertLanguageExtension(db, name, ext).compile()),
+        formatSql(upsertLanguageExtension(store.db, name, ext).compile()),
       );
       executeRemote(statements);
     } else {
       for (const [name, ext] of entries) {
-        await upsertLanguageExtension(db, name, ext).execute();
+        await upsertLanguageExtension(store.db, name, ext).execute();
       }
     }
   } finally {

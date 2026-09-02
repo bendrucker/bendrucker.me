@@ -2,7 +2,13 @@ import { execSync } from "child_process";
 import { writeFileSync } from "fs";
 import { join } from "path";
 import { getPlatformProxy } from "wrangler";
-import { createDb } from "../src/db";
+import type { RepoActivity } from "@workspace/github";
+import { d1Store } from "../src/activity/store";
+import {
+  syncActivity,
+  syncStatements,
+  type SyncResult,
+} from "../src/activity/sync";
 import type { CompiledQuery } from "kysely";
 import SQLite from "better-sqlite3";
 
@@ -10,8 +16,7 @@ export async function connectD1() {
   const { env, dispose } = await getPlatformProxy<{
     ACTIVITY_DB: D1Database;
   }>();
-  const db = createDb(env.ACTIVITY_DB);
-  return { db, dispose };
+  return { store: d1Store(env.ACTIVITY_DB), dispose };
 }
 
 const quote = new SQLite(":memory:").prepare("SELECT quote(?)").pluck();
@@ -31,4 +36,27 @@ export function executeRemote(statements: string[]) {
     `wrangler d1 execute bendrucker-activity --remote --file=${sqlFile}`,
     { encoding: "utf-8" },
   );
+}
+
+/**
+ * The write both scripts perform. Neither covers the window the hourly cron
+ * fetches, so both clear the payload hash and leave the next cron to establish
+ * one over its own dataset.
+ */
+export async function importActivity(
+  repos: RepoActivity[],
+  remote: boolean,
+): Promise<SyncResult | { statements: number }> {
+  const { store, dispose } = await connectD1();
+  try {
+    if (!remote) {
+      return await syncActivity(store, repos, { recordHash: false });
+    }
+
+    const statements = syncStatements(store.db, repos);
+    executeRemote(statements.map((statement) => formatSql(statement)));
+    return { statements: statements.length };
+  } finally {
+    await dispose();
+  }
 }
