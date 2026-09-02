@@ -61,3 +61,18 @@ export function syntheticProfile(
     return clamp(BASELINE + amplitude * shape + jitter);
   });
 }
+
+/**
+ * Rescales a recorded profile to the 0..1 the chart draws, so the lowest
+ * point sits on the floor and the highest at the ceiling however tall the
+ * ride was. A flat ride sits at the baseline rather than dividing by zero.
+ */
+export function normalizeProfile(altitudes: number[]): number[] {
+  const finite = altitudes.filter((altitude) => Number.isFinite(altitude));
+  const min = Math.min(...finite);
+  const max = Math.max(...finite);
+  const span = max - min;
+  return altitudes.map((altitude) =>
+    span > 0 ? clamp((altitude - min) / span) : BASELINE,
+  );
+}

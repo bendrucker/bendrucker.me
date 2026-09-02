@@ -126,6 +126,15 @@ describe("publishPowerCurve", () => {
     expect(rows).toEqual([{ activityId: "a1", durationS: 5, watts: 950 }]);
   });
 
+  it("moves the activity's updatedAt so the feed version changes", async () => {
+    await publishActivity(store, activity());
+    const before = (await feedRow()).updatedAt;
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    await publishPowerCurve(store, "a1", [{ durationS: 60, watts: 400 }]);
+
+    expect((await feedRow()).updatedAt > before).toBe(true);
+  });
+
   it("clears the ladder when an activity stops having one", async () => {
     await publishActivity(store, activity());
     await publishPowerCurve(store, "a1", [{ durationS: 5, watts: 900 }]);

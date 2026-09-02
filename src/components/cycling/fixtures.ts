@@ -9,7 +9,7 @@ import type {
   RankedList,
   Ride,
   RidePhoto,
-} from "./types";
+} from "@/activity/types";
 
 const MARIN: Coordinate = [37.8991, -122.5253];
 const NAPA: Coordinate = [38.5025, -122.2654];
@@ -67,7 +67,7 @@ function ride(
     facts: [],
     elevationProfile: syntheticProfile(
       overrides.id,
-      overrides.elevationFt / overrides.distanceMi,
+      (overrides.elevationFt ?? 0) / (overrides.distanceMi ?? 1),
     ),
     ...overrides,
   };

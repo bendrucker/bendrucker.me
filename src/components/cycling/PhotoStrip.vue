@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RidePhoto } from "./types";
+import type { RidePhoto } from "@/activity/types";
 
 defineProps<{ photos: RidePhoto[] }>();
 

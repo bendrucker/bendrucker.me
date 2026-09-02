@@ -11,7 +11,7 @@ import {
   travelRide,
 } from "./fixtures";
 import PhotoStrip from "./PhotoStrip.vue";
-import type { RidePhoto } from "./types";
+import type { RidePhoto } from "@/activity/types";
 
 const photoSets: Record<string, RidePhoto[]> = {
   one: raceRide.photos,

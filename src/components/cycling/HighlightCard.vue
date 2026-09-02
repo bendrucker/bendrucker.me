@@ -5,7 +5,7 @@ import RideBadge from "./RideBadge.vue";
 import RouteMap from "./RouteMap.vue";
 import StatValue from "./StatValue.vue";
 import StravaLink from "./StravaLink.vue";
-import type { Highlight } from "./types";
+import type { Highlight } from "@/activity/types";
 import { useUnits } from "./useUnits";
 
 const props = withDefaults(
@@ -38,45 +38,56 @@ const subParts = computed(() => {
   const parts = [];
   // The headline metric already carries the duration, in a clock format that
   // rounds differently, so printing both would show two disagreeing numbers.
-  if (props.highlight.metric !== "duration") {
-    parts.push(formatDuration(ride.value.movingSeconds));
+  const { movingSeconds } = ride.value;
+  if (props.highlight.metric !== "duration" && movingSeconds !== undefined) {
+    parts.push(formatDuration(movingSeconds));
   }
   if (ride.value.averageWatts) parts.push(`${ride.value.averageWatts} W`);
   return parts.join(" · ");
 });
 
-const metric = computed<{ value: string; unit?: string; label: string }>(
-  () =>
-    ({
-      distance: {
-        value: formatDistance(ride.value.distanceMi),
+interface Headline {
+  value: string;
+  unit?: string;
+  label: string;
+}
+
+// A highlight is chosen for a measurement the ride has, so the null branch is
+// a caller's mistake rather than a state the page reaches.
+const metric = computed<Headline | null>(() => {
+  const { distanceMi, elevationFt, movingSeconds } = ride.value;
+  switch (props.highlight.metric) {
+    case "distance":
+      if (distanceMi === undefined) return null;
+      return {
+        value: formatDistance(distanceMi),
         unit: distanceUnit.value,
         label: "distance",
-      },
-      elevation: {
-        value: formatElevation(ride.value.elevationFt),
+      };
+    case "elevation":
+      if (elevationFt === undefined) return null;
+      return {
+        value: formatElevation(elevationFt),
         unit: elevationUnit.value,
         label: "climbing",
-      },
-      duration: {
-        value: formatClock(ride.value.movingSeconds),
-        label: "moving time",
-      },
-    })[props.highlight.metric],
-);
+      };
+    case "duration":
+      if (movingSeconds === undefined) return null;
+      return { value: formatClock(movingSeconds), label: "moving time" };
+    default:
+      return null;
+  }
+});
 
 /** Whichever of the two the headline is not already showing, or both. */
 const totals = computed(() => {
+  const { distanceMi, elevationFt } = ride.value;
   const parts = [];
-  if (props.highlight.metric !== "distance") {
-    parts.push(
-      `${formatDistance(ride.value.distanceMi)} ${distanceUnit.value}`,
-    );
+  if (props.highlight.metric !== "distance" && distanceMi !== undefined) {
+    parts.push(`${formatDistance(distanceMi)} ${distanceUnit.value}`);
   }
-  if (props.highlight.metric !== "elevation") {
-    parts.push(
-      `${formatElevation(ride.value.elevationFt)} ${elevationUnit.value}`,
-    );
+  if (props.highlight.metric !== "elevation" && elevationFt !== undefined) {
+    parts.push(`${formatElevation(elevationFt)} ${elevationUnit.value}`);
   }
   return parts.join(" · ");
 });
@@ -112,6 +123,7 @@ const totals = computed(() => {
       <div class="flex items-start justify-between gap-2">
         <component :is="headingAs" class="min-w-0">
           <a
+            v-if="ride.stravaUrl"
             :href="ride.stravaUrl"
             target="_blank"
             rel="noopener noreferrer"
@@ -119,8 +131,12 @@ const totals = computed(() => {
           >
             {{ ride.name }}
           </a>
+          <span v-else class="text-[15px] font-bold wrap-anywhere">
+            {{ ride.name }}
+          </span>
         </component>
         <StravaLink
+          v-if="ride.stravaUrl"
           :href="ride.stravaUrl"
           :name="ride.name"
           class="mt-1 shrink-0"
@@ -133,13 +149,14 @@ const totals = computed(() => {
       </p>
 
       <StatValue
+        v-if="metric"
         :value="metric.value"
         :unit="metric.unit"
         :label="metric.label"
         size="lg"
       />
 
-      <p class="text-[11px] text-foreground/70">{{ totals }}</p>
+      <p v-if="totals" class="text-[11px] text-foreground/70">{{ totals }}</p>
     </div>
   </article>
 </template>

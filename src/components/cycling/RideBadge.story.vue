@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { crowdedRide, epicRide, raceRide, travelRide } from "./fixtures";
 import RideBadge from "./RideBadge.vue";
-import type { RideBadge as RideBadgeType } from "./types";
+import type { RideBadge as RideBadgeType } from "@/activity/types";
 
 const everyKind: RideBadgeType[] = [
   ...epicRide.badges,

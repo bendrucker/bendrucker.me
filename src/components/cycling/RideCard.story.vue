@@ -11,7 +11,8 @@ import {
   raceRide,
 } from "./fixtures";
 import RideCard from "./RideCard.vue";
-import type { Ride, Units } from "./types";
+import type { Ride } from "@/activity/types";
+import type { Units } from "./types";
 import UnitsProvider from "./UnitsProvider.vue";
 
 const rides: Record<string, Ride> = {

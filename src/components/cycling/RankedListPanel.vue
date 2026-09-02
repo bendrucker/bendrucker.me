@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import SectionHeading from "./SectionHeading.vue";
 import StatValue from "./StatValue.vue";
-import type { RankedList, RankedRow } from "./types";
+import type { RankedList, RankedRow } from "@/activity/types";
 import { useUnits } from "./useUnits";
 
 const props = defineProps<{ list: RankedList }>();

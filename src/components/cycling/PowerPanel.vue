@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SectionHeading from "./SectionHeading.vue";
 import StatValue from "./StatValue.vue";
-import type { PowerBest } from "./types";
+import type { PowerBest } from "@/activity/types";
 
 defineProps<{ bests: PowerBest[]; sourceNote?: string }>();
 </script>

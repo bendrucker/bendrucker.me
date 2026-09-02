@@ -1,4 +1,5 @@
-import type { MonthStats, Units } from "./types";
+import type { MonthStats } from "@/activity/types";
+import type { Units } from "./types";
 
 const KM_PER_MILE = 1.609344;
 const METERS_PER_FOOT = 0.3048;
@@ -86,4 +87,15 @@ export function formatMonthKey(key: string): string {
 
 export function monthKeyOf(startedAt: string): string {
   return startedAt.slice(0, 7);
+}
+
+const METERS_PER_MILE = 1609.344;
+
+/** The feed stores SI. The view carries the imperial values these produce. */
+export function metersToMiles(meters: number): number {
+  return meters / METERS_PER_MILE;
+}
+
+export function metersToFeet(meters: number): number {
+  return meters / METERS_PER_FOOT;
 }

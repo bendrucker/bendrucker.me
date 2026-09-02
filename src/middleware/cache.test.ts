@@ -52,14 +52,26 @@ describe("activityCachePolicy", () => {
 });
 
 describe("activityETag", () => {
+  const versions = { github: 7, feed: "3.2026-09-01T10:00:00.000Z" };
+
   it("separates the representations served at one URL", () => {
-    expect(activityETag(7, "html")).toBe('"7-html"');
-    expect(activityETag(7, "md")).toBe('"7-md"');
+    expect(activityETag(versions, "html")).toBe(
+      '"7-3.2026-09-01T10:00:00.000Z-html"',
+    );
+    expect(activityETag(versions, "md")).toBe(
+      '"7-3.2026-09-01T10:00:00.000Z-md"',
+    );
+  });
+
+  it("moves with either dataset", () => {
+    const html = activityETag(versions, "html");
+    expect(activityETag({ ...versions, github: 8 }, "html")).not.toBe(html);
+    expect(activityETag({ ...versions, feed: "4.0" }, "html")).not.toBe(html);
   });
 });
 
 describe("etagMatches", () => {
-  const etag = activityETag(7, "html");
+  const etag = activityETag({ github: 7, feed: "0.0" }, "html");
 
   it("ignores a request with no validator", () => {
     expect(etagMatches(null, etag)).toBe(false);
@@ -67,17 +79,17 @@ describe("etagMatches", () => {
   });
 
   it("matches the same version and representation", () => {
-    expect(etagMatches('"7-html"', etag)).toBe(true);
-    expect(etagMatches('"6-html"', etag)).toBe(false);
-    expect(etagMatches('"7-md"', etag)).toBe(false);
+    expect(etagMatches('"7-0.0-html"', etag)).toBe(true);
+    expect(etagMatches('"6-0.0-html"', etag)).toBe(false);
+    expect(etagMatches('"7-0.0-md"', etag)).toBe(false);
   });
 
   it("compares weakly", () => {
-    expect(etagMatches('W/"7-html"', etag)).toBe(true);
+    expect(etagMatches('W/"7-0.0-html"', etag)).toBe(true);
   });
 
   it("accepts any entry in a list, and the wildcard", () => {
-    expect(etagMatches('"6-html", "7-html"', etag)).toBe(true);
+    expect(etagMatches('"6-0.0-html", "7-0.0-html"', etag)).toBe(true);
     expect(etagMatches("*", etag)).toBe(true);
   });
 });

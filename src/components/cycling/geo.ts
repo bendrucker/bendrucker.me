@@ -1,4 +1,4 @@
-import type { Coordinate } from "./types";
+import type { Coordinate } from "@/activity/types";
 
 const EARTH_RADIUS_MI = 3959;
 const DEGREES_TO_RADIANS = Math.PI / 180;

@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { crowdedRide, rankedLists } from "./fixtures";
 import RankedListPanel from "./RankedListPanel.vue";
-import type { RankedList } from "./types";
+import type { RankedList } from "@/activity/types";
 import UnitsProvider from "./UnitsProvider.vue";
 
 function fixtureList(id: string): RankedList {

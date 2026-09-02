@@ -4,7 +4,7 @@ import PowerPanel from "./PowerPanel.vue";
 import RankedListPanel from "./RankedListPanel.vue";
 import SectionHeading from "./SectionHeading.vue";
 import SegmentedControl from "./SegmentedControl.vue";
-import type { PowerBest, RankedList } from "./types";
+import type { PowerBest, RankedList } from "@/activity/types";
 
 const props = defineProps<{
   lists: RankedList[];

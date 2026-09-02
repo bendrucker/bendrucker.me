@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { bareRide, epicRide, everydayRide, raceRide } from "./fixtures";
 import RouteMap from "./RouteMap.vue";
-import type { Coordinate } from "./types";
+import type { Coordinate } from "@/activity/types";
 
 const routes: Record<string, Coordinate[]> = {
   epic: epicRide.route ?? [],

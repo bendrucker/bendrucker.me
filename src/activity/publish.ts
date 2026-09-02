@@ -121,9 +121,17 @@ export async function publishPowerCurve(
   const id = parse(text, activityId, "activityId");
   const rows = parse(powerBests, bests, "bests");
 
+  // The feed's cache validator is the activity table's latest write, so a
+  // curve that lands after its activity has to move that write or a cached
+  // page keeps revalidating against the curve it rendered without.
   const statements: CompiledQuery[] = [
     store.db
       .deleteFrom("activityPowerCurve")
+      .where("activityId", "=", id)
+      .compile(),
+    store.db
+      .updateTable("activityFeed")
+      .set({ updatedAt: new Date().toISOString() })
       .where("activityId", "=", id)
       .compile(),
   ];

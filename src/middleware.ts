@@ -1,5 +1,6 @@
 import type { APIContext, MiddlewareHandler } from "astro";
 import { sequence } from "astro:middleware";
+import { readFeedVersion } from "./activity/feed";
 import { readSyncState } from "./activity/sync-state";
 import { getDb } from "./db";
 import {
@@ -42,11 +43,15 @@ const cache: MiddlewareHandler = async (context, next) => {
 };
 
 async function syncETag(context: APIContext): Promise<string> {
-  const state = await readSyncState(await getDb());
+  const db = await getDb();
+  const [state, feed] = await Promise.all([
+    readSyncState(db),
+    readFeedVersion(db),
+  ]);
   const negotiable = representationFor(context.routePattern) !== undefined;
 
   return activityETag(
-    state?.version ?? 0,
+    { github: state?.version ?? 0, feed },
     negotiable && prefersMarkdown(context.request) ? "md" : "html",
   );
 }
