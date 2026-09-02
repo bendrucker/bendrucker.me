@@ -8,10 +8,10 @@ import type { ActivityStore } from "./store";
 import { hashStatements, readSyncState, recordSync } from "./sync-state";
 import { activityStatements } from "./upsert";
 
-// A batch grows with the repo count, so it goes to the store in chunks rather
-// than whole. The sync is the writer that can afford the split: every statement
-// is a guarded upsert that stands on its own, so a run that fails between
-// chunks leaves rows the next run rewrites.
+// A batch grows with the repo count, so it goes to the store in chunks. The
+// sync is the writer that can afford the split: every statement is a guarded
+// upsert that stands on its own, so a run that fails between chunks leaves
+// rows the next run rewrites.
 const BATCH_SIZE = 500;
 
 export interface SyncResult {
