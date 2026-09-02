@@ -1,15 +1,16 @@
 import { sql, type SqlBool } from "kysely";
-import type { Kysely, WhereInterface } from "kysely";
-import type { Database } from "@/db";
-import type { Repo } from "@/activity/types";
-import { SITE } from "@/config";
-
-interface FilterParams {
-  owner?: "personal" | "external";
-  language?: string;
-  search?: string;
-  year?: number;
-}
+import type { InferResult, Kysely, WhereInterface } from "kysely";
+import { z } from "zod";
+import type { Database } from "../db";
+import { SITE } from "../config";
+import {
+  activityYear,
+  languagesInput,
+  reposInput,
+  yearsInput,
+  type ActivityFilters,
+} from "./filters";
+import type { Repo } from "./types";
 
 function repoQuery(db: Kysely<Database>) {
   return db
@@ -53,10 +54,7 @@ function repoQuery(db: Kysely<Database>) {
 type FilterTables = "repos" | "repoActivity";
 type FilterableQuery = WhereInterface<Database, FilterTables>;
 
-function applyFilters(
-  filters: FilterParams,
-  options?: { excludeLanguage?: boolean },
-) {
+function applyFilters(filters: ActivityFilters) {
   return <T extends FilterableQuery>(qb: T): T => {
     let q: FilterableQuery = qb;
     if (filters.owner === "personal") {
@@ -64,7 +62,7 @@ function applyFilters(
     } else if (filters.owner === "external") {
       q = q.where("repos.owner", "!=", SITE.githubUsername);
     }
-    if (filters.language && !options?.excludeLanguage) {
+    if (filters.language) {
       q = q.where("repos.primaryLanguageName", "=", filters.language);
     }
     if (filters.search) {
@@ -85,25 +83,9 @@ function applyFilters(
 
 const yearHaving = sql<number>`max(${sql.ref("repoActivity.year")})`;
 
-function mapRepoRow(row: {
-  id: number;
-  owner: string;
-  name: string;
-  description: string;
-  url: string;
-  primaryLanguageName: string | null;
-  primaryLanguageColor: string | null;
-  primaryLanguageExtension: string | null;
-  stargazerCount: number;
-  createdAt: string | null;
-  lastActivity: number;
-  prCount: number;
-  reviewCount: number;
-  issueCount: number;
-  mergeCount: number;
-  hasMergedPrs: number;
-  years: string;
-}): Repo {
+type RepoRow = InferResult<ReturnType<typeof repoQuery>>[number];
+
+function mapRepoRow(row: RepoRow): Repo {
   return {
     name: row.name,
     owner: row.owner,
@@ -162,50 +144,20 @@ function parseOffsetCursor(cursor: string): number {
   return offset;
 }
 
-type SortMode = "recent" | "active" | "stars" | "name";
+// `all` and `limit` are the read model's own options: listing every
+// repository for a year is the year page's business, and capping the
+// language bar is the OG image's.
+const reposQuery = reposInput.extend({ all: z.boolean().optional() });
+const languagesQuery = languagesInput.extend({
+  limit: z.int().positive().optional(),
+});
 
-interface ReposInput {
-  cursor?: string | null;
-  sort?: SortMode;
-  owner?: "personal" | "external" | null;
-  language?: string | null;
-  search?: string | null;
-  year?: number | null;
-  all?: boolean;
-}
-
-interface LanguagesInput {
-  owner?: "personal" | "external" | null;
-  search?: string | null;
-  year?: number | null;
-  limit?: number;
-}
-
-interface YearsInput {
-  owner?: "personal" | "external" | null;
-  language?: string | null;
-  search?: string | null;
-}
-
-function toFilterParams(input: {
-  owner?: string | null;
-  language?: string | null;
-  search?: string | null;
-  year?: number | null;
-}): FilterParams {
-  const params: FilterParams = {};
-  if (input.owner === "personal" || input.owner === "external")
-    params.owner = input.owner;
-  if (input.language) params.language = input.language;
-  if (input.search) params.search = input.search;
-  if (input.year != null) params.year = input.year;
-  return params;
-}
+export type ReposInput = z.input<typeof reposQuery>;
+export type LanguagesInput = z.input<typeof languagesQuery>;
+export type YearsInput = z.input<typeof yearsInput>;
 
 export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
-  const filters = toFilterParams(input);
-  const sort: SortMode = input.sort ?? "recent";
-  const cursor = input.cursor ?? null;
+  const { all, cursor, sort, ...filters } = reposQuery.parse(input);
 
   const countSubquery = db
     .selectFrom("repos")
@@ -222,7 +174,7 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
 
   const total = countResult.total;
 
-  if (input.all === true) {
+  if (all) {
     const rows = await repoQuery(db)
       .$call(applyFilters(filters))
       .$if(!!filters.year, (qb) => qb.having(yearHaving, "=", filters.year!))
@@ -300,16 +252,42 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
   return { repos, nextCursor, hasMore, total };
 }
 
+// A year in the URL has two ways of naming nothing: it falls outside the range
+// activity is recorded for, or nothing was contributed in it. Neither is an
+// error, and the page and the markdown representation answer both the same way,
+// so they branch on one value.
+export type YearRepos =
+  | { found: false }
+  | { found: true; year: number; repos: Repo[]; total: number };
+
+export async function queryYearRepos(
+  db: Kysely<Database>,
+  year: number,
+): Promise<YearRepos> {
+  const parsed = activityYear.safeParse(year);
+  if (!parsed.success) return { found: false };
+
+  // The year listing shows every repository for the year, so it has no cursor
+  // to follow.
+  const { repos, total } = await queryRepos(db, {
+    year: parsed.data,
+    all: true,
+  });
+  if (total === 0) return { found: false };
+
+  return { found: true, year: parsed.data, repos, total };
+}
+
 export async function queryLanguages(
   db: Kysely<Database>,
   input: LanguagesInput,
 ) {
-  const filters = toFilterParams(input);
+  const { limit, ...filters } = languagesQuery.parse(input);
 
   const subquery = db
     .selectFrom("repos")
     .innerJoin("repoActivity", "repoActivity.repoId", "repos.id")
-    .$call(applyFilters(filters, { excludeLanguage: true }))
+    .$call(applyFilters(filters))
     .where("repos.primaryLanguageName", "is not", null)
     .where("repos.primaryLanguageColor", "is not", null)
     .select([
@@ -335,7 +313,7 @@ export async function queryLanguages(
     ])
     .groupBy("sub.primaryLanguageName")
     .orderBy(sql`count`, "desc")
-    .$if(input.limit != null, (qb) => qb.limit(input.limit!))
+    .$if(limit != null, (qb) => qb.limit(limit!))
     .execute();
 
   const total = rows.reduce((sum, row) => sum + row.count, 0);
@@ -351,7 +329,7 @@ export async function queryLanguages(
 }
 
 export async function queryYears(db: Kysely<Database>, input: YearsInput) {
-  const filters = toFilterParams(input);
+  const filters = yearsInput.parse(input);
 
   const rows = await db
     .selectFrom("repos")

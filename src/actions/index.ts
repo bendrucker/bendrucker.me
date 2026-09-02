@@ -1,22 +1,11 @@
 import { defineAction } from "astro:actions";
-import { z } from "astro/zod";
+import { languagesInput, reposInput, yearsInput } from "@/activity/filters";
+import { queryLanguages, queryRepos, queryYears } from "@/activity/query";
 import { getDb } from "@/db";
-import {
-  queryRepos,
-  queryLanguages,
-  queryYears,
-} from "@/pages/activity/code/_query";
 
 export const server = {
   fetchRepos: defineAction({
-    input: z.object({
-      cursor: z.string().nullish(),
-      sort: z.enum(["recent", "active", "stars", "name"]).default("recent"),
-      owner: z.enum(["personal", "external"]).nullish(),
-      language: z.string().nullish(),
-      search: z.string().nullish(),
-      year: z.number().int().min(2000).nullish(),
-    }),
+    input: reposInput,
     handler: async (input) => {
       const db = await getDb();
       return queryRepos(db, input);
@@ -24,11 +13,7 @@ export const server = {
   }),
 
   fetchLanguages: defineAction({
-    input: z.object({
-      owner: z.enum(["personal", "external"]).nullish(),
-      search: z.string().nullish(),
-      year: z.number().int().min(2000).nullish(),
-    }),
+    input: languagesInput,
     handler: async (input) => {
       const db = await getDb();
       return queryLanguages(db, input);
@@ -36,11 +21,7 @@ export const server = {
   }),
 
   fetchYears: defineAction({
-    input: z.object({
-      owner: z.enum(["personal", "external"]).nullish(),
-      language: z.string().nullish(),
-      search: z.string().nullish(),
-    }),
+    input: yearsInput,
     handler: async (input) => {
       const db = await getDb();
       return queryYears(db, input);

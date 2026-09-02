@@ -5,20 +5,10 @@ import { SITE } from "../../../config";
 import YearActivity from "../../../components/activity/YearActivity.vue";
 import type { Repo, YearCount } from "@/activity/types";
 import { getDb } from "@/db";
-import { queryRepos, queryYearsByLastActivity } from "./_query";
+import { queryYearRepos, queryYearsByLastActivity } from "@/activity/query";
 import { logger } from "@workspace/logger";
 
-const { year: yearParam } = Astro.params;
-const year = Number(yearParam);
-
-if (
-  !Number.isInteger(year) ||
-  year < 2000 ||
-  year > new Date().getFullYear() + 1
-) {
-  return Astro.redirect("/404");
-}
-
+const year = Number(Astro.params.year);
 const db = await getDb();
 
 let initialRepos: Repo[] = [];
@@ -26,14 +16,14 @@ let initialTotal = 0;
 let years: YearCount[] = [];
 
 try {
-  const data = await queryRepos(db, { year, all: true });
+  const result = await queryYearRepos(db, year);
 
-  if (data.total === 0) {
+  if (!result.found) {
     return Astro.redirect("/404");
   }
 
-  initialRepos = data.repos;
-  initialTotal = data.total;
+  initialRepos = result.repos;
+  initialTotal = result.total;
 
   const { years: yearRows } = await queryYearsByLastActivity(db);
   years = yearRows;

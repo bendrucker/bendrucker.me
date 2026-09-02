@@ -1,9 +1,10 @@
 import { getDb } from "@/db";
-import { formatReposMarkdown } from "@/pages/activity/code/_markdown";
+import { formatReposMarkdown } from "@/activity/markdown";
 import {
   queryRepos,
+  queryYearRepos,
   queryYearsByLastActivity,
-} from "@/pages/activity/code/_query";
+} from "@/activity/query";
 import type { Representation } from "./types";
 
 export const activity: Representation = {
@@ -29,18 +30,12 @@ export const activityYear: Representation = {
   section: "Activity",
 
   async render({ params }) {
-    const year = Number(params.year);
-    if (!Number.isInteger(year)) return null;
+    const result = await queryYearRepos(await getDb(), Number(params.year));
+    if (!result.found) return null;
 
-    // `all` matches the HTML page, which lists every repository for the year
-    // rather than the first page of them.
-    const { repos, total } = await queryRepos(await getDb(), {
-      year,
-      all: true,
+    return formatReposMarkdown(result.repos, result.total, {
+      year: result.year,
     });
-    if (total === 0) return null;
-
-    return formatReposMarkdown(repos, total, { year });
   },
 
   async list() {

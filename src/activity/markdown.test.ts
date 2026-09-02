@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Repo } from "@/activity/types";
-import { formatReposMarkdown } from "./_markdown";
+import { formatReposMarkdown } from "./markdown";
 
 const repo: Repo = {
   name: "example",

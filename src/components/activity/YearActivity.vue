@@ -36,16 +36,6 @@ const state = reactive<{
   languages: [],
 });
 
-function actionInput() {
-  return {
-    sort: state.filters.sort === "recent" ? undefined : state.filters.sort,
-    owner: state.filters.owner === "all" ? undefined : state.filters.owner,
-    language: state.filters.language,
-    search: state.filters.search || undefined,
-    year: state.filters.year,
-  };
-}
-
 const prevYear = computed(() => {
   const sorted = props.years.map((y) => y.year).toSorted((a, b) => b - a);
   const idx = sorted.indexOf(props.year);
@@ -103,7 +93,7 @@ async function fetchAllRepos() {
     while (hasMore && pages < MAX_PAGES) {
       pages++;
       const { data, error } = await actions.fetchRepos({
-        ...actionInput(),
+        ...state.filters,
         cursor,
       });
       if (error) break;
@@ -120,7 +110,7 @@ async function fetchAllRepos() {
 
 async function fetchLanguages() {
   try {
-    const { owner, search, year } = actionInput();
+    const { owner, search, year } = state.filters;
     const { data, error } = await actions.fetchLanguages({
       owner,
       search,

@@ -34,13 +34,22 @@ export interface YearCount {
 }
 
 // The sort control renders its options from this list and narrows the value it
-// reads back against it, so an option and the type cannot drift apart.
+// reads back against it, so an option and the type cannot drift apart. The
+// filter schema builds its enum from the same list.
 export const SORT_ORDERS = ["recent", "active", "stars", "name"] as const;
 
 export type SortOrder = (typeof SORT_ORDERS)[number];
 
+// "all" is the owner control's value for an unfiltered owner. The filter schema
+// accepts it and drops it, so `FilterState` goes to an action as it stands.
+export const OWNER_FILTERS = ["all", "personal", "external"] as const;
+
+export type OwnerFilter = (typeof OWNER_FILTERS)[number];
+
+// The filter controls' reactive state, assignable to the repos action's input
+// so the composable sends it untranslated.
 export interface FilterState {
-  owner: "all" | "personal" | "external";
+  owner: OwnerFilter;
   language: string | null;
   search: string;
   sort: SortOrder;

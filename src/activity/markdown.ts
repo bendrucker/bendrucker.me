@@ -1,4 +1,4 @@
-import type { Repo } from "@/activity/types";
+import type { Repo } from "./types";
 
 export function formatReposMarkdown(
   repos: Repo[],
