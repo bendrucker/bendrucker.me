@@ -1,8 +1,8 @@
 import { sql, type SqlBool } from "kysely";
 import type { InferResult, Kysely, WhereInterface } from "kysely";
 import { z } from "zod";
-import type { Database } from "@/db";
-import { SITE } from "@/config";
+import type { Database } from "../db";
+import { SITE } from "../config";
 import {
   activityYear,
   languagesInput,
