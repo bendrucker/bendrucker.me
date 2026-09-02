@@ -11,8 +11,8 @@
 import { z } from "zod";
 import { OWNER_FILTERS, SORT_ORDERS } from "./types";
 
-// A filter the controls clear rather than remove: they hold a null for "not
-// filtering", and the query wants the key absent.
+// A filter the controls clear: they hold a null for "not filtering", and the
+// query wants the key absent.
 function cleared<T extends z.ZodType>(schema: T) {
   return schema
     .nullish()

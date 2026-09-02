@@ -144,9 +144,9 @@ function parseOffsetCursor(cursor: string): number {
   return offset;
 }
 
-// `all` and `limit` are the read model's own options rather than filters an
-// action exposes: listing every repository for a year is the year page's
-// business, and capping the language bar is the OG image's.
+// `all` and `limit` are the read model's own options: listing every
+// repository for a year is the year page's business, and capping the
+// language bar is the OG image's.
 const reposQuery = reposInput.extend({ all: z.boolean().optional() });
 const languagesQuery = languagesInput.extend({
   limit: z.int().positive().optional(),
@@ -255,7 +255,7 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
 // A year in the URL has two ways of naming nothing: it falls outside the range
 // activity is recorded for, or nothing was contributed in it. Neither is an
 // error, and the page and the markdown representation answer both the same way,
-// so they branch on one value rather than each re-deriving the range.
+// so they branch on one value.
 export type YearRepos =
   | { found: false }
   | { found: true; year: number; repos: Repo[]; total: number };
@@ -267,8 +267,8 @@ export async function queryYearRepos(
   const parsed = activityYear.safeParse(year);
   if (!parsed.success) return { found: false };
 
-  // The year listing shows every repository for the year rather than a page of
-  // them, so it has no cursor to follow.
+  // The year listing shows every repository for the year, so it has no cursor
+  // to follow.
   const { repos, total } = await queryRepos(db, {
     year: parsed.data,
     all: true,
