@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 import type { Kysely } from "kysely";
 import { activity as fixture } from "@/components/cycling/fixtures";
+import { decodePolyline } from "@/components/cycling/geo";
 import type { Database } from "@/db";
 import { createTestDb, testStore } from "@/test/db";
 import {
@@ -150,6 +151,27 @@ describe("queryCyclingActivity", () => {
     const { months, totals } = await queryCyclingActivity(db, NOW);
     expect(months.map((month) => month.key)).toEqual(["2026-01", "2025-12"]);
     expect(totals.year).toBe(2026);
+  });
+
+  it("thins a full-resolution route and profile to what a card draws", async () => {
+    // Each repeat re-encodes the same deltas, so the string stays decodable.
+    const polyline = GOOGLE_EXAMPLE.repeat(400);
+    const full = decodePolyline(polyline);
+    await seed(
+      ride("long", {
+        polyline,
+        elevationProfile: Array.from({ length: 1000 }, (_, i) => i),
+      }),
+    );
+
+    const [ride1] = (await queryCyclingActivity(db, NOW)).months[0]!.rides;
+    expect(full.length).toBe(1200);
+    expect(ride1!.route!.length).toBeLessThanOrEqual(301);
+    expect(ride1!.route![0]).toEqual(full[0]);
+    expect(ride1!.route!.at(-1)).toEqual(full.at(-1));
+    expect(ride1!.elevationProfile!.length).toBeLessThanOrEqual(101);
+    expect(ride1!.elevationProfile![0]).toBe(0);
+    expect(ride1!.elevationProfile!.at(-1)).toBe(1);
   });
 
   it("falls back to UTC for a timezone the runtime does not know", async () => {

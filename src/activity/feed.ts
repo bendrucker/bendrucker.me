@@ -11,8 +11,15 @@ import {
   metersToMiles,
   monthKeyOf,
 } from "@/components/cycling/format";
-import { decodePolyline } from "@/components/cycling/geo";
-import { normalizeProfile } from "@/components/cycling/profile";
+import {
+  decodePolyline,
+  MAX_PATH_POINTS,
+  thin,
+} from "@/components/cycling/geo";
+import {
+  MAX_PROFILE_SAMPLES,
+  normalizeProfile,
+} from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
 import type {
   CyclingActivityData,
@@ -146,7 +153,13 @@ function toEntry(row: FeedRow): Entry {
   const measured = row.powerSource === "measured";
   const measuredWatts =
     measured && row.averageWatts !== null ? Math.round(row.averageWatts) : null;
-  const route = row.polyline === null ? [] : decodePolyline(row.polyline);
+  // The hub publishes every recorded track point, and the island carries
+  // every ride's route in its props, so a season at full resolution is more
+  // than the worker's memory. Thin to what the card's map and chart can show.
+  const route =
+    row.polyline === null
+      ? []
+      : thin(decodePolyline(row.polyline), MAX_PATH_POINTS);
   const profile =
     row.elevationProfile === null
       ? null
@@ -169,9 +182,10 @@ function toEntry(row: FeedRow): Entry {
   if (measuredWatts !== null) ride.averageWatts = measuredWatts;
   if (route.length >= 2) ride.route = route;
   if (profile !== null && profile.length > 0) {
-    ride.elevationProfile = normalizeProfile(profile).map(
-      (sample) => Math.round(sample * 1000) / 1000,
-    );
+    ride.elevationProfile = thin(
+      normalizeProfile(profile),
+      MAX_PROFILE_SAMPLES,
+    ).map((sample) => Math.round(sample * 1000) / 1000);
   }
 
   return {

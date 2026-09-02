@@ -67,6 +67,9 @@ export function syntheticProfile(
  * point sits on the floor and the highest at the ceiling however tall the
  * ride was. A flat ride sits at the baseline rather than dividing by zero.
  */
+/** Samples a card's profile keeps. It draws at a width where more is invisible. */
+export const MAX_PROFILE_SAMPLES = 100;
+
 export function normalizeProfile(altitudes: number[]): number[] {
   const finite = altitudes.filter((altitude) => Number.isFinite(altitude));
   const min = Math.min(...finite);

@@ -9,7 +9,8 @@ export const TILE_SIZE = 256;
 const MIN_ZOOM = 0;
 const MAX_ZOOM = 15;
 const VIEWPORT_PADDING = 12;
-const MAX_PATH_POINTS = 300;
+/** Points a drawn route keeps. A card's map is too small to show more. */
+export const MAX_PATH_POINTS = 300;
 
 export const TILE_URL_TEMPLATE =
   "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png";
@@ -182,15 +183,8 @@ export function fitRoute(
     }
   }
 
-  const step = Math.max(1, Math.ceil(coordinates.length / MAX_PATH_POINTS));
-  const sampled: number[] = [];
-  for (let i = 0; i < coordinates.length; i += step) sampled.push(i);
-  const lastIndex = coordinates.length - 1;
-  if (sampled[sampled.length - 1] !== lastIndex) sampled.push(lastIndex);
-
-  const path = sampled
-    .map((index, position) => {
-      const [lat, lon] = unwrapped[index];
+  const path = thin(unwrapped, MAX_PATH_POINTS)
+    .map(([lat, lon], position) => {
       const [x, y] = project(lat, lon, zoom);
       const command = position === 0 ? "M" : "L";
       return `${command}${(x - originX).toFixed(1)} ${(y - originY).toFixed(1)}`;
@@ -198,4 +192,22 @@ export function fitRoute(
     .join("");
 
   return { tiles, path, zoom };
+}
+
+/**
+ * Every `step`th item plus the last, so a long series keeps its shape and
+ * both endpoints within a bounded size.
+ */
+export function thin<T>(items: readonly T[], max: number): T[] {
+  const step = Math.max(1, Math.ceil(items.length / max));
+  const kept: T[] = [];
+  let lastKept = -1;
+  for (let i = 0; i < items.length; i += step) {
+    kept.push(items[i]!);
+    lastKept = i;
+  }
+  if (items.length > 0 && lastKept !== items.length - 1) {
+    kept.push(items[items.length - 1]!);
+  }
+  return kept;
 }
