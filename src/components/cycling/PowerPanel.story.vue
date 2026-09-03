@@ -34,11 +34,10 @@ const controls: StoryControlSet = {
       none: "no durations at all",
     },
   },
-  note: { type: "text", title: "source note" },
 };
 
 function initState() {
-  return { bests: "partial", note: "from rides with a power meter" };
+  return { bests: "partial" };
 }
 </script>
 
@@ -53,10 +52,7 @@ function initState() {
     <Variant title="Power panel">
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
-        <PowerPanel
-          :bests="bestSets[state.bests]!"
-          :source-note="state.note || undefined"
-        />
+        <PowerPanel :bests="bestSets[state.bests]!" />
       </template>
 
       <template #controls="{ state }">
@@ -72,6 +68,5 @@ function initState() {
 Best average watts over a set of durations.
 
 Most durations have no number behind them until a ride with a power meter fills
-them in, so the partial case is the ordinary one. Clear the source note to see
-the panel without its footnote.
+them in, so the partial case is the ordinary one.
 </docs>

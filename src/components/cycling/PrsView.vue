@@ -11,7 +11,6 @@ const props = defineProps<{
   bests: PowerBest[];
   periods: string[];
   period: string;
-  powerNote?: string;
 }>();
 
 defineEmits<{ "update:period": [period: string] }>();
@@ -23,23 +22,20 @@ const periodOptions = computed(() =>
 
 <template>
   <div class="flex flex-col gap-5">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <SectionHeading
-        label="personal records"
-        as="h2"
-        class="min-w-40 flex-1"
-      />
+    <div class="flex flex-col gap-2">
+      <SectionHeading label="personal records" as="h2" />
       <SegmentedControl
         v-if="periodOptions.length"
         :model-value="period"
         :options="periodOptions"
         label="Record period"
         size="sm"
+        block
         @update:model-value="$emit('update:period', $event)"
       />
     </div>
 
-    <PowerPanel :bests="bests" :source-note="powerNote" />
+    <PowerPanel :bests="bests" />
 
     <!-- Reachable by changing the period, which leaves focus on the control. -->
     <p

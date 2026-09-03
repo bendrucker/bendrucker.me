@@ -3,7 +3,7 @@ import SectionHeading from "./SectionHeading.vue";
 import StatValue from "./StatValue.vue";
 import type { PowerBest } from "@/activity/types";
 
-defineProps<{ bests: PowerBest[]; sourceNote?: string }>();
+defineProps<{ bests: PowerBest[] }>();
 </script>
 
 <template>
@@ -26,8 +26,5 @@ defineProps<{ bests: PowerBest[]; sourceNote?: string }>();
         <p class="text-[10.5px] text-foreground/70">{{ best.label }}</p>
       </li>
     </ul>
-    <p v-if="sourceNote" class="mt-3 text-[10.5px] text-foreground/70">
-      {{ sourceNote }}
-    </p>
   </div>
 </template>

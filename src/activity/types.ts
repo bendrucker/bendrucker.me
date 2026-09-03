@@ -217,6 +217,8 @@ export interface RecordPeriod {
   /** The window the lists cover, shown on the period control: "all", "2026". */
   period: string;
   lists: RankedList[];
+  /** Best power for the same period the picker selects. */
+  powerBests: PowerBest[];
 }
 
 /** Everything the root view renders, in the shape a page would hand it. */
@@ -226,6 +228,4 @@ export interface CyclingActivityData {
   highlightMonths: HighlightMonth[];
   /** In display order. The first is what an unknown period falls back to. */
   records: RecordPeriod[];
-  powerBests: PowerBest[];
-  powerNote?: string;
 }
