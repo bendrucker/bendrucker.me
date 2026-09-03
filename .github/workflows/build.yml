@@ -143,6 +143,8 @@ jobs:
 
       - name: Build site
         run: npm run build
+        env:
+          PUBLIC_CARTO_BASEMAP_KEY: ${{ secrets.CARTO_BASEMAP_KEY }}
 
       - name: Build story book
         run: npm run story:build
