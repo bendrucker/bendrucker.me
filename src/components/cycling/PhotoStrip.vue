@@ -63,11 +63,11 @@ watch(() => props.photos.length, measure, { flush: "post" });
 </template>
 
 <style scoped>
-/* A dozen photos wrapped to a second row and stretched the card past every
-   other one in the log. The row stays one row instead, and what does not fit
-   fades off its trailing edge. Scrolling still reaches the rest, as does the
-   lightbox, which opens on any thumbnail and pages through them all.
-   `contain` keeps a swipe past the end from turning into a page-back gesture. */
+/* Wrapping the photo row to a second row would stretch the card past every
+   other one in the log, so it stays one row and what does not fit fades off
+   its trailing edge. Scrolling still reaches the rest, as does the lightbox,
+   which opens on any thumbnail and pages through them all. `contain` keeps a
+   swipe past the end from turning into a page-back gesture. */
 .strip {
   scrollbar-width: none;
   overscroll-behavior-x: contain;
