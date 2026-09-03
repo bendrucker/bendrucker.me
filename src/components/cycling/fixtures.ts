@@ -88,7 +88,7 @@ export const epicRide: Ride = ride({
   route: syntheticRoute("19275831643", MARIN, 0.16, 260),
   photos: photos("19275831643", 3),
   badges: [
-    { kind: "longest", icon: "ruler", label: "longest" },
+    { kind: "longest", icon: "ruler", label: "longest", scope: "jul" },
     { kind: "new-climb", icon: "mountain", label: "atlas peak" },
   ],
   facts: [
@@ -139,7 +139,12 @@ export const travelRide: Ride = ride({
   photos: photos("19170862418", 5),
   badges: [
     { kind: "new-location", icon: "map-pin", label: "new location" },
-    { kind: "most-climbing", icon: "trending-up", label: "most climbing" },
+    {
+      kind: "most-climbing",
+      icon: "trending-up",
+      label: "most climbing",
+      scope: "jul",
+    },
   ],
   facts: [{ id: "cal", icon: "flame", label: "6,140 cal" }],
 });
@@ -170,7 +175,7 @@ export const crowdedRide: Ride = ride({
   photos: photos("19090081916", 4),
   badges: [
     { kind: "new-climb", icon: "mountain", label: "mount vision" },
-    { kind: "longest", icon: "ruler", label: "longest" },
+    { kind: "longest", icon: "ruler", label: "longest", scope: "jun" },
     { kind: "race", icon: "flag", label: "race" },
   ],
   facts: [

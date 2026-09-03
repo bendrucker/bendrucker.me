@@ -110,6 +110,12 @@ type Decorated = { icon?: IconName; label: string };
 
 export interface RideBadge extends Decorated {
   kind: RideBadgeKind;
+  /**
+   * The window the superlative is measured over, such as `aug`. A bare
+   * "longest" reads as all time, and these are only ever the best of their
+   * month. Rendered as the badge's own left-hand segment.
+   */
+  scope?: string;
 }
 
 export interface RideFact extends Decorated {

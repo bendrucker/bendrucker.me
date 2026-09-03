@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { BASEMAP_CREDITS, hasBasemap } from "./basemap";
 import HighlightsView from "./HighlightsView.vue";
 import LogView from "./LogView.vue";
 import PhotoLightbox from "./PhotoLightbox.vue";
@@ -126,6 +127,23 @@ watch([mode, () => props.data], () => {
         @update:period="recordPeriod = $event"
       />
     </div>
+
+    <!-- CARTO's free basemap tier is granted in exchange for keeping its
+         credit and OpenStreetMap's visible. A 150px card cannot hold them, so
+         they sit once under the page instead. -->
+    <p v-if="hasBasemap()" class="text-[10px] text-foreground/50">
+      maps
+      <template v-for="(credit, index) in BASEMAP_CREDITS" :key="credit.href"
+        ><template v-if="index > 0">, </template>&copy;
+        <a
+          :href="credit.href"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-accent"
+          >{{ credit.label }}</a
+        ></template
+      >
+    </p>
 
     <PhotoLightbox
       :photos="lightboxRide?.photos ?? []"

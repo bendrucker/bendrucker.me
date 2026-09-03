@@ -13,9 +13,6 @@ const MIN_ZOOM = 0;
 const MAX_ZOOM = 15;
 const VIEWPORT_PADDING = 12;
 
-export const TILE_URL_TEMPLATE =
-  "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png";
-
 export function haversineMiles(a: Coordinate, b: Coordinate): number {
   const latDelta = (b[0] - a[0]) * DEGREES_TO_RADIANS;
   const lonDelta = (b[1] - a[1]) * DEGREES_TO_RADIANS;
@@ -29,7 +26,9 @@ export function haversineMiles(a: Coordinate, b: Coordinate): number {
 
 export interface MapTile {
   key: string;
-  url: string;
+  z: number;
+  x: number;
+  y: number;
   left: number;
   top: number;
 }
@@ -74,12 +73,6 @@ function unwrapLongitudes(coordinates: Coordinate[]): Coordinate[] {
     }
     return [coordinate[0], coordinate[1] + offset] as Coordinate;
   });
-}
-
-function tileUrl(zoom: number, x: number, y: number): string {
-  return TILE_URL_TEMPLATE.replace("{z}", String(zoom))
-    .replace("{x}", String(x))
-    .replace("{y}", String(y));
 }
 
 export function fitRoute(
@@ -139,7 +132,9 @@ export function fitRoute(
       const wrappedX = ((x % tilesPerAxis) + tilesPerAxis) % tilesPerAxis;
       tiles.push({
         key: `${zoom}_${x}_${y}`,
-        url: tileUrl(zoom, wrappedX, y),
+        z: zoom,
+        x: wrappedX,
+        y,
         left: Math.round(x * TILE_SIZE - originX),
         top: Math.round(y * TILE_SIZE - originY),
       });

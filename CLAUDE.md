@@ -96,6 +96,24 @@ process before it is ready.
 
 `.claude/hooks/verify.sh` runs on turns touching `.js`/`.ts`/`.astro`/`.mjs`: formats with Prettier, lints, builds (cached). Exit 2 blocks Claude until fixed.
 
+## Route Maps
+
+`RouteMap.vue` draws its basemap from CARTO raster tiles, built in the browser
+by `src/components/cycling/basemap.ts`. CARTO requires an API key and stamps
+"API KEY REQUIRED" across every tile served without one, so the component draws
+no tiles at all unless `PUBLIC_CARTO_BASEMAP_KEY` is set, leaving the route line
+on the card's own background. Local dev and the story book run that way.
+
+The key is scoped to the domains it was issued for rather than secret, which is
+why it ships to the client through a `PUBLIC_` variable inlined at build. The
+free tier is granted in exchange for keeping CARTO's and OpenStreetMap's credits
+visible, which `CyclingActivity.vue` renders once beneath the views. A card at
+150px cannot carry them itself.
+
+CI reads the key from the `CARTO_BASEMAP_KEY` repository secret, set on the site
+build step in `build.yml` and `deploy.yml`. A fork's build sees no secret and
+falls back to the unmapped route.
+
 ## Theme
 
 CSS vars in `global.css` → Tailwind: `bg-background`, `text-foreground`, `bg-accent`, `text-accent`, `bg-muted`, `text-muted`, `border-border`. Dark mode via `data-theme="dark"` / `dark:` prefix. No `skin-*` classes.

@@ -85,6 +85,11 @@ export function formatMonthKey(key: string): string {
   return `${month} ${key.slice(0, 4)}`;
 }
 
+/** `2026-08` to `aug`, the width the rail and the badges have room for. */
+export function formatMonthShort(key: string): string {
+  return MONTH_NAMES[Number(key.slice(5, 7)) - 1]?.slice(0, 3) ?? "";
+}
+
 export function monthKeyOf(startedAt: string): string {
   return startedAt.slice(0, 7);
 }
