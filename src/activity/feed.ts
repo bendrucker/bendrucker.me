@@ -80,6 +80,7 @@ const TRACK_COLUMNS = [
 ] as const;
 
 export interface PowerCurvePoint {
+  activityId: string;
   durationS: number;
   watts: number;
 }
@@ -95,8 +96,6 @@ const POWER_LADDER = [
   { id: "20m", label: "20 min", durationS: 1200 },
   { id: "1h", label: "1 hr", durationS: 3600 },
 ] as const;
-
-const POWER_NOTE = "from rides with a power meter";
 
 // Scoped per month where they are awarded, so the badge can say which month it
 // won rather than leaving "longest" to read as all time.
@@ -122,6 +121,9 @@ export async function queryCyclingActivity(
       .select(RIDE_COLUMNS)
       .where("sport", "=", "ride")
       .execute(),
+    // Every measured ride's points, rather than one aggregate ladder: the
+    // year a point counts toward is the ride's local one, which only the
+    // entries know.
     db
       .selectFrom("activityPowerCurve")
       .innerJoin(
@@ -132,10 +134,10 @@ export async function queryCyclingActivity(
       .where("activityFeed.sport", "=", "ride")
       .where("activityFeed.powerSource", "=", "measured")
       .select([
+        "activityPowerCurve.activityId",
         "activityPowerCurve.durationS",
-        sql<number>`max(${sql.ref("activityPowerCurve.watts")})`.as("watts"),
+        "activityPowerCurve.watts",
       ])
-      .groupBy("activityPowerCurve.durationS")
       .execute(),
   ]);
   const cutoff = trackCutoff(rides);
@@ -212,17 +214,13 @@ export function buildCyclingActivity(
     .map((row) => toEntry(row, trackById.get(row.activityId)))
     .toSorted((a, b) => b.ride.startedAt.localeCompare(a.ride.startedAt));
   const months = groupMonths(logEntries(entries));
-  const bests = powerBests(entries, curve);
 
-  const data: CyclingActivityData = {
+  return {
     totals: yearTotals(entries, now),
     months: months.map((month) => month.group),
     highlightMonths: months.flatMap((month) => month.highlights),
-    records: records(entries),
-    powerBests: bests,
+    records: records(entries, curve),
   };
-  if (bests.length > 0) data.powerNote = POWER_NOTE;
-  return data;
 }
 
 /**
@@ -433,15 +431,25 @@ function yearTotals(entries: readonly Entry[], now: Date): YearTotals {
   return totals;
 }
 
-function records(entries: readonly Entry[]): RecordPeriod[] {
+function records(
+  entries: readonly Entry[],
+  curve: readonly PowerCurvePoint[],
+): RecordPeriod[] {
   if (entries.length === 0) return [];
   const years = [...new Set(entries.map((entry) => entry.year))];
+  const period = (name: string, within: readonly Entry[]): RecordPeriod => ({
+    period: name,
+    lists: rankedLists(within),
+    powerBests: powerBests(within, curve),
+  });
   return [
-    { period: "all", lists: rankedLists(entries) },
-    ...years.map((year) => ({
-      period: String(year),
-      lists: rankedLists(entries.filter((entry) => entry.year === year)),
-    })),
+    period("all", entries),
+    ...years.map((year) =>
+      period(
+        String(year),
+        entries.filter((entry) => entry.year === year),
+      ),
+    ),
   ];
 }
 
@@ -509,9 +517,16 @@ function powerBests(
   entries: readonly Entry[],
   curve: readonly PowerCurvePoint[],
 ): PowerBest[] {
-  const byDuration = new Map(
-    curve.map((point) => [point.durationS, Math.round(point.watts)]),
-  );
+  const rides = new Set(entries.map((entry) => entry.ride.id));
+  const byDuration = new Map<number, number>();
+  for (const point of curve) {
+    if (!rides.has(point.activityId)) continue;
+    const watts = Math.round(point.watts);
+    const standing = byDuration.get(point.durationS);
+    if (standing === undefined || watts > standing) {
+      byDuration.set(point.durationS, watts);
+    }
+  }
   const rideAverage = best(
     entries,
     (entry) => entry.measuredWatts ?? undefined,

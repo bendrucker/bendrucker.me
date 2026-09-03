@@ -18,9 +18,7 @@ const newcomer: CyclingActivityData = {
   },
   months: activity.months.slice(0, 1),
   highlightMonths: [],
-  records: [{ period: "2026", lists: [] }],
-  powerBests: [],
-  powerNote: undefined,
+  records: [{ period: "2026", lists: [], powerBests: [] }],
 };
 
 const datasets: Record<string, CyclingActivityData> = {

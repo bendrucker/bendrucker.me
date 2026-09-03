@@ -2,34 +2,27 @@
 import type { StoryControlSet } from "@/stories/controls";
 import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
-import { activity, powerBests } from "./fixtures";
+import { activity } from "./fixtures";
 import PrsView from "./PrsView.vue";
 import type { RankedList } from "@/activity/types";
 import UnitsProvider from "./UnitsProvider.vue";
 
 const periods = activity.records.map((entry) => entry.period);
 
-function listsFor(period: string): RankedList[] {
-  return activity.records.find((entry) => entry.period === period)?.lists ?? [];
+function recordsFor(period: string): RecordPeriod {
+  return (
+    activity.records.find((entry) => entry.period === period) ??
+    activity.records[0]!
+  );
 }
-
-const measuredBests = powerBests.map((best, index) => ({
-  ...best,
-  watts: best.watts ?? [412, 348, 296, 254][index] ?? null,
-}));
 
 const controls: StoryControlSet = {
   period: { type: "select", title: "period", options: periods },
   units: { type: "select", title: "units", options: ["imperial", "metric"] },
-  power: {
-    type: "select",
-    title: "power",
-    options: { measured: "all durations", partial: "ride average only" },
-  },
 };
 
 function initState() {
-  return { period: periods[0]!, units: "imperial", power: "measured" };
+  return { period: periods[0]!, units: "imperial" };
 }
 </script>
 
@@ -46,11 +39,10 @@ function initState() {
           <PreviewControls :controls="controls" :state="state" />
           <UnitsProvider :units="state.units">
             <PrsView
-              :lists="listsFor(state.period)"
-              :bests="state.power === 'measured' ? measuredBests : powerBests"
+              :lists="recordsFor(state.period).lists"
+              :bests="recordsFor(state.period).powerBests"
               :periods="periods"
               :period="state.period"
-              power-note="from rides with a power meter"
               @update:period="state.period = $event"
             />
           </UnitsProvider>
@@ -76,6 +68,7 @@ function initState() {
 Ranked lists and power bests for one period, with the period picker above them.
 
 The picker is the view's own, so changing the period in the panel and tapping it
-on the page are the same thing. 2025 carries fewer lists than 2026, which is the
-case worth looking at.
+on the page are the same thing. Everything below it answers the period: 2025
+carries fewer lists than 2026, and 2026 is the year with nothing measured behind
+its ride average.
 </docs>

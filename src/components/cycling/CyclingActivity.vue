@@ -120,10 +120,9 @@ watch([mode, () => props.data], () => {
       <PrsView
         v-else
         :lists="records?.lists ?? []"
-        :bests="data.powerBests"
+        :bests="records?.powerBests ?? []"
         :periods="periods"
         :period="recordPeriod"
-        :power-note="data.powerNote"
         @update:period="recordPeriod = $event"
       />
     </div>

@@ -67,7 +67,6 @@ describe("queryCyclingActivity", () => {
       months: [],
       highlightMonths: [],
       records: [],
-      powerBests: [],
     });
   });
 
@@ -379,30 +378,55 @@ describe("queryCyclingActivity", () => {
     ]);
     await publishPowerCurve(store, "guess", [{ durationS: 60, watts: 999 }]);
 
-    const { powerBests, powerNote, months } = await queryCyclingActivity(
-      db,
-      NOW,
-    );
+    const { records, months } = await queryCyclingActivity(db, NOW);
 
-    expect(powerBests).toEqual([
+    expect(records[0]!.powerBests).toEqual([
       { id: "1m", label: "1 min", watts: 450 },
       { id: "5m", label: "5 min", watts: null },
       { id: "20m", label: "20 min", watts: 280 },
       { id: "1h", label: "1 hr", watts: null },
       { id: "ride", label: "ride avg", watts: 210 },
     ]);
-    expect(powerNote).toBe("from rides with a power meter");
     const guess = months[0]!.rides.find((r) => r.id === "guess")!;
     expect(guess).not.toHaveProperty("averageWatts");
+  });
+
+  it("gives each period the power its own rides set", async () => {
+    await seed(
+      ride("older", {
+        startedAt: "2025-07-11T13:00:55Z",
+        averageWatts: 240,
+      }),
+      ride("newer", { averageWatts: 190 }),
+    );
+    await publishPowerCurve(store, "older", [
+      { durationS: 60, watts: 500 },
+      { durationS: 1200, watts: 300 },
+    ]);
+    await publishPowerCurve(store, "newer", [{ durationS: 60, watts: 420 }]);
+
+    const { records } = await queryCyclingActivity(db, NOW);
+    const watts = (period: string) =>
+      Object.fromEntries(
+        records
+          .find((entry) => entry.period === period)!
+          .powerBests.map((best) => [best.id, best.watts]),
+      );
+
+    // The all-time ladder takes each duration from whichever year holds it.
+    expect(watts("all")).toMatchObject({ "1m": 500, "20m": 300, ride: 240 });
+    expect(watts("2026")).toMatchObject({ "1m": 420, "20m": null, ride: 190 });
+    expect(watts("2025")).toMatchObject({ "1m": 500, "20m": 300, ride: 240 });
   });
 
   it("leaves the power panel empty with nothing measured", async () => {
     await seed(ride("guess", { averageWatts: 400, powerSource: "estimated" }));
 
-    const data = await queryCyclingActivity(db, NOW);
+    const { records } = await queryCyclingActivity(db, NOW);
 
-    expect(data.powerBests).toEqual([]);
-    expect(data).not.toHaveProperty("powerNote");
+    expect(records.every((period) => period.powerBests.length === 0)).toBe(
+      true,
+    );
   });
 
   it("ignores other sports", async () => {
@@ -459,7 +483,9 @@ describe("contract", () => {
     expect(keys(feed.records[0]!.lists[0])).toEqual(
       keys(fixture.records[0]!.lists[0]),
     );
-    expect(keys(feed.powerBests[0])).toEqual(keys(fixture.powerBests[0]));
+    expect(keys(feed.records[0]!.powerBests[0])).toEqual(
+      keys(fixture.records[0]!.powerBests[0]),
+    );
     expect(
       buildCyclingActivity({ rides: [], tracks: [] }, [], NOW).months,
     ).toEqual([]);

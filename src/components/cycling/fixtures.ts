@@ -307,13 +307,50 @@ export const highlightMonths: HighlightMonth[] = [
   },
 ];
 
-export const powerBests: PowerBest[] = [
-  { id: "1m", label: "1 min", watts: null },
-  { id: "5m", label: "5 min", watts: null },
-  { id: "20m", label: "20 min", watts: null },
-  { id: "1h", label: "1 hr", watts: null },
-  { id: "ride", label: "ride avg", watts: 288 },
+const powerDurations: Omit<PowerBest, "watts">[] = [
+  { id: "1m", label: "1 min" },
+  { id: "5m", label: "5 min" },
+  { id: "20m", label: "20 min" },
+  { id: "1h", label: "1 hr" },
+  { id: "ride", label: "ride avg" },
 ];
+
+// A ladder names only the durations it measured, so every period offers the
+// same row of labels and an unmeasured one renders as its em dash.
+function powerLadder(watts: Record<string, number>): PowerBest[] {
+  return powerDurations.map((duration) => ({
+    ...duration,
+    watts: watts[duration.id] ?? null,
+  }));
+}
+
+// The all-time ladder is each duration's best across the years rather than a
+// third hand-written set, so it cannot fall behind the year it draws from.
+function bestOf(...ladders: PowerBest[][]): PowerBest[] {
+  return powerDurations.map((duration, index) => {
+    const measured = ladders
+      .map((ladder) => ladder[index]?.watts)
+      .filter((watts) => watts !== null && watts !== undefined);
+    return {
+      ...duration,
+      watts: measured.length ? Math.max(...measured) : null,
+    };
+  });
+}
+
+// This season's rides mostly ran without a meter, so the durations behind the
+// ride average are still empty. 2025 is the measured case.
+export const powerBests = powerLadder({ ride: 288 });
+
+const powerBests2025 = powerLadder({
+  "1m": 412,
+  "5m": 341,
+  "20m": 297,
+  "1h": 264,
+  ride: 231,
+});
+
+const powerBestsAll = bestOf(powerBests, powerBests2025);
 
 export const rankedLists: RankedList[] = [
   {
@@ -460,10 +497,8 @@ export const activity: CyclingActivityData = {
   months,
   highlightMonths,
   records: [
-    { period: "all", lists: rankedLists },
-    { period: "2026", lists: rankedLists },
-    { period: "2025", lists: rankedLists2025 },
+    { period: "all", lists: rankedLists, powerBests: powerBestsAll },
+    { period: "2026", lists: rankedLists, powerBests },
+    { period: "2025", lists: rankedLists2025, powerBests: powerBests2025 },
   ],
-  powerBests,
-  powerNote: "from rides with a power meter",
 };
