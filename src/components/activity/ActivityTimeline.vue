@@ -107,7 +107,7 @@ watch(
 );
 
 // [data-year] dividers are added as more repos load, so this re-collects them
-// whenever the root's subtree changes rather than only once at mount.
+// whenever the root's subtree changes.
 const yearElements = ref<HTMLElement[]>([]);
 function collectYearElements() {
   yearElements.value = rootRef.value

@@ -38,8 +38,8 @@ export function useScrollSpy(
   const activeKey = ref<string | null>(null);
   const intersecting = new Set<HTMLElement>();
 
-  // Watching content rather than identity, so a caller that mutates the array
-  // in place is tracked and one that rebuilds an identical array is not.
+  // A caller that mutates the array in place is tracked. A caller that
+  // rebuilds an identical array is not.
   const sections = computed(() => {
     const wanted = new Set(keys.value);
     const scope = options.root?.value ?? document;
