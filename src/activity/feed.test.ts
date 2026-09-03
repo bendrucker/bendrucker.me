@@ -193,7 +193,23 @@ describe("queryCyclingActivity", () => {
     expect(route.at(-1)).toEqual(full.at(-1));
     expect(profile.length).toBeLessThanOrEqual(101);
     expect(profile[0]).toBe(0);
-    expect(profile.at(-1)).toBe(1);
+    expect(profile.at(-1)).toBe(Math.max(...profile));
+  });
+
+  it("draws a hillier ride's profile taller than a flatter one's", async () => {
+    const climbs = [0, 100, 200, 100];
+    await seed(
+      ride("hilly", { elevationProfile: climbs, elevationM: 1200 }),
+      ride("flat", { elevationProfile: climbs, elevationM: 150 }),
+    );
+
+    const rides = (await queryCyclingActivity(db, NOW)).months[0]!.rides;
+    const byId = new Map(rides.map((entry) => [entry.id, entry]));
+    const ceiling = (id: string) =>
+      Math.max(...decodeProfile(byId.get(id)!.elevationProfile!));
+
+    // The same shape, so only the climbing per mile separates the two.
+    expect(ceiling("hilly")).toBeGreaterThan(2 * ceiling("flat"));
   });
 
   it("falls back to UTC for a timezone the runtime does not know", async () => {
@@ -258,9 +274,10 @@ describe("queryCyclingActivity", () => {
 
     const profile = decodeProfile(byId.get("full")!.elevationProfile!);
     expect(profile[0]).toBe(0);
-    // The midpoint lands on the nearest of the 256 levels a sample encodes to.
-    expect(profile[1]).toBeCloseTo(0.5, 2);
-    expect(profile[2]).toBe(1);
+    // A ride at 79 ft/mi tops out partway up the scale, and each sample lands
+    // on the nearest of the 256 levels it encodes to.
+    expect(profile[1]).toBeCloseTo(0.197, 2);
+    expect(profile[2]).toBeCloseTo(0.393, 2);
     expect(profile[3]).toBe(0);
     expect(byId.get("full")!.photos).toEqual([
       {

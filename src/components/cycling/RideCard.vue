@@ -72,7 +72,7 @@ const metaLine = computed(() => {
       <ElevationProfile
         v-if="ride.elevationProfile"
         :profile="ride.elevationProfile"
-        class="pointer-events-none absolute inset-x-0 bottom-0 h-12"
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-16"
       />
 
       <div class="relative flex flex-col gap-2">

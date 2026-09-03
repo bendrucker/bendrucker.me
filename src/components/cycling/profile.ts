@@ -4,12 +4,21 @@ export { decodeProfile };
 
 const DEFAULT_SAMPLE_COUNT = 22;
 
-/** Feet per mile at which a ride counts as fully hilly. */
-const STEEP_FEET_PER_MILE = 220;
+/**
+ * The ends of the scale every card's profile is drawn against, in feet of
+ * climbing per mile. Both sit at the edges of a season's riding: a morning of
+ * hill repeats in the city reaches the top, a flat commute the floor.
+ */
+const STEEP_FEET_PER_MILE = 150;
+const FLAT_FEET_PER_MILE = 25;
 
-const BASELINE = 0.5;
-const FLAT_AMPLITUDE = 0.08;
-const HILLY_AMPLITUDE = 0.42;
+/** Height the hilliest ride stands in, as a fraction of the chart. */
+const MAX_RELIEF = 0.75;
+
+/** Height the flattest ride keeps, so its card still reads as a horizon. */
+const MIN_RELIEF = 0.12;
+
+const MID_BAND = 0.5;
 const HARMONICS = [1, 2, 3];
 
 /**
@@ -27,23 +36,37 @@ export function seededRandom(seed: string): () => number {
   };
 }
 
-/** Non-finite input falls back to the baseline, which SVG can still draw. */
+/** Non-finite input falls back to mid-band, which SVG can still draw. */
 function clamp(value: number): number {
-  if (!Number.isFinite(value)) return BASELINE;
+  if (!Number.isFinite(value)) return MID_BAND;
   return Math.min(1, Math.max(0, value));
 }
 
-/** Deterministic 0..1 elevation samples for a ride, evenly spaced. */
+/**
+ * How much of the chart's height a ride's profile stands in.
+ *
+ * Rides repeat their climbs, so how high one got says little about how hilly
+ * it was: a Headlands loop climbs two and a half times what a ride around the
+ * city does and tops out lower than it. Climbing per mile is what separates
+ * them, so it rather than the altitude reached sets the height. The vertical
+ * axis is then a measure of hilliness that holds across cards, and a rate the
+ * data cannot give draws at the floor.
+ */
+export function relief(feetPerMile: number): number {
+  const ratio =
+    (feetPerMile - FLAT_FEET_PER_MILE) /
+    (STEEP_FEET_PER_MILE - FLAT_FEET_PER_MILE);
+  const steepness = Number.isNaN(ratio) ? 0 : Math.min(1, Math.max(0, ratio));
+  return MIN_RELIEF + steepness * (MAX_RELIEF - MIN_RELIEF);
+}
+
+/** Deterministic elevation samples for a ride, evenly spaced. */
 export function syntheticProfile(
   seed: string,
   feetPerMile: number,
   sampleCount: number = DEFAULT_SAMPLE_COUNT,
 ): number[] {
   const random = seededRandom(seed);
-  const ratio = feetPerMile / STEEP_FEET_PER_MILE;
-  const hilliness = Number.isNaN(ratio) ? 0 : Math.min(1, Math.max(0, ratio));
-  const amplitude = FLAT_AMPLITUDE + HILLY_AMPLITUDE * hilliness;
-
   const waves = HARMONICS.map((harmonic) => ({
     frequency: harmonic + random() * 0.6,
     phase: random() * 2 * Math.PI,
@@ -51,9 +74,9 @@ export function syntheticProfile(
   }));
   const totalWeight = waves.reduce((total, wave) => total + wave.weight, 0);
 
-  return Array.from({ length: sampleCount }, (_unused, index) => {
+  const shape = Array.from({ length: sampleCount }, (_unused, index) => {
     const progress = sampleCount > 1 ? index / (sampleCount - 1) : 0;
-    const shape =
+    const point =
       waves.reduce(
         (sum, wave) =>
           sum +
@@ -61,22 +84,28 @@ export function syntheticProfile(
             Math.sin(wave.phase + progress * wave.frequency * 2 * Math.PI),
         0,
       ) / totalWeight;
-    const jitter = (random() - 0.5) * 0.06 * hilliness;
-    return clamp(BASELINE + amplitude * shape + jitter);
+    return point + (random() - 0.5) * 0.06;
   });
+
+  return normalizeProfile(shape, feetPerMile);
 }
 
 /**
- * Rescales a recorded profile to the 0..1 the chart draws, so the lowest
- * point sits on the floor and the highest at the ceiling however tall the
- * ride was. A flat ride sits at the baseline rather than dividing by zero.
+ * Rescales a recorded profile to the share of the chart's height the ride has
+ * earned: its lowest point on the floor, its highest at the `relief` its
+ * climbing per mile buys. A ride that never changed altitude draws a level
+ * band at that height rather than dividing by zero.
  */
-export function normalizeProfile(altitudes: number[]): number[] {
+export function normalizeProfile(
+  altitudes: number[],
+  feetPerMile: number,
+): number[] {
+  const height = relief(feetPerMile);
   const finite = altitudes.filter((altitude) => Number.isFinite(altitude));
   const min = Math.min(...finite);
   const max = Math.max(...finite);
   const span = max - min;
   return altitudes.map((altitude) =>
-    span > 0 ? clamp((altitude - min) / span) : BASELINE,
+    span > 0 ? clamp((altitude - min) / span) * height : height,
   );
 }
