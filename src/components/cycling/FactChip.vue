@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LucideIcon from "./LucideIcon.vue";
+import LucideIcon from "@/components/LucideIcon.vue";
 import type { RideFact } from "@/activity/types";
 
 defineProps<{ fact: RideFact }>();

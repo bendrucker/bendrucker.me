@@ -7,6 +7,8 @@ import {
   format,
 } from "date-fns";
 import type { Repo } from "@/activity/types";
+import LucideIcon from "@/components/LucideIcon.vue";
+import ActivityTooltip from "./ActivityTooltip.vue";
 
 const props = defineProps<{
   repo: Repo;
@@ -127,13 +129,13 @@ function handleKeydown(e: KeyboardEvent) {
           >
             {{ repo.primaryLanguage.name }}
           </span>
-          <span
-            v-if="isNew"
-            class="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/20 px-2 py-1 text-xs font-bold text-green-600"
-            :title="createdTitle"
-          >
-            New!
-          </span>
+          <ActivityTooltip v-if="isNew" :label="createdTitle">
+            <span
+              class="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/20 px-2 py-1 text-xs font-bold text-green-600"
+            >
+              New!
+            </span>
+          </ActivityTooltip>
         </div>
         <p class="mb-3 line-clamp-2 text-sm text-foreground">
           {{ repo.description }}
@@ -141,133 +143,73 @@ function handleKeydown(e: KeyboardEvent) {
         <div
           class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-foreground/70"
         >
-          <a
+          <ActivityTooltip
             v-if="repo.activitySummary.prCount > 0"
-            :href="getGitHubSearchUrl('pr')"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
-            title="Pull requests authored"
+            label="Pull requests authored"
           >
-            <svg
-              class="h-4 w-4 flex-shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <a
+              :href="getGitHubSearchUrl('pr')"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <path d="M6 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-              <path d="M6 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-              <path d="M18 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-              <path d="M6 8l0 8" />
-              <path d="M11 6h5a2 2 0 0 1 2 2v8" />
-              <path d="M14 9l-3 -3l3 -3" />
-            </svg>
-            <span>{{ repo.activitySummary.prCount }}</span>
-          </a>
-          <a
+              <LucideIcon name="git-pull-request" class="flex-shrink-0" />
+              <span>{{ repo.activitySummary.prCount }}</span>
+            </a>
+          </ActivityTooltip>
+          <ActivityTooltip
             v-if="repo.activitySummary.reviewCount > 0"
-            :href="getGitHubSearchUrl('review')"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
-            title="Pull request reviews submitted"
+            label="Pull request reviews submitted"
           >
-            <svg
-              class="h-4 w-4 flex-shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <a
+              :href="getGitHubSearchUrl('review')"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <path
-                d="M9.615 20h-2.615a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8"
-              />
-              <path d="M14 19l2 2l4 -4" />
-              <path d="M9 8h4" />
-              <path d="M9 12h2" />
-            </svg>
-            <span>{{ repo.activitySummary.reviewCount }}</span>
-          </a>
-          <a
+              <LucideIcon name="file-check" class="flex-shrink-0" />
+              <span>{{ repo.activitySummary.reviewCount }}</span>
+            </a>
+          </ActivityTooltip>
+          <ActivityTooltip
             v-if="repo.activitySummary.mergeCount > 0"
-            :href="getGitHubSearchUrl('merge')"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
-            title="Pull requests merged"
+            label="Pull requests merged"
           >
-            <svg
-              class="h-4 w-4 flex-shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <a
+              :href="getGitHubSearchUrl('merge')"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <path d="M7 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-              <path d="M7 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-              <path d="M17 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-              <path d="M7 8l0 8" />
-              <path d="M7 8a4 4 0 0 0 4 4h4" />
-            </svg>
-            <span>{{ repo.activitySummary.mergeCount }}</span>
-          </a>
-          <a
+              <LucideIcon name="git-merge" class="flex-shrink-0" />
+              <span>{{ repo.activitySummary.mergeCount }}</span>
+            </a>
+          </ActivityTooltip>
+          <ActivityTooltip
             v-if="repo.activitySummary.issueCount > 0"
-            :href="getGitHubSearchUrl('issue')"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
-            title="Issues opened or commented"
+            label="Issues opened or commented"
           >
-            <svg
-              class="h-4 w-4 flex-shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+            <a
+              :href="getGitHubSearchUrl('issue')"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-              <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-            </svg>
-            <span>{{ repo.activitySummary.issueCount }}</span>
-          </a>
-          <a
-            v-if="repo.stargazerCount > 0"
-            :href="`${repo.url}/stargazers`"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
-            title="GitHub stars"
-          >
-            <svg
-              class="h-4 w-4 flex-shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              <LucideIcon name="circle-dot" class="flex-shrink-0" />
+              <span>{{ repo.activitySummary.issueCount }}</span>
+            </a>
+          </ActivityTooltip>
+          <ActivityTooltip v-if="repo.stargazerCount > 0" label="GitHub stars">
+            <a
+              :href="`${repo.url}/stargazers`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <path
-                d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"
-              />
-            </svg>
-            <span>{{ formatStarCount(repo.stargazerCount) }}</span>
-          </a>
+              <LucideIcon name="star" class="flex-shrink-0" />
+              <span>{{ formatStarCount(repo.stargazerCount) }}</span>
+            </a>
+          </ActivityTooltip>
         </div>
       </div>
       <div class="flex-shrink-0 text-sm text-foreground/60 sm:text-right">

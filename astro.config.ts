@@ -110,6 +110,32 @@ export default defineConfig({
     ssr: {
       external: ["node:fs", "node:path"],
     },
+    // reka-ui's dist lands in the SSR dep cache carrying its own copy of Vue
+    // while the @astrojs/vue renderer resolves Vue from source. Across two
+    // module instances the `currentRenderingInstance` that `renderSlot`
+    // dereferences is null, so any reka component throws and the dev response
+    // truncates mid-page. Excluding both puts them on one instance. Only
+    // `astro dev` prebundles, so the build and `wrangler dev` are unaffected.
+    //
+    // Islands wrapping reka still server-render empty under `astro dev`: it
+    // compiles them with SSR-optimized slots that reka's vdom-only dist
+    // cannot accept, and Vue's dev-only guard in `renderSlot` swaps in an
+    // empty slot. They hydrate normally, and the build renders them in full.
+    environments: {
+      ssr: {
+        optimizeDeps: {
+          exclude: [
+            "reka-ui",
+            "vue",
+            "@vue/runtime-core",
+            "@vue/runtime-dom",
+            "@vue/reactivity",
+            "@vue/shared",
+            "@vue/server-renderer",
+          ],
+        },
+      },
+    },
   },
   image: {
     responsiveStyles: true,
