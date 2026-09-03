@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import {
-  ToggleGroupItem,
-  ToggleGroupRoot,
-  TooltipContent,
-  TooltipPortal,
-  TooltipProvider,
-  TooltipRoot,
-  TooltipTrigger,
-} from "reka-ui";
+import { ToggleGroupItem, ToggleGroupRoot } from "reka-ui";
 import {
   OWNER_FILTERS,
   SORT_ORDERS,
@@ -16,6 +8,7 @@ import {
   type SortOrder,
 } from "@/activity/types";
 import ActivityIcon from "./ActivityIcon.vue";
+import ActivityTooltip from "./ActivityTooltip.vue";
 
 const SORT_LABELS: Record<SortOrder, string> = {
   recent: "Recent",
@@ -82,76 +75,56 @@ function resetFilters() {
 
 <template>
   <nav class="flex items-center gap-2" aria-label="Filter repositories">
-    <TooltipProvider>
-      <ToggleGroupRoot
-        type="single"
-        :model-value="filters.owner"
-        class="flex items-center gap-2"
-        @update:model-value="onOwnerChange"
+    <ToggleGroupRoot
+      type="single"
+      :model-value="filters.owner"
+      class="flex items-center gap-2"
+      @update:model-value="onOwnerChange"
+    >
+      <ToggleGroupItem
+        value="all"
+        :class="
+          filters.owner === 'all'
+            ? 'border-accent bg-accent text-background'
+            : 'border-border text-foreground hover:border-accent'
+        "
+        class="flex h-8 items-center rounded-full border px-3 text-sm font-medium transition-colors"
       >
+        All
+      </ToggleGroupItem>
+
+      <ActivityTooltip label="Personal repositories">
         <ToggleGroupItem
-          value="all"
+          value="personal"
+          aria-label="Personal repositories"
           :class="
-            filters.owner === 'all'
+            filters.owner === 'personal'
               ? 'border-accent bg-accent text-background'
               : 'border-border text-foreground hover:border-accent'
           "
-          class="flex h-8 items-center rounded-full border px-3 text-sm font-medium transition-colors"
+          class="flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
         >
-          All
+          <ActivityIcon name="user" />
+          <span class="hidden sm:inline">Personal</span>
         </ToggleGroupItem>
+      </ActivityTooltip>
 
-        <TooltipRoot>
-          <TooltipTrigger as-child>
-            <ToggleGroupItem
-              value="personal"
-              :class="
-                filters.owner === 'personal'
-                  ? 'border-accent bg-accent text-background'
-                  : 'border-border text-foreground hover:border-accent'
-              "
-              class="flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
-            >
-              <ActivityIcon name="user" />
-              <span class="hidden sm:inline">Personal</span>
-            </ToggleGroupItem>
-          </TooltipTrigger>
-          <TooltipPortal>
-            <TooltipContent
-              :side-offset="4"
-              class="z-10 rounded-lg border border-border bg-background px-2 py-1 text-xs shadow-lg"
-            >
-              Personal repositories
-            </TooltipContent>
-          </TooltipPortal>
-        </TooltipRoot>
-
-        <TooltipRoot>
-          <TooltipTrigger as-child>
-            <ToggleGroupItem
-              value="external"
-              :class="
-                filters.owner === 'external'
-                  ? 'border-accent bg-accent text-background'
-                  : 'border-border text-foreground hover:border-accent'
-              "
-              class="flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
-            >
-              <ActivityIcon name="users" />
-              <span class="hidden sm:inline">External</span>
-            </ToggleGroupItem>
-          </TooltipTrigger>
-          <TooltipPortal>
-            <TooltipContent
-              :side-offset="4"
-              class="z-10 rounded-lg border border-border bg-background px-2 py-1 text-xs shadow-lg"
-            >
-              External / organization repositories
-            </TooltipContent>
-          </TooltipPortal>
-        </TooltipRoot>
-      </ToggleGroupRoot>
-    </TooltipProvider>
+      <ActivityTooltip label="External / organization repositories">
+        <ToggleGroupItem
+          value="external"
+          aria-label="External / organization repositories"
+          :class="
+            filters.owner === 'external'
+              ? 'border-accent bg-accent text-background'
+              : 'border-border text-foreground hover:border-accent'
+          "
+          class="flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
+        >
+          <ActivityIcon name="users" />
+          <span class="hidden sm:inline">External</span>
+        </ToggleGroupItem>
+      </ActivityTooltip>
+    </ToggleGroupRoot>
     <span class="ml-auto flex items-center gap-1.5 text-xs text-foreground/50">
       <button
         v-if="hasActiveFilter"

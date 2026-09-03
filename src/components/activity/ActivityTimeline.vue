@@ -7,6 +7,7 @@ import {
   useMutationObserver,
 } from "@vueuse/core";
 import { computed, onMounted, ref, watch } from "vue";
+import { TooltipProvider } from "reka-ui";
 import { useActivityApi } from "./composables/useActivityApi";
 import type { Repo } from "@/activity/types";
 import FilterControls from "./FilterControls.vue";
@@ -185,45 +186,47 @@ useIntersectionObserver(
 </script>
 
 <template>
-  <div ref="rootRef" class="relative space-y-4">
-    <div
-      ref="headerRef"
-      class="sticky top-0 z-10 -mt-3 space-y-3 bg-background pt-3 pb-3 after:pointer-events-none after:absolute after:top-full after:right-0 after:left-0 after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']"
-    >
-      <FilterControls
-        :filters="state.filters"
-        :total="state.total"
-        :repo-count="state.repos.length"
-        @update:filters="updateFilters"
-      />
-      <LanguageBar
-        :languages="state.languages"
-        :selected-language="state.filters.language"
-        @select="selectLanguage"
+  <TooltipProvider>
+    <div ref="rootRef" class="relative space-y-4">
+      <div
+        ref="headerRef"
+        class="sticky top-0 z-10 -mt-3 space-y-3 bg-background pt-3 pb-3 after:pointer-events-none after:absolute after:top-full after:right-0 after:left-0 after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']"
+      >
+        <FilterControls
+          :filters="state.filters"
+          :total="state.total"
+          :repo-count="state.repos.length"
+          @update:filters="updateFilters"
+        />
+        <LanguageBar
+          :languages="state.languages"
+          :selected-language="state.filters.language"
+          @select="selectLanguage"
+        />
+      </div>
+
+      <div class="space-y-3">
+        <template v-for="item in reposWithDividers" :key="item.key">
+          <YearDivider v-if="item.type === 'divider'" :year="item.year" />
+          <RepoCard v-else :repo="item.repo" :username="username" />
+        </template>
+      </div>
+
+      <LoadingPulse v-if="state.loading" />
+
+      <p
+        v-if="!state.loading && state.repos.length === 0"
+        class="py-8 text-center text-muted"
+      >
+        No activity data available.
+      </p>
+
+      <TimelineRail
+        :years="state.years"
+        :current-year="state.currentYear"
+        :loaded-years="loadedYears"
+        @navigate="navigateToYear"
       />
     </div>
-
-    <div class="space-y-3">
-      <template v-for="item in reposWithDividers" :key="item.key">
-        <YearDivider v-if="item.type === 'divider'" :year="item.year" />
-        <RepoCard v-else :repo="item.repo" :username="username" />
-      </template>
-    </div>
-
-    <LoadingPulse v-if="state.loading" />
-
-    <p
-      v-if="!state.loading && state.repos.length === 0"
-      class="py-8 text-center text-muted"
-    >
-      No activity data available.
-    </p>
-
-    <TimelineRail
-      :years="state.years"
-      :current-year="state.currentYear"
-      :loaded-years="loadedYears"
-      @navigate="navigateToYear"
-    />
-  </div>
+  </TooltipProvider>
 </template>

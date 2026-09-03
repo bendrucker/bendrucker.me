@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from "vue";
+import { TooltipProvider } from "reka-ui";
 import { actions } from "astro:actions";
 import type { Repo, Language, YearCount, FilterState } from "@/activity/types";
 import { debounce } from "./composables/useActivityApi";
@@ -157,117 +158,119 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
-    <nav
-      class="flex items-center justify-between text-sm"
-      aria-label="Year navigation"
-    >
-      <a
-        v-if="prevYear"
-        :href="`/activity/code/${prevYear}`"
-        class="inline-flex items-center gap-1 text-accent hover:underline"
+  <TooltipProvider>
+    <div class="space-y-4">
+      <nav
+        class="flex items-center justify-between text-sm"
+        aria-label="Year navigation"
       >
-        <ActivityIcon name="arrow-left" />
-        {{ prevYear }}
-      </a>
-      <span v-else />
-      <a
-        href="/activity/code"
-        class="text-foreground/60 transition-colors hover:text-accent"
-      >
-        View in timeline
-      </a>
-      <a
-        v-if="nextYear"
-        :href="`/activity/code/${nextYear}`"
-        class="inline-flex items-center gap-1 text-accent hover:underline"
-      >
-        {{ nextYear }}
-        <ActivityIcon name="arrow-right" />
-      </a>
-      <span v-else />
-    </nav>
-
-    <div
-      class="sticky top-0 z-10 -mt-3 space-y-3 bg-background pt-3 pb-3 after:pointer-events-none after:absolute after:top-full after:right-0 after:left-0 after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']"
-    >
-      <FilterControls
-        :filters="state.filters"
-        :total="state.total"
-        :repo-count="state.repos.length"
-        year-page
-        @update:filters="updateFilters"
-      />
-      <LanguageBar
-        :languages="state.languages"
-        :selected-language="state.filters.language"
-        @select="selectLanguage"
-      />
-    </div>
-
-    <div class="space-y-3">
-      <RepoCard
-        v-for="repo in state.repos"
-        :key="`${repo.owner}/${repo.name}`"
-        :repo="repo"
-        :username="username"
-      />
-    </div>
-
-    <LoadingPulse v-if="state.loading" />
-
-    <p
-      v-if="!state.loading && state.repos.length === 0"
-      class="py-8 text-center text-muted"
-    >
-      No activity data for {{ year }}.
-    </p>
-
-    <nav
-      class="flex items-center justify-between border-t border-border pt-4 text-sm"
-      aria-label="Year navigation"
-    >
-      <a
-        v-if="prevYear"
-        :href="`/activity/code/${prevYear}`"
-        class="inline-flex flex-shrink-0 items-center gap-1 text-accent hover:underline"
-      >
-        <ActivityIcon name="arrow-left" />
-        {{ prevYear }}
-      </a>
-      <span v-else class="w-16" />
-      <div class="flex items-center gap-2">
-        <span v-if="hasNewerFooterYears" class="text-foreground/20">
-          <ActivityIcon name="ellipsis" />
-        </span>
         <a
-          v-for="y in footerYears"
-          :key="y.year"
-          :href="`/activity/code/${y.year}`"
-          :class="[
-            'rounded px-2 py-1 transition-colors',
-            y.year === year
-              ? 'bg-accent font-medium text-background'
-              : 'text-foreground/60 hover:text-accent',
-          ]"
-          :aria-current="y.year === year ? 'page' : undefined"
+          v-if="prevYear"
+          :href="`/activity/code/${prevYear}`"
+          class="inline-flex items-center gap-1 text-accent hover:underline"
         >
-          {{ y.year }}
-          <span class="text-xs opacity-60">({{ y.count }})</span>
+          <ActivityIcon name="arrow-left" />
+          {{ prevYear }}
         </a>
-        <span v-if="hasOlderFooterYears" class="text-foreground/20">
-          <ActivityIcon name="ellipsis" />
-        </span>
-      </div>
-      <a
-        v-if="nextYear"
-        :href="`/activity/code/${nextYear}`"
-        class="inline-flex flex-shrink-0 items-center gap-1 text-accent hover:underline"
+        <span v-else />
+        <a
+          href="/activity/code"
+          class="text-foreground/60 transition-colors hover:text-accent"
+        >
+          View in timeline
+        </a>
+        <a
+          v-if="nextYear"
+          :href="`/activity/code/${nextYear}`"
+          class="inline-flex items-center gap-1 text-accent hover:underline"
+        >
+          {{ nextYear }}
+          <ActivityIcon name="arrow-right" />
+        </a>
+        <span v-else />
+      </nav>
+
+      <div
+        class="sticky top-0 z-10 -mt-3 space-y-3 bg-background pt-3 pb-3 after:pointer-events-none after:absolute after:top-full after:right-0 after:left-0 after:h-6 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']"
       >
-        {{ nextYear }}
-        <ActivityIcon name="arrow-right" />
-      </a>
-      <span v-else class="w-16" />
-    </nav>
-  </div>
+        <FilterControls
+          :filters="state.filters"
+          :total="state.total"
+          :repo-count="state.repos.length"
+          year-page
+          @update:filters="updateFilters"
+        />
+        <LanguageBar
+          :languages="state.languages"
+          :selected-language="state.filters.language"
+          @select="selectLanguage"
+        />
+      </div>
+
+      <div class="space-y-3">
+        <RepoCard
+          v-for="repo in state.repos"
+          :key="`${repo.owner}/${repo.name}`"
+          :repo="repo"
+          :username="username"
+        />
+      </div>
+
+      <LoadingPulse v-if="state.loading" />
+
+      <p
+        v-if="!state.loading && state.repos.length === 0"
+        class="py-8 text-center text-muted"
+      >
+        No activity data for {{ year }}.
+      </p>
+
+      <nav
+        class="flex items-center justify-between border-t border-border pt-4 text-sm"
+        aria-label="Year navigation"
+      >
+        <a
+          v-if="prevYear"
+          :href="`/activity/code/${prevYear}`"
+          class="inline-flex flex-shrink-0 items-center gap-1 text-accent hover:underline"
+        >
+          <ActivityIcon name="arrow-left" />
+          {{ prevYear }}
+        </a>
+        <span v-else class="w-16" />
+        <div class="flex items-center gap-2">
+          <span v-if="hasNewerFooterYears" class="text-foreground/20">
+            <ActivityIcon name="ellipsis" />
+          </span>
+          <a
+            v-for="y in footerYears"
+            :key="y.year"
+            :href="`/activity/code/${y.year}`"
+            :class="[
+              'rounded px-2 py-1 transition-colors',
+              y.year === year
+                ? 'bg-accent font-medium text-background'
+                : 'text-foreground/60 hover:text-accent',
+            ]"
+            :aria-current="y.year === year ? 'page' : undefined"
+          >
+            {{ y.year }}
+            <span class="text-xs opacity-60">({{ y.count }})</span>
+          </a>
+          <span v-if="hasOlderFooterYears" class="text-foreground/20">
+            <ActivityIcon name="ellipsis" />
+          </span>
+        </div>
+        <a
+          v-if="nextYear"
+          :href="`/activity/code/${nextYear}`"
+          class="inline-flex flex-shrink-0 items-center gap-1 text-accent hover:underline"
+        >
+          {{ nextYear }}
+          <ActivityIcon name="arrow-right" />
+        </a>
+        <span v-else class="w-16" />
+      </nav>
+    </div>
+  </TooltipProvider>
 </template>
