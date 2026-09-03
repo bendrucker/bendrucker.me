@@ -1,22 +1,26 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { hasBasemap, tileUrl } from "./basemap";
-import { fitRoute } from "./geo";
-import type { Coordinate } from "@/activity/types";
+import { decodePolyline, fitRoute } from "./geo";
 
 const TILE_SIZE = 256;
 
 const props = defineProps<{
-  coordinates?: Coordinate[];
+  /** The ride's track as an encoded polyline. See `Ride.route`. */
+  route?: string;
   width: number;
   height: number;
   label?: string;
 }>();
 
-const hasRoute = computed(() => (props.coordinates?.length ?? 0) >= 2);
+const coordinates = computed(() =>
+  props.route ? decodePolyline(props.route) : [],
+);
+
+const hasRoute = computed(() => coordinates.value.length >= 2);
 
 const fitted = computed(() =>
-  fitRoute(props.coordinates ?? [], props.width, props.height),
+  fitRoute(coordinates.value, props.width, props.height),
 );
 
 const tiles = computed(() => (hasBasemap() ? fitted.value.tiles : []));

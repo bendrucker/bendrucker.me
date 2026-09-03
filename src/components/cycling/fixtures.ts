@@ -1,3 +1,4 @@
+import { encodePolyline, encodeProfile } from "@/activity/track";
 import { seededRandom, syntheticProfile } from "./profile";
 import type {
   Coordinate,
@@ -25,7 +26,7 @@ function syntheticRoute(
   center: Coordinate,
   radiusDegrees: number,
   points = 220,
-): Coordinate[] {
+): string {
   const random = seededRandom(seed);
   const harmonics = Array.from({ length: 4 }, (_, index) => ({
     frequency: index + 2,
@@ -34,18 +35,20 @@ function syntheticRoute(
   }));
   const lonScale = 1 / Math.cos((center[0] * Math.PI) / 180);
 
-  return Array.from({ length: points }, (_, index) => {
-    const angle = (index / (points - 1)) * Math.PI * 2;
-    const wobble = harmonics.reduce(
-      (sum, h) => sum + h.amplitude * Math.sin(h.frequency * angle + h.phase),
-      0,
-    );
-    const radius = radiusDegrees * (1 + wobble * 0.45);
-    return [
-      center[0] + radius * Math.sin(angle),
-      center[1] + radius * Math.cos(angle) * lonScale,
-    ] satisfies Coordinate;
-  });
+  return encodePolyline(
+    Array.from({ length: points }, (_, index) => {
+      const angle = (index / (points - 1)) * Math.PI * 2;
+      const wobble = harmonics.reduce(
+        (sum, h) => sum + h.amplitude * Math.sin(h.frequency * angle + h.phase),
+        0,
+      );
+      const radius = radiusDegrees * (1 + wobble * 0.45);
+      return [
+        center[0] + radius * Math.sin(angle),
+        center[1] + radius * Math.cos(angle) * lonScale,
+      ] satisfies Coordinate;
+    }),
+  );
 }
 
 function photos(rideId: string, count: number): RidePhoto[] {
@@ -65,9 +68,11 @@ function ride(
     photos: [],
     badges: [],
     facts: [],
-    elevationProfile: syntheticProfile(
-      overrides.id,
-      (overrides.elevationFt ?? 0) / (overrides.distanceMi ?? 1),
+    elevationProfile: encodeProfile(
+      syntheticProfile(
+        overrides.id,
+        (overrides.elevationFt ?? 0) / (overrides.distanceMi ?? 1),
+      ),
     ),
     ...overrides,
   };

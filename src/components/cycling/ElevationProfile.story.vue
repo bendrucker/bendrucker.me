@@ -4,14 +4,15 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import ElevationProfile from "./ElevationProfile.vue";
 import { bareRide, epicRide, raceRide } from "./fixtures";
+import { encodeProfile } from "@/activity/track";
 
-const sampleSets: Record<string, number[]> = {
-  hilly: epicRide.elevationProfile ?? [],
-  flat: raceRide.elevationProfile ?? [],
-  short: bareRide.elevationProfile ?? [],
-  one: [0.7],
-  two: [0.2, 0.85],
-  none: [],
+const sampleSets: Record<string, string> = {
+  hilly: epicRide.elevationProfile ?? "",
+  flat: raceRide.elevationProfile ?? "",
+  short: bareRide.elevationProfile ?? "",
+  one: encodeProfile([0.7]),
+  two: encodeProfile([0.2, 0.85]),
+  none: "",
 };
 
 const controls: StoryControlSet = {
@@ -44,7 +45,7 @@ function initState() {
     <Variant title="Elevation profile" :init-state="initState">
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
-        <ElevationProfile :samples="sampleSets[state.samples]!" />
+        <ElevationProfile :profile="sampleSets[state.samples]!" />
       </template>
 
       <template #controls="{ state }">
@@ -56,7 +57,7 @@ function initState() {
       <div class="relative overflow-hidden rounded-lg border border-border p-3">
         <ElevationProfile
           class="pointer-events-none absolute inset-x-0 bottom-0 h-12"
-          :samples="epicRide.elevationProfile ?? []"
+          :profile="epicRide.elevationProfile ?? ''"
         />
         <p class="relative text-[13px] font-bold">{{ epicRide.name }}</p>
         <p class="relative text-[11px] text-foreground/70">

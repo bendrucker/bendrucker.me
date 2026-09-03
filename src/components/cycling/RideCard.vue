@@ -35,7 +35,8 @@ const {
 
 const started = computed(() => rideDate(props.ride.startedAt));
 
-const hasRoute = computed(() => (props.ride.route?.length ?? 0) >= 2);
+// The feed sets a route only where it holds a line to draw.
+const hasRoute = computed(() => props.ride.route !== undefined);
 
 const metaLine = computed(() => {
   const { movingSeconds, averageWatts, companionCount } = props.ride;
@@ -61,7 +62,7 @@ const metaLine = computed(() => {
       class="flex items-center justify-center border-b border-border sm:border-r sm:border-b-0"
     >
       <RouteMap
-        :coordinates="ride.route"
+        :route="ride.route"
         :width="mapWidth"
         :height="mapHeight"
         :label="`Route map for ${ride.name}`"
@@ -70,8 +71,8 @@ const metaLine = computed(() => {
 
     <div class="relative min-w-0 p-3">
       <ElevationProfile
-        v-if="ride.elevationProfile?.length"
-        :samples="ride.elevationProfile"
+        v-if="ride.elevationProfile"
+        :profile="ride.elevationProfile"
         class="pointer-events-none absolute inset-x-0 bottom-0 h-12"
       />
 

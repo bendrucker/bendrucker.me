@@ -16,6 +16,8 @@ import { normalizeProfile } from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
 import {
   decodePolyline,
+  encodePolyline,
+  encodeProfile,
   MAX_PROFILE_SAMPLES,
   MAX_ROUTE_POINTS,
   thin,
@@ -268,12 +270,11 @@ function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
   if (row.elevationM !== null) ride.elevationFt = feet(row.elevationM);
   if (row.movingS !== null) ride.movingSeconds = Math.round(row.movingS);
   if (measuredWatts !== null) ride.averageWatts = measuredWatts;
-  if (route.length >= 2) ride.route = route;
+  if (route.length >= 2) ride.route = encodePolyline(route);
   if (profile !== null && profile.length > 0) {
-    ride.elevationProfile = thin(
-      normalizeProfile(profile),
-      MAX_PROFILE_SAMPLES,
-    ).map((sample) => Math.round(sample * 1000) / 1000);
+    ride.elevationProfile = encodeProfile(
+      thin(normalizeProfile(profile), MAX_PROFILE_SAMPLES),
+    );
   }
 
   return {

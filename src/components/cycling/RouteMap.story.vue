@@ -4,24 +4,24 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { bareRide, epicRide, everydayRide, raceRide } from "./fixtures";
 import RouteMap from "./RouteMap.vue";
-import type { Coordinate } from "@/activity/types";
+import { encodePolyline } from "@/activity/track";
 
-const routes: Record<string, Coordinate[]> = {
-  epic: epicRide.route ?? [],
-  everyday: everydayRide.route ?? [],
-  race: raceRide.route ?? [],
-  none: bareRide.route ?? [],
-  single: [[37.8991, -122.5253]],
-  transcontinental: [
+const routes: Record<string, string> = {
+  epic: epicRide.route ?? "",
+  everyday: everydayRide.route ?? "",
+  race: raceRide.route ?? "",
+  none: bareRide.route ?? "",
+  single: encodePolyline([[37.8991, -122.5253]]),
+  transcontinental: encodePolyline([
     [33.9416, -118.4085],
     [40.6413, -73.7781],
-  ],
-  antimeridian: [
+  ]),
+  antimeridian: encodePolyline([
     [-16.9, 179.88],
     [-16.92, 179.96],
     [-16.94, -179.96],
     [-16.95, -179.9],
-  ],
+  ]),
 };
 
 const sizes = [
@@ -65,7 +65,7 @@ function initState() {
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
         <RouteMap
-          :coordinates="routes[state.route]!"
+          :route="routes[state.route]!"
           :width="state.width"
           :height="state.height"
           label="Route map"
@@ -81,7 +81,7 @@ function initState() {
       <div class="flex flex-wrap items-end gap-4">
         <figure v-for="size in sizes" :key="size.label" class="space-y-1">
           <RouteMap
-            :coordinates="epicRide.route"
+            :route="epicRide.route"
             :width="size.width"
             :height="size.height"
             :label="`Route map for ${epicRide.name}`"

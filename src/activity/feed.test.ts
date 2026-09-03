@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 import type { Kysely } from "kysely";
 import { activity as fixture } from "@/components/cycling/fixtures";
 import { decodePolyline } from "@/components/cycling/geo";
+import { decodeProfile } from "@/components/cycling/profile";
 import type { Database } from "@/db";
 import { createTestDb, testStore } from "@/test/db";
 import {
@@ -183,13 +184,15 @@ describe("queryCyclingActivity", () => {
     );
 
     const [ride1] = (await queryCyclingActivity(db, NOW)).months[0]!.rides;
+    const route = decodePolyline(ride1!.route!);
+    const profile = decodeProfile(ride1!.elevationProfile!);
     expect(full.length).toBe(1200);
-    expect(ride1!.route!.length).toBeLessThanOrEqual(301);
-    expect(ride1!.route![0]).toEqual(full[0]);
-    expect(ride1!.route!.at(-1)).toEqual(full.at(-1));
-    expect(ride1!.elevationProfile!.length).toBeLessThanOrEqual(101);
-    expect(ride1!.elevationProfile![0]).toBe(0);
-    expect(ride1!.elevationProfile!.at(-1)).toBe(1);
+    expect(route.length).toBeLessThanOrEqual(301);
+    expect(route[0]).toEqual(full[0]);
+    expect(route.at(-1)).toEqual(full.at(-1));
+    expect(profile.length).toBeLessThanOrEqual(101);
+    expect(profile[0]).toBe(0);
+    expect(profile.at(-1)).toBe(1);
   });
 
   it("falls back to UTC for a timezone the runtime does not know", async () => {
@@ -252,7 +255,12 @@ describe("queryCyclingActivity", () => {
     expect(byId.get("plain")).not.toHaveProperty("elevationProfile");
     expect(byId.get("plain")!.photos).toEqual([]);
 
-    expect(byId.get("full")!.elevationProfile).toEqual([0, 0.5, 1, 0]);
+    const profile = decodeProfile(byId.get("full")!.elevationProfile!);
+    expect(profile[0]).toBe(0);
+    // The midpoint lands on the nearest of the 256 levels a sample encodes to.
+    expect(profile[1]).toBeCloseTo(0.5, 2);
+    expect(profile[2]).toBe(1);
+    expect(profile[3]).toBe(0);
     expect(byId.get("full")!.photos).toEqual([
       {
         id: "raw/strava/activities/1/photos/a.jpg",
@@ -274,9 +282,10 @@ describe("queryCyclingActivity", () => {
 
     const [mapped] = (await queryCyclingActivity(db, NOW)).months[0]!.rides;
 
-    expect(mapped!.route).toHaveLength(3);
-    expect(mapped!.route![0]![0]).toBeCloseTo(38.5, 5);
-    expect(mapped!.route![0]![1]).toBeCloseTo(-120.2, 5);
+    const route = decodePolyline(mapped!.route!);
+    expect(route).toHaveLength(3);
+    expect(route[0]![0]).toBeCloseTo(38.5, 5);
+    expect(route[0]![1]).toBeCloseTo(-120.2, 5);
     expect(mapped!.stravaUrl).toBe("https://www.strava.com/activities/mapped");
   });
 
