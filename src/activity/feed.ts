@@ -7,6 +7,7 @@ import { sql, type Kysely, type Selectable } from "kysely";
 import { z } from "zod";
 import {
   formatMonthKey,
+  formatMonthShort,
   metersToFeet,
   metersToMiles,
   monthKeyOf,
@@ -97,12 +98,14 @@ const POWER_LADDER = [
 
 const POWER_NOTE = "from rides with a power meter";
 
-const LONGEST: RideBadge = { kind: "longest", icon: "ruler", label: "longest" };
-const MOST_CLIMBING: RideBadge = {
+// Scoped per month where they are awarded, so the badge can say which month it
+// won rather than leaving "longest" to read as all time.
+const LONGEST = { kind: "longest", icon: "ruler", label: "longest" } as const;
+const MOST_CLIMBING = {
   kind: "most-climbing",
   icon: "trending-up",
   label: "most climbing",
-};
+} as const;
 
 const elevationProfile = z.array(z.number());
 const photoKeys = z.array(z.string());
@@ -347,7 +350,7 @@ function groupMonths(entries: readonly Entry[]): Month[] {
 
   return [...byKey.entries()].map(([key, members]) => {
     const carded = members.filter((entry) => !entry.commute);
-    const highlights = highlightMonth(carded);
+    const highlights = highlightMonth(carded, formatMonthShort(key));
     const stats = {
       key,
       label: formatMonthKey(key),
@@ -372,7 +375,7 @@ function groupMonths(entries: readonly Entry[]): Month[] {
  * it earns neither. Where one ride is both, it is highlighted once, for its
  * length.
  */
-function highlightMonth(carded: readonly Entry[]): Highlight[] {
+function highlightMonth(carded: readonly Entry[], scope: string): Highlight[] {
   if (carded.length < 2) return [];
 
   const longest = best(carded, (entry) => entry.ride.distanceMi);
@@ -380,17 +383,15 @@ function highlightMonth(carded: readonly Entry[]): Highlight[] {
   const highlights: Highlight[] = [];
 
   if (longest) {
-    longest.ride.badges.push(LONGEST);
-    highlights.push({ ride: longest.ride, badge: LONGEST, metric: "distance" });
+    const badge: RideBadge = { ...LONGEST, scope };
+    longest.ride.badges.push(badge);
+    highlights.push({ ride: longest.ride, badge, metric: "distance" });
   }
   if (hilliest) {
-    hilliest.ride.badges.push(MOST_CLIMBING);
+    const badge: RideBadge = { ...MOST_CLIMBING, scope };
+    hilliest.ride.badges.push(badge);
     if (hilliest !== longest) {
-      highlights.push({
-        ride: hilliest.ride,
-        badge: MOST_CLIMBING,
-        metric: "elevation",
-      });
+      highlights.push({ ride: hilliest.ride, badge, metric: "elevation" });
     }
   }
   return highlights;
