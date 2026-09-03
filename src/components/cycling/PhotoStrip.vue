@@ -9,15 +9,19 @@ defineEmits<{ open: [index: number] }>();
 const strip = useTemplateRef<HTMLElement>("strip");
 
 /**
- * Whether the row runs past its own edge. The fade is painted only then: a
- * thumbnail that happens to end inside the gradient would otherwise dim with
- * nothing hidden behind it.
+ * Whether photos are still hidden past the trailing edge. The fade is painted
+ * only then: a thumbnail that ends inside the gradient, because the row fits or
+ * because it has been scrolled to its end, would dim with nothing behind it.
  */
 const clipped = ref(false);
 
 function measure() {
   const element = strip.value;
-  if (element) clipped.value = element.scrollWidth > element.clientWidth;
+  if (!element) return;
+  // A pixel of slack, since the two widths round independently and a row that
+  // fits exactly can report a stray pixel of overflow at some zoom levels.
+  clipped.value =
+    element.scrollWidth - element.clientWidth - element.scrollLeft > 1;
 }
 
 watch(strip, (element, _previous, onCleanup) => {
@@ -38,6 +42,7 @@ watch(() => props.photos.length, measure, { flush: "post" });
     ref="strip"
     class="strip flex gap-1.5 overflow-x-auto"
     :class="{ clipped }"
+    @scroll.passive="measure"
   >
     <li v-for="(photo, index) in photos" :key="photo.id" class="shrink-0">
       <button

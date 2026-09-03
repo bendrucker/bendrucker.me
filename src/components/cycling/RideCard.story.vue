@@ -88,7 +88,7 @@ function initState() {
 One ride as it appears in the log.
 
 Every case the card has to survive is a control rather than a variant. The
-crowded ride is a long name with three badges and four photos, the bare ride has
-no route, photos or badges, and the last entry drops the elevation stream.
+crowded ride is a long name with three badges and twelve photos, the bare ride
+has no route, photos or badges, and the last entry drops the elevation stream.
 Narrow the card width to the phone column the log actually renders in.
 </docs>

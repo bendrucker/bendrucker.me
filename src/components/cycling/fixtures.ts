@@ -162,7 +162,7 @@ export const bareRide: Ride = ride({
 
 /**
  * Long name, a full set of annotations, and more photos than a strip can
- * show. Exercises overflow and wrapping in one ride.
+ * show. Exercises the wrapping name and the clipped photo row in one ride.
  */
 export const crowdedRide: Ride = ride({
   id: "19090081916",
