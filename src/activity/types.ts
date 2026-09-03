@@ -82,8 +82,17 @@ export interface RidePhoto {
   alt: string;
 }
 
-export type RideBadgeKind =
-  "new-climb" | "new-location" | "longest" | "most-climbing" | "race";
+// The log page's wire schema builds its enum from this array, so the schema
+// and the type cannot drift apart.
+export const badgeKinds = [
+  "new-climb",
+  "new-location",
+  "longest",
+  "most-climbing",
+  "race",
+] as const;
+
+export type RideBadgeKind = (typeof badgeKinds)[number];
 
 /** Lucide icons the cycling and activity components draw on. See `LucideIcon.vue`. */
 export const iconNames = [
@@ -248,4 +257,15 @@ export interface CyclingActivityData {
   highlightMonths: HighlightMonth[];
   /** In display order. The first is what an unknown period falls back to. */
   records: RecordPeriod[];
+  /**
+   * The month the log's next page loads before, exclusive. Null once the log
+   * reaches the first ride.
+   */
+  logCursor: string | null;
+}
+
+/** One older page of the log, fetched as the reader scrolls back. */
+export interface LogPage {
+  months: MonthGroup[];
+  logCursor: string | null;
 }

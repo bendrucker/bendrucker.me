@@ -24,9 +24,23 @@ const severalYears = [
   "2024-10",
 ].map((key) => ({ key, label: formatMonthKey(key) }));
 
+// What the log looks like once it has been scrolled all the way back: thirteen
+// years, most of them ridden in a season. This is the case the year collapse
+// exists for.
+const fullHistory: { key: string; label: string }[] = [];
+for (let year = 2026; year >= 2013; year--) {
+  const first = year === 2026 ? 7 : 11;
+  const last = year === 2013 ? 8 : 3;
+  for (let month = first; month >= last; month--) {
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    fullHistory.push({ key, label: formatMonthKey(key) });
+  }
+}
+
 const monthSets: Record<string, { key: string; label: string }[]> = {
   season,
   severalYears,
+  fullHistory,
   single: season.slice(0, 1),
   none: [],
 };
@@ -34,6 +48,7 @@ const monthSets: Record<string, { key: string; label: string }[]> = {
 const monthOptions = {
   season: "one season",
   severalYears: "several years",
+  fullHistory: "2013 to now",
   single: "a single month",
   none: "no months",
 };
@@ -111,9 +126,15 @@ function initState() {
 
 The fixed month index down the side of the log.
 
+Only the year being read opens into its months. Every other year is one row, so
+thirteen seasons fit a column twelve pixels wide instead of a hundred and fifty
+buttons. Clicking a collapsed year jumps to its newest month, which opens it.
+
 Scroll spy is the real thing: scroll the frame and watch the active month track
-the sections. Fixed state pins the active month instead, which is how the empty
-and single-month cases are easiest to read.
+the sections. Load "2013 to now" there and scroll a long way to see the rail
+collapse and re-open, and the active button scroll itself back into the rail.
+Fixed state pins the active month instead, which is how the empty and
+single-month cases are easiest to read.
 
 The rail is `hidden sm:flex`, so it renders nothing below 640px. This story
 keeps the responsive preview rather than fitting the pane, since a phone-width

@@ -8,7 +8,9 @@ import {
   formatElevation,
   formatMonthKey,
   formatSpeed,
+  monthAfter,
   monthKeyOf,
+  monthsBefore,
   speedUnit,
 } from "./format";
 
@@ -103,5 +105,31 @@ describe("month keys", () => {
 
   it("derives a key from a start time", () => {
     expect(monthKeyOf("2026-07-11T07:42:00")).toBe("2026-07");
+  });
+});
+
+describe("monthAfter", () => {
+  it("steps to the next month", () => {
+    expect(monthAfter("2026-07")).toBe("2026-08");
+  });
+
+  it("rolls the year over past december", () => {
+    expect(monthAfter("2026-12")).toBe("2027-01");
+  });
+});
+
+describe("monthsBefore", () => {
+  it("steps back within a year", () => {
+    expect(monthsBefore("2026-07", 6)).toBe("2026-01");
+  });
+
+  it("rolls the year back past january", () => {
+    expect(monthsBefore("2026-01", 1)).toBe("2025-12");
+    expect(monthsBefore("2026-05", 12)).toBe("2025-05");
+    expect(monthsBefore("2026-02", 25)).toBe("2024-01");
+  });
+
+  it("returns the month itself for no steps", () => {
+    expect(monthsBefore("2026-07", 0)).toBe("2026-07");
   });
 });

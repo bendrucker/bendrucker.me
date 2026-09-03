@@ -8,6 +8,7 @@ import PrsView from "./PrsView.vue";
 import SegmentedControl from "./SegmentedControl.vue";
 import type { CyclingActivityData, Ride } from "@/activity/types";
 import type { SegmentedOption, Units, ViewMode } from "./types";
+import { useLogPages } from "./useLogPages";
 import { provideUnits } from "./useUnits";
 import YearSummary from "./YearSummary.vue";
 
@@ -41,6 +42,17 @@ function selectUnits(value: string) {
   const next = UNITS.find((option) => option.value === value);
   if (next) units.value = next.value;
 }
+
+// The log grows past what the page rendered, so its months live in local
+// state. The highlights stay at the initial window: a highlights view whose
+// length depends on how far the log scrolled is not one worth having.
+const {
+  months: logMonths,
+  hasMore,
+  loading,
+  failed,
+  loadMore,
+} = useLogPages(props.data.months, props.data.logCursor);
 
 const periods = computed(() => props.data.records.map((entry) => entry.period));
 
@@ -110,8 +122,12 @@ watch([mode, () => props.data], () => {
     <div role="region" :aria-label="`${modeLabel} view`">
       <LogView
         v-if="mode === 'log'"
-        :months="data.months"
+        :months="logMonths"
+        :has-more="hasMore"
+        :loading="loading"
+        :failed="failed"
         @open-photo="openPhoto"
+        @load-more="loadMore"
       />
       <HighlightsView
         v-else-if="mode === 'highlights'"

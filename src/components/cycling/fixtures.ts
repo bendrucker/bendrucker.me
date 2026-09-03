@@ -509,4 +509,7 @@ export const activity: CyclingActivityData = {
     { period: "2026", lists: rankedLists, powerBests },
     { period: "2025", lists: rankedLists2025, powerBests: powerBests2025 },
   ],
+  // The fixtures are one window of the log and nothing older, so there is
+  // nothing for a story to page back to.
+  logCursor: null,
 };
