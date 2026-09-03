@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, watch } from "vue";
 import { actions } from "astro:actions";
 import type { Repo, Language, YearCount, FilterState } from "@/activity/types";
 import { debounce } from "./composables/useActivityApi";
+import ActivityIcon from "./ActivityIcon.vue";
 import FilterControls from "./FilterControls.vue";
 import LanguageBar from "./LanguageBar.vue";
 import RepoCard from "./RepoCard.vue";
@@ -164,9 +165,10 @@ onMounted(() => {
       <a
         v-if="prevYear"
         :href="`/activity/code/${prevYear}`"
-        class="text-accent hover:underline"
+        class="inline-flex items-center gap-1 text-accent hover:underline"
       >
-        &larr; {{ prevYear }}
+        <ActivityIcon name="arrow-left" />
+        {{ prevYear }}
       </a>
       <span v-else />
       <a
@@ -178,9 +180,10 @@ onMounted(() => {
       <a
         v-if="nextYear"
         :href="`/activity/code/${nextYear}`"
-        class="text-accent hover:underline"
+        class="inline-flex items-center gap-1 text-accent hover:underline"
       >
-        {{ nextYear }} &rarr;
+        {{ nextYear }}
+        <ActivityIcon name="arrow-right" />
       </a>
       <span v-else />
     </nav>
@@ -227,15 +230,16 @@ onMounted(() => {
       <a
         v-if="prevYear"
         :href="`/activity/code/${prevYear}`"
-        class="flex-shrink-0 text-accent hover:underline"
+        class="inline-flex flex-shrink-0 items-center gap-1 text-accent hover:underline"
       >
-        &larr; {{ prevYear }}
+        <ActivityIcon name="arrow-left" />
+        {{ prevYear }}
       </a>
       <span v-else class="w-16" />
       <div class="flex items-center gap-2">
-        <span v-if="hasNewerFooterYears" class="text-foreground/20"
-          >&hellip;</span
-        >
+        <span v-if="hasNewerFooterYears" class="text-foreground/20">
+          <ActivityIcon name="ellipsis" />
+        </span>
         <a
           v-for="y in footerYears"
           :key="y.year"
@@ -251,16 +255,17 @@ onMounted(() => {
           {{ y.year }}
           <span class="text-xs opacity-60">({{ y.count }})</span>
         </a>
-        <span v-if="hasOlderFooterYears" class="text-foreground/20"
-          >&hellip;</span
-        >
+        <span v-if="hasOlderFooterYears" class="text-foreground/20">
+          <ActivityIcon name="ellipsis" />
+        </span>
       </div>
       <a
         v-if="nextYear"
         :href="`/activity/code/${nextYear}`"
-        class="flex-shrink-0 text-accent hover:underline"
+        class="inline-flex flex-shrink-0 items-center gap-1 text-accent hover:underline"
       >
-        {{ nextYear }} &rarr;
+        {{ nextYear }}
+        <ActivityIcon name="arrow-right" />
       </a>
       <span v-else class="w-16" />
     </nav>
