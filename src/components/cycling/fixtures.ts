@@ -165,7 +165,10 @@ export const bareRide: Ride = ride({
   movingSeconds: 1442,
 });
 
-/** Long name plus a full set of annotations, for overflow and wrapping. */
+/**
+ * Long name, a full set of annotations, and more photos than a strip can
+ * show. Exercises the wrapping name and the clipped photo row in one ride.
+ */
 export const crowdedRide: Ride = ride({
   id: "19090081916",
   name: "SFCC Anniversary Ride: Paradise Loop, Camino Alto, and the long way home",
@@ -177,7 +180,7 @@ export const crowdedRide: Ride = ride({
   averageWatts: 201,
   companionCount: 12,
   route: syntheticRoute("19090081916", MARIN, 0.09, 240),
-  photos: photos("19090081916", 4),
+  photos: photos("19090081916", 12),
   badges: [
     { kind: "new-climb", icon: "mountain", label: "mount vision" },
     { kind: "longest", icon: "ruler", label: "longest", scope: "jun" },
