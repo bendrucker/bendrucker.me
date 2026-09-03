@@ -1,4 +1,9 @@
-import { onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
+import {
+  useEventListener,
+  useIntersectionObserver,
+  useResizeObserver,
+} from "@vueuse/core";
+import { computed, ref, watch, type Ref } from "vue";
 
 /** A band across the upper third of the viewport. A section becomes active once
  * its top reaches the band rather than when it first appears. */
@@ -31,14 +36,29 @@ export function useScrollSpy(
   options: { rootMargin?: string; root?: Ref<HTMLElement | null> } = {},
 ): Ref<string | null> {
   const activeKey = ref<string | null>(null);
-  const sections = new Map<Element, string>();
-  const intersecting = new Set<Element>();
-  let observer: IntersectionObserver | null = null;
+  const intersecting = new Set<HTMLElement>();
+
+  // Watching content rather than identity, so a caller that mutates the array
+  // in place is tracked and one that rebuilds an identical array is not.
+  const sections = computed(() => {
+    const wanted = new Set(keys.value);
+    const scope = options.root?.value ?? document;
+    const map = new Map<HTMLElement, string>();
+    for (const element of scope.querySelectorAll<HTMLElement>(
+      "[data-month-key]",
+    )) {
+      const key = element.dataset.monthKey;
+      if (!key || !wanted.has(key)) continue;
+      map.set(element, key);
+    }
+    return map;
+  });
+  const sectionElements = () => [...sections.value.keys()];
 
   function selectActive() {
     // Positions are read live rather than taken from the entries, because an
     // entry only records where its section sat when its visibility changed.
-    const measured = [...sections]
+    const measured = [...sections.value]
       .map(([element, key]) => ({
         element,
         key,
@@ -61,51 +81,42 @@ export function useScrollSpy(
     activeKey.value = passed?.key ?? measured[0]?.key ?? null;
   }
 
-  function observe() {
-    observer?.disconnect();
-    sections.clear();
-    intersecting.clear();
+  // A section dropped from `keys` should stop counting as intersecting, even
+  // though the observer that reported it has already been replaced. Flushed
+  // post-render so this reads `sections` no earlier than the DOM-scoped
+  // watchers below do, since a computed caches whichever DOM state it was
+  // first read against.
+  watch(
+    sections,
+    (current) => {
+      for (const element of intersecting) {
+        if (!current.has(element)) intersecting.delete(element);
+      }
+    },
+    { flush: "post" },
+  );
 
-    observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!sections.has(entry.target)) continue;
-          if (entry.isIntersecting) intersecting.add(entry.target);
-          else intersecting.delete(entry.target);
-        }
-        selectActive();
-      },
-      { rootMargin: options.rootMargin ?? DEFAULT_ROOT_MARGIN },
-    );
+  useIntersectionObserver(
+    sectionElements,
+    (entries) => {
+      for (const entry of entries) {
+        if (!(entry.target instanceof HTMLElement)) continue;
+        if (!sections.value.has(entry.target)) continue;
+        if (entry.isIntersecting) intersecting.add(entry.target);
+        else intersecting.delete(entry.target);
+      }
+      selectActive();
+    },
+    { rootMargin: options.rootMargin ?? DEFAULT_ROOT_MARGIN },
+  );
 
-    const wanted = new Set(keys.value);
-    const scope = options.root?.value ?? document;
-    for (const element of scope.querySelectorAll<HTMLElement>(
-      "[data-month-key]",
-    )) {
-      const key = element.dataset.monthKey;
-      if (!key || !wanted.has(key)) continue;
-      sections.set(element, key);
-      observer.observe(element);
-    }
-  }
+  // Resizing reflows the sections without crossing the band, so the observer
+  // stays quiet while the active section moves out from under it.
+  useEventListener("resize", selectActive);
 
-  onMounted(() => {
-    observe();
-    // Resizing reflows the sections without crossing the band, so the observer
-    // stays quiet while the active section moves out from under it.
-    window.addEventListener("resize", selectActive);
-  });
-
-  // Watching content rather than identity, so a caller that mutates the array
-  // in place is tracked and one that rebuilds an identical array is not.
-  watch(() => keys.value.join("\n"), observe, { flush: "post" });
-
-  onBeforeUnmount(() => {
-    window.removeEventListener("resize", selectActive);
-    observer?.disconnect();
-    observer = null;
-  });
+  // A section can also reflow on its own: an image finishing load, a section
+  // expanding, a font swapping in. None of those cross a window resize.
+  useResizeObserver(sectionElements, selectActive);
 
   return activeKey;
 }

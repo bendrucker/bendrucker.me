@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import {
+  useElementSize,
+  useIntersectionObserver,
+  useInfiniteScroll,
+  useMutationObserver,
+} from "@vueuse/core";
+import { computed, onMounted, ref, watch } from "vue";
 import { useActivityApi } from "./composables/useActivityApi";
 import type { Repo } from "@/activity/types";
 import FilterControls from "./FilterControls.vue";
@@ -27,8 +33,6 @@ const { state, fetchRepos, fetchLanguages, fetchYears, prefetchNext } =
 
 const rootRef = ref<HTMLDivElement | null>(null);
 const headerRef = ref<HTMLDivElement | null>(null);
-const sentinelRef = ref<HTMLDivElement | null>(null);
-let observer: IntersectionObserver | null = null;
 
 const calendarYear = new Date().getFullYear();
 
@@ -82,70 +86,64 @@ function navigateToYear(year: number) {
 
 onMounted(() => {
   state.currentYear = calendarYear;
-
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting && !state.loading && state.hasMore) {
-        fetchRepos();
-      }
-    },
-    { rootMargin: "200px" },
-  );
-
-  if (sentinelRef.value) {
-    observer.observe(sentinelRef.value);
-  }
-
   prefetchNext();
   fetchLanguages();
   fetchYears();
-
-  const headerHeight = headerRef.value?.offsetHeight ?? 0;
-  rootRef.value?.style.setProperty("--header-height", `${headerHeight}px`);
-
-  const yearObserver = new IntersectionObserver(
-    (entries) => {
-      let maxYear = -Infinity;
-      for (const entry of entries) {
-        if (!(entry.target instanceof HTMLElement)) continue;
-        const year = Number(entry.target.dataset.year);
-        if (!year) continue;
-
-        let candidate: number;
-        if (entry.isIntersecting) {
-          candidate = year;
-        } else if (entry.boundingClientRect.top > 0) {
-          candidate = year + 1;
-        } else {
-          continue;
-        }
-
-        if (candidate > maxYear) maxYear = candidate;
-      }
-      if (maxYear > -Infinity) state.currentYear = maxYear;
-    },
-    { rootMargin: `-${headerHeight}px 0px -50% 0px` },
-  );
-
-  const root = rootRef.value;
-  const observe = () => {
-    root
-      ?.querySelectorAll("[data-year]")
-      .forEach((el) => yearObserver.observe(el));
-  };
-
-  observe();
-  const mo = new MutationObserver(observe);
-  if (root) {
-    mo.observe(root, { childList: true, subtree: true });
-  }
-
-  onUnmounted(() => {
-    observer?.disconnect();
-    yearObserver.disconnect();
-    mo.disconnect();
-  });
 });
+
+useInfiniteScroll(window, () => fetchRepos(), {
+  distance: 200,
+  canLoadMore: () => state.hasMore,
+});
+
+const { height: headerHeight } = useElementSize(headerRef);
+
+watch(
+  headerHeight,
+  (height) => {
+    rootRef.value?.style.setProperty("--header-height", `${height}px`);
+  },
+  { immediate: true },
+);
+
+// [data-year] dividers are added as more repos load, so this re-collects them
+// whenever the root's subtree changes rather than only once at mount.
+const yearElements = ref<HTMLElement[]>([]);
+function collectYearElements() {
+  yearElements.value = rootRef.value
+    ? [...rootRef.value.querySelectorAll<HTMLElement>("[data-year]")]
+    : [];
+}
+watch(rootRef, collectYearElements, { immediate: true, flush: "post" });
+useMutationObserver(rootRef, collectYearElements, {
+  childList: true,
+  subtree: true,
+});
+
+useIntersectionObserver(
+  yearElements,
+  (entries) => {
+    let maxYear = -Infinity;
+    for (const entry of entries) {
+      if (!(entry.target instanceof HTMLElement)) continue;
+      const year = Number(entry.target.dataset.year);
+      if (!year) continue;
+
+      let candidate: number;
+      if (entry.isIntersecting) {
+        candidate = year;
+      } else if (entry.boundingClientRect.top > 0) {
+        candidate = year + 1;
+      } else {
+        continue;
+      }
+
+      if (candidate > maxYear) maxYear = candidate;
+    }
+    if (maxYear > -Infinity) state.currentYear = maxYear;
+  },
+  { rootMargin: () => `-${headerHeight.value}px 0px -50% 0px` },
+);
 </script>
 
 <template>
@@ -175,8 +173,6 @@ onMounted(() => {
     </div>
 
     <LoadingPulse v-if="state.loading" />
-
-    <div ref="sentinelRef" class="h-1" />
 
     <p
       v-if="!state.loading && state.repos.length === 0"
