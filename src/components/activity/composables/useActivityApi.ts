@@ -1,15 +1,17 @@
-import { reactive, watch } from "vue";
+import { refDebounced, useDebounceFn } from "@vueuse/core";
+import { computed, reactive, watch } from "vue";
 import { actions } from "astro:actions";
 import type { Repo, ActivityState } from "@/activity/types";
 
+// `useDebounceFn` returns a promisified wrapper. Callers here fire and forget,
+// so this keeps the original signature by discarding that promise.
 export function debounce<A extends unknown[]>(
   fn: (...args: A) => void,
   ms: number,
 ): (...args: A) => void {
-  let timer: ReturnType<typeof setTimeout>;
+  const debounced = useDebounceFn(fn, ms);
   return (...args: A) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
+    debounced(...args);
   };
 }
 
@@ -151,23 +153,26 @@ export function useActivityApi(
     });
   }
 
-  const debouncedReset = debounce(() => {
+  function refresh() {
     resetAndFetch();
     fetchLanguages();
     fetchYears();
-  }, 300);
+  }
+
+  // Only the search box benefits from waiting out keystrokes, so its value is
+  // debounced separately and the immediate watch below defers to it whenever
+  // search is part of the change.
+  const debouncedSearch = refDebounced(
+    computed(() => state.filters.search),
+    300,
+  );
+  watch(debouncedSearch, refresh);
 
   watch(
     () => ({ ...state.filters }),
     (newVal, oldVal) => {
       const searchChanged = oldVal && newVal.search !== oldVal.search;
-      if (searchChanged) {
-        debouncedReset();
-      } else {
-        resetAndFetch();
-        fetchLanguages();
-        fetchYears();
-      }
+      if (!searchChanged) refresh();
     },
     { deep: true },
   );
