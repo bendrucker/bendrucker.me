@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "reka-ui";
 import { computed, watch } from "vue";
+import PhotoCarousel from "./PhotoCarousel.vue";
 import StravaLink from "./StravaLink.vue";
 import type { RidePhoto } from "@/activity/types";
 
@@ -59,7 +60,7 @@ const photo = computed<RidePhoto | undefined>(
 
 const instructions = computed(() =>
   count.value > 1
-    ? `Photo gallery with ${count.value} photos. Use the left and right arrow keys to move between them.`
+    ? `Photo gallery with ${count.value} photos. Swipe, or use the left and right arrow keys, to move between them.`
     : "A single photo from this ride.",
 );
 
@@ -94,8 +95,10 @@ function onKeydown(event: KeyboardEvent) {
   <DialogRoot :open="open && count > 0" @update:open="onOpenChange">
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-50 bg-background/95" />
+      <!-- The whole viewport, so a photo is as large as the screen allows.
+           Capping the width left a postage stamp on a wide display. -->
       <DialogContent
-        class="fixed inset-x-4 top-1/2 z-50 mx-auto flex w-fit max-w-3xl -translate-y-1/2 flex-col gap-2"
+        class="fixed inset-0 z-50 flex flex-col outline-none"
         @keydown="onKeydown"
       >
         <DialogTitle class="sr-only">{{ rideName }}</DialogTitle>
@@ -103,39 +106,15 @@ function onKeydown(event: KeyboardEvent) {
           {{ instructions }}
         </DialogDescription>
 
-        <div class="relative">
-          <!-- Deliberately unkeyed. Remounting collapses the `w-fit` box while
-               the next photo loads, moving the arrow buttons under the pointer. -->
-          <img
-            v-if="photo"
-            :src="photo.fullUrl"
-            :alt="photo.alt"
-            decoding="async"
-            class="max-h-[75vh] max-w-full rounded-lg border border-border object-contain"
-          />
+        <PhotoCarousel
+          :photos="photos"
+          :index="position"
+          @update:index="emit('update:index', $event)"
+        />
 
-          <button
-            v-if="count > 1"
-            type="button"
-            class="absolute top-1/2 left-2 -translate-y-1/2 rounded-full border border-border bg-background/90 px-2.5 py-1 text-foreground"
-            @click="step(-1)"
-          >
-            <span aria-hidden="true">‹</span>
-            <span class="sr-only">Previous photo</span>
-          </button>
-
-          <button
-            v-if="count > 1"
-            type="button"
-            class="absolute top-1/2 right-2 -translate-y-1/2 rounded-full border border-border bg-background/90 px-2.5 py-1 text-foreground"
-            @click="step(1)"
-          >
-            <span aria-hidden="true">›</span>
-            <span class="sr-only">Next photo</span>
-          </button>
-        </div>
-
-        <div class="flex items-center gap-3 text-[11px] text-foreground/70">
+        <div
+          class="flex shrink-0 items-center gap-3 px-4 pb-4 text-[11px] text-foreground/70"
+        >
           <p class="shrink-0">
             <span aria-hidden="true">{{ position + 1 }} / {{ count }}</span>
             <!-- Carries the alt text too. A screen reader does not re-announce
@@ -150,7 +129,7 @@ function onKeydown(event: KeyboardEvent) {
           </p>
           <div class="ml-auto flex items-center gap-3">
             <StravaLink v-if="rideUrl" :href="rideUrl" :name="rideName" />
-            <DialogClose class="text-foreground/70">
+            <DialogClose class="text-foreground/70 hover:text-accent">
               <span aria-hidden="true">✕</span>
               <span class="sr-only">Close photo viewer</span>
             </DialogClose>

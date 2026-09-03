@@ -41,6 +41,7 @@
     "@types/node": "^26.1.1",
     "astro": "7.2.2",
     "date-fns": "^4.4.0",
+    "embla-carousel-vue": "^8.6.0",
     "kysely": "^0.29.4",
     "lodash.kebabcase": "^4.1.1",
     "reka-ui": "^2.10.3",
