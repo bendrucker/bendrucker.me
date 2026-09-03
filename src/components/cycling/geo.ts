@@ -13,6 +13,14 @@ const MIN_ZOOM = 0;
 const MAX_ZOOM = 15;
 const VIEWPORT_PADDING = 12;
 
+/**
+ * Half a pixel: the device pixel of a retina display, and the finest step a
+ * two pixel stroke can show. Drawing on that grid holds every coordinate to
+ * three or four characters and drops the points where the route has not moved
+ * far enough to leave the one before it.
+ */
+const PATH_GRID = 0.5;
+
 export function haversineMiles(a: Coordinate, b: Coordinate): number {
   const latDelta = (b[0] - a[0]) * DEGREES_TO_RADIANS;
   const lonDelta = (b[1] - a[1]) * DEGREES_TO_RADIANS;
@@ -141,13 +149,18 @@ export function fitRoute(
     }
   }
 
-  const path = thin(unwrapped, MAX_ROUTE_POINTS)
-    .map(([lat, lon], position) => {
-      const [x, y] = project(lat, lon, zoom);
-      const command = position === 0 ? "M" : "L";
-      return `${command}${(x - originX).toFixed(1)} ${(y - originY).toFixed(1)}`;
-    })
-    .join("");
+  let path = "";
+  let lastX: number | null = null;
+  let lastY: number | null = null;
+  for (const [lat, lon] of thin(unwrapped, MAX_ROUTE_POINTS)) {
+    const [x, y] = project(lat, lon, zoom);
+    const gridX = Math.round((x - originX) / PATH_GRID) * PATH_GRID;
+    const gridY = Math.round((y - originY) / PATH_GRID) * PATH_GRID;
+    if (gridX === lastX && gridY === lastY) continue;
+    path += `${path === "" ? "M" : "L"}${gridX} ${gridY}`;
+    lastX = gridX;
+    lastY = gridY;
+  }
 
   return { tiles, path, zoom };
 }

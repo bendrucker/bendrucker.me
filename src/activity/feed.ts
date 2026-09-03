@@ -16,6 +16,8 @@ import { normalizeProfile } from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
 import {
   decodePolyline,
+  encodePolyline,
+  encodeProfile,
   MAX_PROFILE_SAMPLES,
   MAX_ROUTE_POINTS,
   thin,
@@ -242,12 +244,8 @@ function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
   const measured = row.powerSource === "measured";
   const measuredWatts =
     measured && row.averageWatts !== null ? Math.round(row.averageWatts) : null;
-  // Rows published before the write side thinned tracks still carry every
-  // recorded point, so the read side bounds them the same way.
-  const route =
-    track?.polyline == null
-      ? []
-      : thin(decodePolyline(track.polyline), MAX_ROUTE_POINTS);
+  const polyline = track?.polyline ?? null;
+  const route = polyline === null ? [] : decodePolyline(polyline);
   const profile =
     track?.elevationProfile == null
       ? null
@@ -268,12 +266,19 @@ function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
   if (row.elevationM !== null) ride.elevationFt = feet(row.elevationM);
   if (row.movingS !== null) ride.movingSeconds = Math.round(row.movingS);
   if (measuredWatts !== null) ride.averageWatts = measuredWatts;
-  if (route.length >= 2) ride.route = route;
+  if (polyline !== null && route.length >= 2) {
+    // The write side thins as it stores, so a row published since then is
+    // already within the cap and its string goes out as it came in. Only a row
+    // published before that pays to be bounded and re-encoded here.
+    ride.route =
+      route.length <= MAX_ROUTE_POINTS
+        ? polyline
+        : encodePolyline(thin(route, MAX_ROUTE_POINTS));
+  }
   if (profile !== null && profile.length > 0) {
-    ride.elevationProfile = thin(
-      normalizeProfile(profile),
-      MAX_PROFILE_SAMPLES,
-    ).map((sample) => Math.round(sample * 1000) / 1000);
+    ride.elevationProfile = encodeProfile(
+      thin(normalizeProfile(profile), MAX_PROFILE_SAMPLES),
+    );
   }
 
   return {

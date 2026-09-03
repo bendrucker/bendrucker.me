@@ -139,12 +139,19 @@ export interface Ride {
   movingSeconds?: number;
   averageWatts?: number;
   companionCount?: number;
-  route?: Coordinate[];
   /**
-   * Elevation samples normalized to 0..1 across the ride, evenly spaced. Real
-   * streams and the synthetic stand-in are interchangeable at this shape.
+   * The track as an encoded polyline, the form Strava publishes and the
+   * smallest one an island's props can carry. Set only where it holds a line
+   * to draw, so a card can read it as "this ride has a map". `geo.ts` decodes
+   * it for the map to project.
    */
-  elevationProfile?: number[];
+  route?: string;
+  /**
+   * Elevation samples normalized to 0..1 across the ride, evenly spaced, two
+   * hex digits each. Real streams and the synthetic stand-in are
+   * interchangeable at this shape. `profile.ts` decodes it for the chart.
+   */
+  elevationProfile?: string;
   photos: RidePhoto[];
   badges: RideBadge[];
   facts: RideFact[];

@@ -32,7 +32,7 @@ const ride = computed(() => props.highlight.ride);
 
 const started = computed(() => rideDate(ride.value.startedAt));
 
-const hasRoute = computed(() => (ride.value.route?.length ?? 0) >= 2);
+const hasRoute = computed(() => ride.value.route !== undefined);
 
 const subParts = computed(() => {
   const parts = [];
@@ -104,7 +104,7 @@ const totals = computed(() => {
     >
       <div class="relative">
         <RouteMap
-          :coordinates="ride.route"
+          :route="ride.route"
           :width="mapWidth"
           :height="mapHeight"
           :label="`Route map for ${ride.name}`"

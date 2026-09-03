@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   decodePolyline,
+  decodeProfile,
   encodePolyline,
+  encodeProfile,
   MAX_ROUTE_POINTS,
   thin,
   thinPolyline,
@@ -55,5 +57,46 @@ describe("thinPolyline", () => {
     expect(thinned.length).toBeLessThanOrEqual(MAX_ROUTE_POINTS + 1);
     expect(thinned[0]).toEqual(full[0]);
     expect(thinned.at(-1)).toEqual(full.at(-1));
+  });
+});
+
+describe("encodeProfile", () => {
+  it("spells each sample as two hex digits", () => {
+    expect(encodeProfile([0, 1])).toBe("00ff");
+  });
+
+  it("round-trips the endpoints exactly", () => {
+    expect(decodeProfile(encodeProfile([0, 1, 0]))).toEqual([0, 1, 0]);
+  });
+
+  it("round-trips the samples between them to within a level", () => {
+    const samples = Array.from({ length: 100 }, (_, i) => i / 99);
+    decodeProfile(encodeProfile(samples)).forEach((sample, index) => {
+      expect(sample).toBeCloseTo(samples[index]!, 2);
+    });
+  });
+
+  it("holds a sample outside 0..1, or no number at all, inside the range", () => {
+    expect(decodeProfile(encodeProfile([-3, 4, Number.NaN]))).toEqual([
+      0, 1, 0,
+    ]);
+  });
+});
+
+describe("decodeProfile", () => {
+  it("returns nothing for an empty string", () => {
+    expect(decodeProfile("")).toEqual([]);
+  });
+
+  it("drops a trailing half sample", () => {
+    expect(decodeProfile("00ff0")).toEqual([0, 1]);
+  });
+
+  it("stops at a character outside the alphabet", () => {
+    expect(decodeProfile("00zz ff")).toEqual([0]);
+  });
+
+  it("stops where only the second digit of a sample is outside it", () => {
+    expect(decodeProfile("001gff")).toEqual([0]);
   });
 });

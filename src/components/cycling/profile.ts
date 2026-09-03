@@ -1,3 +1,7 @@
+import { decodeProfile } from "@/activity/track";
+
+export { decodeProfile };
+
 const DEFAULT_SAMPLE_COUNT = 22;
 
 /** Feet per mile at which a ride counts as fully hilly. */

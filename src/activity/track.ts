@@ -10,6 +10,9 @@ export const MAX_ROUTE_POINTS = 300;
 /** Samples a stored profile keeps. A card's chart draws at a width where more is invisible. */
 export const MAX_PROFILE_SAMPLES = 100;
 
+/** The top of the range a sample quantizes to: a byte, which two hex digits spell. */
+const PROFILE_TOP = 255;
+
 /**
  * Every `step`th item plus the last, so a long series keeps its shape and
  * both endpoints within a bounded size.
@@ -98,4 +101,39 @@ function encodeDelta(delta: number): string {
     value >>= 5;
   }
   return output + String.fromCharCode(value + 63);
+}
+
+/**
+ * Normalized samples as two hex digits each. A profile crosses to the browser
+ * inside an island's serialized props, where a JSON number costs five times
+ * what one sample is worth to a chart drawn at the height of a line of text.
+ */
+export function encodeProfile(samples: readonly number[]): string {
+  let output = "";
+  for (const sample of samples) {
+    const bounded = Number.isFinite(sample)
+      ? Math.min(1, Math.max(0, sample))
+      : 0;
+    output += Math.round(bounded * PROFILE_TOP)
+      .toString(16)
+      .padStart(2, "0");
+  }
+  return output;
+}
+
+/**
+ * One sample, tested whole. `parseInt` reads as many leading digits as it can
+ * and ignores the rest, so it takes "1g" for 1 rather than refusing it.
+ */
+const PROFILE_SAMPLE = /^[0-9a-f]{2}$/i;
+
+/** The inverse of `encodeProfile`. A trailing half-sample is dropped. */
+export function decodeProfile(encoded: string): number[] {
+  const samples: number[] = [];
+  for (let index = 0; index + 2 <= encoded.length; index += 2) {
+    const pair = encoded.slice(index, index + 2);
+    if (!PROFILE_SAMPLE.test(pair)) break;
+    samples.push(Number.parseInt(pair, 16) / PROFILE_TOP);
+  }
+  return samples;
 }
