@@ -121,13 +121,19 @@ export function encodeProfile(samples: readonly number[]): string {
   return output;
 }
 
+/**
+ * One sample, tested whole. `parseInt` reads as many leading digits as it can
+ * and ignores the rest, so it takes "1g" for 1 rather than refusing it.
+ */
+const PROFILE_SAMPLE = /^[0-9a-f]{2}$/i;
+
 /** The inverse of `encodeProfile`. A trailing half-sample is dropped. */
 export function decodeProfile(encoded: string): number[] {
   const samples: number[] = [];
   for (let index = 0; index + 2 <= encoded.length; index += 2) {
-    const level = Number.parseInt(encoded.slice(index, index + 2), 16);
-    if (Number.isNaN(level)) break;
-    samples.push(level / PROFILE_TOP);
+    const pair = encoded.slice(index, index + 2);
+    if (!PROFILE_SAMPLE.test(pair)) break;
+    samples.push(Number.parseInt(pair, 16) / PROFILE_TOP);
   }
   return samples;
 }

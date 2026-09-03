@@ -22,16 +22,16 @@ function round(value: number): number {
 }
 
 const path = computed(() => {
-  const points = samples.value;
-  if (points.length === 0) return "";
+  if (samples.value.length === 0) return "";
 
   // A lone sample has no gradient to draw, so it spans the width as a level
-  // band. Dividing by its index would instead pin it to the left edge and
-  // render a wedge, reading as a descent the ride never made.
-  if (points.length === 1) {
-    const y = round((1 - points[0]) * VIEW_HEIGHT);
-    return `M0 ${VIEW_HEIGHT}L0 ${y}L${VIEW_WIDTH} ${y}L${VIEW_WIDTH} ${VIEW_HEIGHT}Z`;
-  }
+  // band, which is what the general case makes of it doubled. Left alone it
+  // would divide by its own index and render a wedge, reading as a descent the
+  // ride never made.
+  const points =
+    samples.value.length === 1
+      ? [samples.value[0]!, samples.value[0]!]
+      : samples.value;
 
   const lastIndex = points.length - 1;
   const ridge = points

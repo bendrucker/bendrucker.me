@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 import type { Kysely } from "kysely";
 import { activity as fixture } from "@/components/cycling/fixtures";
-import { decodePolyline } from "@/components/cycling/geo";
-import { decodeProfile } from "@/components/cycling/profile";
 import type { Database } from "@/db";
 import { createTestDb, testStore } from "@/test/db";
 import {
@@ -10,6 +8,7 @@ import {
   queryCyclingActivity,
   readFeedVersion,
 } from "./feed";
+import { decodePolyline, decodeProfile } from "./track";
 import {
   deleteActivity,
   publishActivity,

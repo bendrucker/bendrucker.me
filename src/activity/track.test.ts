@@ -95,4 +95,8 @@ describe("decodeProfile", () => {
   it("stops at a character outside the alphabet", () => {
     expect(decodeProfile("00zz ff")).toEqual([0]);
   });
+
+  it("stops where only the second digit of a sample is outside it", () => {
+    expect(decodeProfile("001gff")).toEqual([0]);
+  });
 });
