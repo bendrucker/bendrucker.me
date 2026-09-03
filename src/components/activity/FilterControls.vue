@@ -55,8 +55,7 @@ function setOwner(owner: FilterState["owner"]) {
 /**
  * A single-select toggle group can also report `undefined`, which is how it
  * represents clicking the already-pressed item back off. That has no
- * meaning here since one owner is always selected, so it is ignored rather
- * than forwarded to `setOwner`.
+ * meaning here since one owner is always selected.
  */
 function onOwnerChange(value: unknown) {
   const owner = OWNER_FILTERS.find((candidate) => candidate === value);

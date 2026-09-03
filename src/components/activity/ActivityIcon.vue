@@ -17,8 +17,8 @@ export type IconName =
 defineProps<{ name: IconName }>();
 
 /**
- * Written out rather than built from the name, because Tailwind extracts
- * candidates from source text and never sees an interpolated class.
+ * Tailwind extracts class candidates from source text, so an interpolated
+ * class name here would generate no CSS.
  */
 const classes: Record<IconName, string> = {
   user: "icon-[lucide--user]",
