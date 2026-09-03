@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { YearCount } from "@/activity/types";
-import ActivityIcon from "./ActivityIcon.vue";
+import LucideIcon from "@/components/LucideIcon.vue";
 
 const MAX_VISIBLE = 7;
 
@@ -67,7 +67,7 @@ const hasNewerYears = computed(() => {
         aria-label="Show all years"
         @click="expanded = true"
       >
-        <ActivityIcon name="ellipsis" />
+        <LucideIcon name="ellipsis" />
       </button>
       <template v-for="y in visibleYears" :key="y.year">
         <button
@@ -101,7 +101,7 @@ const hasNewerYears = computed(() => {
         aria-label="Show all years"
         @click="expanded = true"
       >
-        <ActivityIcon name="ellipsis" />
+        <LucideIcon name="ellipsis" />
       </button>
     </div>
   </nav>

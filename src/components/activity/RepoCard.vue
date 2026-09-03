@@ -7,7 +7,7 @@ import {
   format,
 } from "date-fns";
 import type { Repo } from "@/activity/types";
-import ActivityIcon from "./ActivityIcon.vue";
+import LucideIcon from "@/components/LucideIcon.vue";
 import ActivityTooltip from "./ActivityTooltip.vue";
 
 const props = defineProps<{
@@ -153,7 +153,7 @@ function handleKeydown(e: KeyboardEvent) {
               rel="noopener noreferrer"
               class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <ActivityIcon name="git-pull-request" class="flex-shrink-0" />
+              <LucideIcon name="git-pull-request" class="flex-shrink-0" />
               <span>{{ repo.activitySummary.prCount }}</span>
             </a>
           </ActivityTooltip>
@@ -167,7 +167,7 @@ function handleKeydown(e: KeyboardEvent) {
               rel="noopener noreferrer"
               class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <ActivityIcon name="file-check" class="flex-shrink-0" />
+              <LucideIcon name="file-check" class="flex-shrink-0" />
               <span>{{ repo.activitySummary.reviewCount }}</span>
             </a>
           </ActivityTooltip>
@@ -181,7 +181,7 @@ function handleKeydown(e: KeyboardEvent) {
               rel="noopener noreferrer"
               class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <ActivityIcon name="git-merge" class="flex-shrink-0" />
+              <LucideIcon name="git-merge" class="flex-shrink-0" />
               <span>{{ repo.activitySummary.mergeCount }}</span>
             </a>
           </ActivityTooltip>
@@ -195,7 +195,7 @@ function handleKeydown(e: KeyboardEvent) {
               rel="noopener noreferrer"
               class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <ActivityIcon name="circle-dot" class="flex-shrink-0" />
+              <LucideIcon name="circle-dot" class="flex-shrink-0" />
               <span>{{ repo.activitySummary.issueCount }}</span>
             </a>
           </ActivityTooltip>
@@ -206,7 +206,7 @@ function handleKeydown(e: KeyboardEvent) {
               rel="noopener noreferrer"
               class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
             >
-              <ActivityIcon name="star" class="flex-shrink-0" />
+              <LucideIcon name="star" class="flex-shrink-0" />
               <span>{{ formatStarCount(repo.stargazerCount) }}</span>
             </a>
           </ActivityTooltip>

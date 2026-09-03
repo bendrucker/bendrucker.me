@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { rideDate } from "./datetime";
 import ElevationProfile from "./ElevationProfile.vue";
 import FactChip from "./FactChip.vue";
-import LucideIcon from "./LucideIcon.vue";
+import LucideIcon from "@/components/LucideIcon.vue";
 import PhotoStrip from "./PhotoStrip.vue";
 import RideBadge from "./RideBadge.vue";
 import RouteMap from "./RouteMap.vue";

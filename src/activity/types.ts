@@ -85,17 +85,30 @@ export interface RidePhoto {
 export type RideBadgeKind =
   "new-climb" | "new-location" | "longest" | "most-climbing" | "race";
 
-/** Lucide icons the cycling components draw on. See `LucideIcon.vue`. */
+/** Lucide icons the cycling and activity components draw on. See `LucideIcon.vue`. */
 export const iconNames = [
+  "arrow-down-narrow-wide",
+  "arrow-left",
+  "arrow-right",
+  "circle-dot",
   "clock",
+  "ellipsis",
+  "file-check",
   "flag",
   "flame",
   "gauge",
+  "git-merge",
+  "git-pull-request",
   "map-pin",
   "mountain",
   "ruler",
+  "search",
+  "star",
   "timer",
   "trending-up",
+  "user",
+  "users",
+  "x",
   "zap",
 ] as const;
 

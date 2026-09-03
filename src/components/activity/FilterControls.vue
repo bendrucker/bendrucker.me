@@ -7,7 +7,7 @@ import {
   type FilterState,
   type SortOrder,
 } from "@/activity/types";
-import ActivityIcon from "./ActivityIcon.vue";
+import LucideIcon from "@/components/LucideIcon.vue";
 import ActivityTooltip from "./ActivityTooltip.vue";
 
 const SORT_LABELS: Record<SortOrder, string> = {
@@ -83,12 +83,7 @@ function resetFilters() {
     >
       <ToggleGroupItem
         value="all"
-        :class="
-          filters.owner === 'all'
-            ? 'border-accent bg-accent text-background'
-            : 'border-border text-foreground hover:border-accent'
-        "
-        class="flex h-8 items-center rounded-full border px-3 text-sm font-medium transition-colors"
+        class="flex h-8 items-center rounded-full border border-border px-3 text-sm font-medium text-foreground transition-colors hover:border-accent data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-background"
       >
         All
       </ToggleGroupItem>
@@ -97,14 +92,9 @@ function resetFilters() {
         <ToggleGroupItem
           value="personal"
           aria-label="Personal repositories"
-          :class="
-            filters.owner === 'personal'
-              ? 'border-accent bg-accent text-background'
-              : 'border-border text-foreground hover:border-accent'
-          "
-          class="flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
+          class="flex h-8 items-center gap-1.5 rounded-full border border-border px-3 text-sm font-medium text-foreground transition-colors hover:border-accent data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-background"
         >
-          <ActivityIcon name="user" />
+          <LucideIcon name="user" />
           <span class="hidden sm:inline">Personal</span>
         </ToggleGroupItem>
       </ActivityTooltip>
@@ -113,14 +103,9 @@ function resetFilters() {
         <ToggleGroupItem
           value="external"
           aria-label="External / organization repositories"
-          :class="
-            filters.owner === 'external'
-              ? 'border-accent bg-accent text-background'
-              : 'border-border text-foreground hover:border-accent'
-          "
-          class="flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
+          class="flex h-8 items-center gap-1.5 rounded-full border border-border px-3 text-sm font-medium text-foreground transition-colors hover:border-accent data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-background"
         >
-          <ActivityIcon name="users" />
+          <LucideIcon name="users" />
           <span class="hidden sm:inline">External</span>
         </ToggleGroupItem>
       </ActivityTooltip>
@@ -132,7 +117,7 @@ function resetFilters() {
         aria-label="Reset filters"
         @click="resetFilters"
       >
-        <ActivityIcon name="x" />
+        <LucideIcon name="x" />
       </button>
       <span aria-live="polite">{{ countLabel }}</span>
     </span>
@@ -140,7 +125,7 @@ function resetFilters() {
 
   <div class="flex items-center gap-2">
     <div class="relative flex-1">
-      <ActivityIcon
+      <LucideIcon
         name="search"
         class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-foreground/40"
       />
@@ -159,7 +144,7 @@ function resetFilters() {
       />
     </div>
     <div class="relative flex-shrink-0">
-      <ActivityIcon
+      <LucideIcon
         name="arrow-down-narrow-wide"
         class="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-foreground/40"
       />
