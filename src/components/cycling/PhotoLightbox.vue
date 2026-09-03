@@ -95,8 +95,8 @@ function onKeydown(event: KeyboardEvent) {
   <DialogRoot :open="open && count > 0" @update:open="onOpenChange">
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-50 bg-background/95" />
-      <!-- The whole viewport, so a photo is as large as the screen allows.
-           Capping the width left a postage stamp on a wide display. -->
+      <!-- Sized to the whole viewport, so a photo is as large as the screen
+           allows. -->
       <DialogContent
         class="fixed inset-0 z-50 flex flex-col outline-none"
         @keydown="onKeydown"

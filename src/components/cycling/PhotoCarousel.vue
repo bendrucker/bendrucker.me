@@ -9,9 +9,8 @@ const emit = defineEmits<{ "update:index": [index: number] }>();
 
 /**
  * Embla reads its options and its element once, from its own `onMounted`, so
- * this lives in a component that mounts with the open dialog rather than with
- * the lightbox. That is also what makes `startIndex` the photo the strip was
- * clicked on, instead of a scroll across everything in between.
+ * this lives in a component that mounts with the open dialog. That is also what
+ * makes `startIndex` the photo the strip was clicked on.
  */
 const [viewport, embla] = emblaCarouselVue({
   loop: true,

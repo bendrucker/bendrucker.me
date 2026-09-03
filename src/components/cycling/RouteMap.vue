@@ -28,9 +28,9 @@ const tiles = computed(() => (hasBasemap() ? fitted.value.tiles : []));
     :style="{ width: `${width}px`, height: `${height}px` }"
   >
     <!-- Only the light basemap is fetched. Desaturating it first means the
-         dark inversion lands on gray rather than on complementary hues.
-         Unkeyed CARTO tiles carry a watermark across the image, so an
-         unconfigured key leaves the route on the card's own ground. -->
+         dark inversion lands on gray. Unkeyed CARTO tiles carry a watermark
+         across the image, so an unconfigured key leaves the route on the
+         card's own ground. -->
     <img
       v-for="tile in tiles"
       :key="tile.key"

@@ -99,7 +99,7 @@ const POWER_LADDER = [
 const POWER_NOTE = "from rides with a power meter";
 
 // Scoped per month where they are awarded, so the badge can say which month it
-// won rather than leaving "longest" to read as all time.
+// won.
 const LONGEST = { kind: "longest", icon: "ruler", label: "longest" } as const;
 const MOST_CLIMBING = {
   kind: "most-climbing",

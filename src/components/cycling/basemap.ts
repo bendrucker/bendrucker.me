@@ -5,8 +5,8 @@ const TILE_URL = "https://basemaps.cartocdn.com/light_all";
 /**
  * CARTO's raster basemaps require a key, and serve tiles stamped "API KEY
  * REQUIRED" across the image without one. The key is scoped to the domains it
- * was issued for rather than secret, which is what lets it ship to the browser,
- * the only place tile URLs are built.
+ * was issued for, which is what lets it ship to the browser, the only place tile
+ * URLs are built.
  */
 function key(): string {
   return import.meta.env.PUBLIC_CARTO_BASEMAP_KEY ?? "";

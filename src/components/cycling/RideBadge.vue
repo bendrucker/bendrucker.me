@@ -7,8 +7,7 @@ defineProps<{ badge: RideBadge }>();
 
 <template>
   <!-- Two segments, the window on the left and what was won on the right. The
-       reading order is what carries the meaning, so the scope is real text
-       rather than a border or a tint. -->
+       reading order is what carries the meaning, so the scope is real text. -->
   <span
     class="inline-flex items-stretch overflow-hidden rounded-sm border border-accent/60 text-[10px] whitespace-nowrap"
   >
