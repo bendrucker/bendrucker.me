@@ -1,4 +1,5 @@
 import {
+  defaultDocument,
   useEventListener,
   useIntersectionObserver,
   useResizeObserver,
@@ -38,12 +39,15 @@ export function useScrollSpy(
   const activeKey = ref<string | null>(null);
   const intersecting = new Set<HTMLElement>();
 
-  // A caller that mutates the array in place is tracked. A caller that
-  // rebuilds an identical array is not.
+  // Recomputed whenever `keys` or the root changes, by identity. A caller that
+  // rebuilds the array with the same contents rebuilds the observers too.
   const sections = computed(() => {
     const wanted = new Set(keys.value);
-    const scope = options.root?.value ?? document;
+    // `defaultDocument` is `undefined` on the server. The watcher below reads
+    // this computed eagerly, so a bare `document` would throw during SSR.
+    const scope = options.root?.value ?? defaultDocument;
     const map = new Map<HTMLElement, string>();
+    if (!scope) return map;
     for (const element of scope.querySelectorAll<HTMLElement>(
       "[data-month-key]",
     )) {

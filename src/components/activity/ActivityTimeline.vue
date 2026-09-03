@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  defaultWindow,
   useElementSize,
   useIntersectionObserver,
   useInfiniteScroll,
@@ -91,12 +92,20 @@ onMounted(() => {
   fetchYears();
 });
 
-useInfiniteScroll(window, () => fetchRepos(), {
+// `defaultWindow` is `undefined` on the server, where the bare global would
+// throw during the island's SSR render. Astro renders this component before it
+// hydrates, so setup runs in both places.
+useInfiniteScroll(defaultWindow, () => fetchRepos(), {
   distance: 200,
   canLoadMore: () => state.hasMore,
 });
 
-const { height: headerHeight } = useElementSize(headerRef);
+// The header carries its own padding, and the sticky dividers below it are
+// offset by the whole box. `useElementSize` measures the content box by
+// default, which would seat them 24px too high.
+const { height: headerHeight } = useElementSize(headerRef, undefined, {
+  box: "border-box",
+});
 
 watch(
   headerHeight,
@@ -120,27 +129,56 @@ useMutationObserver(rootRef, collectYearElements, {
   subtree: true,
 });
 
+// Intersection is tracked across callbacks rather than read out of one. A new
+// target array or a new root margin makes `useIntersectionObserver` rebuild the
+// underlying observer, and a fresh observer reports every target rather than
+// only the ones that changed, so a reduction over one callback's entries sees a
+// different set depending on whether a rebuild just happened.
+const intersectingYears = new Set<HTMLElement>();
+
+watch(yearElements, (current) => {
+  const live = new Set(current);
+  for (const element of intersectingYears) {
+    if (!live.has(element)) intersectingYears.delete(element);
+  }
+});
+
+function selectCurrentYear() {
+  // Dividers are sticky within one containing block, so each one the reader has
+  // passed stays pinned in the band alongside the others. The section actually
+  // on screen belongs to the last of them, which is the smallest year.
+  let passed = Infinity;
+  for (const element of intersectingYears) {
+    const year = Number(element.dataset.year);
+    if (year && year < passed) passed = year;
+  }
+  if (passed < Infinity) {
+    state.currentYear = passed;
+    return;
+  }
+
+  // Nothing has been passed yet, so the reader sits above every divider and the
+  // closest one below names the year after it.
+  let upcoming = -Infinity;
+  for (const element of yearElements.value) {
+    const year = Number(element.dataset.year);
+    if (!year) continue;
+    if (element.getBoundingClientRect().top > 0 && year + 1 > upcoming) {
+      upcoming = year + 1;
+    }
+  }
+  if (upcoming > -Infinity) state.currentYear = upcoming;
+}
+
 useIntersectionObserver(
   yearElements,
   (entries) => {
-    let maxYear = -Infinity;
     for (const entry of entries) {
       if (!(entry.target instanceof HTMLElement)) continue;
-      const year = Number(entry.target.dataset.year);
-      if (!year) continue;
-
-      let candidate: number;
-      if (entry.isIntersecting) {
-        candidate = year;
-      } else if (entry.boundingClientRect.top > 0) {
-        candidate = year + 1;
-      } else {
-        continue;
-      }
-
-      if (candidate > maxYear) maxYear = candidate;
+      if (entry.isIntersecting) intersectingYears.add(entry.target);
+      else intersectingYears.delete(entry.target);
     }
-    if (maxYear > -Infinity) state.currentYear = maxYear;
+    selectCurrentYear();
   },
   { rootMargin: () => `-${headerHeight.value}px 0px -50% 0px` },
 );
