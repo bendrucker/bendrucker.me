@@ -16,8 +16,8 @@ import type { RidePhoto } from "@/activity/types";
 const photoSets: Record<string, RidePhoto[]> = {
   one: raceRide.photos,
   three: epicRide.photos,
-  four: crowdedRide.photos,
   five: travelRide.photos,
+  twelve: crowdedRide.photos,
   none: bareRide.photos,
 };
 
@@ -28,8 +28,8 @@ const controls: StoryControlSet = {
     options: {
       one: "one photo",
       three: "three photos",
-      four: "four photos",
       five: "five photos",
+      twelve: "twelve photos",
       none: "no photos",
     },
   },
@@ -37,7 +37,7 @@ const controls: StoryControlSet = {
 };
 
 function initState() {
-  return { photos: "three", width: 340 };
+  return { photos: "twelve", width: 340 };
 }
 </script>
 
@@ -72,6 +72,7 @@ function initState() {
 
 The row of thumbnails on a ride card.
 
-Narrow the width until the row wraps. Tapping a thumbnail logs the index it would
-open in the lightbox.
+Narrow the width until the row overflows: it stays one row, fading out at the
+trailing edge rather than wrapping onto a second. Tapping a thumbnail logs the
+index it would open in the lightbox.
 </docs>
