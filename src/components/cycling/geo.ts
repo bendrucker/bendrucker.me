@@ -1,4 +1,7 @@
+import { decodePolyline, MAX_ROUTE_POINTS, thin } from "@/activity/track";
 import type { Coordinate } from "@/activity/types";
+
+export { decodePolyline };
 
 const EARTH_RADIUS_MI = 3959;
 const DEGREES_TO_RADIANS = Math.PI / 180;
@@ -9,49 +12,9 @@ export const TILE_SIZE = 256;
 const MIN_ZOOM = 0;
 const MAX_ZOOM = 15;
 const VIEWPORT_PADDING = 12;
-/** Points a drawn route keeps. A card's map is too small to show more. */
-export const MAX_PATH_POINTS = 300;
 
 export const TILE_URL_TEMPLATE =
   "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png";
-
-export function decodePolyline(encoded: string): Coordinate[] {
-  const coordinates: Coordinate[] = [];
-  let index = 0;
-  let lat = 0;
-  let lon = 0;
-
-  /**
-   * Reads one delta, or null once the input runs out mid-value. Each delta is a
-   * chain of five-bit groups, least significant first, offset by 63 to stay
-   * printable. Bit 6 signals another group follows, and the assembled value is
-   * zig-zag encoded: bit 0 marks a negative stored as its complement.
-   */
-  const readDelta = (): number | null => {
-    let shift = 0;
-    let result = 0;
-    let group: number;
-    do {
-      if (index >= encoded.length) return null;
-      group = encoded.charCodeAt(index++) - 63;
-      result |= (group & 31) << shift;
-      shift += 5;
-    } while (group >= 32);
-    return result & 1 ? ~(result >> 1) : result >> 1;
-  };
-
-  while (index < encoded.length) {
-    const latDelta = readDelta();
-    if (latDelta === null) break;
-    const lonDelta = readDelta();
-    if (lonDelta === null) break;
-    lat += latDelta;
-    lon += lonDelta;
-    coordinates.push([lat / 1e5, lon / 1e5]);
-  }
-
-  return coordinates;
-}
 
 export function haversineMiles(a: Coordinate, b: Coordinate): number {
   const latDelta = (b[0] - a[0]) * DEGREES_TO_RADIANS;
@@ -183,7 +146,7 @@ export function fitRoute(
     }
   }
 
-  const path = thin(unwrapped, MAX_PATH_POINTS)
+  const path = thin(unwrapped, MAX_ROUTE_POINTS)
     .map(([lat, lon], position) => {
       const [x, y] = project(lat, lon, zoom);
       const command = position === 0 ? "M" : "L";
@@ -192,22 +155,4 @@ export function fitRoute(
     .join("");
 
   return { tiles, path, zoom };
-}
-
-/**
- * Every `step`th item plus the last, so a long series keeps its shape and
- * both endpoints within a bounded size.
- */
-export function thin<T>(items: readonly T[], max: number): T[] {
-  const step = Math.max(1, Math.ceil(items.length / max));
-  const kept: T[] = [];
-  let lastKept = -1;
-  for (let i = 0; i < items.length; i += step) {
-    kept.push(items[i]!);
-    lastKept = i;
-  }
-  if (items.length > 0 && lastKept !== items.length - 1) {
-    kept.push(items[items.length - 1]!);
-  }
-  return kept;
 }

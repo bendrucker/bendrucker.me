@@ -10,6 +10,7 @@ import {
   type PublishedActivity,
 } from "./publish";
 import type { ActivityStore } from "./store";
+import { decodePolyline } from "./track";
 
 let db: Kysely<Database>;
 let store: ActivityStore;
@@ -70,6 +71,29 @@ describe("publishActivity", () => {
     expect(rows[0]!.name).toBe("Renamed");
     expect(rows[0]!.distanceM).toBe(50000);
     expect(rows[0]!.elevationProfile).toBeNull();
+  });
+
+  it("stores a track thinned to what a card draws", async () => {
+    // Each repeat re-encodes the same deltas, so the string stays decodable.
+    const polyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@".repeat(400);
+    await publishActivity(
+      store,
+      activity({
+        polyline,
+        elevationProfile: Array.from({ length: 1000 }, (_, i) => i),
+      }),
+    );
+
+    const row = await db
+      .selectFrom("activityFeed")
+      .select(["polyline", "elevationProfile"])
+      .executeTakeFirstOrThrow();
+    const route = decodePolyline(row.polyline!);
+    expect(route.length).toBeLessThanOrEqual(301);
+    expect(route.at(-1)).toEqual(decodePolyline(polyline).at(-1));
+    const profile: unknown = JSON.parse(row.elevationProfile!);
+    expect(profile).toHaveLength(101);
+    expect(profile).toEqual(expect.arrayContaining([0, 999]));
   });
 
   it("accepts an activity with nothing but the registry fields", async () => {

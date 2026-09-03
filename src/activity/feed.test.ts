@@ -153,6 +153,25 @@ describe("queryCyclingActivity", () => {
     expect(totals.year).toBe(2026);
   });
 
+  it("logs the last twelve months and ranks every ride", async () => {
+    await seed(
+      ride("latest", { startedAt: "2026-07-11T13:00:55Z", distanceM: 10_000 }),
+      ride("edge", { startedAt: "2025-08-01T13:00:55Z", distanceM: 20_000 }),
+      ride("old", { startedAt: "2025-07-31T13:00:55Z", distanceM: 30_000 }),
+    );
+
+    const { months, records } = await queryCyclingActivity(db, NOW);
+    expect(months.map((month) => month.key)).toEqual(["2026-07", "2025-08"]);
+    const distance = records
+      .find((period) => period.period === "all")!
+      .lists.find((list) => list.metric === "distance")!;
+    expect(distance.rows.map((row) => row.id)).toEqual([
+      "old",
+      "edge",
+      "latest",
+    ]);
+  });
+
   it("thins a full-resolution route and profile to what a card draws", async () => {
     // Each repeat re-encodes the same deltas, so the string stays decodable.
     const polyline = GOOGLE_EXAMPLE.repeat(400);
@@ -441,7 +460,9 @@ describe("contract", () => {
       keys(fixture.records[0]!.lists[0]),
     );
     expect(keys(feed.powerBests[0])).toEqual(keys(fixture.powerBests[0]));
-    expect(buildCyclingActivity([], [], NOW).months).toEqual([]);
+    expect(
+      buildCyclingActivity({ rides: [], tracks: [] }, [], NOW).months,
+    ).toEqual([]);
   });
 });
 

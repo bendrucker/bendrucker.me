@@ -14,7 +14,7 @@ try {
   data = await queryCyclingActivity(await getDb());
 } catch (error) {
   logger.error({ error }, "Failed to load cycling activity");
-  data = buildCyclingActivity([], [], new Date());
+  data = buildCyclingActivity({ rides: [], tracks: [] }, [], new Date());
 }
 ---
 

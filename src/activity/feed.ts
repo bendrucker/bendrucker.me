@@ -11,16 +11,14 @@ import {
   metersToMiles,
   monthKeyOf,
 } from "@/components/cycling/format";
+import { normalizeProfile } from "@/components/cycling/profile";
+import type { ActivityFeedTable, Database } from "@/db";
 import {
   decodePolyline,
-  MAX_PATH_POINTS,
-  thin,
-} from "@/components/cycling/geo";
-import {
   MAX_PROFILE_SAMPLES,
-  normalizeProfile,
-} from "@/components/cycling/profile";
-import type { ActivityFeedTable, Database } from "@/db";
+  MAX_ROUTE_POINTS,
+  thin,
+} from "./track";
 import type {
   CyclingActivityData,
   Highlight,
@@ -37,6 +35,48 @@ import type {
 } from "./types";
 
 export type FeedRow = Selectable<ActivityFeedTable>;
+
+/** Every column but the track: what the totals and ranked lists read. */
+export type RideRow = Omit<
+  FeedRow,
+  "polyline" | "elevationProfile" | "photoKeys"
+>;
+
+/** The track columns, read only for the rides the log shows. */
+export type TrackRow = Pick<
+  FeedRow,
+  "activityId" | "polyline" | "elevationProfile" | "photoKeys"
+>;
+
+export interface FeedRows {
+  rides: RideRow[];
+  tracks: TrackRow[];
+}
+
+/** Months the log shows, counting back from the month of the latest ride. */
+export const LOG_MONTHS = 12;
+
+const RIDE_COLUMNS = [
+  "activityId",
+  "stravaId",
+  "name",
+  "sport",
+  "startedAt",
+  "timezone",
+  "distanceM",
+  "movingS",
+  "elevationM",
+  "averageWatts",
+  "powerSource",
+  "updatedAt",
+] as const;
+
+const TRACK_COLUMNS = [
+  "activityId",
+  "polyline",
+  "elevationProfile",
+  "photoKeys",
+] as const;
 
 export interface PowerCurvePoint {
   durationS: number;
@@ -71,10 +111,12 @@ export async function queryCyclingActivity(
   db: Kysely<Database>,
   now: Date = new Date(),
 ): Promise<CyclingActivityData> {
-  const [rows, curve] = await Promise.all([
+  // Tracks dominate a row's size, so the ranked lists and totals read every
+  // ride without them, and only the log's window pays for its tracks.
+  const [rides, curve] = await Promise.all([
     db
       .selectFrom("activityFeed")
-      .selectAll()
+      .select(RIDE_COLUMNS)
       .where("sport", "=", "ride")
       .execute(),
     db
@@ -93,7 +135,38 @@ export async function queryCyclingActivity(
       .groupBy("activityPowerCurve.durationS")
       .execute(),
   ]);
-  return buildCyclingActivity(rows, curve, now);
+  const cutoff = trackCutoff(rides);
+  const tracks =
+    cutoff === null
+      ? []
+      : await db
+          .selectFrom("activityFeed")
+          .select(TRACK_COLUMNS)
+          .where("sport", "=", "ride")
+          .where("startedAt", ">=", cutoff)
+          .execute();
+  return buildCyclingActivity({ rides, tracks }, curve, now);
+}
+
+/**
+ * The instant before which no ride can fall in the log's window, from the
+ * latest ride's month back `LOG_MONTHS`, with two days of slack for the local
+ * dates the window is actually keyed on.
+ */
+function trackCutoff(rides: readonly RideRow[]): string | null {
+  let latest = -Infinity;
+  for (const ride of rides) {
+    const instant = Date.parse(ride.startedAt);
+    if (instant > latest) latest = instant;
+  }
+  if (!Number.isFinite(latest)) return null;
+  const month = new Date(latest);
+  const start = Date.UTC(
+    month.getUTCFullYear(),
+    month.getUTCMonth() - (LOG_MONTHS - 1),
+    1,
+  );
+  return new Date(start - 2 * 24 * 3600 * 1000).toISOString();
 }
 
 /**
@@ -124,17 +197,18 @@ interface Entry {
 }
 
 export function buildCyclingActivity(
-  rows: readonly FeedRow[],
+  { rides, tracks }: FeedRows,
   curve: readonly PowerCurvePoint[],
   now: Date,
 ): CyclingActivityData {
+  const trackById = new Map(tracks.map((track) => [track.activityId, track]));
   // Ordered on the wall clock the months are keyed on, so a ride sits in the
   // log by its own date rather than by the instant, which can fall on the
   // other side of a month or year boundary in another zone.
-  const entries = rows
-    .map((row) => toEntry(row))
+  const entries = rides
+    .map((row) => toEntry(row, trackById.get(row.activityId)))
     .toSorted((a, b) => b.ride.startedAt.localeCompare(a.ride.startedAt));
-  const months = groupMonths(entries);
+  const months = groupMonths(logEntries(entries));
   const bests = powerBests(entries, curve);
 
   const data: CyclingActivityData = {
@@ -148,28 +222,41 @@ export function buildCyclingActivity(
   return data;
 }
 
-function toEntry(row: FeedRow): Entry {
+/**
+ * The log's window: the latest ride's month and the `LOG_MONTHS - 1` before
+ * it, by the local month each ride is filed under. Entries arrive newest
+ * first, so the first one sets the window.
+ */
+function logEntries(entries: readonly Entry[]): Entry[] {
+  const latest = entries[0];
+  if (latest === undefined) return [];
+  const [year, month] = latest.monthKey.split("-").map(Number);
+  const first = new Date(Date.UTC(year!, month! - 1 - (LOG_MONTHS - 1), 1));
+  const firstKey = first.toISOString().slice(0, 7);
+  return entries.filter((entry) => entry.monthKey >= firstKey);
+}
+
+function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
   const startedAt = wallClock(row.startedAt, row.timezone);
   const measured = row.powerSource === "measured";
   const measuredWatts =
     measured && row.averageWatts !== null ? Math.round(row.averageWatts) : null;
-  // The hub publishes every recorded track point, and the island carries
-  // every ride's route in its props, so a season at full resolution is more
-  // than the worker's memory. Thin to what the card's map and chart can show.
+  // Rows published before the write side thinned tracks still carry every
+  // recorded point, so the read side bounds them the same way.
   const route =
-    row.polyline === null
+    track?.polyline == null
       ? []
-      : thin(decodePolyline(row.polyline), MAX_PATH_POINTS);
+      : thin(decodePolyline(track.polyline), MAX_ROUTE_POINTS);
   const profile =
-    row.elevationProfile === null
+    track?.elevationProfile == null
       ? null
-      : parseJson(elevationProfile, row.elevationProfile);
+      : parseJson(elevationProfile, track.elevationProfile);
 
   const ride: Ride = {
     id: row.activityId,
     name: row.name ?? "Ride",
     startedAt,
-    photos: photos(row),
+    photos: track === undefined ? [] : photos(track, row.name),
     badges: [],
     facts: [],
   };
@@ -227,13 +314,13 @@ function parseJson<T>(schema: z.ZodType<T>, text: string): T | null {
   return result.success ? result.data : null;
 }
 
-function photos(row: FeedRow): RidePhoto[] {
-  const keys = parseJson(photoKeys, row.photoKeys) ?? [];
+function photos(track: TrackRow, name: string | null): RidePhoto[] {
+  const keys = parseJson(photoKeys, track.photoKeys) ?? [];
   return keys.map((key, index) => ({
     id: key,
     thumbnailUrl: `/photos/${key}`,
     fullUrl: `/photos/${key}`,
-    alt: `Photo ${index + 1} from ${row.name ?? "the ride"}`,
+    alt: `Photo ${index + 1} from ${name ?? "the ride"}`,
   }));
 }
 

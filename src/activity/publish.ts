@@ -4,6 +4,7 @@
 import type { CompiledQuery } from "kysely";
 import { z } from "zod";
 import type { ActivityStore } from "./store";
+import { MAX_PROFILE_SAMPLES, thin, thinPolyline } from "./track";
 
 // The hub branches on this name to decide whether a failure is permanent. RPC
 // carries a thrown error's name and message and drops its stack.
@@ -66,6 +67,9 @@ export async function publishActivity(
   row: unknown,
 ): Promise<void> {
   const activity = parse(publishedActivity, row, "activity");
+  // The hub sends every point the head unit logged. A card draws a few
+  // hundred, and a season of full tracks is more than one request can hold,
+  // so the track is thinned once here rather than on every read.
   await store.db
     .insertInto("activityFeed")
     .values({
@@ -80,11 +84,14 @@ export async function publishActivity(
       elevationM: activity.elevationM,
       averageWatts: activity.averageWatts,
       powerSource: activity.powerSource,
-      polyline: activity.polyline,
+      polyline:
+        activity.polyline === null ? null : thinPolyline(activity.polyline),
       elevationProfile:
         activity.elevationProfile === null
           ? null
-          : JSON.stringify(activity.elevationProfile),
+          : JSON.stringify(
+              thin(activity.elevationProfile, MAX_PROFILE_SAMPLES),
+            ),
       photoKeys: JSON.stringify(activity.photoKeys),
       updatedAt: new Date().toISOString(),
     })
