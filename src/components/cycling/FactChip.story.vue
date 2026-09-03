@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { bareRide, crowdedRide, epicRide, raceRide } from "./fixtures";
 import FactChip from "./FactChip.vue";
-import type { RideFact } from "./types";
+import type { RideFact } from "@/activity/types";
 
 const factSets: Record<string, RideFact[]> = {
   one: raceRide.facts,

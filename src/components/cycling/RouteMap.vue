@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { fitRoute } from "./geo";
-import type { Coordinate } from "./types";
+import type { Coordinate } from "@/activity/types";
 
 const TILE_SIZE = 256;
 

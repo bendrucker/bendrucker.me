@@ -10,6 +10,7 @@ import {
   type PublishedActivity,
 } from "./publish";
 import type { ActivityStore } from "./store";
+import { decodePolyline } from "./track";
 
 let db: Kysely<Database>;
 let store: ActivityStore;
@@ -72,6 +73,29 @@ describe("publishActivity", () => {
     expect(rows[0]!.elevationProfile).toBeNull();
   });
 
+  it("stores a track thinned to what a card draws", async () => {
+    // Each repeat re-encodes the same deltas, so the string stays decodable.
+    const polyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@".repeat(400);
+    await publishActivity(
+      store,
+      activity({
+        polyline,
+        elevationProfile: Array.from({ length: 1000 }, (_, i) => i),
+      }),
+    );
+
+    const row = await db
+      .selectFrom("activityFeed")
+      .select(["polyline", "elevationProfile"])
+      .executeTakeFirstOrThrow();
+    const route = decodePolyline(row.polyline!);
+    expect(route.length).toBeLessThanOrEqual(301);
+    expect(route.at(-1)).toEqual(decodePolyline(polyline).at(-1));
+    const profile: unknown = JSON.parse(row.elevationProfile!);
+    expect(profile).toHaveLength(101);
+    expect(profile).toEqual(expect.arrayContaining([0, 999]));
+  });
+
   it("accepts an activity with nothing but the registry fields", async () => {
     await publishActivity(
       store,
@@ -124,6 +148,15 @@ describe("publishPowerCurve", () => {
       .selectAll()
       .execute();
     expect(rows).toEqual([{ activityId: "a1", durationS: 5, watts: 950 }]);
+  });
+
+  it("moves the activity's updatedAt so the feed version changes", async () => {
+    await publishActivity(store, activity());
+    const before = (await feedRow()).updatedAt;
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    await publishPowerCurve(store, "a1", [{ durationS: 60, watts: 400 }]);
+
+    expect((await feedRow()).updatedAt > before).toBe(true);
   });
 
   it("clears the ladder when an activity stops having one", async () => {

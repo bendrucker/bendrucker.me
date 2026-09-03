@@ -20,13 +20,25 @@ export function activityCachePolicy(now: Date): CachePolicy {
   return { maxAge: activityMaxAge(now), swr: 3600 };
 }
 
+export interface ActivityVersions {
+  /** `sync_state.version`, which moves only when the github cron changed a row. */
+  github: number;
+  /** The activity feed's fingerprint, from `readFeedVersion`. */
+  feed: string;
+}
+
 /**
- * `sync_state.version` moves only when the github cron actually changed a row,
- * so it identifies the rendered dataset. The variant is part of the tag because
- * `/activity/code` serves HTML or markdown at one URL, by `Accept`.
+ * Both datasets go into every activity page's tag rather than the one the
+ * page reads, which costs a re-render of the other page when either changes
+ * and saves the middleware knowing which page is which. The variant is part
+ * of the tag because `/activity/code` serves HTML or markdown at one URL, by
+ * `Accept`.
  */
-export function activityETag(version: number, variant: "html" | "md"): string {
-  return `"${version}-${variant}"`;
+export function activityETag(
+  { github, feed }: ActivityVersions,
+  variant: "html" | "md",
+): string {
+  return `"${github}-${feed}-${variant}"`;
 }
 
 export function etagMatches(ifNoneMatch: string | null, etag: string): boolean {

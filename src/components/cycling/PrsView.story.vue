@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { activity, powerBests } from "./fixtures";
 import PrsView from "./PrsView.vue";
-import type { RankedList } from "./types";
+import type { RankedList } from "@/activity/types";
 import UnitsProvider from "./UnitsProvider.vue";
 
 const periods = activity.records.map((entry) => entry.period);

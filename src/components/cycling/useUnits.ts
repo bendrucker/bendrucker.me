@@ -7,7 +7,8 @@ import {
   type Ref,
 } from "vue";
 import * as format from "./format";
-import type { MonthStats, Units } from "./types";
+import type { MonthStats } from "@/activity/types";
+import type { Units } from "./types";
 
 const unitsKey: InjectionKey<Ref<Units>> = Symbol("cycling-units");
 

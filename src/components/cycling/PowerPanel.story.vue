@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { powerBests } from "./fixtures";
 import PowerPanel from "./PowerPanel.vue";
-import type { PowerBest } from "./types";
+import type { PowerBest } from "@/activity/types";
 
 const measuredWatts: Record<string, number> = {
   "1m": 412,

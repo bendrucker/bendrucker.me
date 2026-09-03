@@ -6,13 +6,12 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 
 - `src/config.ts` — `SITE` constant (metadata, feature flags)
 - `src/content/blog/*.md` — posts (frontmatter: `title`, `publishDate` required; `subtitle`, `categories`, `series` optional)
-- `src/pages/` — routes: `posts/`, `activity/code.astro`, `tags/`, `archives/`, `about.md`, `rss.xml.ts`, `og.png.ts`
+- `src/pages/` — routes: `posts/`, `activity/code.astro`, `activity/cycling.astro`, `tags/`, `archives/`, `about.md`, `rss.xml.ts`, `og.png.ts`
 - `src/layouts/` — `Layout`, `PostDetails`, `AboutLayout`, `Main`
 - `src/styles/global.css` — theme variables + Tailwind `@theme inline`
 - `static/` — images, fonts (copied to `public/` at build)
 - `packages/logger` — shared pino logger; `packages/github` — GitHub API client
 - `workers/github` — cron (hourly): GitHub API → D1
-- `workers/strava` — cron (6h): Strava API → KV
 - `terraform/` — Terraform root: Cloudflare DNS and redirect rules
 
 ## Commands
@@ -124,7 +123,6 @@ All deploy via GitHub Actions matrix on push to `main`. Use `@workspace/logger` 
 | ------ | ------------------------------ | -------------------- |
 | www    | `wrangler.toml`                | Main site, reads D1  |
 | github | `workers/github/wrangler.toml` | GitHub activity → D1 |
-| strava | `workers/strava/wrangler.toml` | Strava activity → KV |
 
 Run `npx wrangler types` after changing any `wrangler.toml`. The `types` CI job
 regenerates types at the root and in each worker. On a pull request from a

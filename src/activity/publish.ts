@@ -4,6 +4,7 @@
 import type { CompiledQuery } from "kysely";
 import { z } from "zod";
 import type { ActivityStore } from "./store";
+import { MAX_PROFILE_SAMPLES, thin, thinPolyline } from "./track";
 
 // The hub branches on this name to decide whether a failure is permanent. RPC
 // carries a thrown error's name and message and drops its stack.
@@ -66,6 +67,9 @@ export async function publishActivity(
   row: unknown,
 ): Promise<void> {
   const activity = parse(publishedActivity, row, "activity");
+  // The hub sends every point the head unit logged. A card draws a few
+  // hundred, and a season of full tracks is more than one request can hold,
+  // so the track is thinned once here rather than on every read.
   await store.db
     .insertInto("activityFeed")
     .values({
@@ -80,11 +84,14 @@ export async function publishActivity(
       elevationM: activity.elevationM,
       averageWatts: activity.averageWatts,
       powerSource: activity.powerSource,
-      polyline: activity.polyline,
+      polyline:
+        activity.polyline === null ? null : thinPolyline(activity.polyline),
       elevationProfile:
         activity.elevationProfile === null
           ? null
-          : JSON.stringify(activity.elevationProfile),
+          : JSON.stringify(
+              thin(activity.elevationProfile, MAX_PROFILE_SAMPLES),
+            ),
       photoKeys: JSON.stringify(activity.photoKeys),
       updatedAt: new Date().toISOString(),
     })
@@ -121,9 +128,17 @@ export async function publishPowerCurve(
   const id = parse(text, activityId, "activityId");
   const rows = parse(powerBests, bests, "bests");
 
+  // The feed's cache validator is the activity table's latest write, so a
+  // curve that lands after its activity has to move that write or a cached
+  // page keeps revalidating against the curve it rendered without.
   const statements: CompiledQuery[] = [
     store.db
       .deleteFrom("activityPowerCurve")
+      .where("activityId", "=", id)
+      .compile(),
+    store.db
+      .updateTable("activityFeed")
+      .set({ updatedAt: new Date().toISOString() })
       .where("activityId", "=", id)
       .compile(),
   ];

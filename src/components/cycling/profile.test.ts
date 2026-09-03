@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { seededRandom, syntheticProfile } from "./profile";
+import { normalizeProfile, seededRandom, syntheticProfile } from "./profile";
 
 const FLAT_FEET_PER_MILE = 12;
 const HILLY_FEET_PER_MILE = 180;
@@ -105,5 +105,19 @@ describe("syntheticProfile", () => {
         0.6040300551597427,
       ]
     `);
+  });
+});
+
+describe("normalizeProfile", () => {
+  it("rescales the lowest point to 0 and the highest to 1", () => {
+    expect(normalizeProfile([100, 150, 200, 100])).toEqual([0, 0.5, 1, 0]);
+  });
+
+  it("sits a flat ride at the baseline", () => {
+    expect(normalizeProfile([12, 12, 12])).toEqual([0.5, 0.5, 0.5]);
+  });
+
+  it("holds a non-finite sample at the baseline", () => {
+    expect(normalizeProfile([0, Number.NaN, 10])).toEqual([0, 0.5, 1]);
   });
 });

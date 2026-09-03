@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import LucideIcon from "./LucideIcon.vue";
-import type { IconName } from "./types";
+import type { IconName } from "@/activity/types";
 
 withDefaults(
   defineProps<{

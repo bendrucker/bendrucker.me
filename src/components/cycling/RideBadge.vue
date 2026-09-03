@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import LucideIcon from "./LucideIcon.vue";
-import type { RideBadge } from "./types";
+import type { RideBadge } from "@/activity/types";
 
 defineProps<{ badge: RideBadge }>();
 </script>

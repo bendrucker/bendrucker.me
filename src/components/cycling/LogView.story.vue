@@ -5,7 +5,7 @@ import PreviewControls from "@/stories/PreviewControls.vue";
 import { logEvent } from "histoire/client";
 import { juneMonth, months } from "./fixtures";
 import LogView from "./LogView.vue";
-import type { MonthGroup } from "./types";
+import type { MonthGroup } from "@/activity/types";
 import UnitsProvider from "./UnitsProvider.vue";
 
 const emptyMonth: MonthGroup = {

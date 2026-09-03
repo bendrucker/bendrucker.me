@@ -5,7 +5,7 @@ import PreviewControls from "@/stories/PreviewControls.vue";
 import { julyMonth, rankedLists } from "./fixtures";
 import * as format from "./format";
 import SectionHeading from "./SectionHeading.vue";
-import { iconNames } from "./types";
+import { iconNames } from "@/activity/types";
 
 const monthSummary = format.formatMonthSummary(julyMonth, "imperial");
 

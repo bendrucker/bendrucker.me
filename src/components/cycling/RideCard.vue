@@ -9,7 +9,7 @@ import RideBadge from "./RideBadge.vue";
 import RouteMap from "./RouteMap.vue";
 import StatValue from "./StatValue.vue";
 import StravaLink from "./StravaLink.vue";
-import type { Ride } from "./types";
+import type { Ride } from "@/activity/types";
 import { useUnits } from "./useUnits";
 
 const props = withDefaults(
@@ -39,7 +39,8 @@ const hasRoute = computed(() => (props.ride.route?.length ?? 0) >= 2);
 
 const metaLine = computed(() => {
   const { movingSeconds, averageWatts, companionCount } = props.ride;
-  const parts = [formatDuration(movingSeconds)];
+  const parts = [];
+  if (movingSeconds !== undefined) parts.push(formatDuration(movingSeconds));
   if (averageWatts) parts.push(`${averageWatts} W`);
   if (companionCount) {
     parts.push(`+${companionCount} rider${companionCount === 1 ? "" : "s"}`);
@@ -79,6 +80,7 @@ const metaLine = computed(() => {
           <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <component :is="headingAs" class="min-w-0">
               <a
+                v-if="ride.stravaUrl"
                 :href="ride.stravaUrl"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -86,6 +88,9 @@ const metaLine = computed(() => {
               >
                 {{ ride.name }}
               </a>
+              <span v-else class="text-[15px] font-bold wrap-anywhere">
+                {{ ride.name }}
+              </span>
             </component>
             <ul v-if="ride.badges.length" class="flex flex-wrap gap-1">
               <li v-for="badge in ride.badges" :key="badge.kind">
@@ -98,19 +103,29 @@ const metaLine = computed(() => {
             class="flex shrink-0 items-center gap-2 text-[11px] text-foreground/70"
           >
             <time :datetime="ride.startedAt">{{ started.short }}</time>
-            <StravaLink :href="ride.stravaUrl" :name="ride.name" />
+            <StravaLink
+              v-if="ride.stravaUrl"
+              :href="ride.stravaUrl"
+              :name="ride.name"
+            />
           </div>
         </div>
 
-        <p class="text-[11px] text-foreground/70">{{ metaLine }}</p>
+        <p v-if="metaLine" class="text-[11px] text-foreground/70">
+          {{ metaLine }}
+        </p>
 
         <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
           <StatValue
+            v-if="ride.distanceMi !== undefined"
             :value="formatDistance(ride.distanceMi)"
             :unit="distanceUnit"
             label="distance"
           />
-          <div class="flex items-baseline gap-0.5">
+          <div
+            v-if="ride.elevationFt !== undefined"
+            class="flex items-baseline gap-0.5"
+          >
             <StatValue
               :value="formatElevation(ride.elevationFt)"
               :unit="elevationUnit"

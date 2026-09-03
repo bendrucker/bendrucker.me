@@ -10,13 +10,13 @@ import {
 } from "reka-ui";
 import { computed, watch } from "vue";
 import StravaLink from "./StravaLink.vue";
-import type { RidePhoto } from "./types";
+import type { RidePhoto } from "@/activity/types";
 
 const props = defineProps<{
   photos: RidePhoto[];
   index: number;
   rideName: string;
-  rideUrl: string;
+  rideUrl?: string;
   open: boolean;
 }>();
 
@@ -149,7 +149,7 @@ function onKeydown(event: KeyboardEvent) {
             {{ rideName }}
           </p>
           <div class="ml-auto flex items-center gap-3">
-            <StravaLink :href="rideUrl" :name="rideName" />
+            <StravaLink v-if="rideUrl" :href="rideUrl" :name="rideName" />
             <DialogClose class="text-foreground/70">
               <span aria-hidden="true">✕</span>
               <span class="sr-only">Close photo viewer</span>

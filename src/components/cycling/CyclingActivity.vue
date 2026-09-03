@@ -5,13 +5,8 @@ import LogView from "./LogView.vue";
 import PhotoLightbox from "./PhotoLightbox.vue";
 import PrsView from "./PrsView.vue";
 import SegmentedControl from "./SegmentedControl.vue";
-import type {
-  CyclingActivityData,
-  Ride,
-  SegmentedOption,
-  Units,
-  ViewMode,
-} from "./types";
+import type { CyclingActivityData, Ride } from "@/activity/types";
+import type { SegmentedOption, Units, ViewMode } from "./types";
 import { provideUnits } from "./useUnits";
 import YearSummary from "./YearSummary.vue";
 
@@ -136,7 +131,7 @@ watch([mode, () => props.data], () => {
       :photos="lightboxRide?.photos ?? []"
       :index="photoIndex"
       :ride-name="lightboxRide?.name ?? ''"
-      :ride-url="lightboxRide?.stravaUrl ?? ''"
+      :ride-url="lightboxRide?.stravaUrl"
       :open="lightboxRide !== null"
       @close="lightboxRide = null"
       @update:index="photoIndex = $event"

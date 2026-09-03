@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { bareRide, crowdedRide, highlights } from "./fixtures";
 import HighlightCard from "./HighlightCard.vue";
-import type { Highlight } from "./types";
+import type { Highlight } from "@/activity/types";
 import UnitsProvider from "./UnitsProvider.vue";
 
 const cases: Record<string, Highlight> = {

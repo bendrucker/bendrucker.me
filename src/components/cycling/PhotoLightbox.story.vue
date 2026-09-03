@@ -6,7 +6,7 @@ import { ref } from "vue";
 import { crowdedRide, raceRide, travelRide } from "./fixtures";
 import PhotoLightbox from "./PhotoLightbox.vue";
 import PhotoStrip from "./PhotoStrip.vue";
-import type { RidePhoto } from "./types";
+import type { RidePhoto } from "@/activity/types";
 
 const photoSets: Record<string, RidePhoto[]> = {
   five: travelRide.photos,

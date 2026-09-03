@@ -1,0 +1,34 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Main from "../../layouts/Main.astro";
+import { SITE } from "../../config";
+import CyclingActivity from "../../components/cycling/CyclingActivity.vue";
+import { buildCyclingActivity, queryCyclingActivity } from "@/activity/feed";
+import type { CyclingActivityData } from "@/activity/types";
+import { getDb } from "@/db";
+import { logger } from "@workspace/logger";
+
+let data: CyclingActivityData;
+
+try {
+  data = await queryCyclingActivity(await getDb());
+} catch (error) {
+  logger.error({ error }, "Failed to load cycling activity");
+  data = buildCyclingActivity({ rides: [], tracks: [] }, [], new Date());
+}
+---
+
+<Layout
+  title={`Cycling | ${SITE.title}`}
+  description="My rides, by month."
+  sourcePath="src/pages/activity/cycling.astro"
+>
+  <Main
+    pageTitle="Cycling"
+    pageDesc="This page is a log of my rides: each month's rides with their routes and photos, the ones that stood out, and my personal records."
+  >
+    <section class="page-column">
+      <CyclingActivity client:load data={data} />
+    </section>
+  </Main>
+</Layout>

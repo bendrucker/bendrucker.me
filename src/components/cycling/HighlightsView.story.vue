@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { highlightMonths } from "./fixtures";
 import HighlightsView from "./HighlightsView.vue";
-import type { HighlightMonth } from "./types";
+import type { HighlightMonth } from "@/activity/types";
 import UnitsProvider from "./UnitsProvider.vue";
 
 const quietMonth: HighlightMonth = {

@@ -4,7 +4,7 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import CyclingActivity from "./CyclingActivity.vue";
 import { activity } from "./fixtures";
-import type { CyclingActivityData } from "./types";
+import type { CyclingActivityData } from "@/activity/types";
 
 /** A first-ride-of-the-year account: totals, but nothing ranked or notable. */
 const newcomer: CyclingActivityData = {

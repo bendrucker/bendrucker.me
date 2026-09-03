@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import HighlightCard from "./HighlightCard.vue";
 import SectionHeading from "./SectionHeading.vue";
-import type { HighlightMonth } from "./types";
+import type { HighlightMonth } from "@/activity/types";
 import { useUnits } from "./useUnits";
 
 defineProps<{ months: HighlightMonth[] }>();

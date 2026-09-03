@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import MonthRail from "./MonthRail.vue";
 import RideCard from "./RideCard.vue";
 import SectionHeading from "./SectionHeading.vue";
-import type { MonthGroup, Ride } from "./types";
+import type { MonthGroup, Ride } from "@/activity/types";
 import { scrollToSection, useScrollSpy } from "./useScrollSpy";
 import { useUnits } from "./useUnits";
 
