@@ -35,7 +35,6 @@ const {
 
 const started = computed(() => rideDate(props.ride.startedAt));
 
-// The feed sets a route only where it holds a line to draw.
 const hasRoute = computed(() => props.ride.route !== undefined);
 
 const metaLine = computed(() => {

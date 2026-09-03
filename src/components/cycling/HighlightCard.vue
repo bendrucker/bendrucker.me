@@ -32,7 +32,6 @@ const ride = computed(() => props.highlight.ride);
 
 const started = computed(() => rideDate(ride.value.startedAt));
 
-// The feed sets a route only where it holds a line to draw.
 const hasRoute = computed(() => ride.value.route !== undefined);
 
 const subParts = computed(() => {
