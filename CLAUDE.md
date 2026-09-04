@@ -6,7 +6,8 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 
 - `src/config.ts` — `SITE` constant (metadata, feature flags)
 - `src/content/blog/*.md` — posts (frontmatter: `title`, `publishDate` required; `subtitle`, `categories`, `series` optional)
-- `src/pages/` — routes: `posts/`, `activity/code.astro`, `activity/cycling.astro`, `tags/`, `archives/`, `about.md`, `rss.xml.ts`, `og.png.ts`
+- `src/pages/` — routes: `posts/`, `activity/code.astro`, `activity/cycling.astro`, `tags/`, `archives/`, `about.md`, `rss.xml.ts`, `og.png.ts`, `map/`
+- `src/map/` — vector basemap rendering for the route cards
 - `src/layouts/` — `Layout`, `PostDetails`, `AboutLayout`, `Main`
 - `src/styles/global.css` — theme variables + Tailwind `@theme inline`
 - `static/` — images, fonts (copied to `public/` at build)
@@ -101,21 +102,47 @@ process before it is ready.
 
 ## Route Maps
 
-`RouteMap.vue` draws its basemap from CARTO raster tiles, built in the browser
-by `src/components/cycling/basemap.ts`. CARTO requires an API key and stamps
-"API KEY REQUIRED" across every tile served without one, so the component draws
-no tiles at all unless `PUBLIC_CARTO_BASEMAP_KEY` is set, leaving the route line
-on the card's own background. Local dev and the story book run that way.
+`RouteMap.vue` draws a route line over a basemap PNG that the worker renders
+from CARTO vector tiles. `src/pages/map/[id]/[hash]/[spec].png.ts` reads the
+ride's polyline from D1, frames it with the same `fitRoute` the component uses,
+fetches the covering tiles, and rasterizes an SVG through the `@cf-wasm/resvg`
+pipeline that already backs the OG images.
 
-The key is scoped to the domains it was issued for rather than secret, which is
-why it ships to the client through a `PUBLIC_` variable inlined at build. The
-free tier is granted in exchange for keeping CARTO's and OpenStreetMap's credits
-visible, which `CyclingActivity.vue` renders once beneath the views. A card at
-150px cannot carry them itself.
+CARTO's raster basemaps are retired and stamp "API KEY REQUIRED" across every
+tile they serve, keyed or not. Nothing builds a raster tile URL any more. The
+vector tiles serve unkeyed today, so `CARTO_BASEMAP_KEY` is an optional worker
+secret that gets appended once CARTO extends the requirement to vector. Set it
+with `wrangler secret put`, not through a build variable: the browser never sees
+it.
 
-CI reads the key from the `CARTO_BASEMAP_KEY` repository secret, set on the site
-build step in `build.yml` and `deploy.yml`. A fork's build sees no secret and
-falls back to the unmapped route.
+The free tier is granted in exchange for keeping CARTO's and OpenStreetMap's
+credits visible, which `CyclingActivity.vue` renders once beneath the views. A
+card at 150px cannot carry them itself.
+
+Three constraints shape the design:
+
+- The source publishes to zoom 14 and `fitRoute` frames a short ride at 15, so
+  those tiles come from their zoom 14 parent and get drawn at twice the size
+  into a clipped quadrant. `src/map/tiles.test.ts` pins that math.
+- A vector tile is 165KB against 55KB for the equivalent PNG, and a cycling feed
+  draws a map per card. Rendering server-side is what keeps a page from pulling
+  several megabytes of tiles.
+- Rules are drawn across every tile before the next rule, so one tile's water
+  cannot land on the roads its neighbour already drew.
+
+Images are addressed by a hash of the ride's track and `BASEMAP_VERSION`, which
+makes them immutable: a re-synced ride or a restyle moves to a new URL rather
+than waiting out a cache. The browser gets `Cache-Control` from the route and
+Cloudflare's edge gets `Cloudflare-CDN-Cache-Control` from `cache.set()`, so a
+superseded URL leaves the edge early while a current one stays for a year.
+Upstream tile fetches ask for `cacheEverything`, which keeps repeat renders off
+CARTO's quota.
+
+Only the sizes the cards ask for are rendered, since the endpoint is public and
+each render costs several tile fetches. The cards take their defaults from
+`RIDE_MAP` and `HIGHLIGHT_MAP` rather than repeating the numbers. A size outside
+that list, or an image that fails to load, leaves the route line on the card's
+own ground. The story book has no worker and renders every card that way.
 
 ## Theme
 

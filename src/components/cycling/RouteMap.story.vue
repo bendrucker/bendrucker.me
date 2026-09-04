@@ -103,4 +103,8 @@ A ride's track, projected and drawn to fit whatever box it is given.
 The route control covers the cases the projection has to survive: one point, no
 points, a continent-wide bounding box, and a track that crosses the antimeridian.
 Sizes compares the four boxes the site actually asks for.
+
+The basemap behind the line is a PNG the worker renders from CARTO vector tiles,
+addressed by ride. Stories pass a bare track and no ride, so they draw the line
+alone — which is also what a card falls back to when the image does not load.
 </docs>

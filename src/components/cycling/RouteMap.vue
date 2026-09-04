@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { hasBasemap, tileUrl } from "./basemap";
+import { computed, ref, watch } from "vue";
+import { mapImageUrl } from "./basemap";
 import { decodePolyline, fitRoute } from "./geo";
 
-const TILE_SIZE = 256;
-
 const props = defineProps<{
+  /** The ride the basemap is rendered for. See `Ride.id`. */
+  id?: string;
   /** The ride's track as an encoded polyline. See `Ride.route`. */
   route?: string;
   width: number;
@@ -23,7 +23,30 @@ const fitted = computed(() =>
   fitRoute(coordinates.value, props.width, props.height),
 );
 
-const tiles = computed(() => (hasBasemap() ? fitted.value.tiles : []));
+/**
+ * Both themes are addressed up front and swapped with CSS. The site's theme is
+ * an attribute a reader can toggle, so a `prefers-color-scheme` source would
+ * follow the operating system straight past that choice.
+ */
+const basemaps = computed(() => {
+  const { id, route, width, height } = props;
+  if (id === undefined || route === undefined || !hasRoute.value) return null;
+  return {
+    light: mapImageUrl(id, route, width, height, "light"),
+    dark: mapImageUrl(id, route, width, height, "dark"),
+  };
+});
+
+/**
+ * The route line is the content and the card stands on its own without a
+ * basemap, so a size the worker will not render, or a ride whose images have
+ * not been generated, leaves the line on the card's own ground. The story
+ * book renders every card this way.
+ */
+const failed = ref(false);
+watch(basemaps, () => {
+  failed.value = false;
+});
 </script>
 
 <template>
@@ -31,22 +54,21 @@ const tiles = computed(() => (hasBasemap() ? fitted.value.tiles : []));
     class="relative overflow-hidden bg-muted text-accent"
     :style="{ width: `${width}px`, height: `${height}px` }"
   >
-    <!-- Only the light basemap is fetched. Desaturating it first means the
-         dark inversion lands on gray rather than on complementary hues.
-         Unkeyed CARTO tiles carry a watermark across the image, so an
-         unconfigured key leaves the route on the card's own ground. -->
-    <img
-      v-for="tile in tiles"
-      :key="tile.key"
-      :src="tileUrl(tile)"
-      alt=""
-      aria-hidden="true"
-      loading="lazy"
-      :width="TILE_SIZE"
-      :height="TILE_SIZE"
-      class="absolute max-w-none opacity-85 contrast-[.92] grayscale-[.9] dark:opacity-70 dark:invert"
-      :style="{ left: `${tile.left}px`, top: `${tile.top}px` }"
-    />
+    <template v-if="basemaps && !failed">
+      <img
+        v-for="(src, theme) in basemaps"
+        :key="theme"
+        :src="src"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        @error="failed = true"
+        :width="width"
+        :height="height"
+        class="absolute inset-0"
+        :class="theme === 'dark' ? 'hidden dark:block' : 'dark:hidden'"
+      />
+    </template>
     <svg
       v-if="hasRoute"
       class="absolute inset-0"

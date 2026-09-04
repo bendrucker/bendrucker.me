@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { BASEMAP_CREDITS, hasBasemap } from "./basemap";
+import { BASEMAP_CREDITS } from "./basemap";
 import HighlightsView from "./HighlightsView.vue";
 import LogView from "./LogView.vue";
 import PhotoLightbox from "./PhotoLightbox.vue";
@@ -43,6 +43,11 @@ function selectUnits(value: string) {
 }
 
 const periods = computed(() => props.data.records.map((entry) => entry.period));
+
+// A year without a basemap owes CARTO nothing.
+const hasBasemap = computed(() =>
+  props.data.months.some((month) => month.rides.some((ride) => ride.route)),
+);
 
 const records = computed(
   () =>
@@ -130,7 +135,7 @@ watch([mode, () => props.data], () => {
     <!-- CARTO's free basemap tier is granted in exchange for keeping its
          credit and OpenStreetMap's visible. A 150px card cannot hold them, so
          they sit once under the page instead. -->
-    <p v-if="hasBasemap()" class="text-[10px] text-foreground/50">
+    <p v-if="hasBasemap" class="text-[10px] text-foreground/50">
       maps
       <template v-for="(credit, index) in BASEMAP_CREDITS" :key="credit.href"
         ><template v-if="index > 0">, </template>&copy;

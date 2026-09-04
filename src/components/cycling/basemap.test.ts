@@ -1,37 +1,73 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { hasBasemap, tileUrl } from "./basemap";
-import type { MapTile } from "./geo";
+import { describe, expect, it } from "vitest";
+import {
+  HIGHLIGHT_MAP,
+  isMapSize,
+  mapImageUrl,
+  RIDE_MAP,
+  routeHash,
+} from "./basemap";
 
-const TILE: MapTile = { key: "9_82_197", z: 9, x: 82, y: 197, left: 0, top: 0 };
+const ROUTE = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
-describe("hasBasemap", () => {
-  it("is false without a key", () => {
-    vi.stubEnv("PUBLIC_CARTO_BASEMAP_KEY", "");
-    expect(hasBasemap()).toBe(false);
+describe("isMapSize", () => {
+  it("accepts the sizes the cards ask for", () => {
+    expect(isMapSize(RIDE_MAP.width, RIDE_MAP.height)).toBe(true);
+    expect(isMapSize(HIGHLIGHT_MAP.width, HIGHLIGHT_MAP.height)).toBe(true);
   });
 
-  it("is true with one", () => {
-    vi.stubEnv("PUBLIC_CARTO_BASEMAP_KEY", "abc123");
-    expect(hasBasemap()).toBe(true);
+  // Rendering costs tile fetches, so an arbitrary size is not something the
+  // endpoint will do on request.
+  it("refuses anything else", () => {
+    expect(isMapSize(150, 141)).toBe(false);
+    expect(isMapSize(4000, 4000)).toBe(false);
   });
 });
 
-describe("tileUrl", () => {
-  it("addresses the tile by its own coordinates", () => {
-    vi.stubEnv("PUBLIC_CARTO_BASEMAP_KEY", "abc123");
-    expect(tileUrl(TILE)).toBe(
-      "https://basemaps.cartocdn.com/light_all/9/82/197@2x.png?key=abc123",
+describe("routeHash", () => {
+  it("is stable for the same route", () => {
+    expect(routeHash(ROUTE)).toBe(routeHash(ROUTE));
+  });
+
+  it("changes when the route does", () => {
+    expect(routeHash(ROUTE)).not.toBe(routeHash(`${ROUTE}?`));
+  });
+
+  it("is URL safe", () => {
+    expect(routeHash(ROUTE)).toMatch(/^[0-9a-z]+$/);
+  });
+});
+
+describe("mapImageUrl", () => {
+  it("addresses the ride, its track, and the size", () => {
+    expect(mapImageUrl("42", ROUTE, 150, 140, "light")).toBe(
+      `/map/42/${routeHash(ROUTE)}/150x140.png`,
     );
   });
 
-  // A key arrives by email and gets pasted into a secret. Escaping it means a
-  // stray `&` or `+` cannot silently truncate the query.
-  it("escapes a key holding query syntax", () => {
-    vi.stubEnv("PUBLIC_CARTO_BASEMAP_KEY", "a+b&c=d");
-    expect(tileUrl(TILE)).toContain("?key=a%2Bb%26c%3Dd");
+  it("names the dark render separately", () => {
+    expect(mapImageUrl("42", ROUTE, 150, 140, "dark")).toBe(
+      `/map/42/${routeHash(ROUTE)}/150x140-dark.png`,
+    );
+  });
+
+  // The two themes are fetched as separate images, so they must not collide.
+  it("gives the themes different urls", () => {
+    expect(mapImageUrl("42", ROUTE, 150, 140, "light")).not.toBe(
+      mapImageUrl("42", ROUTE, 150, 140, "dark"),
+    );
+  });
+
+  it("escapes an id that would otherwise reshape the path", () => {
+    expect(mapImageUrl("a/b", ROUTE, 150, 140, "light")).toContain(
+      "/map/a%2Fb/",
+    );
+  });
+
+  // A re-synced ride keeps its id, so the hash is the only thing that retires
+  // an image already cached as immutable.
+  it("moves to a new url when the track changes", () => {
+    expect(mapImageUrl("42", ROUTE, 150, 140, "light")).not.toBe(
+      mapImageUrl("42", `${ROUTE}?`, 150, 140, "light"),
+    );
   });
 });

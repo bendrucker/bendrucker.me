@@ -6,6 +6,7 @@ import FactChip from "./FactChip.vue";
 import LucideIcon from "@/components/LucideIcon.vue";
 import PhotoStrip from "./PhotoStrip.vue";
 import RideBadge from "./RideBadge.vue";
+import { RIDE_MAP } from "./basemap";
 import RouteMap from "./RouteMap.vue";
 import StatValue from "./StatValue.vue";
 import StravaLink from "./StravaLink.vue";
@@ -20,7 +21,7 @@ const props = withDefaults(
     /** Heading level for the ride name, so callers own the document outline. */
     headingAs?: "h2" | "h3" | "h4" | "h5" | "h6";
   }>(),
-  { mapWidth: 150, mapHeight: 140, headingAs: "h3" },
+  { mapWidth: RIDE_MAP.width, mapHeight: RIDE_MAP.height, headingAs: "h3" },
 );
 
 defineEmits<{ openPhoto: [index: number] }>();
@@ -61,6 +62,7 @@ const metaLine = computed(() => {
       class="flex items-center justify-center border-b border-border sm:border-r sm:border-b-0"
     >
       <RouteMap
+        :id="ride.id"
         :route="ride.route"
         :width="mapWidth"
         :height="mapHeight"

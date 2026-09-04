@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { rideDate } from "./datetime";
 import RideBadge from "./RideBadge.vue";
+import { HIGHLIGHT_MAP } from "./basemap";
 import RouteMap from "./RouteMap.vue";
 import StatValue from "./StatValue.vue";
 import StravaLink from "./StravaLink.vue";
@@ -16,7 +17,11 @@ const props = withDefaults(
     /** Heading level for the ride name, so callers own the document outline. */
     headingAs?: "h2" | "h3" | "h4" | "h5" | "h6";
   }>(),
-  { mapWidth: 260, mapHeight: 130, headingAs: "h3" },
+  {
+    mapWidth: HIGHLIGHT_MAP.width,
+    mapHeight: HIGHLIGHT_MAP.height,
+    headingAs: "h3",
+  },
 );
 
 const {
@@ -104,6 +109,7 @@ const totals = computed(() => {
     >
       <div class="relative">
         <RouteMap
+          :id="ride.id"
           :route="ride.route"
           :width="mapWidth"
           :height="mapHeight"
