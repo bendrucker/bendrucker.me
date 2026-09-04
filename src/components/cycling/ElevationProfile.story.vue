@@ -5,13 +5,12 @@ import PreviewControls from "@/stories/PreviewControls.vue";
 import ElevationProfile from "./ElevationProfile.vue";
 import {
   bareRide,
+  crowdedRide,
   epicRide,
-  everydayRide,
   raceRide,
-  travelRide,
+  springRide,
   winterRide,
 } from "./fixtures";
-import { climbRate } from "./profile";
 import { encodeProfile } from "@/activity/track";
 
 const sampleSets: Record<string, string> = {
@@ -23,10 +22,10 @@ const sampleSets: Record<string, string> = {
   none: "",
 };
 
-const scale = [raceRide, winterRide, travelRide, everydayRide, epicRide].map(
+const scale = [raceRide, winterRide, springRide, crowdedRide, epicRide].map(
   (ride) => ({
     name: ride.name,
-    feetPerMile: Math.round(climbRate(ride.elevationFt, ride.distanceMi)),
+    elevationFt: ride.elevationFt ?? 0,
     profile: ride.elevationProfile ?? "",
   }),
 );
@@ -81,7 +80,7 @@ function initState() {
             :profile="row.profile"
           />
           <p class="relative truncate p-2 text-[11px] text-foreground/70">
-            {{ row.name }} · {{ row.feetPerMile }} ft/mi
+            {{ row.name }} · {{ row.elevationFt.toLocaleString() }} ft
           </p>
         </li>
       </ul>
@@ -107,9 +106,9 @@ function initState() {
 
 The wash of climbing behind a ride card. A sample is the share of the chart's
 height that point of the ride stands at, so the component only paints: how much
-of the box a ride earns is decided upstream by `relief`, from its climbing per
-mile. A flat commute keeps a thin horizon and a morning of hill repeats fills
-three quarters of the box.
+of the box a ride earns is decided upstream by `relief`, from the feet it
+climbed. A commute keeps a thin horizon and a day in the hills fills three
+quarters of the box.
 
 "Across the scale" is that spread on one screen, from the flattest fixture ride
 to the hilliest.

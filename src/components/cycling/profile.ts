@@ -5,14 +5,14 @@ export { decodeProfile };
 const DEFAULT_SAMPLE_COUNT = 22;
 
 /**
- * The ends of the scale every card's profile is drawn against, in feet of
- * climbing per mile. Both sit at the edges of a season's riding: a morning of
- * hill repeats in the city reaches the top, a flat commute the floor.
+ * The ends of the scale every card's profile is drawn against, in feet
+ * climbed. Both sit at the edges of a season's riding: an evening spin around
+ * the city at the floor, a full day in the hills at the top.
  */
-const STEEP_FEET_PER_MILE = 150;
-const FLAT_FEET_PER_MILE = 25;
+const EASY_DAY_FEET = 400;
+const BIG_DAY_FEET = 8000;
 
-/** Height the hilliest ride stands in, as a fraction of the chart. */
+/** Height the biggest day stands in, as a fraction of the chart. */
 const MAX_RELIEF = 0.75;
 
 /** Height the flattest ride keeps, so its card still reads as a horizon. */
@@ -43,39 +43,27 @@ function clamp(value: number): number {
 }
 
 /**
- * Feet of climbing per mile, the rate `relief` reads. A ride missing either
- * measure, or one that recorded no distance to divide by, has no rate to give
- * and yields NaN, which `relief` draws at the floor.
- */
-export function climbRate(
-  elevationFt: number | null | undefined,
-  distanceMi: number | null | undefined,
-): number {
-  if (elevationFt == null || !distanceMi) return Number.NaN;
-  return elevationFt / distanceMi;
-}
-
-/**
- * How much of the chart's height a ride's profile stands in.
+ * How much of the chart's height a ride's profile stands in, from the feet the
+ * card already prints.
  *
- * Rides repeat their climbs, so how high one got says little about how hilly
- * it was: a Headlands loop climbs two and a half times what a ride around the
- * city does and tops out lower than it. Climbing per mile sets the height.
- * The vertical axis is then a measure of hilliness that holds across cards,
- * and a rate the data cannot give draws at the floor.
+ * The scale is logarithmic. A season spans two hundredfold between a commute
+ * and a double century, so a linear axis presses everything short of an epic
+ * onto the floor. Climbing per mile, the other candidate, is scale-free: it
+ * stands a four-mile evening spin level with a day that climbed fifty times
+ * as much. An elevation the data cannot give draws at the floor.
  */
-export function relief(feetPerMile: number): number {
+export function relief(elevationFt: number | null | undefined): number {
   const ratio =
-    (feetPerMile - FLAT_FEET_PER_MILE) /
-    (STEEP_FEET_PER_MILE - FLAT_FEET_PER_MILE);
-  const steepness = Number.isNaN(ratio) ? 0 : Math.min(1, Math.max(0, ratio));
-  return MIN_RELIEF + steepness * (MAX_RELIEF - MIN_RELIEF);
+    Math.log((elevationFt ?? 0) / EASY_DAY_FEET) /
+    Math.log(BIG_DAY_FEET / EASY_DAY_FEET);
+  const climbed = Number.isNaN(ratio) ? 0 : Math.min(1, Math.max(0, ratio));
+  return MIN_RELIEF + climbed * (MAX_RELIEF - MIN_RELIEF);
 }
 
 /** Deterministic elevation samples for a ride, evenly spaced. */
 export function syntheticProfile(
   seed: string,
-  feetPerMile: number,
+  elevationFt: number | null | undefined,
   sampleCount: number = DEFAULT_SAMPLE_COUNT,
 ): number[] {
   const random = seededRandom(seed);
@@ -99,20 +87,20 @@ export function syntheticProfile(
     return point + (random() - 0.5) * 0.06;
   });
 
-  return normalizeProfile(shape, feetPerMile);
+  return normalizeProfile(shape, elevationFt);
 }
 
 /**
  * Rescales a recorded profile to the share of the chart's height the ride has
  * earned: its lowest point on the floor, its highest at the `relief` its
- * climbing per mile buys. A ride that never changed altitude draws a level
- * band at that height rather than dividing by zero.
+ * climbing buys. A ride that never changed altitude draws a level band at
+ * that height rather than dividing by zero.
  */
 export function normalizeProfile(
   altitudes: number[],
-  feetPerMile: number,
+  elevationFt: number | null | undefined,
 ): number[] {
-  const height = relief(feetPerMile);
+  const height = relief(elevationFt);
   const finite = altitudes.filter((altitude) => Number.isFinite(altitude));
   const min = Math.min(...finite);
   const max = Math.max(...finite);

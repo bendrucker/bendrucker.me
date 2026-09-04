@@ -14,7 +14,7 @@ import {
   monthKeyOf,
   monthsBefore,
 } from "@/components/cycling/format";
-import { climbRate, normalizeProfile } from "@/components/cycling/profile";
+import { normalizeProfile } from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
 import {
   decodePolyline,
@@ -395,10 +395,7 @@ function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
   }
   if (profile !== null && profile.length > 0) {
     ride.elevationProfile = encodeProfile(
-      thin(
-        normalizeProfile(profile, climbRate(ride.elevationFt, ride.distanceMi)),
-        MAX_PROFILE_SAMPLES,
-      ),
+      thin(normalizeProfile(profile, ride.elevationFt), MAX_PROFILE_SAMPLES),
     );
   }
 

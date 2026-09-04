@@ -1,5 +1,5 @@
 import { encodePolyline, encodeProfile } from "@/activity/track";
-import { climbRate, seededRandom, syntheticProfile } from "./profile";
+import { seededRandom, syntheticProfile } from "./profile";
 import type {
   Coordinate,
   CyclingActivityData,
@@ -69,10 +69,7 @@ function ride(
     badges: [],
     facts: [],
     elevationProfile: encodeProfile(
-      syntheticProfile(
-        overrides.id,
-        climbRate(overrides.elevationFt, overrides.distanceMi),
-      ),
+      syntheticProfile(overrides.id, overrides.elevationFt),
     ),
     ...overrides,
   };
