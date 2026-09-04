@@ -141,8 +141,8 @@ describe("relief", () => {
     expect(heights.at(-1)!).toBeLessThan(MAX_RELIEF);
   });
 
-  // The pair that prompted the scale: the loop climbs 2.5x what the city ride
-  // does over 1.5x the distance, and has to draw visibly taller for it.
+  // The loop climbs 2.5x what the city ride does over 1.5x the distance, and
+  // has to draw visibly taller for it.
   it("stands a headlands loop well above a ride around the city", () => {
     expect(relief(2425 / 23.3)).toBeGreaterThan(1.5 * relief(997 / 15.4));
   });
