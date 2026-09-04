@@ -11,7 +11,7 @@ export function debounce<A extends unknown[]>(
 ): (...args: A) => void {
   const debounced = useDebounceFn(fn, ms);
   return (...args: A) => {
-    debounced(...args);
+    void debounced(...args);
   };
 }
 
@@ -153,10 +153,13 @@ export function useActivityApi(
     });
   }
 
+  // A watcher callback, so nothing is here to await the three reloads. The
+  // supplemental two swallow their own failures. A failed repo reload leaves
+  // the list empty, which is what the caller would have rendered anyway.
   function refresh() {
-    resetAndFetch();
-    fetchLanguages();
-    fetchYears();
+    void resetAndFetch();
+    void fetchLanguages();
+    void fetchYears();
   }
 
   // Only the search box benefits from waiting out keystrokes, so its value is
