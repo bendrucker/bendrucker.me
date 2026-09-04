@@ -14,7 +14,7 @@ import {
   monthKeyOf,
   monthsBefore,
 } from "@/components/cycling/format";
-import { normalizeProfile } from "@/components/cycling/profile";
+import { climbRate, normalizeProfile } from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
 import {
   decodePolyline,
@@ -394,14 +394,11 @@ function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
         : encodePolyline(thin(route, MAX_ROUTE_POINTS));
   }
   if (profile !== null && profile.length > 0) {
-    // Climbing per mile is what sets how tall the card draws the profile, so
-    // a ride missing either measure draws as flat as the scale goes.
-    const feetPerMile =
-      row.elevationM !== null && row.distanceM !== null && row.distanceM > 0
-        ? metersToFeet(row.elevationM) / metersToMiles(row.distanceM)
-        : Number.NaN;
     ride.elevationProfile = encodeProfile(
-      thin(normalizeProfile(profile, feetPerMile), MAX_PROFILE_SAMPLES),
+      thin(
+        normalizeProfile(profile, climbRate(ride.elevationFt, ride.distanceMi)),
+        MAX_PROFILE_SAMPLES,
+      ),
     );
   }
 

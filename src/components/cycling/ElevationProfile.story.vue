@@ -11,6 +11,7 @@ import {
   travelRide,
   winterRide,
 } from "./fixtures";
+import { climbRate } from "./profile";
 import { encodeProfile } from "@/activity/track";
 
 const sampleSets: Record<string, string> = {
@@ -25,7 +26,7 @@ const sampleSets: Record<string, string> = {
 const scale = [raceRide, winterRide, travelRide, everydayRide, epicRide].map(
   (ride) => ({
     name: ride.name,
-    feetPerMile: Math.round((ride.elevationFt ?? 0) / (ride.distanceMi ?? 1)),
+    feetPerMile: Math.round(climbRate(ride.elevationFt, ride.distanceMi)),
     profile: ride.elevationProfile ?? "",
   }),
 );

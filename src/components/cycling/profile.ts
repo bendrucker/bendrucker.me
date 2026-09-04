@@ -43,6 +43,19 @@ function clamp(value: number): number {
 }
 
 /**
+ * Feet of climbing per mile, the rate `relief` reads. A ride missing either
+ * measure, or one that recorded no distance to divide by, has no rate to give
+ * and yields NaN, which `relief` draws at the floor.
+ */
+export function climbRate(
+  elevationFt: number | null | undefined,
+  distanceMi: number | null | undefined,
+): number {
+  if (elevationFt == null || !distanceMi) return Number.NaN;
+  return elevationFt / distanceMi;
+}
+
+/**
  * How much of the chart's height a ride's profile stands in.
  *
  * Rides repeat their climbs, so how high one got says little about how hilly

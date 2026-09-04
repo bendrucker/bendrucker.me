@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  climbRate,
   normalizeProfile,
   relief,
   seededRandom,
@@ -120,6 +121,24 @@ describe("syntheticProfile", () => {
         0.5417028076096769,
       ]
     `);
+  });
+});
+
+describe("climbRate", () => {
+  it("divides climbing by distance", () => {
+    expect(climbRate(2425, 23.3)).toBeCloseTo(104.08);
+  });
+
+  it("has no rate to give without both measures", () => {
+    expect(climbRate(undefined, 23.3)).toBeNaN();
+    expect(climbRate(2425, undefined)).toBeNaN();
+    expect(climbRate(null, null)).toBeNaN();
+  });
+
+  // A ride whose distance rounded away would otherwise divide to Infinity and
+  // draw at the ceiling, which is the opposite of what it earned.
+  it("has no rate to give for a ride that recorded no distance", () => {
+    expect(climbRate(2425, 0)).toBeNaN();
   });
 });
 
