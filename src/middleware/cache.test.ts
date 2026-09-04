@@ -3,6 +3,7 @@ import {
   activityCachePolicy,
   activityETag,
   activityMaxAge,
+  cachesResponse,
   etagMatches,
   isActivityPath,
 } from "./cache";
@@ -91,5 +92,38 @@ describe("etagMatches", () => {
   it("accepts any entry in a list, and the wildcard", () => {
     expect(etagMatches('"6-0.0-html", "7-0.0-html"', etag)).toBe(true);
     expect(etagMatches("*", etag)).toBe(true);
+  });
+});
+
+function outcome(status: number, cacheControl: string | null, routed = false) {
+  const headers = new Headers();
+  if (cacheControl !== null) headers.set("cache-control", cacheControl);
+  return { status, headers, routed };
+}
+
+describe("cachesResponse", () => {
+  it("caches a plain rendered response", () => {
+    expect(cachesResponse(outcome(200, null))).toBe(true);
+  });
+
+  it("turns down anything that did not render", () => {
+    expect(cachesResponse(outcome(404, null))).toBe(false);
+    expect(cachesResponse(outcome(302, null))).toBe(false);
+  });
+
+  it("turns down a response that manages its own caching", () => {
+    expect(cachesResponse(outcome(200, "no-store"))).toBe(false);
+  });
+
+  // The map images set `Cache-Control` for the browser and a policy of their
+  // own for the edge. Reading the first as a request to skip the edge would
+  // rasterize every image again for every cold client.
+  it("keeps the policy a route set for itself", () => {
+    expect(cachesResponse(outcome(200, "public, max-age=31536000", true))).toBe(
+      true,
+    );
+    expect(cachesResponse(outcome(302, "public, max-age=300", true))).toBe(
+      true,
+    );
   });
 });

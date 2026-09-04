@@ -6,6 +6,7 @@ import { getDb } from "./db";
 import {
   activityCachePolicy,
   activityETag,
+  cachesResponse,
   etagMatches,
   isActivityPath,
 } from "./middleware/cache";
@@ -32,10 +33,11 @@ const cache: MiddlewareHandler = async (context, next) => {
   if (method !== "GET" && method !== "HEAD") return response;
   if (context.isPrerendered) return response;
 
-  // `routeRules` seeds a policy when the cache is created, before the response
-  // exists, and applies it with no regard for the status or an existing
-  // `Cache-Control`. Opt back out for responses that must not be cached.
-  if (response.status !== 200 || response.headers.has("Cache-Control")) {
+  // Only the activity branch above sets a policy before the route runs, so
+  // anywhere else one is the route's own.
+  const routed = !conditional && context.cache.options.maxAge !== undefined;
+  const { status, headers } = response;
+  if (!cachesResponse({ status, headers, routed })) {
     context.cache.set(false);
   }
 
