@@ -9,7 +9,6 @@ import {
 const FLAT_FEET_PER_MILE = 12;
 const HILLY_FEET_PER_MILE = 180;
 
-/** What `relief` returns at either end of its scale. */
 const MIN_RELIEF = 0.12;
 const MAX_RELIEF = 0.75;
 

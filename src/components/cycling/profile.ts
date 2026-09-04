@@ -47,10 +47,9 @@ function clamp(value: number): number {
  *
  * Rides repeat their climbs, so how high one got says little about how hilly
  * it was: a Headlands loop climbs two and a half times what a ride around the
- * city does and tops out lower than it. Climbing per mile is what separates
- * them, so it rather than the altitude reached sets the height. The vertical
- * axis is then a measure of hilliness that holds across cards, and a rate the
- * data cannot give draws at the floor.
+ * city does and tops out lower than it. Climbing per mile sets the height.
+ * The vertical axis is then a measure of hilliness that holds across cards,
+ * and a rate the data cannot give draws at the floor.
  */
 export function relief(feetPerMile: number): number {
   const ratio =
