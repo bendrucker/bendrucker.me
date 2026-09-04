@@ -85,15 +85,27 @@
     "typescript/no-namespace": "error",
     "typescript/no-require-imports": "error",
     "typescript/no-unsafe-function-type": "error",
-    // Type-aware, so it needs `npm run lint:types`. Parse external data with a
-    // zod schema and infer the type from it rather than asserting the shape.
+    // Type-aware from here down: `npm run lint` misses these and
+    // `npm run lint:types` is what catches them.
+    //
+    // Parse external data with a zod schema and infer the type from it rather
+    // than asserting the shape.
     "typescript/no-unsafe-type-assertion": "error",
-    // Type-aware too, and reachable now, but each has its own backlog. Turning
-    // one on belongs with the cleanup that makes it pass.
-    "typescript/no-floating-promises": "off",
-    "typescript/no-implied-eval": "off",
-    "typescript/no-unnecessary-type-assertion": "off",
-    "typescript/restrict-template-expressions": "off"
+    "typescript/no-floating-promises": "error",
+    "typescript/no-implied-eval": "error",
+    // `never` reaches a template only through the `_exhaustive` guard on a
+    // switch default, where interpolating the unhandled value is the message.
+    "typescript/restrict-template-expressions": [
+      "error",
+      {
+        "allowNever": true
+      }
+    ],
+    // Off until `noUncheckedIndexedAccess` is on. Every assertion it flags is a
+    // `!` on an index access, unnecessary only because the compiler types
+    // `items[i]` as `T` rather than `T | undefined`. Stripping them now means
+    // writing them back when that flag lands.
+    "typescript/no-unnecessary-type-assertion": "off"
   },
   "overrides": [
     {

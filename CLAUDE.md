@@ -31,11 +31,14 @@ npm run story:build   # Static story book into .histoire/dist
 checker attached, several seconds rather than a fraction of one, so CI runs it
 in place of `lint` rather than after it.
 
-`typescript/no-unsafe-type-assertion` is what needs the type checker: data
-arriving from KV, a GraphQL response, or a file is parsed with a zod schema and
-typed from it via `z.infer`, rather than asserted with `as`. tsgolint reads only
-`.ts`, so a cast in a `.vue` or `.astro` file reaches no linter and is the
-reviewer's to catch.
+Four rules need the type checker. `typescript/no-unsafe-type-assertion` is the
+one that shapes how code gets written: data arriving from KV, a GraphQL
+response, or a file is parsed with a zod schema and typed from it via `z.infer`,
+rather than asserted with `as`. `no-floating-promises`, `no-implied-eval`, and
+`restrict-template-expressions` catch what their names say.
+
+tsgolint reads only `.ts`, so a cast or a dropped promise in a `.vue` or
+`.astro` file reaches no linter and is the reviewer's to catch.
 
 ### Component Stories
 
