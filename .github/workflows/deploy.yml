@@ -145,8 +145,6 @@ jobs:
       - name: "🏗️ Build main site"
         if: matrix.path == '.'
         run: npm run build
-        env:
-          PUBLIC_CARTO_BASEMAP_KEY: ${{ secrets.CARTO_BASEMAP_KEY }}
 
       - name: "📋 Copy assets ignore file"
         if: matrix.path == '.'

@@ -18,11 +18,10 @@ import { normalizeProfile } from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
 import {
   decodePolyline,
-  encodePolyline,
   encodeProfile,
   MAX_PROFILE_SAMPLES,
-  MAX_ROUTE_POINTS,
   thin,
+  thinPolyline,
 } from "./track";
 import type {
   CyclingActivityData,
@@ -384,15 +383,10 @@ function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
   if (row.elevationM !== null) ride.elevationFt = feet(row.elevationM);
   if (row.movingS !== null) ride.movingSeconds = Math.round(row.movingS);
   if (measuredWatts !== null) ride.averageWatts = measuredWatts;
-  if (polyline !== null && route.length >= 2) {
-    // The write side thins as it stores, so a row published since then is
-    // already within the cap and its string goes out as it came in. Only a row
-    // published before that pays to be bounded and re-encoded here.
-    ride.route =
-      route.length <= MAX_ROUTE_POINTS
-        ? polyline
-        : encodePolyline(thin(route, MAX_ROUTE_POINTS));
-  }
+  // The map endpoint reads the stored polyline back through this same helper,
+  // so the basemap it renders is framed on the points the card draws.
+  if (polyline !== null && route.length >= 2)
+    ride.route = thinPolyline(polyline);
   if (profile !== null && profile.length > 0) {
     ride.elevationProfile = encodeProfile(
       thin(normalizeProfile(profile), MAX_PROFILE_SAMPLES),

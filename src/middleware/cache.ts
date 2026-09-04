@@ -65,3 +65,32 @@ export function activityMaxAge(now: Date): number {
   }
   return Math.ceil((synced - now.getTime()) / 1000);
 }
+
+/** What the cache middleware knows about a response once the route has run. */
+export interface CacheOutcome {
+  status: number;
+  headers: Headers;
+  /**
+   * A policy the route set for itself, chosen with its own status and headers
+   * already in hand.
+   */
+  routed: boolean;
+}
+
+/**
+ * `routeRules` seeds a policy when the cache is created, before the response
+ * exists, and applies it with no regard for the status or an existing
+ * `Cache-Control`. A response this turns down opts back out of that policy.
+ *
+ * A route that set its own policy keeps it. Turning one down for carrying
+ * `Cache-Control` would cost a route that renders its own response an edge
+ * cache on the grounds that it also told the browser how long to hold it.
+ */
+export function cachesResponse({
+  status,
+  headers,
+  routed,
+}: CacheOutcome): boolean {
+  if (routed) return true;
+  return status === 200 && !headers.has("Cache-Control");
+}

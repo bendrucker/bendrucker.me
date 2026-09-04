@@ -1,25 +1,54 @@
-import type { MapTile } from "./geo";
-
-const TILE_URL = "https://basemaps.cartocdn.com/light_all";
+// Route cards address their basemap as an image the worker renders from CARTO
+// vector tiles. Nothing here builds a tile URL for the browser.
 
 /**
- * CARTO's raster basemaps require a key, and serve tiles stamped "API KEY
- * REQUIRED" across the image without one. The key is scoped to the domains it
- * was issued for rather than secret, which is what lets it ship to the browser,
- * the only place tile URLs are built.
+ * The sizes the worker will render. The endpoint is public and each render
+ * costs a handful of tile fetches, so it serves these and refuses everything
+ * else. The cards take their defaults from here, which keeps the two in step.
  */
-function key(): string {
-  return import.meta.env.PUBLIC_CARTO_BASEMAP_KEY ?? "";
+export const RIDE_MAP = { width: 150, height: 140 } as const;
+export const HIGHLIGHT_MAP = { width: 260, height: 130 } as const;
+
+const MAP_SIZES = [RIDE_MAP, HIGHLIGHT_MAP];
+
+export function isMapSize(width: number, height: number): boolean {
+  return MAP_SIZES.some(
+    (size) => size.width === width && size.height === height,
+  );
 }
 
-/** Whether tiles can be drawn at all. Without a key the route goes unmapped. */
-export function hasBasemap(): boolean {
-  return key() !== "";
+/**
+ * Bump when the rendered basemap should change: a new palette, different
+ * layers, another zoom ceiling. Rendered images are immutable under a URL this
+ * feeds, so a bump is the only thing that retires the ones already sitting in
+ * Cloudflare's cache.
+ */
+export const BASEMAP_VERSION = 1;
+
+/**
+ * Identifies the track a card is drawing, so the rendered image can be cached
+ * forever under a URL that changes whenever the route does. FNV-1a because it
+ * runs in the browser on every card and only has to separate one ride's track
+ * from the same ride's re-synced track.
+ */
+export function routeHash(route: string): string {
+  let hash = 0x811c9dc5;
+  for (const char of `${BASEMAP_VERSION}:${route}`) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
 }
 
-export function tileUrl(tile: MapTile): string {
-  const query = new URLSearchParams({ key: key() });
-  return `${TILE_URL}/${tile.z}/${tile.x}/${tile.y}@2x.png?${query}`;
+export function mapImageUrl(
+  id: string,
+  route: string,
+  width: number,
+  height: number,
+  theme: "light" | "dark",
+): string {
+  const suffix = theme === "dark" ? "-dark" : "";
+  return `/map/${encodeURIComponent(id)}/${routeHash(route)}/${width}x${height}${suffix}.png`;
 }
 
 /**
