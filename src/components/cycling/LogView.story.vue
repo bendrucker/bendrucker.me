@@ -11,7 +11,7 @@ import UnitsProvider from "./UnitsProvider.vue";
 const emptyMonth: MonthGroup = {
   ...juneMonth,
   rides: [],
-  commuteCount: 1,
+  commutes: { count: 1, distanceMi: 5.2, movingSeconds: 1_500 },
 };
 
 const monthSets: Record<string, MonthGroup[]> = {

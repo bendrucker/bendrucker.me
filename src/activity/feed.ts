@@ -28,6 +28,7 @@ import {
   thinPolyline,
 } from "./track";
 import type {
+  CommuteSummary,
   CyclingActivityData,
   Highlight,
   HighlightMonth,
@@ -475,6 +476,7 @@ function groupMonths(entries: readonly Entry[]): Month[] {
 
   return [...byKey.entries()].map(([key, members]) => {
     const carded = members.filter((entry) => !entry.commute);
+    const commutes = members.filter((entry) => entry.commute);
     const highlights = highlightMonth(carded, formatMonthShort(key));
     const stats = {
       key,
@@ -483,15 +485,26 @@ function groupMonths(entries: readonly Entry[]): Month[] {
       elevationFt: feet(sum(members, (entry) => entry.elevationM)),
       rideCount: members.length,
     };
+    const group: MonthGroup = {
+      ...stats,
+      rides: carded.map((entry) => entry.ride),
+    };
+    if (commutes.length > 0) group.commutes = summarizeCommutes(commutes);
     return {
-      group: {
-        ...stats,
-        rides: carded.map((entry) => entry.ride),
-        commuteCount: members.length - carded.length,
-      },
+      group,
       highlights: highlights.length > 0 ? [{ ...stats, highlights }] : [],
     };
   });
+}
+
+function summarizeCommutes(entries: readonly Entry[]): CommuteSummary {
+  return {
+    count: entries.length,
+    distanceMi: miles(sum(entries, (entry) => entry.distanceM)),
+    movingSeconds: Math.round(
+      sum(entries, (entry) => entry.ride.movingSeconds ?? 0),
+    ),
+  };
 }
 
 /**
