@@ -14,7 +14,6 @@ const newcomer: CyclingActivityData = {
     distanceMi: 18.4,
     elevationFt: 620,
     rideCount: 1,
-    note: "ride in 2026",
   },
   months: activity.months.slice(0, 1),
   highlightMonths: [],

@@ -238,8 +238,6 @@ export interface YearTotals {
   distanceMi: number;
   elevationFt: number;
   rideCount: number;
-  /** Qualifies the ride count, such as "rides since may". */
-  note?: string;
 }
 
 export interface RecordPeriod {

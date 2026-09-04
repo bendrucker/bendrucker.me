@@ -75,7 +75,7 @@ function withinMargin(element: HTMLElement | null): boolean {
 </script>
 
 <template>
-  <div ref="root" class="flex flex-col gap-8 sm:pr-14">
+  <div ref="root" class="flex flex-col gap-8">
     <p v-if="!months.length" class="text-[11px] text-foreground/70">
       no rides logged yet
     </p>

@@ -3,6 +3,8 @@ import type { StoryControlSet } from "@/stories/controls";
 import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { months } from "./fixtures";
+import SegmentedControl from "./SegmentedControl.vue";
+import type { SegmentedOption } from "./types";
 import UnitsProvider from "./UnitsProvider.vue";
 import YearSummary from "./YearSummary.vue";
 
@@ -33,13 +35,17 @@ const totals: Record<string, Totals> = {
   },
 };
 
+const UNITS: SegmentedOption[] = [
+  { value: "imperial", label: "mi", name: "miles" },
+  { value: "metric", label: "km", name: "kilometers" },
+];
+
 const controls: StoryControlSet = {
   totals: {
     type: "select",
     title: "totals",
     options: { season: "a season", sixFigure: "six-figure totals" },
   },
-  note: { type: "text", title: "note" },
   units: { type: "select", title: "units", options: ["imperial", "metric"] },
   width: { type: "slider", title: "width", min: 240, max: 720 },
 };
@@ -47,7 +53,6 @@ const controls: StoryControlSet = {
 function initState() {
   return {
     totals: "season",
-    note: "rides since may",
     units: "imperial",
     width: 358,
   };
@@ -67,10 +72,18 @@ function initState() {
         <PreviewControls :controls="controls" :state="state" />
         <UnitsProvider :units="state.units">
           <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
-            <YearSummary
-              v-bind="totals[state.totals]!"
-              :note="state.note || undefined"
-            />
+            <YearSummary v-bind="totals[state.totals]!">
+              <template #controls>
+                <SegmentedControl
+                  :model-value="state.units"
+                  :options="UNITS"
+                  label="Units"
+                  size="sm"
+                  variant="ghost"
+                  @update:model-value="state.units = $event"
+                />
+              </template>
+            </YearSummary>
           </div>
         </UnitsProvider>
       </template>
@@ -87,7 +100,8 @@ function initState() {
 
 The headline totals above the log: distance, climbing, rides.
 
-Clear the note to see the summary without its qualifier. The six-figure totals
-are what the numbers look like once a full year of climbing has accumulated, and
-the width slider is where they start to collide.
+The year caps the panel and the units toggle rides in the cap beside it, which
+is where the page mounts it. The six-figure totals are what the numbers look
+like once a full year of climbing has accumulated, and the width slider is where
+they start to collide.
 </docs>

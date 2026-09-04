@@ -55,12 +55,20 @@ const controls: StoryControlSet = {
     },
   },
   size: { type: "select", title: "size", options: ["sm", "md"] },
+  variant: { type: "select", title: "variant", options: ["outline", "ghost"] },
   block: { type: "checkbox", title: "full width" },
   width: { type: "slider", title: "width", min: 120, max: 340 },
 };
 
 function initState() {
-  return { set: "modes", value: "log", size: "md", block: false, width: 340 };
+  return {
+    set: "modes",
+    value: "log",
+    size: "md",
+    variant: "outline",
+    block: false,
+    width: 340,
+  };
 }
 </script>
 
@@ -80,6 +88,7 @@ function initState() {
             :model-value="selected(state)"
             :options="optionSets[state.set]!"
             :size="state.size"
+            :variant="state.variant"
             :block="state.block"
             label="View mode"
             @update:model-value="
@@ -104,6 +113,10 @@ The pill row behind the mode tabs, the units toggle, and the record years.
 
 `md` is the mode tabs, `sm` is everything else. Narrow the width with the long
 labels selected: the row has to stay tappable rather than shrink its targets.
+
+`outline` frames the set and fills the chosen segment. `ghost` is the units
+toggle in the year summary's cap: no frame, so the control reads as part of the
+panel it sits in rather than as a second panel inside it.
 
 Full width is the record years. It takes the whole width it is given and splits
 it evenly, so the segments stay the same size as each other however long their

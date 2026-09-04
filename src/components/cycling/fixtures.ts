@@ -497,7 +497,6 @@ export const activity: CyclingActivityData = {
     rideCount: 148,
     // The log runs past the year boundary, so the totals say which year they
     // count rather than leaving the December rides below them ambiguous.
-    note: "rides in 2026",
   },
   months,
   highlightMonths,
