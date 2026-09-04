@@ -6,6 +6,7 @@ import { createTestDb, testStore } from "@/test/db";
 import {
   buildCyclingActivity,
   queryCyclingActivity,
+  queryCyclingLogPage,
   readFeedVersion,
 } from "./feed";
 import { decodePolyline, decodeProfile } from "./track";
@@ -67,6 +68,7 @@ describe("queryCyclingActivity", () => {
       months: [],
       highlightMonths: [],
       records: [],
+      logCursor: null,
     });
   });
 
@@ -447,6 +449,126 @@ describe("queryCyclingActivity", () => {
   });
 });
 
+describe("queryCyclingLogPage", () => {
+  it("carries exactly its own six months, tracks and all", async () => {
+    await seed(
+      ride("after", { startedAt: "2026-04-02T13:00:00Z" }),
+      ride("newest", {
+        startedAt: "2026-03-02T13:00:00Z",
+        polyline: GOOGLE_EXAMPLE,
+      }),
+      ride("oldest", { startedAt: "2025-10-02T13:00:00Z" }),
+      ride("before", { startedAt: "2025-09-02T13:00:00Z" }),
+    );
+
+    const page = await queryCyclingLogPage(db, "2026-04");
+
+    expect(page.months.map((month) => month.key)).toEqual([
+      "2026-03",
+      "2025-10",
+    ]);
+    expect(page.months[0]!.rides[0]!.route).toBe(GOOGLE_EXAMPLE);
+  });
+
+  it("skips a gap to the next month with rides", async () => {
+    await seed(
+      ride("recent", { startedAt: "2026-03-02T13:00:00Z" }),
+      ride("ancient", { startedAt: "2019-08-02T13:00:00Z" }),
+    );
+
+    const page = await queryCyclingLogPage(db, "2026-04");
+
+    expect(page.logCursor).toBe("2019-09");
+  });
+
+  it("names the next page from a ride the window's own slack reached", async () => {
+    await seed(
+      ride("recent", { startedAt: "2026-03-02T13:00:00Z" }),
+      // Just inside the window's lower bound by the instant, and in september
+      // by its own clock, so it belongs to the page after this one.
+      ride("straddle", {
+        startedAt: "2025-10-01T04:00:00Z",
+        timezone: "America/Los_Angeles",
+      }),
+    );
+
+    const page = await queryCyclingLogPage(db, "2026-04");
+
+    expect(page.months.map((month) => month.key)).toEqual(["2026-03"]);
+    expect(page.logCursor).toBe("2025-10");
+  });
+
+  it("runs out at the first ride", async () => {
+    await seed(ride("only", { startedAt: "2026-03-02T13:00:00Z" }));
+
+    const page = await queryCyclingLogPage(db, "2026-04");
+
+    expect(page.logCursor).toBeNull();
+  });
+
+  it("files a ride straddling a page boundary on one page only", async () => {
+    // 2026-04-01 in UTC, still march in the rider's zone, so the page that
+    // ends before april claims it and the page that starts at april does not.
+    const straddle = {
+      startedAt: "2026-04-01T04:00:00Z",
+      timezone: "America/Los_Angeles",
+    };
+    await seed(ride("straddle", straddle), ride("anchor"));
+
+    const earlier = await queryCyclingLogPage(db, "2026-04");
+    const later = await queryCyclingLogPage(db, "2026-10");
+
+    expect(rideIds(earlier)).toContain("straddle");
+    expect(rideIds(later)).not.toContain("straddle");
+  });
+
+  it("returns an empty page for a window with no rides", async () => {
+    await seed(ride("old", { startedAt: "2019-08-02T13:00:00Z" }));
+
+    const page = await queryCyclingLogPage(db, "2026-04");
+
+    expect(page.months).toEqual([]);
+    expect(page.logCursor).toBe("2019-09");
+  });
+
+  it("ignores other sports", async () => {
+    await seed(
+      ride("run", { sport: "run", startedAt: "2026-03-02T13:00:00Z" }),
+      ride("older-run", { sport: "run", startedAt: "2019-08-02T13:00:00Z" }),
+    );
+
+    const page = await queryCyclingLogPage(db, "2026-04");
+
+    expect(page.months).toEqual([]);
+    expect(page.logCursor).toBeNull();
+  });
+});
+
+describe("the log's first cursor", () => {
+  it("is null when every ride is already in the window", async () => {
+    await seed(
+      ride("new", { startedAt: "2026-07-11T13:00:55Z" }),
+      ride("old", { startedAt: "2025-09-11T13:00:55Z" }),
+    );
+
+    const data = await queryCyclingActivity(db, NOW);
+
+    expect(data.logCursor).toBeNull();
+  });
+
+  it("skips the off-season to the newest month below the window", async () => {
+    await seed(
+      ride("new", { startedAt: "2026-07-11T13:00:55Z" }),
+      ride("old", { startedAt: "2023-05-11T13:00:55Z" }),
+    );
+
+    const data = await queryCyclingActivity(db, NOW);
+
+    expect(data.months.at(-1)!.key).toBe("2026-07");
+    expect(data.logCursor).toBe("2023-06");
+  });
+});
+
 describe("readFeedVersion", () => {
   it("moves on every write and on delete", async () => {
     const empty = await readFeedVersion(db);
@@ -499,6 +621,10 @@ describe("contract", () => {
     ).toEqual([]);
   });
 });
+
+function rideIds(page: { months: { rides: { id: string }[] }[] }): string[] {
+  return page.months.flatMap((month) => month.rides.map((entry) => entry.id));
+}
 
 function keys(value: object | undefined): string[] {
   return Object.keys(value ?? {}).toSorted();

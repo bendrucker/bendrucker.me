@@ -10,7 +10,9 @@ import {
   formatMonthShort,
   metersToFeet,
   metersToMiles,
+  monthAfter,
   monthKeyOf,
+  monthsBefore,
 } from "@/components/cycling/format";
 import { normalizeProfile } from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
@@ -26,6 +28,7 @@ import type {
   CyclingActivityData,
   Highlight,
   HighlightMonth,
+  LogPage,
   MonthGroup,
   PowerBest,
   RankedList,
@@ -59,6 +62,17 @@ export interface FeedRows {
 /** Months the log shows, counting back from the month of the latest ride. */
 export const LOG_MONTHS = 12;
 
+/** Months an older log page carries. */
+export const PAGE_MONTHS = 6;
+
+/**
+ * A month is keyed on the ride's local wall clock while `startedAt` is a UTC
+ * instant, so a ride within a day of a month boundary can file under the
+ * neighbouring month. Every query bounded on instants widens by this much and
+ * filters the rows it gets back by month key.
+ */
+const SLACK_MS = 2 * 24 * 3600 * 1000;
+
 const RIDE_COLUMNS = [
   "activityId",
   "stravaId",
@@ -76,6 +90,14 @@ const RIDE_COLUMNS = [
 
 const TRACK_COLUMNS = [
   "activityId",
+  "polyline",
+  "elevationProfile",
+  "photoKeys",
+] as const;
+
+/** Everything a log page reads: its rides carry their tracks from one query. */
+const LOG_COLUMNS = [
+  ...RIDE_COLUMNS,
   "polyline",
   "elevationProfile",
   "photoKeys",
@@ -157,8 +179,8 @@ export async function queryCyclingActivity(
 
 /**
  * The instant before which no ride can fall in the log's window, from the
- * latest ride's month back `LOG_MONTHS`, with two days of slack for the local
- * dates the window is actually keyed on.
+ * latest ride's month back `LOG_MONTHS`, with slack for the local dates the
+ * window is actually keyed on.
  */
 function trackCutoff(rides: readonly RideRow[]): string | null {
   let latest = -Infinity;
@@ -167,13 +189,86 @@ function trackCutoff(rides: readonly RideRow[]): string | null {
     if (instant > latest) latest = instant;
   }
   if (!Number.isFinite(latest)) return null;
-  const month = new Date(latest);
-  const start = Date.UTC(
-    month.getUTCFullYear(),
-    month.getUTCMonth() - (LOG_MONTHS - 1),
-    1,
+  const month = new Date(latest).toISOString().slice(0, 7);
+  return lowerBound(monthsBefore(month, LOG_MONTHS - 1));
+}
+
+/**
+ * The `PAGE_MONTHS` calendar months ending just before `before`, an exclusive
+ * month key. Both ends are bounded, so the page costs the same however far
+ * back the reader has scrolled: one windowed read of the rides with their
+ * tracks, and at most one probe for the month the next page starts on.
+ */
+export async function queryCyclingLogPage(
+  db: Kysely<Database>,
+  before: string,
+): Promise<LogPage> {
+  const start = monthsBefore(before, PAGE_MONTHS);
+  const startBound = lowerBound(start);
+  const rows = await db
+    .selectFrom("activityFeed")
+    .select(LOG_COLUMNS)
+    .where("sport", "=", "ride")
+    .where("startedAt", ">=", startBound)
+    .where("startedAt", "<", upperBound(before))
+    .execute();
+
+  // A full row answers for both halves of `FeedRows`, so a page builds its
+  // entries through the same path the whole feed does.
+  const entries = toEntries({ rides: rows, tracks: rows });
+  const inWindow = entries.filter(
+    (entry) => entry.monthKey >= start && entry.monthKey < before,
   );
-  return new Date(start - 2 * 24 * 3600 * 1000).toISOString();
+
+  return {
+    // A month's badges and totals compare only the rides inside it. A page
+    // needs no context from the pages around it.
+    months: groupMonths(inWindow).map((month) => month.group),
+    logCursor: await pageCursor(db, entries, start, startBound),
+  };
+}
+
+/**
+ * The month the page after this one loads before: the newest month older than
+ * the window, so an off-season gap costs one round trip.
+ */
+async function pageCursor(
+  db: Kysely<Database>,
+  entries: readonly Entry[],
+  start: string,
+  startBound: string,
+): Promise<string | null> {
+  // The slack rows already reach a couple of days past the window, so one of
+  // them falling under an older month names that month without another query.
+  if (entries.some((entry) => entry.monthKey < start)) return start;
+
+  const older = await db
+    .selectFrom("activityFeed")
+    .select(["startedAt", "timezone"])
+    .where("sport", "=", "ride")
+    .where("startedAt", "<", startBound)
+    .orderBy("startedAt", "desc")
+    .limit(1)
+    .executeTakeFirst();
+  if (older === undefined) return null;
+
+  // The probe starts a clear two days below the window, further than any zone
+  // can shift a local date, so this month is always below it too.
+  return monthAfter(monthKeyOf(wallClock(older.startedAt, older.timezone)));
+}
+
+/** The earliest instant a ride keyed to `month` or later could carry. */
+function lowerBound(month: string): string {
+  return new Date(monthInstant(month) - SLACK_MS).toISOString();
+}
+
+/** The latest instant a ride keyed before `month` could carry. */
+function upperBound(month: string): string {
+  return new Date(monthInstant(month) + SLACK_MS).toISOString();
+}
+
+function monthInstant(month: string): number {
+  return Date.parse(`${month}-01T00:00:00.000Z`);
 }
 
 /**
@@ -204,39 +299,62 @@ interface Entry {
 }
 
 export function buildCyclingActivity(
-  { rides, tracks }: FeedRows,
+  rows: FeedRows,
   curve: readonly PowerCurvePoint[],
   now: Date,
 ): CyclingActivityData {
-  const trackById = new Map(tracks.map((track) => [track.activityId, track]));
-  // Ordered on the wall clock the months are keyed on, so a ride sits in the
-  // log by its own date rather than by the instant, which can fall on the
-  // other side of a month or year boundary in another zone.
-  const entries = rides
-    .map((row) => toEntry(row, trackById.get(row.activityId)))
-    .toSorted((a, b) => b.ride.startedAt.localeCompare(a.ride.startedAt));
-  const months = groupMonths(logEntries(entries));
+  const entries = toEntries(rows);
+  const firstKey = logWindow(entries);
+  const months = groupMonths(
+    firstKey === null
+      ? []
+      : entries.filter((entry) => entry.monthKey >= firstKey),
+  );
 
   return {
     totals: yearTotals(entries, now),
     months: months.map((month) => month.group),
     highlightMonths: months.flatMap((month) => month.highlights),
     records: records(entries, curve),
+    logCursor: initialCursor(entries, firstKey),
   };
 }
 
 /**
- * The log's window: the latest ride's month and the `LOG_MONTHS - 1` before
- * it, by the local month each ride is filed under. Entries arrive newest
- * first, so the first one sets the window.
+ * Ordered on the wall clock the months are keyed on, so a ride sits in the log
+ * by its own date. The instant can fall on the other side of a month or year
+ * boundary in another zone.
  */
-function logEntries(entries: readonly Entry[]): Entry[] {
+function toEntries({ rides, tracks }: FeedRows): Entry[] {
+  const trackById = new Map(tracks.map((track) => [track.activityId, track]));
+  return rides
+    .map((row) => toEntry(row, trackById.get(row.activityId)))
+    .toSorted((a, b) => b.ride.startedAt.localeCompare(a.ride.startedAt));
+}
+
+/**
+ * The first month of the log's window: the latest ride's month and the
+ * `LOG_MONTHS - 1` before it, by the local month each ride is filed under.
+ * Entries arrive newest first, so the first one sets the window.
+ */
+function logWindow(entries: readonly Entry[]): string | null {
   const latest = entries[0];
-  if (latest === undefined) return [];
-  const [year, month] = latest.monthKey.split("-").map(Number);
-  const first = new Date(Date.UTC(year!, month! - 1 - (LOG_MONTHS - 1), 1));
-  const firstKey = first.toISOString().slice(0, 7);
-  return entries.filter((entry) => entry.monthKey >= firstKey);
+  if (latest === undefined) return null;
+  return monthsBefore(latest.monthKey, LOG_MONTHS - 1);
+}
+
+/**
+ * Every ride is already in hand here, so the first page boundary is exact: the
+ * newest month below the window, which skips an off-season straight to the
+ * next month that has rides in it.
+ */
+function initialCursor(
+  entries: readonly Entry[],
+  firstKey: string | null,
+): string | null {
+  if (firstKey === null) return null;
+  const older = entries.find((entry) => entry.monthKey < firstKey);
+  return older === undefined ? null : monthAfter(older.monthKey);
 }
 
 function toEntry(row: RideRow, track: TrackRow | undefined): Entry {

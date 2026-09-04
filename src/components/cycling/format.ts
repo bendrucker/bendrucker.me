@@ -94,6 +94,26 @@ export function monthKeyOf(startedAt: string): string {
   return startedAt.slice(0, 7);
 }
 
+/** `2026-08` to `2026-09`, rolling the year over past december. */
+export function monthAfter(key: string): string {
+  const year = Number(key.slice(0, 4));
+  const month = Number(key.slice(5, 7));
+  return monthKey(year, month);
+}
+
+/** `2026-08` back `count` months, so `monthsBefore("2026-01", 2)` is `2025-11`. */
+export function monthsBefore(key: string, count: number): string {
+  const year = Number(key.slice(0, 4));
+  const month = Number(key.slice(5, 7));
+  return monthKey(year, month - 1 - count);
+}
+
+// Months outside 1..12 roll the year, which is what `Date.UTC` does with an
+// out-of-range month index.
+function monthKey(year: number, monthIndex: number): string {
+  return new Date(Date.UTC(year, monthIndex, 1)).toISOString().slice(0, 7);
+}
+
 const METERS_PER_MILE = KM_PER_MILE * 1000;
 
 /** The feed stores SI. The view carries the imperial values these produce. */

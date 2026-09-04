@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 
 interface RailMonth {
   key: string;
@@ -34,6 +34,26 @@ const yearGroups = computed(() => {
 
   return groups;
 });
+
+// The log runs back to 2013, and every month of it would be a hundred and
+// fifty buttons in a column twelve pixels wide. Only the year being read opens
+// into its months.
+const activeYear = computed(() => props.activeKey?.slice(0, 4) ?? null);
+
+const rail = ref<HTMLElement | null>(null);
+
+// Years and the open year's months together outrun a short viewport, so the
+// month just scrolled to is brought back into the rail's own scroll.
+watch(
+  () => props.activeKey,
+  (key) => {
+    const button = rail.value?.querySelector(`[data-rail-month="${key}"]`);
+    if (button instanceof HTMLElement) {
+      button.scrollIntoView({ block: "nearest" });
+    }
+  },
+  { flush: "post" },
+);
 </script>
 
 <template>
@@ -45,17 +65,28 @@ const yearGroups = computed(() => {
     <!-- `pr-1` keeps the outward focus ring off the viewport edge, where its
          right stroke would never be painted. -->
     <ul
+      ref="rail"
       role="list"
       class="pointer-events-auto flex max-h-[80vh] w-12 flex-col gap-2 overflow-y-auto rounded-l-md border border-r-0 border-border bg-background/85 py-2 pr-1 backdrop-blur-sm"
     >
       <li v-for="group in yearGroups" :key="group.months[0].key">
-        <p
+        <!-- A collapsed year jumps to its newest month, which opens it. -->
+        <button
           :id="`month-rail-${group.months[0].key}`"
-          class="px-2 text-right text-[9px] tracking-[.14em] text-foreground/70"
+          type="button"
+          class="w-full px-2 py-1 text-right text-[9px] tracking-[.14em] transition-colors"
+          :class="
+            group.year === activeYear
+              ? 'font-bold text-accent'
+              : 'text-foreground/70 hover:text-foreground'
+          "
+          :aria-current="group.year === activeYear ? 'location' : undefined"
+          @click="emit('navigate', group.months[0].key)"
         >
           {{ group.year }}
-        </p>
+        </button>
         <ul
+          v-if="group.year === activeYear"
           role="list"
           :aria-labelledby="`month-rail-${group.months[0].key}`"
           class="flex flex-col items-stretch"
@@ -63,6 +94,7 @@ const yearGroups = computed(() => {
           <li v-for="month in group.months" :key="month.key">
             <button
               type="button"
+              :data-rail-month="month.key"
               class="w-full px-2 py-1 text-right text-[11px] leading-4 transition-colors"
               :class="
                 month.key === activeKey
