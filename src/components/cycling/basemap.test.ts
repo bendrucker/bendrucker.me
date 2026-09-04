@@ -38,17 +38,17 @@ describe("routeHash", () => {
 });
 
 describe("mapImageUrl", () => {
-  it("addresses the ride, its track, and the size", () => {
-    expect(mapImageUrl("42", ROUTE, 150, 140, "light")).toBe(
-      `/map/42/${routeHash(ROUTE)}/150x140.png`,
-    );
-  });
-
-  it("names the dark render separately", () => {
-    expect(mapImageUrl("42", ROUTE, 150, 140, "dark")).toBe(
-      `/map/42/${routeHash(ROUTE)}/150x140-dark.png`,
-    );
-  });
+  it.each<{ theme: "light" | "dark"; suffix: string }>([
+    { theme: "light", suffix: "" },
+    { theme: "dark", suffix: "-dark" },
+  ])(
+    "addresses the ride, its track, and the $theme size",
+    ({ theme, suffix }) => {
+      expect(mapImageUrl("42", ROUTE, 150, 140, theme)).toBe(
+        `/map/42/${routeHash(ROUTE)}/150x140${suffix}.png`,
+      );
+    },
+  );
 
   // The two themes are fetched as separate images, so they must not collide.
   it("gives the themes different urls", () => {

@@ -1,4 +1,4 @@
-import { VectorTile } from "@mapbox/vector-tile";
+import { VectorTile, type VectorTileLayer } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
 import { TILE_SIZE, type MapTile } from "@/components/cycling/geo";
 
@@ -12,8 +12,11 @@ const TILE_URL =
  */
 export const SOURCE_MAX_ZOOM = 14;
 
-/** Upstream tiles are immutable for six months, so let Cloudflare hold them. */
-const TILE_CACHE_SECONDS = 86400;
+/**
+ * A month. Basemap geometry moves slowly, and the whole point of holding tiles
+ * at the edge is that a render already paid for does not go back to CARTO.
+ */
+const TILE_CACHE_SECONDS = 2592000;
 
 export interface DecodedTile {
   layer(name: string): DecodedLayer | undefined;
@@ -89,11 +92,18 @@ export async function fetchTile(
   );
   if (key) url.searchParams.set("key", key);
 
-  const response = await fetch(url, {
-    cf: { cacheEverything: true, cacheTtl: TILE_CACHE_SECONDS },
-  });
   // A missing tile is ordinary: the grid can reach past the edge of coverage,
-  // and open water has nothing to publish. The card renders without it.
+  // and open water has nothing to publish. A tile that errors outright is
+  // treated the same way, since one unreachable tile should cost its own
+  // square rather than the whole card.
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      cf: { cacheEverything: true, cacheTtl: TILE_CACHE_SECONDS },
+    });
+  } catch {
+    return null;
+  }
   if (!response.ok) return null;
 
   // The tiles are served gzipped, which workerd's fetch decodes on the way in.
@@ -102,22 +112,37 @@ export async function fetchTile(
 
 export function decodeTile(buffer: ArrayBuffer): DecodedTile {
   const tile = new VectorTile(new PbfReader(new Uint8Array(buffer)));
+
+  // Several paint rules read one layer, and overzoomed tiles share a source,
+  // so a layer is asked for many times per render. Geometry is decoded on
+  // first ask and held, including the miss.
+  const decoded = new Map<string, DecodedLayer | undefined>();
+
   return {
     layer(name) {
-      const layer = tile.layers[name];
-      if (layer === undefined) return undefined;
+      if (decoded.has(name)) return decoded.get(name);
 
-      const features: DecodedFeature[] = [];
-      for (let index = 0; index < layer.length; index++) {
-        const feature = layer.feature(index);
-        const featureClass = feature.properties["class"];
-        features.push({
-          ...(typeof featureClass === "string" ? { class: featureClass } : {}),
-          type: feature.type,
-          rings: feature.loadGeometry(),
-        });
-      }
-      return { extent: layer.extent, features };
+      const layer = tile.layers[name];
+      const result =
+        layer === undefined
+          ? undefined
+          : { extent: layer.extent, features: readFeatures(layer) };
+      decoded.set(name, result);
+      return result;
     },
   };
+}
+
+function readFeatures(layer: VectorTileLayer): DecodedFeature[] {
+  const features: DecodedFeature[] = [];
+  for (let index = 0; index < layer.length; index++) {
+    const feature = layer.feature(index);
+    const featureClass = feature.properties["class"];
+    features.push({
+      ...(typeof featureClass === "string" ? { class: featureClass } : {}),
+      type: feature.type,
+      rings: feature.loadGeometry(),
+    });
+  }
+  return features;
 }

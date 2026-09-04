@@ -74,6 +74,13 @@ async function render() {
 }
 
 describe("basemapSvg", () => {
+  // The assertions below each pin one property of the markup. This pins the
+  // markup, so a change to its shape has to be read in a diff rather than
+  // slipping through the gaps between them.
+  it("assembles the whole document", async () => {
+    expect(await render()).toMatchSnapshot();
+  });
+
   it("rasterizes at twice the card's size", async () => {
     const svg = await render();
     expect(svg).toContain(`width="${WIDTH * 2}" height="${HEIGHT * 2}"`);

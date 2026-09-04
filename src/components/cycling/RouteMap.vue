@@ -23,12 +23,16 @@ const fitted = computed(() =>
   fitRoute(coordinates.value, props.width, props.height),
 );
 
+type Theme = "light" | "dark";
+
 /**
  * Both themes are addressed up front and swapped with CSS. The site's theme is
  * an attribute a reader can toggle, so a `prefers-color-scheme` source would
- * follow the operating system straight past that choice.
+ * follow the operating system straight past that choice. That costs a card two
+ * image requests where it shows one, which buys a toggle that needs no
+ * JavaScript and no round trip.
  */
-const basemaps = computed(() => {
+const basemaps = computed<Record<Theme, string> | null>(() => {
   const { id, route, width, height } = props;
   if (id === undefined || route === undefined || !hasRoute.value) return null;
   return {
@@ -42,10 +46,13 @@ const basemaps = computed(() => {
  * basemap, so a size the worker will not render, or a ride whose images have
  * not been generated, leaves the line on the card's own ground. The story
  * book renders every card this way.
+ *
+ * Tracked per theme, since the two are separate requests and one failing says
+ * nothing about the other.
  */
-const failed = ref(false);
+const failed = ref<Record<Theme, boolean>>({ light: false, dark: false });
 watch(basemaps, () => {
-  failed.value = false;
+  failed.value = { light: false, dark: false };
 });
 </script>
 
@@ -54,15 +61,16 @@ watch(basemaps, () => {
     class="relative overflow-hidden bg-muted text-accent"
     :style="{ width: `${width}px`, height: `${height}px` }"
   >
-    <template v-if="basemaps && !failed">
+    <template v-if="basemaps">
       <img
         v-for="(src, theme) in basemaps"
+        v-show="!failed[theme]"
         :key="theme"
         :src="src"
         alt=""
         aria-hidden="true"
         loading="lazy"
-        @error="failed = true"
+        @error="failed[theme] = true"
         :width="width"
         :height="height"
         class="absolute inset-0"

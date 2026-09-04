@@ -31,11 +31,28 @@ export function thin<T>(items: readonly T[], max: number): T[] {
   return kept;
 }
 
+/** A stored route bounded to `MAX_ROUTE_POINTS`, in both forms it is read in. */
+export interface Track {
+  /** Re-encoded only when thinning dropped points, so a bounded route is untouched. */
+  route: string;
+  coordinates: Coordinate[];
+}
+
+/**
+ * Decoding is the expensive half, and a caller that wants the points as well
+ * as the encoded form would otherwise pay for it twice.
+ */
+export function thinTrack(encoded: string): Track {
+  const coordinates = decodePolyline(encoded);
+  if (coordinates.length <= MAX_ROUTE_POINTS)
+    return { route: encoded, coordinates };
+  const kept = thin(coordinates, MAX_ROUTE_POINTS);
+  return { route: encodePolyline(kept), coordinates: kept };
+}
+
 /** The encoded route with at most `MAX_ROUTE_POINTS`, untouched when already within it. */
 export function thinPolyline(encoded: string): string {
-  const coordinates = decodePolyline(encoded);
-  if (coordinates.length <= MAX_ROUTE_POINTS) return encoded;
-  return encodePolyline(thin(coordinates, MAX_ROUTE_POINTS));
+  return thinTrack(encoded).route;
 }
 
 export function decodePolyline(encoded: string): Coordinate[] {

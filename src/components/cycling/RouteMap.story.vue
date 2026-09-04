@@ -106,5 +106,5 @@ Sizes compares the four boxes the site actually asks for.
 
 The basemap behind the line is a PNG the worker renders from CARTO vector tiles,
 addressed by ride. Stories pass a bare track and no ride, so they draw the line
-alone — which is also what a card falls back to when the image does not load.
+alone. That is also what a card falls back to when the image does not load.
 </docs>
