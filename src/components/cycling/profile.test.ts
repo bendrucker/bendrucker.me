@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  longestClimb,
   normalizeProfile,
   relief,
   seededRandom,
   syntheticProfile,
 } from "./profile";
 
-const SPIN_FEET = 200;
-const BIG_DAY_FEET = 12_000;
+const SPIN = relief(200);
+const BIG_DAY = relief(12_000);
 
 const MIN_RELIEF = 0.12;
 const MAX_RELIEF = 0.75;
@@ -51,20 +52,24 @@ describe("seededRandom", () => {
 
 describe("syntheticProfile", () => {
   it("repeats exactly for the same seed", () => {
-    expect(syntheticProfile("ride-1", BIG_DAY_FEET)).toEqual(
-      syntheticProfile("ride-1", BIG_DAY_FEET),
+    expect(syntheticProfile("ride-1", BIG_DAY)).toEqual(
+      syntheticProfile("ride-1", BIG_DAY),
     );
   });
 
   it("differs across seeds", () => {
-    expect(syntheticProfile("ride-1", BIG_DAY_FEET)).not.toEqual(
-      syntheticProfile("ride-2", BIG_DAY_FEET),
+    expect(syntheticProfile("ride-1", BIG_DAY)).not.toEqual(
+      syntheticProfile("ride-2", BIG_DAY),
     );
   });
 
   it("stays within 0..1", () => {
     for (const elevationFt of [0, 120, 900, 2200, 20_000]) {
-      for (const sample of syntheticProfile("ride-1", elevationFt, 64)) {
+      for (const sample of syntheticProfile(
+        "ride-1",
+        relief(elevationFt),
+        64,
+      )) {
         expect(sample).toBeGreaterThanOrEqual(0);
         expect(sample).toBeLessThanOrEqual(1);
       }
@@ -72,37 +77,41 @@ describe("syntheticProfile", () => {
   });
 
   it("defaults to 22 samples and honours an explicit count", () => {
-    expect(syntheticProfile("ride-1", BIG_DAY_FEET)).toHaveLength(22);
-    expect(syntheticProfile("ride-1", BIG_DAY_FEET, 5)).toHaveLength(5);
-    expect(syntheticProfile("ride-1", BIG_DAY_FEET, 0)).toEqual([]);
+    expect(syntheticProfile("ride-1", BIG_DAY)).toHaveLength(22);
+    expect(syntheticProfile("ride-1", BIG_DAY, 5)).toHaveLength(5);
+    expect(syntheticProfile("ride-1", BIG_DAY, 0)).toEqual([]);
   });
 
   it("swings wider for a big day than a spin around the city", () => {
-    const spin = syntheticProfile("ride-1", SPIN_FEET, 64);
-    const big = syntheticProfile("ride-1", BIG_DAY_FEET, 64);
+    const spin = syntheticProfile("ride-1", SPIN, 64);
+    const big = syntheticProfile("ride-1", BIG_DAY, 64);
     expect(spread(big)).toBeGreaterThan(spread(spin));
   });
 
   it("keeps a ride that barely climbed down against the floor", () => {
-    for (const sample of syntheticProfile("ride-1", 0, 64)) {
+    for (const sample of syntheticProfile("ride-1", relief(0), 64)) {
       expect(sample).toBeGreaterThanOrEqual(0);
       expect(sample).toBeLessThanOrEqual(MIN_RELIEF);
     }
   });
 
   it("stands a big day at the top of the scale", () => {
-    const big = syntheticProfile("ride-1", BIG_DAY_FEET, 64);
+    const big = syntheticProfile("ride-1", BIG_DAY, 64);
     expect(Math.max(...big)).toBeCloseTo(MAX_RELIEF);
     expect(Math.min(...big)).toBe(0);
   });
 
   it("draws a single sample at the baseline rather than an endpoint", () => {
-    expect(syntheticProfile("ride-1", BIG_DAY_FEET, 1)).toHaveLength(1);
+    expect(syntheticProfile("ride-1", BIG_DAY, 1)).toHaveLength(1);
   });
 
   it("stays finite for degenerate elevations", () => {
     for (const elevationFt of [NaN, Infinity, -Infinity, -500, null]) {
-      for (const sample of syntheticProfile("ride-1", elevationFt, 16)) {
+      for (const sample of syntheticProfile(
+        "ride-1",
+        relief(elevationFt),
+        16,
+      )) {
         expect(sample).toBeGreaterThanOrEqual(0);
         expect(sample).toBeLessThanOrEqual(1);
       }
@@ -111,7 +120,7 @@ describe("syntheticProfile", () => {
 
   // Locks the generator constants, which the same-run comparisons above cannot.
   it("matches a recorded sequence", () => {
-    expect(syntheticProfile("ride-1", 2425, 5)).toMatchInlineSnapshot(`
+    expect(syntheticProfile("ride-1", relief(2425), 5)).toMatchInlineSnapshot(`
       [
         0.18583905926405372,
         0.4989848083117122,
@@ -153,6 +162,17 @@ describe("relief", () => {
     expect(relief(17_060)).toBeGreaterThan(2 * relief(358));
   });
 
+  // A ride that spends 3,000 ft going up without a break stands with the days
+  // that climbed far more in pieces.
+  it("lifts a ride that climbed once and kept going", () => {
+    expect(relief(3200, 3000)).toBeGreaterThan(relief(3200));
+    expect(relief(3200, 3000)).toBe(MAX_RELIEF);
+  });
+
+  it("leaves a ride of rollers on what it climbed in total", () => {
+    expect(relief(2336, 630)).toBe(relief(2336));
+  });
+
   it("draws an unknown elevation at the floor", () => {
     expect(relief(Number.NaN)).toBe(MIN_RELIEF);
     expect(relief(-100)).toBe(MIN_RELIEF);
@@ -163,7 +183,7 @@ describe("relief", () => {
 
 describe("normalizeProfile", () => {
   it("rescales the lowest point to 0 and the highest to its relief", () => {
-    expect(normalizeProfile([100, 150, 200, 100], BIG_DAY_FEET)).toEqual([
+    expect(normalizeProfile([100, 150, 200, 100], BIG_DAY)).toEqual([
       0,
       MAX_RELIEF / 2,
       MAX_RELIEF,
@@ -173,8 +193,8 @@ describe("normalizeProfile", () => {
 
   it("scales the same shape by how much the ride climbed", () => {
     const altitudes = [100, 150, 200, 100];
-    const spin = normalizeProfile(altitudes, SPIN_FEET);
-    const big = normalizeProfile(altitudes, BIG_DAY_FEET);
+    const spin = normalizeProfile(altitudes, SPIN);
+    const big = normalizeProfile(altitudes, BIG_DAY);
     expect(Math.max(...big)).toBeGreaterThan(Math.max(...spin));
     expect(big.map((sample) => sample / MAX_RELIEF)).toEqual(
       spin.map((sample) => sample / MIN_RELIEF),
@@ -182,7 +202,7 @@ describe("normalizeProfile", () => {
   });
 
   it("sits a ride that never changed altitude at its relief", () => {
-    expect(normalizeProfile([12, 12, 12], SPIN_FEET)).toEqual([
+    expect(normalizeProfile([12, 12, 12], SPIN)).toEqual([
       MIN_RELIEF,
       MIN_RELIEF,
       MIN_RELIEF,
@@ -190,7 +210,7 @@ describe("normalizeProfile", () => {
   });
 
   it("holds a non-finite sample mid-band", () => {
-    expect(normalizeProfile([0, Number.NaN, 10], BIG_DAY_FEET)).toEqual([
+    expect(normalizeProfile([0, Number.NaN, 10], BIG_DAY)).toEqual([
       0,
       MAX_RELIEF / 2,
       MAX_RELIEF,
@@ -198,6 +218,35 @@ describe("normalizeProfile", () => {
   });
 
   it("draws nothing from no samples", () => {
-    expect(normalizeProfile([], BIG_DAY_FEET)).toEqual([]);
+    expect(normalizeProfile([], BIG_DAY)).toEqual([]);
+  });
+});
+
+describe("longestClimb", () => {
+  it("measures one continuous climb end to end", () => {
+    expect(longestClimb([10, 50, 120, 300, 260])).toBe(290);
+  });
+
+  it("takes the biggest of several climbs rather than their sum", () => {
+    expect(longestClimb([0, 100, 0, 400, 0, 250, 0])).toBe(400);
+  });
+
+  // A climb with a false flat in it is still one climb.
+  it("rides through a dip shallower than a twentieth of the range", () => {
+    expect(longestClimb([0, 400, 390, 1000])).toBe(1000);
+  });
+
+  it("ends a climb at a real descent", () => {
+    expect(longestClimb([0, 400, 100, 600])).toBe(500);
+  });
+
+  it("measures nothing from a ride that never climbed", () => {
+    expect(longestClimb([100, 100, 100])).toBe(0);
+    expect(longestClimb([300, 200, 100])).toBe(0);
+    expect(longestClimb([])).toBe(0);
+  });
+
+  it("skips samples the recording lost", () => {
+    expect(longestClimb([0, Number.NaN, 500])).toBe(500);
   });
 });

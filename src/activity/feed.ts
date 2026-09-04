@@ -14,7 +14,11 @@ import {
   monthKeyOf,
   monthsBefore,
 } from "@/components/cycling/format";
-import { normalizeProfile } from "@/components/cycling/profile";
+import {
+  longestClimb,
+  normalizeProfile,
+  relief,
+} from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
 import {
   decodePolyline,
@@ -394,8 +398,14 @@ function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
         : encodePolyline(thin(route, MAX_ROUTE_POINTS));
   }
   if (profile !== null && profile.length > 0) {
+    // The profile arrives in metres, the same unit as the total the card
+    // prints, so the longest climb converts the same way.
+    const height = relief(
+      ride.elevationFt,
+      metersToFeet(longestClimb(profile)),
+    );
     ride.elevationProfile = encodeProfile(
-      thin(normalizeProfile(profile, ride.elevationFt), MAX_PROFILE_SAMPLES),
+      thin(normalizeProfile(profile, height), MAX_PROFILE_SAMPLES),
     );
   }
 

@@ -108,7 +108,11 @@ The wash of climbing behind a ride card. A sample is the share of the chart's
 height that point of the ride stands at, so the component only paints: how much
 of the box a ride earns is decided upstream by `relief`, from the feet it
 climbed. A commute keeps a thin horizon and a day in the hills fills three
-quarters of the box.
+quarters of the box. A single sustained climb lifts a ride on top of that, so a
+morning up one 2,500 ft grind stands with days that climbed more in pieces.
+
+The fixtures carry no recorded track, so the rides below are placed on their
+totals alone.
 
 "Across the scale" is that spread on one screen, from the flattest fixture ride
 to the hilliest.
