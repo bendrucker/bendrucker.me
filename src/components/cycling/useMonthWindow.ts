@@ -57,7 +57,13 @@ export function useMonthWindow(
             // still holds its rides. Reading it back off the element would
             // force a layout and, a tick later, measure a section already
             // emptied.
-            heights.set(key, entry.boundingClientRect.height);
+            //
+            // A log hidden behind another view measures zero. Reserving that
+            // would collapse the page, so a month keeps the last height it
+            // actually stood at.
+            if (entry.boundingClientRect.height > 0) {
+              heights.set(key, entry.boundingClientRect.height);
+            }
             far.value.add(key);
           }
         },

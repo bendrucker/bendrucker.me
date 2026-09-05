@@ -22,7 +22,11 @@ const BAND_BOTTOM = 0.3;
 export function scrollToSection(root: HTMLElement | null, key: string): void {
   const section = (root ?? document).querySelector(`[data-month-key="${key}"]`);
   if (!(section instanceof HTMLElement)) return;
-  section.scrollIntoView({ block: "start" });
+  // Instant against the page's `scroll-smooth`, which would otherwise animate
+  // across every month between here and the target. Each one they pass through
+  // enters the window, mounts its rides, and leaves again, so a jump to the
+  // first ride does the whole archive's DOM work on the way.
+  section.scrollIntoView({ block: "start", behavior: "instant" });
   section.focus({ preventScroll: true });
 }
 

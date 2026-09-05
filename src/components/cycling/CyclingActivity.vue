@@ -135,8 +135,12 @@ watch([mode, () => props.data], () => {
     <p role="status" class="sr-only">showing {{ modeLabel }}</p>
 
     <div role="region" :aria-label="`${modeLabel} view`">
+      <!-- Hidden rather than unmounted, because the pages it has fetched live
+           here and outlive it. Destroying it would drop the window's record of
+           which months are collapsed, and coming back would mount every month
+           fetched so far at once. -->
       <LogView
-        v-if="mode === 'log'"
+        v-show="mode === 'log'"
         :months="logMonths"
         :has-more="hasMore"
         :loading="loading"
@@ -145,11 +149,11 @@ watch([mode, () => props.data], () => {
         @load-more="loadMore"
       />
       <HighlightsView
-        v-else-if="mode === 'highlights'"
+        v-if="mode === 'highlights'"
         :months="data.highlightMonths"
       />
       <PrsView
-        v-else
+        v-else-if="mode === 'prs'"
         :lists="records?.lists ?? []"
         :bests="records?.powerBests ?? []"
         :periods="periods"
