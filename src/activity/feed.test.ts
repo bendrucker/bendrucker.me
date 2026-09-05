@@ -87,7 +87,7 @@ describe("queryCyclingActivity", () => {
       key: "2026-07",
       label: "july 2026",
       rideCount: 3,
-      commuteCount: 1,
+      commutes: { count: 1, distanceMi: 3.73, movingSeconds: 5_400 },
       distanceMi: 128.58,
       elevationFt: 10499,
     });
@@ -613,6 +613,7 @@ describe("contract", () => {
       ride("a", { polyline: GOOGLE_EXAMPLE, elevationProfile: [1, 2, 3] }),
       ride("b", { startedAt: "2026-07-12T13:00:55Z", distanceM: 50_000 }),
       ride("c", { startedAt: "2025-07-12T13:00:55Z" }),
+      ride("d", { startedAt: "2026-07-13T13:00:55Z", distanceM: 6_000 }),
     );
     await publishPowerCurve(store, "a", [{ durationS: 60, watts: 300 }]);
 

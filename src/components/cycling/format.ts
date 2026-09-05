@@ -1,4 +1,4 @@
-import type { MonthStats } from "@/activity/types";
+import type { CommuteSummary, MonthStats } from "@/activity/types";
 import type { Units } from "./types";
 
 const KM_PER_MILE = 1.609344;
@@ -44,6 +44,16 @@ export function formatMonthSummary(month: MonthStats, units: Units): string {
     `${formatElevation(month.elevationFt, units)} ${elevationUnit(units)}`,
     `${month.rideCount} rides`,
   ].join(" · ");
+}
+
+export function formatCommuteTotals(
+  commutes: CommuteSummary,
+  units: Units,
+): string {
+  return [
+    `${formatDistance(commutes.distanceMi, units)} ${distanceUnit(units)}`,
+    formatDuration(commutes.movingSeconds),
+  ].join(", ");
 }
 
 /** Coarse ride length: `4:32` past an hour, `48 min` below it. */

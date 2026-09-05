@@ -23,7 +23,7 @@ const emit = defineEmits<{
   loadMore: [];
 }>();
 
-const { formatMonthSummary } = useUnits();
+const { formatCommuteTotals, formatMonthSummary } = useUnits();
 
 const root = ref<HTMLElement | null>(null);
 const keys = computed(() => props.months.map((month) => month.key));
@@ -108,9 +108,10 @@ function withinMargin(element: HTMLElement | null): boolean {
         </li>
       </ul>
 
-      <p v-if="month.commuteCount" class="mt-2 text-[11px] text-foreground/70">
-        + {{ month.commuteCount }}
-        {{ month.commuteCount === 1 ? "commute" : "commutes" }}
+      <p v-if="month.commutes" class="mt-2 text-[11px] text-foreground/70">
+        + {{ month.commutes.count }}
+        {{ month.commutes.count === 1 ? "commute" : "commutes" }}
+        ({{ formatCommuteTotals(month.commutes) }})
       </p>
     </section>
 

@@ -236,7 +236,7 @@ export const julyMonth: MonthGroup = {
   distanceMi: 357.57,
   elevationFt: 35151,
   rideCount: 19,
-  commuteCount: 6,
+  commutes: { count: 6, distanceMi: 31.4, movingSeconds: 8_940 },
 };
 
 export const juneMonth: MonthGroup = {
@@ -246,7 +246,7 @@ export const juneMonth: MonthGroup = {
   distanceMi: 289.4,
   elevationFt: 24880,
   rideCount: 22,
-  commuteCount: 9,
+  commutes: { count: 9, distanceMi: 47.2, movingSeconds: 13_320 },
 };
 
 export const mayMonth: MonthGroup = {
@@ -256,7 +256,6 @@ export const mayMonth: MonthGroup = {
   distanceMi: 214.6,
   elevationFt: 16404,
   rideCount: 14,
-  commuteCount: 0,
 };
 
 export const aprilMonth: MonthGroup = {
@@ -266,7 +265,7 @@ export const aprilMonth: MonthGroup = {
   distanceMi: 176.2,
   elevationFt: 19340,
   rideCount: 11,
-  commuteCount: 4,
+  commutes: { count: 4, distanceMi: 20.8, movingSeconds: 5_760 },
 };
 
 export const decemberMonth: MonthGroup = {
@@ -276,7 +275,7 @@ export const decemberMonth: MonthGroup = {
   distanceMi: 132.9,
   elevationFt: 8115,
   rideCount: 8,
-  commuteCount: 2,
+  commutes: { count: 2, distanceMi: 9.6, movingSeconds: 3_180 },
 };
 
 export const months: MonthGroup[] = [

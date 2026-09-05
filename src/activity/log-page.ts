@@ -47,6 +47,12 @@ const ride = z.object({
   facts: z.array(fact),
 });
 
+const commuteSummary = z.object({
+  count: z.number(),
+  distanceMi: z.number(),
+  movingSeconds: z.number(),
+});
+
 const monthGroup = z.object({
   key: z.string(),
   label: z.string(),
@@ -54,7 +60,7 @@ const monthGroup = z.object({
   elevationFt: z.number(),
   rideCount: z.number(),
   rides: z.array(ride),
-  commuteCount: z.number(),
+  commutes: commuteSummary.optional(),
 });
 
 export const logPage = z.object({
