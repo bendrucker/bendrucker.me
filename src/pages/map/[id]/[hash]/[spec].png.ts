@@ -61,7 +61,10 @@ export const GET: APIRoute = async ({ params, cache, request }) => {
   // the adapter's `Cloudflare-CDN-Cache-Control`, which leaves `Cache-Control`
   // to say what the browser should do. The URL is now known to name this exact
   // track, so both can hold it indefinitely.
-  const etag = `"${hash}"`;
+  // The hash names the track, and one track is drawn at several sizes, scales
+  // and themes. A validator has to name the representation rather than the
+  // ride, or a cache holding one of them answers a request for another.
+  const etag = `"${hash}-${width}x${height}@${scale}x-${theme}"`;
   cache.set({ maxAge: A_YEAR, etag });
 
   const headers = {
