@@ -16,7 +16,10 @@ describe("sync state", () => {
   });
 
   it("starts at version zero with no payload hash", async () => {
-    expect(await readSyncState(db)).toEqual({ version: 0, payloadHash: null });
+    expect(await readSyncState(db)).toMatchObject({
+      version: 0,
+      payloadHash: null,
+    });
   });
 
   it("records the hash without bumping the version on a no-op run", async () => {
@@ -32,7 +35,7 @@ describe("sync state", () => {
     }).execute();
 
     expect(version).toBe(1);
-    expect(await readSyncState(db)).toEqual({
+    expect(await readSyncState(db)).toMatchObject({
       version: 1,
       payloadHash: "reordered",
     });

@@ -86,3 +86,17 @@ export async function getDb(): Promise<Kysely<Database>> {
   const { env } = await import("cloudflare:workers");
   return createDb(env.ACTIVITY_DB);
 }
+
+/**
+ * A `TEXT` timestamp as D1 holds it. The site writes ISO strings, and a
+ * column's `datetime('now')` default writes `YYYY-MM-DD HH:MM:SS`, which
+ * `Date.parse` would read in local time.
+ */
+export function readTimestamp(text: string | null): Date | null {
+  if (text === null) return null;
+  const sqlite = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$/.exec(text);
+  const iso = sqlite ? `${sqlite[1]}T${sqlite[2]}Z` : text;
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(iso)) return null;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
+}

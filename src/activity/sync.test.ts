@@ -140,7 +140,10 @@ describe("syncActivity", () => {
     });
 
     expect(result.version).toBe(1);
-    expect(await readSyncState(db)).toEqual({ version: 1, payloadHash: null });
+    expect(await readSyncState(db)).toMatchObject({
+      version: 1,
+      payloadHash: null,
+    });
   });
 
   it("writes again after a cleared hash rather than skipping", async () => {
@@ -170,6 +173,9 @@ describe("syncStatements", () => {
     }
 
     expect(await db.selectFrom("repos").selectAll().execute()).toHaveLength(1);
-    expect(await readSyncState(db)).toEqual({ version: 1, payloadHash: null });
+    expect(await readSyncState(db)).toMatchObject({
+      version: 1,
+      payloadHash: null,
+    });
   });
 });

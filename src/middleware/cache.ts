@@ -38,9 +38,10 @@ export interface ActivityVersions {
  * which page is which. The variant is part of the tag because
  * `/activity/code` serves HTML or markdown at one URL, by `Accept`.
  *
- * The tag is weak because Cloudflare drops a strong one from any HTML it may
- * rewrite on the way out, which is every HTML response on the zone. The
- * bytes it compares are never the same across encodings anyway.
+ * The tag is weak: it names a version, and the bytes differ by encoding.
+ * Cloudflare drops it from HTML on the way out, so a browser holding a page
+ * revalidates by `Last-Modified` and only the JSON and markdown clients by
+ * tag.
  */
 export function activityETag(
   { github, feed, deploy }: ActivityVersions,
@@ -49,12 +50,64 @@ export function activityETag(
   return `W/"${github}-${feed}-${deploy}-${variant}"`;
 }
 
+export interface ActivityTimes {
+  /** `sync_state.changed_at`, the last github sync that changed a row. */
+  github: Date | null;
+  /** The feed's latest write, from `readFeedVersion`. */
+  feed: Date | null;
+  /** When the Worker version was uploaded. */
+  deploy: Date | null;
+}
+
+/**
+ * The latest of the times, at the whole second `Last-Modified` carries. The
+ * page moves whenever any of them does, so the latest is when it last did.
+ */
+export function activityLastModified(times: ActivityTimes): Date {
+  const instants = [times.github, times.feed, times.deploy]
+    .filter((time) => time !== null)
+    .map((time) => time.getTime())
+    .filter((instant) => !Number.isNaN(instant));
+  const latest = instants.length === 0 ? 0 : Math.max(...instants);
+  return new Date(Math.floor(latest / 1000) * 1000);
+}
+
+export interface Validators {
+  etag: string;
+  lastModified: Date;
+}
+
+/**
+ * Whether the request already holds the current representation. The tag
+ * decides when the request carries one, as the spec has it, and the date
+ * stands in when it does not: a browser revalidating a page never saw the
+ * tag, since Cloudflare drops it from HTML.
+ */
+export function unchanged(
+  headers: Headers,
+  { etag, lastModified }: Validators,
+): boolean {
+  const ifNoneMatch = headers.get("If-None-Match");
+  if (ifNoneMatch !== null) return etagMatches(ifNoneMatch, etag);
+  return notModifiedSince(headers.get("If-Modified-Since"), lastModified);
+}
+
+export function notModifiedSince(
+  ifModifiedSince: string | null,
+  lastModified: Date,
+): boolean {
+  if (!ifModifiedSince) return false;
+  const since = Date.parse(ifModifiedSince);
+  if (Number.isNaN(since)) return false;
+  return since >= Math.floor(lastModified.getTime() / 1000) * 1000;
+}
+
 /**
  * The browser keeps the page but asks before reusing it. The edge holds the
- * same response under the same tag and answers the ask with a 304 without
- * waking the Worker, so a return visit costs one round trip and no body. A
- * max-age would save that trip and serve, after a deploy, HTML naming assets
- * the new version no longer has.
+ * same response under the same validators and answers the ask with a 304
+ * without waking the Worker, so a return visit costs one round trip and no
+ * body. A max-age would save that trip and serve, after a deploy, HTML naming
+ * assets the new version no longer has.
  */
 export const BROWSER_CACHE_CONTROL = "public, max-age=0, must-revalidate";
 

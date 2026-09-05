@@ -6,6 +6,8 @@ const ROW_ID = 1;
 export interface SyncState {
   version: number;
   payloadHash: string | null;
+  /** When `version` last moved. */
+  changedAt: string;
 }
 
 export function readSyncState(
@@ -13,7 +15,7 @@ export function readSyncState(
 ): Promise<SyncState | undefined> {
   return db
     .selectFrom("syncState")
-    .select(["version", "payloadHash"])
+    .select(["version", "payloadHash", "changedAt"])
     .where("id", "=", ROW_ID)
     .executeTakeFirst();
 }

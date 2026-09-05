@@ -638,10 +638,11 @@ describe("readFeedVersion", () => {
     await deleteActivity(store, "a");
     const deleted = await readFeedVersion(db);
 
-    expect(new Set([empty, one, curved]).size).toBe(3);
-    expect(deleted).toBe(empty);
-    expect(empty).toBe("0.0");
-    expect(one).toMatch(/^1\.\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
+    expect(new Set([empty.tag, one.tag, curved.tag]).size).toBe(3);
+    expect(deleted).toEqual(empty);
+    expect(empty).toEqual({ tag: "0.0", updatedAt: null });
+    expect(one.tag).toMatch(/^1\.\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
+    expect(one.updatedAt?.toISOString()).toBe(one.tag.slice(2));
   });
 });
 

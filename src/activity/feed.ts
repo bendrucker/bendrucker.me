@@ -19,7 +19,7 @@ import {
   normalizeProfile,
   relief,
 } from "@/components/cycling/profile";
-import type { ActivityFeedTable, Database } from "@/db";
+import { readTimestamp, type ActivityFeedTable, type Database } from "@/db";
 import { photoUrl, thumbnailUrl } from "@/photos";
 import {
   decodePolyline,
@@ -298,7 +298,16 @@ function monthInstant(month: string): number {
  * write moves `updatedAt`, and a delete moves the count. Characters an ETag
  * cannot carry are dropped, which keeps a default-valued `updated_at` legal.
  */
-export async function readFeedVersion(db: Kysely<Database>): Promise<string> {
+export interface FeedVersion {
+  /** A fingerprint an ETag can carry. */
+  tag: string;
+  /** The latest write, for `Last-Modified`. */
+  updatedAt: Date | null;
+}
+
+export async function readFeedVersion(
+  db: Kysely<Database>,
+): Promise<FeedVersion> {
   const { count, updatedAt } = await db
     .selectFrom("activityFeed")
     .select([
@@ -307,7 +316,7 @@ export async function readFeedVersion(db: Kysely<Database>): Promise<string> {
     ])
     .executeTakeFirstOrThrow();
   const changed = (updatedAt ?? "0").replaceAll(/[^\x21\x23-\x7e]/g, "");
-  return `${count}.${changed}`;
+  return { tag: `${count}.${changed}`, updatedAt: readTimestamp(updatedAt) };
 }
 
 interface Entry {
