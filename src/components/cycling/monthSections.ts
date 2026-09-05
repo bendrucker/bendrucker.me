@@ -4,10 +4,10 @@ import { computed, watch, type ComputedRef, type Ref } from "vue";
 /**
  * The log's month sections, keyed to the month each one holds.
  *
- * Sections are found by attribute rather than passed in, so the spy and the
- * window can both track them without the view wiring either one to a list of
- * elements. Pass `root` when more than one log shares a page, since an
- * unscoped search would find the other instance's sections first.
+ * Sections are found by attribute, so the spy and the window can both track
+ * them without the view wiring either one to a list of elements. Pass `root`
+ * when more than one log shares a page, since an unscoped search would find
+ * the other instance's sections first.
  */
 export function useMonthSections(
   keys: Ref<string[]>,

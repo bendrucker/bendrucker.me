@@ -12,7 +12,7 @@ export interface ParsedSpec {
   theme: "light" | "dark";
 }
 
-// Matched whole. Dimensions are checked against `isMapSize` by the caller.
+// Dimensions are checked against `isMapSize` by the caller.
 const SPEC = /^(\d{1,4})x(\d{1,4})(@2x)?(-dark)?$/;
 
 export function parseSpec(spec: string): ParsedSpec | null {
