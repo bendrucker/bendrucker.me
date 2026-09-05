@@ -5,6 +5,7 @@ import MonthRail from "./MonthRail.vue";
 import RideCard from "./RideCard.vue";
 import SectionHeading from "./SectionHeading.vue";
 import type { MonthGroup, Ride } from "@/activity/types";
+import { useMonthWindow } from "./useMonthWindow";
 import { scrollToSection, useScrollSpy } from "./useScrollSpy";
 import { useUnits } from "./useUnits";
 
@@ -28,6 +29,7 @@ const { formatCommuteTotals, formatMonthSummary } = useUnits();
 const root = ref<HTMLElement | null>(null);
 const keys = computed(() => props.months.map((month) => month.key));
 const activeKey = useScrollSpy(keys, { root });
+const monthWindow = useMonthWindow(keys, { root });
 
 /** How far below the fold a page starts loading, in pixels. */
 const SENTINEL_MARGIN = 200;
@@ -80,6 +82,9 @@ function withinMargin(element: HTMLElement | null): boolean {
       no rides logged yet
     </p>
 
+    <!-- A month far from the viewport holds its measured height and nothing
+         else, so the page keeps its length and the reader keeps their place
+         while the cards themselves are released. -->
     <section
       v-for="month in months"
       :key="month.key"
@@ -87,6 +92,11 @@ function withinMargin(element: HTMLElement | null): boolean {
       :aria-label="month.label"
       tabindex="-1"
       class="scroll-mt-4"
+      :style="
+        monthWindow.holds(month.key)
+          ? undefined
+          : { minHeight: `${monthWindow.reserved(month.key)}px` }
+      "
     >
       <SectionHeading
         :label="month.label"
@@ -94,25 +104,27 @@ function withinMargin(element: HTMLElement | null): boolean {
         as="h2"
       />
 
-      <ul
-        v-if="month.rides.length"
-        role="list"
-        class="mt-3 flex flex-col gap-3"
-      >
-        <li v-for="ride in month.rides" :key="ride.id">
-          <RideCard
-            :ride="ride"
-            heading-as="h3"
-            @open-photo="emit('openPhoto', ride, $event)"
-          />
-        </li>
-      </ul>
+      <template v-if="monthWindow.holds(month.key)">
+        <ul
+          v-if="month.rides.length"
+          role="list"
+          class="mt-3 flex flex-col gap-3"
+        >
+          <li v-for="ride in month.rides" :key="ride.id">
+            <RideCard
+              :ride="ride"
+              heading-as="h3"
+              @open-photo="emit('openPhoto', ride, $event)"
+            />
+          </li>
+        </ul>
 
-      <p v-if="month.commutes" class="mt-2 text-[11px] text-foreground/70">
-        + {{ month.commutes.count }}
-        {{ month.commutes.count === 1 ? "commute" : "commutes" }}
-        ({{ formatCommuteTotals(month.commutes) }})
-      </p>
+        <p v-if="month.commutes" class="mt-2 text-[11px] text-foreground/70">
+          + {{ month.commutes.count }}
+          {{ month.commutes.count === 1 ? "commute" : "commutes" }}
+          ({{ formatCommuteTotals(month.commutes) }})
+        </p>
+      </template>
     </section>
 
     <!-- The log stops at the first ride, so this whole block goes with the

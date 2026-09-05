@@ -166,6 +166,36 @@ projected path stay in card pixels, and `fitRoute` picks the zoom from the card
 size, so both scales frame the same map. A test asserts the two renders differ
 in nothing but the root element's `width` and `height`.
 
+## Log Window
+
+The log pages backwards to the first ride ever recorded, so its length is the
+whole archive rather than a screenful. Rendered whole that is over a hundred
+thousand elements, twenty thousand listeners, and around a gigabyte of decoded
+basemaps, which is enough for Chrome to warn about the tab.
+
+`useMonthWindow` keeps only the months within two viewports mounted. A month on
+its way out is measured from the rect its `IntersectionObserver` entry already
+carries, and its section holds that height while the rides are gone, so nothing
+above the viewport changes size and the reader keeps their place. A month
+starts mounted and is unmounted only once the observer has placed it outside
+the window. Starting the other way round would leave a new page reserving no
+height, and the collapsed page would keep the loading sentinel on screen and
+pull every remaining page at once.
+
+`useLogPages` holds the months in a `shallowRef`. A ride never changes once it
+has been read, and a deep ref wraps every ride, badge, fact and photo in a
+proxy that costs more than the data. Pages are appended by replacing the array.
+
+`useScrollSpy` and `useMonthWindow` both track `[data-month-key]` sections
+through `monthSections.ts`, which reconciles observers against the sections
+incrementally. Rebuilding them whenever the month list grew cost a page load
+one `observe` per month already loaded, quadratic across the twenty-odd pages
+a full scroll fetches.
+
+Windowing trades away in-page search and linear screen-reader access to months
+the reader has scrolled past. The rail and `scrollToSection` still reach every
+month, and a section mounts as soon as it is scrolled to.
+
 ## Theme
 
 CSS vars in `global.css` → Tailwind: `bg-background`, `text-foreground`, `bg-accent`, `text-accent`, `bg-muted`, `text-muted`, `border-border`. Dark mode via `data-theme="dark"` / `dark:` prefix. No `skin-*` classes.

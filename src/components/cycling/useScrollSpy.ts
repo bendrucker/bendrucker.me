@@ -1,10 +1,10 @@
 import {
   defaultDocument,
+  tryOnScopeDispose,
   useEventListener,
-  useIntersectionObserver,
-  useResizeObserver,
 } from "@vueuse/core";
-import { computed, ref, watch, type Ref } from "vue";
+import { ref, type Ref } from "vue";
+import { observeSections, useMonthSections } from "./monthSections";
 
 /** A band across the upper third of the viewport. A section becomes active once
  * its top reaches the band rather than when it first appears. */
@@ -27,10 +27,9 @@ export function scrollToSection(root: HTMLElement | null, key: string): void {
 }
 
 /**
- * Tracks which `[data-month-key]` section is in view. Callers own the sections:
- * the composable finds them by attribute, so the rail and the sections stay
- * independent components. Pass `root` when more than one spy shares a page,
- * since an unscoped search would find the other instance's sections first.
+ * Tracks which month section is in view. Callers own the sections, so the rail
+ * and the sections stay independent components. Pass `root` when more than one
+ * spy shares a page.
  */
 export function useScrollSpy(
   keys: Ref<string[]>,
@@ -39,25 +38,7 @@ export function useScrollSpy(
   const activeKey = ref<string | null>(null);
   const intersecting = new Set<HTMLElement>();
 
-  // Recomputed whenever `keys` or the root changes, by identity. A caller that
-  // rebuilds the array with the same contents rebuilds the observers too.
-  const sections = computed(() => {
-    const wanted = new Set(keys.value);
-    // `defaultDocument` is `undefined` on the server. The watcher below reads
-    // this computed eagerly, so a bare `document` would throw during SSR.
-    const scope = options.root?.value ?? defaultDocument;
-    const map = new Map<HTMLElement, string>();
-    if (!scope) return map;
-    for (const element of scope.querySelectorAll<HTMLElement>(
-      "[data-month-key]",
-    )) {
-      const key = element.dataset.monthKey;
-      if (!key || !wanted.has(key)) continue;
-      map.set(element, key);
-    }
-    return map;
-  });
-  const sectionElements = () => [...sections.value.keys()];
+  const sections = useMonthSections(keys, options.root);
 
   function selectActive() {
     // Positions are read live rather than taken from the entries, because an
@@ -85,42 +66,47 @@ export function useScrollSpy(
     activeKey.value = passed?.key ?? measured[0]?.key ?? null;
   }
 
-  // A section dropped from `keys` should stop counting as intersecting, even
-  // though the observer that reported it has already been replaced. Flushed
-  // post-render so this reads `sections` no earlier than the DOM-scoped
-  // watchers below do, since a computed caches whichever DOM state it was
-  // first read against.
-  watch(
-    sections,
-    (current) => {
-      for (const element of intersecting) {
-        if (!current.has(element)) intersecting.delete(element);
-      }
-    },
-    { flush: "post" },
-  );
+  const band = defaultDocument
+    ? new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!(entry.target instanceof HTMLElement)) continue;
+            if (!sections.value.has(entry.target)) continue;
+            if (entry.isIntersecting) intersecting.add(entry.target);
+            else intersecting.delete(entry.target);
+          }
+          selectActive();
+        },
+        { rootMargin: options.rootMargin ?? DEFAULT_ROOT_MARGIN },
+      )
+    : null;
 
-  useIntersectionObserver(
-    sectionElements,
-    (entries) => {
-      for (const entry of entries) {
-        if (!(entry.target instanceof HTMLElement)) continue;
-        if (!sections.value.has(entry.target)) continue;
-        if (entry.isIntersecting) intersecting.add(entry.target);
-        else intersecting.delete(entry.target);
-      }
-      selectActive();
+  // A section can also reflow on its own: an image finishing load, a section
+  // expanding, a font swapping in. None of those cross a window resize.
+  const reflow = defaultDocument ? new ResizeObserver(selectActive) : null;
+
+  tryOnScopeDispose(() => {
+    band?.disconnect();
+    reflow?.disconnect();
+  });
+
+  observeSections(sections, {
+    enter: (element) => {
+      band?.observe(element);
+      reflow?.observe(element);
     },
-    { rootMargin: options.rootMargin ?? DEFAULT_ROOT_MARGIN },
-  );
+    leave: (element) => {
+      band?.unobserve(element);
+      reflow?.unobserve(element);
+      // A section dropped from `keys` should stop counting as intersecting,
+      // even though the observer that reported it has stopped watching it.
+      intersecting.delete(element);
+    },
+  });
 
   // Resizing reflows the sections without crossing the band, so the observer
   // stays quiet while the active section moves out from under it.
   useEventListener("resize", selectActive);
-
-  // A section can also reflow on its own: an image finishing load, a section
-  // expanding, a font swapping in. None of those cross a window resize.
-  useResizeObserver(sectionElements, selectActive);
 
   return activeKey;
 }
