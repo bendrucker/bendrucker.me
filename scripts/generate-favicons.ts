@@ -95,7 +95,7 @@ async function main() {
   logger.info("Wrote favicon-dark.svg");
 
   const frames = await Promise.all(
-    ICO_SIZES.map((size) => rasterize(inkSvg(favicon, INK.light), size)),
+    ICO_SIZES.map(async (size) => rasterize(inkSvg(favicon, INK.light), size)),
   );
   writeFileSync(join(STATIC, "favicon.ico"), await pngToIco(frames));
   logger.info(`Wrote favicon.ico (${ICO_SIZES.join("/")})`);
@@ -108,7 +108,9 @@ async function main() {
   logger.info(`Wrote apple-touch-icon.png (${APPLE_SIZE}px)`);
 }
 
-main().catch((err) => {
+try {
+  await main();
+} catch (err) {
   logger.error({ err }, "Failed to generate favicons");
   process.exitCode = 1;
-});
+}

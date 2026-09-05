@@ -10,6 +10,20 @@ import {
 } from "@/photos";
 
 /**
+ * The transform, or null where it fails. Narrower than a `try` around the
+ * response itself, which would redirect on a failure to read the result.
+ */
+async function cut(body: Parameters<typeof env.IMAGES.input>[0]) {
+  try {
+    return await env.IMAGES.input(body)
+      .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
+      .output({ format: "image/jpeg", quality: 80 });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The 48px square a card shows, cut from the photo: a Strava original is
  * several hundred kilobytes, and a log renders a strip of them per ride.
  */
@@ -23,10 +37,7 @@ export const GET: APIRoute = async ({ params, cache }) => {
     return new Response("Not Found", { status: 404 });
   }
 
-  const thumbnail = await env.IMAGES.input(object.body)
-    .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
-    .output({ format: "image/jpeg", quality: 80 })
-    .catch(() => null);
+  const thumbnail = await cut(object.body);
   if (thumbnail === null) {
     // The original still draws the card. A redirect keeps the failure
     // short-lived at the edge.

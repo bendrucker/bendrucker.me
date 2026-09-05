@@ -9,8 +9,10 @@ const entry = {
 };
 
 vi.mock("astro:content", () => ({
-  getCollection: (_collection: string, filter?: (e: unknown) => boolean) =>
-    Promise.resolve([entry].filter((e) => (filter ? filter(e) : true))),
+  getCollection: async (
+    _collection: string,
+    filter?: (e: unknown) => boolean,
+  ) => [entry].filter((e) => (filter ? filter(e) : true)),
 }));
 
 const { posts } = await import("./posts");

@@ -11,9 +11,8 @@ export async function getStaticPaths() {
     return [];
   }
 
-  const posts = await getCollection("blog").then((p) =>
-    p.filter(({ data }) => !data.draft && !data.ogImage),
-  );
+  const entries = await getCollection("blog");
+  const posts = entries.filter(({ data }) => !data.draft && !data.ogImage);
 
   return posts.map((post) => ({
     params: { slug: getPath(post.id, post.filePath, false) },

@@ -43,10 +43,12 @@ async function main() {
   );
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   logger.error(
     { error: error instanceof Error ? error.message : error },
     "Failed to seed language_extensions",
   );
   process.exit(1);
-});
+}

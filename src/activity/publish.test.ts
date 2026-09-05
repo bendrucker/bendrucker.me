@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type { Kysely } from "kysely";
 import type { Database } from "@/db";
-import { createTestDb, testStore } from "@/test/db";
+import { createTestDb, testStore, tick } from "@/test/db";
 import {
   deleteActivity,
   publishActivity,
@@ -42,7 +42,7 @@ function activity(
   };
 }
 
-function feedRow() {
+async function feedRow() {
   return db.selectFrom("activityFeed").selectAll().executeTakeFirstOrThrow();
 }
 
@@ -153,7 +153,7 @@ describe("publishPowerCurve", () => {
   it("moves the activity's updatedAt so the feed version changes", async () => {
     await publishActivity(store, activity());
     const before = (await feedRow()).updatedAt;
-    await new Promise((resolve) => setTimeout(resolve, 2));
+    await tick();
     await publishPowerCurve(store, "a1", [{ durationS: 60, watts: 400 }]);
 
     expect((await feedRow()).updatedAt > before).toBe(true);

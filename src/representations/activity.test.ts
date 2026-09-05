@@ -7,7 +7,7 @@ import { createTestDb, seed, type SeedRepo } from "@/test/db";
 let db: Kysely<Database>;
 
 vi.mock("@/db", () => ({
-  getDb: () => Promise.resolve(db),
+  getDb: async () => db,
 }));
 
 const { activity, activityYear } = await import("./activity");

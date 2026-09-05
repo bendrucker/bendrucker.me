@@ -9,7 +9,7 @@ import { SITE } from "../config";
  * out of `sync.ts` so the write path can be tested without resolving the
  * GitHub client, which `npm test` does not build.
  */
-export function fetchActivity(
+export async function fetchActivity(
   token: string,
   window?: { from?: Date; to?: Date },
 ): Promise<GitHubActivityResult> {
