@@ -6,7 +6,7 @@ import ActivityTimeline from "../../components/activity/ActivityTimeline.vue";
 import type { Repo } from "@/activity/types";
 import { getDb } from "@/db";
 import { queryRepos } from "@/activity/query";
-import { logger } from "@workspace/logger";
+import { rethrowLocally } from "@/fallback";
 
 const db = await getDb();
 
@@ -22,7 +22,7 @@ try {
   initialHasMore = result.hasMore;
   initialCursor = result.nextCursor;
 } catch (error) {
-  logger.error({ error }, "Failed to load activity data");
+  rethrowLocally(error, "Failed to load activity data");
 }
 ---
 

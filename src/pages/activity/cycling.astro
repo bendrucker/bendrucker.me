@@ -6,14 +6,14 @@ import CyclingActivity from "../../components/cycling/CyclingActivity.vue";
 import { buildCyclingActivity, queryCyclingActivity } from "@/activity/feed";
 import type { CyclingActivityData } from "@/activity/types";
 import { getDb } from "@/db";
-import { logger } from "@workspace/logger";
+import { rethrowLocally } from "@/fallback";
 
 let data: CyclingActivityData;
 
 try {
   data = await queryCyclingActivity(await getDb());
 } catch (error) {
-  logger.error({ error }, "Failed to load cycling activity");
+  rethrowLocally(error, "Failed to load cycling activity");
   data = buildCyclingActivity({ rides: [], tracks: [] }, [], new Date());
 }
 ---

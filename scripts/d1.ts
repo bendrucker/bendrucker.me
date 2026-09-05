@@ -9,11 +9,16 @@ import { syncActivity, syncStatements } from "../src/activity/sync";
 import type { CompiledQuery } from "kysely";
 import SQLite from "better-sqlite3";
 
+// The bindings a script reaches through the proxy. `env` comes back alongside
+// the store because the seed writes ride photos into R2 as well as rows into
+// D1, and two proxies would be two Miniflare instances over one state
+// directory.
 export async function connectD1() {
   const { env, dispose } = await getPlatformProxy<{
     ACTIVITY_DB: D1Database;
+    RAW: R2Bucket;
   }>();
-  return { store: d1Store(env.ACTIVITY_DB), dispose };
+  return { store: d1Store(env.ACTIVITY_DB), env, dispose };
 }
 
 const quote = new SQLite(":memory:").prepare("SELECT quote(?)").pluck();
