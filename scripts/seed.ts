@@ -6,7 +6,7 @@
 // calls, so a seeded row is shaped exactly like a published one and a schema
 // change breaks this script the way it breaks the hub.
 //
-// Both flags write to the LOCAL database. `--remote` names where the rows are
+// `--remote` writes to the LOCAL database too. It names where the rows are
 // read from, not where they land: `npm run fetch-activity --remote` means the
 // opposite, so read the flag as "the real rides" rather than "against
 // production".
