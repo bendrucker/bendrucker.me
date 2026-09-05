@@ -46,7 +46,6 @@ export function formatMonthSummary(month: MonthStats, units: Units): string {
   ].join(" · ");
 }
 
-/** What the commutes a month never carded amounted to: distance, then time. */
 export function formatCommuteTotals(
   commutes: CommuteSummary,
   units: Units,

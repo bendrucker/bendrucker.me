@@ -189,7 +189,7 @@ export interface MonthStats {
   rideCount: number;
 }
 
-/** Rides too short to earn a card, summarized as a footnote instead. */
+/** Rides too short to earn a card, summarized as a footnote. */
 export interface CommuteSummary {
   count: number;
   distanceMi: number;
@@ -198,7 +198,7 @@ export interface CommuteSummary {
 
 export interface MonthGroup extends MonthStats {
   rides: Ride[];
-  /** Absent from a month that logged none, rather than carried as a zero. */
+  /** Absent when a month logged no commutes. */
   commutes?: CommuteSummary;
 }
 
