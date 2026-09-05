@@ -280,7 +280,7 @@ describe("queryCyclingActivity", () => {
       name: "Ride",
       startedAt: "2026-07-11T06:00:55",
       movingSeconds: 1_800,
-      photos: [],
+      media: [],
       badges: [],
       facts: [],
     });
@@ -300,7 +300,7 @@ describe("queryCyclingActivity", () => {
         elevationProfile: [100, 150, 200, 100],
         photoKeys: [
           "raw/strava/activities/1/photos/a.jpg",
-          "raw/strava/activities/1/photos/b.jpg",
+          "raw/strava/activities/1/photos/b.mp4",
         ],
       }),
     );
@@ -309,7 +309,7 @@ describe("queryCyclingActivity", () => {
     const byId = new Map(rides.map((entry) => [entry.id, entry]));
 
     expect(byId.get("plain")).not.toHaveProperty("elevationProfile");
-    expect(byId.get("plain")!.photos).toEqual([]);
+    expect(byId.get("plain")!.media).toEqual([]);
 
     const profile = decodeProfile(byId.get("full")!.elevationProfile!);
     expect(profile[0]).toBe(0);
@@ -318,20 +318,24 @@ describe("queryCyclingActivity", () => {
     expect(profile[1]).toBeCloseTo(0.228, 2);
     expect(profile[2]).toBeCloseTo(0.455, 2);
     expect(profile[3]).toBe(0);
-    expect(byId.get("full")!.photos).toEqual([
+    // Strava drops a ride's videos into the photo prefix beside its photos, so
+    // the extension is what separates the two here.
+    expect(byId.get("full")!.media).toEqual([
       {
         id: "raw/strava/activities/1/photos/a.jpg",
+        kind: "photo",
         thumbnailUrl:
           "/photos/thumbnails/1/raw/strava/activities/1/photos/a.jpg",
         fullUrl: "/photos/raw/strava/activities/1/photos/a.jpg",
         alt: "Photo 1 from Ride full",
       },
       {
-        id: "raw/strava/activities/1/photos/b.jpg",
+        id: "raw/strava/activities/1/photos/b.mp4",
+        kind: "video",
         thumbnailUrl:
-          "/photos/thumbnails/1/raw/strava/activities/1/photos/b.jpg",
-        fullUrl: "/photos/raw/strava/activities/1/photos/b.jpg",
-        alt: "Photo 2 from Ride full",
+          "/photos/thumbnails/1/raw/strava/activities/1/photos/b.mp4",
+        fullUrl: "/photos/raw/strava/activities/1/photos/b.mp4",
+        alt: "Video 2 from Ride full",
       },
     ]);
   });

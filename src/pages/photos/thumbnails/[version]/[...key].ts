@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import {
   isPhotoKey,
+  isVideoKey,
   PHOTO_CACHE,
   PHOTO_CACHE_CONTROL,
   photoUrl,
@@ -23,9 +24,23 @@ async function cut(body: Parameters<typeof env.IMAGES.input>[0]) {
   }
 }
 
+/** The same square for a video, cut from its first frame, or null where it fails. */
+async function cutFrame(body: Parameters<typeof env.MEDIA.input>[0]) {
+  try {
+    return await env.MEDIA.input(body)
+      .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
+      .output({ mode: "frame", time: "0s", format: "jpg" })
+      .response();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The 48px square a card shows, cut from the photo: a Strava original is
- * several hundred kilobytes, and a log renders a strip of them per ride.
+ * several hundred kilobytes, and a log renders a strip of them per ride. A
+ * video's square is cut from its first frame through the Media binding, since
+ * the Images binding refuses one and the original runs to megabytes.
  */
 export const GET: APIRoute = async ({ params, cache }) => {
   if (params.version !== String(THUMBNAIL_VERSION) || !isPhotoKey(params.key)) {
@@ -35,6 +50,25 @@ export const GET: APIRoute = async ({ params, cache }) => {
   const object = await env.RAW.get(params.key);
   if (object === null) {
     return new Response("Not Found", { status: 404 });
+  }
+
+  if (isVideoKey(params.key)) {
+    const frame = await cutFrame(object.body);
+    // Falling back to the original is what this route exists to avoid: a card
+    // would pull the whole video into a 48px `<img>` and paint nothing. The
+    // strip draws its own tile for a video with no frame.
+    if (frame === null) {
+      return new Response("Not Found", { status: 404 });
+    }
+
+    cache.set({ ...PHOTO_CACHE, etag: object.httpEtag });
+    return new Response(frame.body, {
+      headers: {
+        "content-type": frame.headers.get("content-type") ?? "image/jpeg",
+        "cache-control": PHOTO_CACHE_CONTROL,
+        etag: object.httpEtag,
+      },
+    });
   }
 
   const thumbnail = await cut(object.body);

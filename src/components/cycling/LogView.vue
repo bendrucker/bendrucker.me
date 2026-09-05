@@ -20,7 +20,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  openPhoto: [ride: Ride, index: number];
+  openMedia: [ride: Ride, index: number];
   loadMore: [];
 }>();
 
@@ -117,7 +117,7 @@ function withinMargin(element: HTMLElement | null): boolean {
             <RideCard
               :ride="ride"
               heading-as="h3"
-              @open-photo="emit('openPhoto', ride, $event)"
+              @open-media="emit('openMedia', ride, $event)"
             />
           </li>
         </ul>

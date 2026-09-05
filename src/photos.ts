@@ -23,8 +23,32 @@ export const THUMBNAIL_PX = 96;
  */
 export const THUMBNAIL_VERSION = 1;
 
+// Strava publishes a ride's videos into the same photo prefix as its photos,
+// so the extension is the only thing that separates them. Media
+// Transformations guarantees MP4/H.264; the other two are here because a key
+// carrying one still must not be handed to an `<img>`.
+const VIDEO_KEY = /\.(mp4|mov|m4v)$/i;
+
 export function isPhotoKey(key: string | undefined): key is string {
   return key !== undefined && PHOTO_KEY.test(key);
+}
+
+export function isVideoKey(key: string): boolean {
+  return VIDEO_KEY.test(key);
+}
+
+/**
+ * The `content-range` a `206` answers with. R2 resolves whichever of the three
+ * shapes the request asked for, so the last byte has to be worked back out
+ * from the object's own size.
+ */
+export function contentRange(range: R2Range, size: number): string {
+  if ("suffix" in range) {
+    return `bytes ${size - range.suffix}-${size - 1}/${size}`;
+  }
+  const first = range.offset ?? 0;
+  const last = range.length === undefined ? size - 1 : first + range.length - 1;
+  return `bytes ${first}-${last}/${size}`;
 }
 
 export function photoUrl(key: string): string {

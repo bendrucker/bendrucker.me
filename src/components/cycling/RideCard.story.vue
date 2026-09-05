@@ -9,6 +9,7 @@ import {
   epicRide,
   everydayRide,
   raceRide,
+  travelRide,
 } from "./fixtures";
 import RideCard from "./RideCard.vue";
 import type { Ride } from "@/activity/types";
@@ -19,6 +20,7 @@ const rides: Record<string, Ride> = {
   everyday: everydayRide,
   epic: epicRide,
   crowded: crowdedRide,
+  travel: travelRide,
   race: raceRide,
   bare: bareRide,
   flat: { ...bareRide, elevationProfile: undefined },
@@ -28,6 +30,7 @@ const rideOptions = {
   everyday: "everyday ride",
   epic: "epic ride",
   crowded: "crowded ride",
+  travel: "ride with a video",
   race: "race ride",
   bare: "bare ride",
   flat: "no elevation stream",
@@ -69,7 +72,7 @@ function initState() {
               :ride="rides[state.ride]!"
               :map-width="state.mapWidth"
               :map-height="state.mapHeight"
-              @open-photo="logEvent('openPhoto', { index: $event })"
+              @open-media="logEvent('openMedia', { index: $event })"
             />
           </div>
         </UnitsProvider>
@@ -88,7 +91,8 @@ function initState() {
 One ride as it appears in the log.
 
 Every case the card has to survive is a control rather than a variant. The
-crowded ride is a long name with three badges and twelve photos, the bare ride
-has no route, photos or badges, and the last entry drops the elevation stream.
+crowded ride is a long name with three badges and twelve photos, the travel
+ride leads its strip with a video, the bare ride has no route, media or badges,
+and the last entry drops the elevation stream.
 Narrow the card width to the phone column the log actually renders in.
 </docs>

@@ -9,12 +9,12 @@ import {
   DialogTitle,
 } from "reka-ui";
 import { computed, watch } from "vue";
-import PhotoCarousel from "./PhotoCarousel.vue";
+import MediaCarousel from "./MediaCarousel.vue";
 import StravaLink from "./StravaLink.vue";
-import type { RidePhoto } from "@/activity/types";
+import type { RideMedia } from "@/activity/types";
 
 const props = defineProps<{
-  photos: RidePhoto[];
+  media: RideMedia[];
   index: number;
   rideName: string;
   rideUrl?: string;
@@ -26,9 +26,9 @@ const emit = defineEmits<{
   "update:index": [index: number];
 }>();
 
-const count = computed(() => props.photos.length);
+const count = computed(() => props.media.length);
 
-/** An out of range index still lands on a real photo rather than blanking. */
+/** An out of range index still lands on a real item rather than blanking. */
 const position = computed(() => {
   if (count.value < 1) return 0;
   const whole = Math.trunc(props.index);
@@ -37,7 +37,7 @@ const position = computed(() => {
 });
 
 /**
- * Keyed on the photo count rather than on the clamped position, so a caller
+ * Keyed on the item count rather than on the clamped position, so a caller
  * that ignores these events gets one of them, not an endless stream. Emptying
  * the list closes the dialog through the `open` binding, which reka reads as
  * caller-driven and reports nothing back.
@@ -54,14 +54,12 @@ watch(
   { flush: "post" },
 );
 
-const photo = computed<RidePhoto | undefined>(
-  () => props.photos[position.value],
-);
+const item = computed<RideMedia | undefined>(() => props.media[position.value]);
 
 const instructions = computed(() =>
   count.value > 1
-    ? `Photo gallery with ${count.value} photos. Swipe, or use the left and right arrow keys, to move between them.`
-    : "A single photo from this ride.",
+    ? `Gallery with ${count.value} items. Swipe, or use the left and right arrow keys, to move between them.`
+    : "A single item from this ride.",
 );
 
 function step(delta: number) {
@@ -95,7 +93,7 @@ function onKeydown(event: KeyboardEvent) {
   <DialogRoot :open="open && count > 0" @update:open="onOpenChange">
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-50 bg-background/95" />
-      <!-- The whole viewport, so a photo is as large as the screen allows.
+      <!-- The whole viewport, so an item is as large as the screen allows.
            Capping the width left a postage stamp on a wide display. -->
       <DialogContent
         class="fixed inset-0 z-50 flex flex-col outline-none"
@@ -106,8 +104,8 @@ function onKeydown(event: KeyboardEvent) {
           {{ instructions }}
         </DialogDescription>
 
-        <PhotoCarousel
-          :photos="photos"
+        <MediaCarousel
+          :media="media"
           :index="position"
           @update:index="emit('update:index', $event)"
         />
@@ -120,8 +118,8 @@ function onKeydown(event: KeyboardEvent) {
             <!-- Carries the alt text too. A screen reader does not re-announce
                  an unfocused image whose alt changed under it. -->
             <span class="sr-only" aria-live="polite">
-              Photo {{ position + 1 }} of {{ count }}.
-              {{ photo?.alt }}
+              Item {{ position + 1 }} of {{ count }}.
+              {{ item?.alt }}
             </span>
           </p>
           <p class="max-w-[36ch] min-w-0 truncate text-foreground/80">
@@ -131,7 +129,7 @@ function onKeydown(event: KeyboardEvent) {
             <StravaLink v-if="rideUrl" :href="rideUrl" :name="rideName" />
             <DialogClose class="text-foreground/70 hover:text-accent">
               <span aria-hidden="true">✕</span>
-              <span class="sr-only">Close photo viewer</span>
+              <span class="sr-only">Close media viewer</span>
             </DialogClose>
           </div>
         </div>

@@ -152,6 +152,30 @@ re-throw a failed query instead of rendering the empty page a reader would get.
 screen: seeding, the URLs worth requesting, and screenshotting both themes at
 both widths.
 
+## Ride Media
+
+A ride's `photoKeys` carry videos alongside photos, separated only by the file
+extension, so `isVideoKey` in `src/photos.ts` is what tells the two apart and
+`RideMedia.kind` is what the components branch on.
+
+The Images binding rejects a video, so `[media]`'s `MEDIA` binding cuts the
+poster frame the card's thumbnail shows. When it fails the thumbnail route
+answers 404 rather than redirecting to the original: a 48px `<img>` pointed at
+an eleven megabyte MP4 downloads all of it and paints nothing. `MediaStrip.vue`
+draws its scrim and play glyph over whatever poster it got, or over nothing.
+
+`/photos/<key>` answers `Range` so a `<video>` can seek. R2 parses the header
+itself and reports the range it resolved, which `contentRange` formats. A `206`
+skips `cache.set()`, since those bytes must not be served to the next reader
+asking for the whole object.
+
+Media Transformations has no local simulator, so the Cloudflare vite plugin
+opens a remote proxy session for the binding and wants a `CLOUDFLARE_API_TOKEN`
+in any non-interactive shell. Nothing calls the binding at build time, so the
+`build` script sets `CLOUDFLARE_VITE_FORCE_LOCAL=true` and CI needs no
+credentials. `astro dev` still proxies it, along with R2 and D1, and needs a
+`wrangler login`.
+
 ## Stop Hook
 
 `.claude/hooks/verify.sh` runs on turns touching a file Prettier, a linter, or

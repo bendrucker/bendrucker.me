@@ -38,6 +38,12 @@ bucket_name = "activity-hub-raw"
 [images]
 binding = "IMAGES"
 
+# Cuts the poster frame a video's card thumbnail shows. The Images binding
+# above rejects a video outright, so this is the only thing standing between a
+# 48px tile and an eleven megabyte download.
+[media]
+binding = "MEDIA"
+
 # The activity pages' ETag carries the version id, so a browser revalidating
 # after a deploy is handed the new HTML rather than a 304 for the old one.
 [version_metadata]

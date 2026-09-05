@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { BASEMAP_CREDITS } from "./basemap";
 import HighlightsView from "./HighlightsView.vue";
 import LogView from "./LogView.vue";
-import PhotoLightbox from "./PhotoLightbox.vue";
+import MediaLightbox from "./MediaLightbox.vue";
 import PrsView from "./PrsView.vue";
 import SegmentedControl from "./SegmentedControl.vue";
 import type { CyclingActivityData, Ride } from "@/activity/types";
@@ -90,11 +90,11 @@ const modeLabel = computed(() => {
 });
 
 const lightboxRide = ref<Ride | null>(null);
-const photoIndex = ref(0);
+const mediaIndex = ref(0);
 
-function openPhoto(ride: Ride, index: number) {
+function openMedia(ride: Ride, index: number) {
   lightboxRide.value = ride;
-  photoIndex.value = index;
+  mediaIndex.value = index;
 }
 
 // The lightbox belongs to the ride that opened it. Leaving the log, or swapping
@@ -145,7 +145,7 @@ watch([mode, () => props.data], () => {
         :has-more="hasMore"
         :loading="loading"
         :failed="failed"
-        @open-photo="openPhoto"
+        @open-media="openMedia"
         @load-more="loadMore"
       />
       <HighlightsView
@@ -179,14 +179,14 @@ watch([mode, () => props.data], () => {
       >
     </p>
 
-    <PhotoLightbox
-      :photos="lightboxRide?.photos ?? []"
-      :index="photoIndex"
+    <MediaLightbox
+      :media="lightboxRide?.media ?? []"
+      :index="mediaIndex"
       :ride-name="lightboxRide?.name ?? ''"
       :ride-url="lightboxRide?.stravaUrl"
       :open="lightboxRide !== null"
       @close="lightboxRide = null"
-      @update:index="photoIndex = $event"
+      @update:index="mediaIndex = $event"
     />
   </div>
 </template>

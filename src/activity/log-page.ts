@@ -8,8 +8,9 @@
 import { z } from "zod";
 import { badgeKinds, iconNames, type LogPage } from "./types";
 
-const photo = z.object({
+const media = z.object({
   id: z.string(),
+  kind: z.enum(["photo", "video"]),
   thumbnailUrl: z.string(),
   fullUrl: z.string(),
   alt: z.string(),
@@ -42,7 +43,7 @@ const ride = z.object({
   // decoding to `geo.ts` and `profile.ts`.
   route: z.string().optional(),
   elevationProfile: z.string().optional(),
-  photos: z.array(photo),
+  media: z.array(media),
   badges: z.array(badge),
   facts: z.array(fact),
 });

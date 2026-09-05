@@ -20,7 +20,7 @@ import {
   relief,
 } from "@/components/cycling/profile";
 import { readTimestamp, type ActivityFeedTable, type Database } from "@/db";
-import { photoUrl, thumbnailUrl } from "@/photos";
+import { isVideoKey, photoUrl, thumbnailUrl } from "@/photos";
 import {
   decodePolyline,
   encodeProfile,
@@ -41,7 +41,7 @@ import type {
   RecordPeriod,
   Ride,
   RideBadge,
-  RidePhoto,
+  RideMedia,
   YearTotals,
 } from "./types";
 
@@ -432,7 +432,7 @@ function toEntry(row: RideRow): Entry {
     id: row.activityId,
     name: row.name ?? "Ride",
     startedAt,
-    photos: [],
+    media: [],
     badges: [],
     facts: [],
   };
@@ -484,7 +484,7 @@ function parseJson<T>(schema: z.ZodType<T>, text: string): T | null {
 }
 
 function attachTrack(ride: Ride, track: TrackRow): void {
-  ride.photos = photos(track, ride.name);
+  ride.media = media(track, ride.name);
 
   const route = track.polyline === null ? [] : decodePolyline(track.polyline);
   // The map endpoint reads the stored polyline back through this same helper,
@@ -510,14 +510,18 @@ function attachTrack(ride: Ride, track: TrackRow): void {
   }
 }
 
-function photos(track: TrackRow, name: string): RidePhoto[] {
+function media(track: TrackRow, name: string): RideMedia[] {
   const keys = parseJson(photoKeys, track.photoKeys) ?? [];
-  return keys.map((key, index) => ({
-    id: key,
-    thumbnailUrl: thumbnailUrl(key),
-    fullUrl: photoUrl(key),
-    alt: `Photo ${index + 1} from ${name}`,
-  }));
+  return keys.map((key, index) => {
+    const kind = isVideoKey(key) ? "video" : "photo";
+    return {
+      id: key,
+      kind,
+      thumbnailUrl: thumbnailUrl(key),
+      fullUrl: photoUrl(key),
+      alt: `${kind === "video" ? "Video" : "Photo"} ${index + 1} from ${name}`,
+    };
+  });
 }
 
 function miles(meters: number): number {

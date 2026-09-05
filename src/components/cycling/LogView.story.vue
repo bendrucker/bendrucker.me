@@ -77,9 +77,9 @@ function initState() {
             <LogView
               :months="monthSets[state.months]!"
               v-bind="paging[state.paging]!"
-              @open-photo="
+              @open-media="
                 (ride, index) =>
-                  logEvent('openPhoto', { ride: ride.name, index })
+                  logEvent('openMedia', { ride: ride.name, index })
               "
               @load-more="logEvent('loadMore', {})"
             />
@@ -99,7 +99,8 @@ function initState() {
 
 Rides grouped by month, each month headed by its own totals.
 
-Opening a photo logs to the Events tab, and so does asking for another page.
+Opening a photo or a video logs to the Events tab, and so does asking for
+another page.
 
 The log pages backwards until it reaches the first ride. The paging control puts
 that footer in each of its states: nothing to load, a page in flight, and a page
