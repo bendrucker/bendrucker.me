@@ -100,7 +100,7 @@ describe("queryCyclingActivity", () => {
     });
   });
 
-  it("splits months across the year boundary and qualifies the totals", async () => {
+  it("splits months across the year boundary and totals the latest year", async () => {
     await seed(
       ride("dec", { startedAt: "2025-12-14T17:00:00Z" }),
       ride("jan", { startedAt: "2026-01-03T17:00:00Z" }),
@@ -114,7 +114,6 @@ describe("queryCyclingActivity", () => {
       distanceMi: 24.85,
       elevationFt: 1969,
       rideCount: 1,
-      note: "ride in 2026",
     });
   });
 

@@ -551,22 +551,18 @@ function best(
 
 /**
  * The most recent year with a ride, so a January page keeps last season's
- * numbers up until the first ride of the new one replaces them. The note
- * qualifies the count once the log below runs into another year.
+ * numbers up until the first ride of the new one replaces them. The summary
+ * names the year, so a count covering only part of the log needs no qualifier.
  */
 function yearTotals(entries: readonly Entry[], now: Date): YearTotals {
   const year = entries[0]?.year ?? now.getUTCFullYear();
   const inYear = entries.filter((entry) => entry.year === year);
-  const totals: YearTotals = {
+  return {
     year,
     distanceMi: miles(sum(inYear, (entry) => entry.distanceM)),
     elevationFt: feet(sum(inYear, (entry) => entry.elevationM)),
     rideCount: inYear.length,
   };
-  if (inYear.length !== entries.length) {
-    totals.note = `${inYear.length === 1 ? "ride" : "rides"} in ${year}`;
-  }
-  return totals;
 }
 
 function records(

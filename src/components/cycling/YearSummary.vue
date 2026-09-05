@@ -8,7 +8,6 @@ withDefaults(
     distanceMi: number;
     elevationFt: number;
     rideCount: number;
-    note?: string;
     /** Heading level for the year, so callers own the document outline. */
     as?: "h2" | "h3" | "h4" | "h5" | "h6";
   }>(),
@@ -20,33 +19,39 @@ const { distanceUnit, elevationUnit, formatDistance, formatElevation } =
 </script>
 
 <template>
-  <div
-    class="flex flex-wrap items-baseline gap-x-6 gap-y-3 rounded-lg border border-border px-4 py-3"
-  >
-    <!-- The year is what the numbers beside it belong to, so it carries the
-         panel's heading rather than sitting in the tree as loose text. -->
-    <component
-      :is="as"
-      class="font-sans text-[26px] leading-none font-extrabold tracking-tight"
+  <div class="rounded-lg border border-border">
+    <!-- The year scopes every number below it, so it caps the panel. The
+         cap is also the one strip of the header with room for a control. -->
+    <div
+      class="flex items-center justify-between gap-3 border-b border-border px-4 py-2"
     >
-      {{ year }}
-    </component>
-    <StatValue
-      :value="formatDistance(distanceMi)"
-      :unit="distanceUnit"
-      size="lg"
-      label="distance"
-    />
-    <StatValue
-      :value="formatElevation(elevationFt)"
-      :unit="elevationUnit"
-      size="lg"
-      label="climbing"
-    />
-    <StatValue
-      :value="rideCount.toLocaleString('en-US')"
-      :unit="note ?? 'rides'"
-      size="lg"
-    />
+      <component
+        :is="as"
+        class="text-[11px] font-bold tracking-[.14em] text-foreground/70"
+      >
+        {{ year }}
+      </component>
+      <slot name="controls" />
+    </div>
+
+    <div class="flex flex-wrap items-baseline gap-x-6 gap-y-3 px-4 py-3">
+      <StatValue
+        :value="formatDistance(distanceMi)"
+        :unit="distanceUnit"
+        size="lg"
+        label="distance"
+      />
+      <StatValue
+        :value="formatElevation(elevationFt)"
+        :unit="elevationUnit"
+        size="lg"
+        label="climbing"
+      />
+      <StatValue
+        :value="rideCount.toLocaleString('en-US')"
+        :unit="rideCount === 1 ? 'ride' : 'rides'"
+        size="lg"
+      />
+    </div>
   </div>
 </template>

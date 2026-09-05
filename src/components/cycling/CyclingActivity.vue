@@ -101,24 +101,30 @@ watch([mode, () => props.data], () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-5 bg-background text-foreground">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <SegmentedControl
-        :model-value="mode"
-        :options="MODES"
-        label="Activity view"
-        @update:model-value="selectMode"
-      />
-      <SegmentedControl
-        :model-value="units"
-        :options="UNITS"
-        label="Units"
-        size="sm"
-        @update:model-value="selectUnits"
-      />
-    </div>
+  <!-- The month rail is fixed against the viewport edge, so the gutter it
+       needs is reserved here, and every view ends where the controls above
+       it do. -->
+  <div class="flex flex-col gap-5 bg-background text-foreground sm:pr-14">
+    <SegmentedControl
+      :model-value="mode"
+      :options="MODES"
+      label="Activity view"
+      class="self-start"
+      @update:model-value="selectMode"
+    />
 
-    <YearSummary v-bind="data.totals" />
+    <YearSummary v-bind="data.totals">
+      <template #controls>
+        <SegmentedControl
+          :model-value="units"
+          :options="UNITS"
+          label="Units"
+          size="sm"
+          variant="ghost"
+          @update:model-value="selectUnits"
+        />
+      </template>
+    </YearSummary>
 
     <!-- Switching modes replaces everything below the controls without moving
          focus, which a screen reader has no other way to notice. -->
