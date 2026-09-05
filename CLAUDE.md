@@ -169,8 +169,65 @@ renders every card that way.
 A card carries both themes as separate images and swaps them with CSS, because
 the site's theme is an attribute a reader toggles rather than an OS setting.
 That costs two image requests where one is shown, in exchange for a toggle that
-needs no JavaScript and no round trip. Each image is rendered once and then
-served from the edge, so the doubling is bandwidth rather than renders.
+needs no JavaScript and no round trip. The hidden image is never painted, so
+the second theme costs a request and an element.
+
+The numbers in the route's URL are CSS pixels and `@2x` asks for the same card
+rasterized at twice that, which a card offers through `srcset`. A display at
+one device pixel per CSS pixel takes the 1x image and holds a quarter of the
+bitmap the 2x one decodes to.
+
+`src/map/spec.ts` owns the grammar, apart from the route, because the route
+imports `cloudflare:workers` at module scope and Vitest cannot resolve it.
+
+Only the root `<svg>` element scales. The `viewBox`, the background, and every
+projected path stay in card pixels, and `fitRoute` picks the zoom from the card
+size, so both scales frame the same map. A test asserts the two renders differ
+in nothing but the root element's `width` and `height`.
+
+## Log Window
+
+The log pages backwards to the first ride ever recorded, so its length is the
+whole archive rather than a screenful. Rendered whole, that is over a hundred
+thousand elements and around a gigabyte of decoded basemaps, which is enough
+for Chrome to warn about the tab.
+
+`useMonthWindow` keeps only the months within two viewports mounted. A month on
+its way out is measured from the rect its `IntersectionObserver` entry already
+carries, and its section holds that height while the rides are gone, so nothing
+above the viewport changes size and the reader keeps their place. A month
+starts mounted and is unmounted only once the observer has placed it outside
+the window. Starting the other way round would leave a new page reserving no
+height, and the collapsed page would keep the loading sentinel on screen and
+pull every remaining page at once.
+
+`useLogPages` holds the months in a `shallowRef`. A ride never changes once it
+has been read, and a deep ref wraps every ride, badge, fact and photo in a
+proxy that costs more than the data. Pages are appended by replacing the array.
+
+`useScrollSpy` and `useMonthWindow` both track `[data-month-key]` sections
+through `monthSections.ts`, which reconciles observers against the sections
+incrementally. Rebuilding them on every load would cost one `observe` per
+month already mounted, quadratic across the twenty-odd pages a full scroll
+fetches.
+
+The fetched pages live in `CyclingActivity`, so the log is hidden rather than
+unmounted when the reader switches to highlights or records. Unmounting it
+would drop the window's record of which months are collapsed while keeping the
+months themselves, and coming back would mount every month fetched so far at
+once. A hidden section measures zero, so a month keeps the last height it
+actually stood at. The loading sentinel measures zero too, which reads as on
+screen, so pagination checks it has a box before asking for another page.
+Without that check, switching views while a page is in flight fetches the rest
+of the archive behind whatever the reader is looking at.
+
+A rail jump is instant. The page sets `scroll-smooth`, and animating to a
+month years back carries the viewport across every month in between, each one
+mounting its rides as it enters the window and dropping them as it leaves.
+
+Windowing trades away in-page search and linear screen-reader access to months
+the reader has scrolled past. The rail and `scrollToSection` still reach every
+month, and a section mounts as soon as it is scrolled to.
 
 ## Theme
 

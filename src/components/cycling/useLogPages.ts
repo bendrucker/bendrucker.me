@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from "vue";
+import { computed, ref, shallowRef, type Ref } from "vue";
 import { logPage } from "@/activity/log-page";
 import type { MonthGroup } from "@/activity/types";
 
@@ -22,7 +22,12 @@ export function useLogPages(
   initialMonths: MonthGroup[],
   initialCursor: string | null,
 ): LogPages {
-  const months = ref<MonthGroup[]>([...initialMonths]);
+  // Shallow because a ride never changes once it has been read: a deep ref
+  // would wrap every ride, badge, fact and photo of every month in a proxy,
+  // which costs tens of megabytes across a log scrolled to its first ride and
+  // buys reactivity nothing reads. Pages are appended by replacing the array,
+  // which is the only mutation the ref has to see.
+  const months = shallowRef<MonthGroup[]>([...initialMonths]);
   const cursor = ref<string | null>(initialCursor);
   const loading = ref(false);
   const failed = ref(false);
@@ -37,7 +42,7 @@ export function useLogPages(
       const response = await fetch(`/activity/cycling/${before}.json`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const page = logPage.parse(await response.json());
-      months.value.push(...page.months);
+      months.value = [...months.value, ...page.months];
       cursor.value = page.logCursor;
     } catch {
       failed.value = true;

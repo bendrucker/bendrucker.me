@@ -25,6 +25,12 @@ const fitted = computed(() =>
 
 type Theme = "light" | "dark";
 
+interface BasemapImage {
+  /** The 1x URL, for a browser that ignores `srcset`. */
+  src: string;
+  srcset: string;
+}
+
 /**
  * Both themes are addressed up front and swapped with CSS. The site's theme is
  * an attribute a reader can toggle, so a `prefers-color-scheme` source would
@@ -32,13 +38,17 @@ type Theme = "light" | "dark";
  * image requests where it shows one, which buys a toggle that needs no
  * JavaScript and no round trip.
  */
-const basemaps = computed<Record<Theme, string> | null>(() => {
+const basemaps = computed<Record<Theme, BasemapImage> | null>(() => {
   const { id, route, width, height } = props;
   if (id === undefined || route === undefined || !hasRoute.value) return null;
-  return {
-    light: mapImageUrl(id, route, width, height, "light"),
-    dark: mapImageUrl(id, route, width, height, "dark"),
+
+  const forTheme = (theme: Theme): BasemapImage => {
+    const src = mapImageUrl({ id, route, width, height, theme, scale: 1 });
+    const src2x = mapImageUrl({ id, route, width, height, theme, scale: 2 });
+    return { src, srcset: `${src} 1x, ${src2x} 2x` };
   };
+
+  return { light: forTheme("light"), dark: forTheme("dark") };
 });
 
 /**
@@ -63,10 +73,11 @@ watch(basemaps, () => {
   >
     <template v-if="basemaps">
       <img
-        v-for="(src, theme) in basemaps"
+        v-for="(image, theme) in basemaps"
         v-show="!failed[theme]"
         :key="theme"
-        :src="src"
+        :src="image.src"
+        :srcset="image.srcset"
         alt=""
         aria-hidden="true"
         loading="lazy"

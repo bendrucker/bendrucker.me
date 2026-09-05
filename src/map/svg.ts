@@ -10,22 +10,24 @@ import {
   type TilePlacement,
 } from "./tiles";
 
-/**
- * Cards are small enough that a 1x basemap is visibly soft on a phone. The SVG
- * is built in card pixels and rasterized at twice that, which costs nothing
- * extra to ask for here.
- */
-const RENDER_SCALE = 2;
-
 /** Geometry types from the vector tile spec. Points carry no shape to draw. */
 const LINE_GEOMETRY = 2;
 const POLYGON_GEOMETRY = 3;
 
 export interface BasemapRequest {
   coordinates: Coordinate[];
+  /** CSS pixels. `fitRoute` frames and zooms on these, never on `scale`. */
   width: number;
   height: number;
   theme: Theme;
+  /**
+   * Cards are small enough that a 1x basemap is visibly soft on a phone, so
+   * the route also serves a 2x raster of the same card for the browser to
+   * pick via `srcset`. Only the root `<svg>` element's `width`/`height` scale
+   * with this. The `viewBox`, the background rect, and every projected path
+   * stay in card pixels, so the two scales show the same map.
+   */
+  scale: 1 | 2;
   key?: string;
 }
 
@@ -42,6 +44,7 @@ export async function basemapSvg({
   width,
   height,
   theme,
+  scale,
   key,
 }: BasemapRequest): Promise<string> {
   const placed = await placeTiles(coordinates, width, height, key);
@@ -54,7 +57,7 @@ export async function basemapSvg({
     .join("");
 
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width * RENDER_SCALE}" height="${height * RENDER_SCALE}" viewBox="0 0 ${width} ${height}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width * scale}" height="${height * scale}" viewBox="0 0 ${width} ${height}">`,
     `<defs>${clips}</defs>`,
     `<rect width="${width}" height="${height}" fill="${background(theme)}"/>`,
     ...paintRules(theme).map((rule) => layerGroup(rule, placed)),
