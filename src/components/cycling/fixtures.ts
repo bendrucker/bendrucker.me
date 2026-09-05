@@ -1,7 +1,7 @@
-import { encodePolyline, encodeProfile } from "@/activity/track";
-import { relief, seededRandom, syntheticProfile } from "./profile";
+import { encodeProfile } from "@/activity/track";
+import { MARIN, NAPA, PENINSULA, syntheticRoute } from "@/test/rides";
+import { relief, syntheticProfile } from "./profile";
 import type {
-  Coordinate,
   CyclingActivityData,
   Highlight,
   HighlightMonth,
@@ -11,45 +11,6 @@ import type {
   Ride,
   RidePhoto,
 } from "@/activity/types";
-
-const MARIN: Coordinate = [37.8991, -122.5253];
-const NAPA: Coordinate = [38.5025, -122.2654];
-const PENINSULA: Coordinate = [37.4419, -122.143];
-
-/**
- * Closed loop with a few harmonics layered on, so fixture routes read as roads
- * rather than circles. Latitude is compressed by the cosine of the centre so
- * the loop keeps its proportions once projected.
- */
-function syntheticRoute(
-  seed: string,
-  center: Coordinate,
-  radiusDegrees: number,
-  points = 220,
-): string {
-  const random = seededRandom(seed);
-  const harmonics = Array.from({ length: 4 }, (_, index) => ({
-    frequency: index + 2,
-    amplitude: (random() * 0.5 + 0.15) / (index + 1),
-    phase: random() * Math.PI * 2,
-  }));
-  const lonScale = 1 / Math.cos((center[0] * Math.PI) / 180);
-
-  return encodePolyline(
-    Array.from({ length: points }, (_, index) => {
-      const angle = (index / (points - 1)) * Math.PI * 2;
-      const wobble = harmonics.reduce(
-        (sum, h) => sum + h.amplitude * Math.sin(h.frequency * angle + h.phase),
-        0,
-      );
-      const radius = radiusDegrees * (1 + wobble * 0.45);
-      return [
-        center[0] + radius * Math.sin(angle),
-        center[1] + radius * Math.cos(angle) * lonScale,
-      ] satisfies Coordinate;
-    }),
-  );
-}
 
 function photos(rideId: string, count: number): RidePhoto[] {
   return Array.from({ length: count }, (_, index) => ({
