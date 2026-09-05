@@ -151,8 +151,20 @@ renders every card that way.
 A card carries both themes as separate images and swaps them with CSS, because
 the site's theme is an attribute a reader toggles rather than an OS setting.
 That costs two image requests where one is shown, in exchange for a toggle that
-needs no JavaScript and no round trip. Each image is rendered once and then
-served from the edge, so the doubling is bandwidth rather than renders.
+needs no JavaScript and no round trip. Chrome never decodes the hidden one, so
+the second theme costs a request and an element rather than a bitmap.
+
+The numbers in a URL are CSS pixels and `@2x` asks for the same card rasterized
+at twice that, which a card offers through `srcset`. A display at one device
+pixel per CSS pixel takes the 1x image and holds a quarter of the bitmap the 2x
+one decodes to. `src/map/spec.ts` owns the grammar, apart from the route,
+because the route imports `cloudflare:workers` at module scope and Vitest
+cannot resolve it.
+
+Only the root `<svg>` element scales. The `viewBox`, the background, and every
+projected path stay in card pixels, and `fitRoute` picks the zoom from the card
+size, so both scales frame the same map. A test asserts the two renders differ
+in nothing but the root element's `width` and `height`.
 
 ## Theme
 

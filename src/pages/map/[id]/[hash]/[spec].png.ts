@@ -5,9 +5,7 @@ import { isMapSize, routeHash } from "@/components/cycling/basemap";
 import { getDb } from "@/db";
 import { etagMatches } from "@/middleware/cache";
 import { renderBasemap } from "@/map/render";
-
-// Matched whole, with the dimensions checked against `isMapSize`.
-const SPEC = /^(\d{1,4})x(\d{1,4})(-dark)?$/;
+import { parseSpec } from "@/map/spec";
 
 /**
  * Astro decodes a path param with `decodeURI`, which leaves the characters
@@ -22,12 +20,11 @@ const A_YEAR = 31536000;
 const SUPERSEDED = 300;
 
 export const GET: APIRoute = async ({ params, cache, request }) => {
-  const spec = SPEC.exec(params.spec ?? "");
+  const spec = parseSpec(params.spec ?? "");
   const id = params.id;
   if (spec === null || id === undefined || !ID.test(id)) return notFound();
 
-  const width = Number(spec[1]);
-  const height = Number(spec[2]);
+  const { width, height, scale, theme } = spec;
   if (!isMapSize(width, height)) return notFound();
 
   const db = await getDb();
@@ -54,7 +51,7 @@ export const GET: APIRoute = async ({ params, cache, request }) => {
     return new Response(null, {
       status: 302,
       headers: {
-        location: `/map/${id}/${hash}/${spec[0]}.png`,
+        location: `/map/${id}/${hash}/${params.spec}.png`,
         "cache-control": `public, max-age=${SUPERSEDED}`,
       },
     });
@@ -83,7 +80,8 @@ export const GET: APIRoute = async ({ params, cache, request }) => {
     coordinates,
     width,
     height,
-    theme: spec[3] === undefined ? "light" : "dark",
+    scale,
+    theme,
     key: env.CARTO_BASEMAP_KEY,
   });
 

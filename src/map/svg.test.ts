@@ -64,12 +64,13 @@ beforeEach(() => {
   );
 });
 
-async function render() {
+async function render(scale: 1 | 2 = 1) {
   return basemapSvg({
     coordinates: ROUTE,
     width: WIDTH,
     height: HEIGHT,
     theme: "light",
+    scale,
   });
 }
 
@@ -81,10 +82,28 @@ describe("basemapSvg", () => {
     expect(await render()).toMatchSnapshot();
   });
 
-  it("rasterizes at twice the card's size", async () => {
-    const svg = await render();
-    expect(svg).toContain(`width="${WIDTH * 2}" height="${HEIGHT * 2}"`);
-    expect(svg).toContain(`viewBox="0 0 ${WIDTH} ${HEIGHT}"`);
+  it("rasterizes at the requested scale, framed in card pixels", async () => {
+    const oneX = await render(1);
+    expect(oneX).toContain(`width="${WIDTH}" height="${HEIGHT}"`);
+    expect(oneX).toContain(`viewBox="0 0 ${WIDTH} ${HEIGHT}"`);
+
+    const twoX = await render(2);
+    expect(twoX).toContain(`width="${WIDTH * 2}" height="${HEIGHT * 2}"`);
+    expect(twoX).toContain(`viewBox="0 0 ${WIDTH} ${HEIGHT}"`);
+  });
+
+  // The regression this whole feature is one typo away from: the 1x and 2x
+  // renders must show the same map, at the same zoom and framing, differing
+  // only in how large the root element says it is.
+  it("draws the same map at every scale", async () => {
+    const oneX = await render(1);
+    const twoX = await render(2);
+    expect(twoX).toBe(
+      oneX.replace(
+        `width="${WIDTH}" height="${HEIGHT}" viewBox`,
+        `width="${WIDTH * 2}" height="${HEIGHT * 2}" viewBox`,
+      ),
+    );
   });
 
   it("fills the card before anything is drawn on it", async () => {

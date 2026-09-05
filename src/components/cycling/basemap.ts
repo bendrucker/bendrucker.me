@@ -19,11 +19,13 @@ export function isMapSize(width: number, height: number): boolean {
 
 /**
  * Bump when the rendered basemap should change: a new palette, different
- * layers, another zoom ceiling. Rendered images are immutable under a URL this
- * feeds, so a bump is the only thing that retires the ones already sitting in
+ * layers, another zoom ceiling, or a URL segment changing what it means (`2`
+ * is the `@2x` grammar landing, which repoints `150x140.png` from a 2x render
+ * to a 1x one). Rendered images are immutable under a URL this feeds, so a
+ * bump is the only thing that retires the ones already sitting in
  * Cloudflare's cache.
  */
-export const BASEMAP_VERSION = 1;
+export const BASEMAP_VERSION = 2;
 
 /**
  * Identifies the track a card is drawing, so the rendered image can be cached
@@ -40,15 +42,27 @@ export function routeHash(route: string): string {
   return (hash >>> 0).toString(36);
 }
 
-export function mapImageUrl(
-  id: string,
-  route: string,
-  width: number,
-  height: number,
-  theme: "light" | "dark",
-): string {
+export interface MapImageOptions {
+  id: string;
+  route: string;
+  width: number;
+  height: number;
+  theme: "light" | "dark";
+  /** Defaults to 1x. A card asks for both, one to `src` and one to `srcset`. */
+  scale?: 1 | 2;
+}
+
+export function mapImageUrl({
+  id,
+  route,
+  width,
+  height,
+  theme,
+  scale = 1,
+}: MapImageOptions): string {
+  const scaleSegment = scale === 2 ? "@2x" : "";
   const suffix = theme === "dark" ? "-dark" : "";
-  return `/map/${encodeURIComponent(id)}/${routeHash(route)}/${width}x${height}${suffix}.png`;
+  return `/map/${encodeURIComponent(id)}/${routeHash(route)}/${width}x${height}${scaleSegment}${suffix}.png`;
 }
 
 /**
