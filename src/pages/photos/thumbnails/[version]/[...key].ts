@@ -4,8 +4,9 @@ import {
   isPhotoKey,
   PHOTO_CACHE,
   PHOTO_CACHE_CONTROL,
-  readPhoto,
+  photoUrl,
   THUMBNAIL_PX,
+  THUMBNAIL_VERSION,
 } from "@/photos";
 
 /**
@@ -13,11 +14,11 @@ import {
  * several hundred kilobytes, and a log renders a strip of them per ride.
  */
 export const GET: APIRoute = async ({ params, cache }) => {
-  if (!isPhotoKey(params.key)) {
+  if (params.version !== String(THUMBNAIL_VERSION) || !isPhotoKey(params.key)) {
     return new Response("Not Found", { status: 404 });
   }
 
-  const object = await readPhoto(params.key);
+  const object = await env.RAW.get(params.key);
   if (object === null) {
     return new Response("Not Found", { status: 404 });
   }
@@ -32,10 +33,11 @@ export const GET: APIRoute = async ({ params, cache }) => {
     // short-lived at the edge.
     return new Response(null, {
       status: 302,
-      headers: { location: `/photos/${params.key}` },
+      headers: { location: photoUrl(params.key) },
     });
   }
 
+  // The URL names the transform, so the original's tag is the thumbnail's.
   cache.set({ ...PHOTO_CACHE, etag: object.httpEtag });
   return new Response(thumbnail.image(), {
     headers: {

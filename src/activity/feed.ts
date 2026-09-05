@@ -20,6 +20,7 @@ import {
   relief,
 } from "@/components/cycling/profile";
 import type { ActivityFeedTable, Database } from "@/db";
+import { photoUrl, thumbnailUrl } from "@/photos";
 import {
   decodePolyline,
   encodeProfile,
@@ -504,8 +505,8 @@ function photos(track: TrackRow, name: string): RidePhoto[] {
   const keys = parseJson(photoKeys, track.photoKeys) ?? [];
   return keys.map((key, index) => ({
     id: key,
-    thumbnailUrl: `/photos/thumbnails/${key}`,
-    fullUrl: `/photos/${key}`,
+    thumbnailUrl: thumbnailUrl(key),
+    fullUrl: photoUrl(key),
     alt: `Photo ${index + 1} from ${name}`,
   }));
 }

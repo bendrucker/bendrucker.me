@@ -321,13 +321,15 @@ describe("queryCyclingActivity", () => {
     expect(byId.get("full")!.photos).toEqual([
       {
         id: "raw/strava/activities/1/photos/a.jpg",
-        thumbnailUrl: "/photos/thumbnails/raw/strava/activities/1/photos/a.jpg",
+        thumbnailUrl:
+          "/photos/thumbnails/1/raw/strava/activities/1/photos/a.jpg",
         fullUrl: "/photos/raw/strava/activities/1/photos/a.jpg",
         alt: "Photo 1 from Ride full",
       },
       {
         id: "raw/strava/activities/1/photos/b.jpg",
-        thumbnailUrl: "/photos/thumbnails/raw/strava/activities/1/photos/b.jpg",
+        thumbnailUrl:
+          "/photos/thumbnails/1/raw/strava/activities/1/photos/b.jpg",
         fullUrl: "/photos/raw/strava/activities/1/photos/b.jpg",
         alt: "Photo 2 from Ride full",
       },

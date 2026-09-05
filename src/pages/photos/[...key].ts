@@ -1,17 +1,13 @@
 import type { APIRoute } from "astro";
-import {
-  isPhotoKey,
-  PHOTO_CACHE,
-  PHOTO_CACHE_CONTROL,
-  readPhoto,
-} from "@/photos";
+import { env } from "cloudflare:workers";
+import { isPhotoKey, PHOTO_CACHE, PHOTO_CACHE_CONTROL } from "@/photos";
 
 export const GET: APIRoute = async ({ params, cache }) => {
   if (!isPhotoKey(params.key)) {
     return new Response("Not Found", { status: 404 });
   }
 
-  const object = await readPhoto(params.key);
+  const object = await env.RAW.get(params.key);
   if (object === null) {
     return new Response("Not Found", { status: 404 });
   }
