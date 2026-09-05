@@ -501,9 +501,7 @@ function summarizeCommutes(entries: readonly Entry[]): CommuteSummary {
   return {
     count: entries.length,
     distanceMi: miles(sum(entries, (entry) => entry.distanceM)),
-    movingSeconds: Math.round(
-      sum(entries, (entry) => entry.ride.movingSeconds ?? 0),
-    ),
+    movingSeconds: sum(entries, (entry) => entry.ride.movingSeconds ?? 0),
   };
 }
 
