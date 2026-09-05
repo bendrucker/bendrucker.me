@@ -19,11 +19,10 @@ writes through, so a schema change breaks the seed the way it breaks the hub.
 ```bash
 npm run seed              # three years of synthetic rides
 npm run seed -- --remote  # the real rides, exported from production D1
-npm run seed -- --reset   # drop the local rides first
 ```
 
-`--remote` names where the rows are read from, not where they land. Both flags
-write locally. `npm run fetch-activity --remote` means the opposite, so read
+`--remote` names where the rows are read from, not where they land. It still
+writes locally. `npm run fetch-activity --remote` means the opposite, so read
 this one as "the real rides".
 
 The synthetic set carries the cases recent bugs lived in: an off-season gap so
@@ -33,7 +32,7 @@ route nor profile. It also writes placeholder photos into local R2, without
 which every thumbnail 404s at `src/pages/photos/[...key].ts`.
 
 `dev:worker` seeds on its own when the feed table is empty. Run the seed by
-hand when you want `--reset` or `--remote`. A blank cycling page locally means
+hand when you want `--remote`. A blank cycling page locally means
 the query is broken or the database is empty, and `dev:worker`'s
 `LOCAL_ERRORS` throws a stack trace saying which.
 
