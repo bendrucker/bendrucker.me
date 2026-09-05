@@ -69,7 +69,10 @@ watch(
 
 function withinMargin(element: HTMLElement | null): boolean {
   if (element === null) return false;
-  const { top, bottom } = element.getBoundingClientRect();
+  const { top, bottom, width, height } = element.getBoundingClientRect();
+  // A log hidden behind another view measures at zero, which sits inside the
+  // margin and would page the rest of the archive one request at a time.
+  if (width === 0 && height === 0) return false;
   return (
     bottom >= -SENTINEL_MARGIN && top <= window.innerHeight + SENTINEL_MARGIN
   );

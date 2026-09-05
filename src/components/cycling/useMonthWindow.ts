@@ -53,17 +53,16 @@ export function useMonthWindow(
               far.value.delete(key);
               continue;
             }
+            // A hidden log reports every section at zero, which says nothing
+            // about where a month sits. A month never measured would drop its
+            // rides and reserve nothing in their place.
+            if (entry.boundingClientRect.height === 0) continue;
+
             // The rect the observer already measured, taken while the month
             // still holds its rides. Reading it back off the element would
             // force a layout and, a tick later, measure a section already
             // emptied.
-            //
-            // A log hidden behind another view measures zero. Reserving that
-            // would collapse the page, so a month keeps the last height it
-            // actually stood at.
-            if (entry.boundingClientRect.height > 0) {
-              heights.set(key, entry.boundingClientRect.height);
-            }
+            heights.set(key, entry.boundingClientRect.height);
             far.value.add(key);
           }
         },

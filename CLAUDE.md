@@ -198,7 +198,10 @@ unmounted when the reader switches to highlights or records. Unmounting it
 would drop the window's record of which months are collapsed while keeping the
 months themselves, and coming back would mount every month fetched so far at
 once. A hidden section measures zero, so a month keeps the last height it
-actually stood at.
+actually stood at. The loading sentinel measures zero too, which reads as on
+screen, so pagination checks it has a box before asking for another page.
+Without that check, switching views while a page is in flight fetches the rest
+of the archive behind whatever the reader is looking at.
 
 A rail jump is instant. The page sets `scroll-smooth`, and animating to a
 month years back carries the viewport across every month in between, each one
