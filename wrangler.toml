@@ -33,6 +33,11 @@ binding = "SESSION"
 binding = "RAW"
 bucket_name = "activity-hub-raw"
 
+# Resizes ride photos to the thumbnails the cards show. The zone's URL
+# transformations are not enabled, so this binding is the only resizer.
+[images]
+binding = "IMAGES"
+
 [observability]
 enabled = true
 
