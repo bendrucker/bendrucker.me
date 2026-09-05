@@ -14,7 +14,7 @@ import { logger } from "@workspace/logger";
  * request cannot answer this: the adapter rewrites its URL to the configured
  * site, so every host looks like production from inside the worker.
  */
-export function isLocal(): boolean {
+function isLocal(): boolean {
   return import.meta.env.DEV || env.LOCAL_ERRORS === "true";
 }
 

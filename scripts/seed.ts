@@ -13,7 +13,6 @@
 //
 //   npm run seed              synthetic rides, three years of them
 //   npm run seed -- --remote  the real rides, exported from production D1
-//   npm run seed -- --reset   drop the local rides first
 
 import { execFileSync } from "node:child_process";
 import { Resvg } from "@cf-wasm/resvg/node";
@@ -26,29 +25,20 @@ import {
   type PowerBest,
   type PublishedActivity,
 } from "../src/activity/publish";
-import type { ActivityStore } from "../src/activity/store";
 import { seedRides, type SeededRide } from "../src/test/rides";
 
 const DATABASE = "bendrucker-activity";
-
-/** Every seeded photo lives under this prefix, which `--reset` clears. */
-const PHOTO_PREFIX = "raw/strava/";
 
 const PHOTO_WIDTH = 960;
 const PHOTO_HEIGHT = 640;
 
 async function main(): Promise<void> {
   const remote = process.argv.includes("--remote");
-  const reset = process.argv.includes("--reset");
 
   applyMigrations();
 
   const { store, env, dispose } = await connectD1();
   try {
-    if (reset) {
-      await clear(store, env.RAW);
-    }
-
     const rides = remote ? exportProduction() : seedRides();
     for (const { activity, bests } of rides) {
       await publishActivity(store, activity);
@@ -63,7 +53,7 @@ async function main(): Promise<void> {
     );
 
     logger.info(
-      { rides: rides.length, photos, remote, reset },
+      { rides: rides.length, photos, remote },
       "Seeded local activity data",
     );
   } finally {
@@ -80,24 +70,6 @@ function applyMigrations(): void {
   execFileSync("wrangler", ["d1", "migrations", "apply", DATABASE, "--local"], {
     stdio: "inherit",
   });
-}
-
-/**
- * A re-seed is an upsert, so a row whose shape changed between runs would keep
- * its old columns. Dropping first makes the run say what the database holds.
- */
-async function clear(store: ActivityStore, bucket: R2Bucket): Promise<void> {
-  await store.db.deleteFrom("activityPowerCurve").execute();
-  await store.db.deleteFrom("activityFeed").execute();
-
-  let cursor: string | undefined;
-  do {
-    const listed = await bucket.list({ prefix: PHOTO_PREFIX, cursor });
-    await Promise.all(
-      listed.objects.map((object) => bucket.delete(object.key)),
-    );
-    cursor = listed.truncated ? listed.cursor : undefined;
-  } while (cursor !== undefined);
 }
 
 // The columns as raw SQL returns them, which is snake case: the CamelCase
