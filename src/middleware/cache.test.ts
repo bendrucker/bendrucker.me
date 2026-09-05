@@ -57,10 +57,10 @@ describe("activityETag", () => {
 
   it("separates the representations served at one URL", () => {
     expect(activityETag(versions, "html")).toBe(
-      '"7-3.2026-09-01T10:00:00.000Z-html"',
+      'W/"7-3.2026-09-01T10:00:00.000Z-html"',
     );
     expect(activityETag(versions, "md")).toBe(
-      '"7-3.2026-09-01T10:00:00.000Z-md"',
+      'W/"7-3.2026-09-01T10:00:00.000Z-md"',
     );
   });
 

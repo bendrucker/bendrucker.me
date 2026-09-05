@@ -33,12 +33,25 @@ export interface ActivityVersions {
  * and saves the middleware knowing which page is which. The variant is part
  * of the tag because `/activity/code` serves HTML or markdown at one URL, by
  * `Accept`.
+ *
+ * The tag is weak because Cloudflare drops a strong one from any HTML it may
+ * rewrite on the way out, which is every HTML response on the zone. The
+ * bytes it compares are never the same across encodings anyway.
  */
 export function activityETag(
   { github, feed }: ActivityVersions,
   variant: "html" | "md",
 ): string {
-  return `"${github}-${feed}-${variant}"`;
+  return `W/"${github}-${feed}-${variant}"`;
+}
+
+/**
+ * What the browser is told, from the same policy the edge holds. A page held
+ * this long revalidates with its tag on the next visit after the sync, which
+ * the edge answers with a 304 without waking the Worker.
+ */
+export function browserCacheControl({ maxAge, swr }: CachePolicy): string {
+  return `public, max-age=${maxAge}, stale-while-revalidate=${swr}`;
 }
 
 export function etagMatches(ifNoneMatch: string | null, etag: string): boolean {
