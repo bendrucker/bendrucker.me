@@ -21,12 +21,19 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 npm run dev           # Spotlight + Astro dev server
 npm run dev:json      # Astro dev server with JSON logs (no Spotlight)
 npm run build         # packages → wrangler types → astro check → astro build
+npm test              # vitest, whole suite
 npm run lint          # oxlint + ESLint
 npm run lint:types    # oxlint's type-aware rules, via tsgolint
 npm run format        # Prettier
 npm run story:dev     # Histoire component stories on :6006
 npm run story:build   # Static story book into .histoire/dist
 ```
+
+The suite is the cheapest check here, a few seconds for the whole of it, and
+`src/test/db.ts` is why: `createTestDb()` runs the migrations into in-memory
+SQLite and `testStore()` supplies the `ActivityStore` seam the write path takes,
+so a D1-backed query is testable in milliseconds with no D1 anywhere. Prefer it
+over a real database when reproducing a data bug.
 
 `lint` is the tight local loop. `lint:types` runs that same rule set with a type
 checker attached, several seconds rather than a fraction of one, so CI runs it
@@ -98,7 +105,14 @@ process before it is ready.
 
 ## Stop Hook
 
-`.claude/hooks/verify.sh` runs on turns touching `.js`/`.ts`/`.astro`/`.mjs`: formats with Prettier, lints, builds (cached). Exit 2 blocks Claude until fixed.
+`.claude/hooks/verify.sh` runs on turns touching a file Prettier, a linter, or
+the build reads: `.js`, `.mjs`, `.cjs`, `.ts`, `.astro`, `.vue`, `.css`, `.md`,
+`.json`. It formats with Prettier, runs oxlint and ESLint, runs the suite, and
+builds (cached against a marker). Exit 2 blocks Claude until fixed.
+
+The build runs only once the four cheap checks pass. Together they cost about
+seven seconds against the build's twenty-five, and a turn with a lint error or a
+red test has something to fix without waiting for one.
 
 ## Route Maps
 
