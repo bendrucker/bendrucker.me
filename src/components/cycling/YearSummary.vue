@@ -23,9 +23,8 @@ const rideUnit = computed(() => (props.rideCount === 1 ? "ride" : "rides"));
 
 <template>
   <div class="rounded-lg border border-border">
-    <!-- The year scopes every number below it, so it caps the panel rather
-         than standing in the row as a fourth stat. The cap is also the one
-         strip of the header with room for a control. -->
+    <!-- The year scopes every number below it, so it caps the panel. The
+         cap is also the one strip of the header with room for a control. -->
     <div
       class="flex items-center justify-between gap-3 border-b border-border px-4 py-2"
     >

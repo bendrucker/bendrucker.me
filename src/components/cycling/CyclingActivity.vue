@@ -102,8 +102,8 @@ watch([mode, () => props.data], () => {
 
 <template>
   <!-- The month rail is fixed against the viewport edge, so the gutter it
-       needs is reserved here rather than in the log alone. Every view then
-       ends where the controls above them do. -->
+       needs is reserved here, and every view ends where the controls above
+       it do. -->
   <div class="flex flex-col gap-5 bg-background text-foreground sm:pr-14">
     <SegmentedControl
       :model-value="mode"
