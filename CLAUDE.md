@@ -87,6 +87,14 @@ Three gotchas:
 
 ### Background Dev Server
 
+Two servers, and they render different sites. Use `astro dev` when the change
+is styling or client-side behavior, where HMR pays for itself. Use
+`npm run dev:worker` for anything server-rendered, D1-backed, cached,
+hydration-sensitive, or wrapped in reka: the comment at `astro.config.ts:120-124`
+is the reason, and it comes down to islands wrapping reka server-rendering
+empty under `astro dev`. `SegmentedControl.vue` is the cycling page's view
+switcher, so that page in particular is a different page under each server.
+
 `npm run dev` wraps `spotlight run astro dev`, which holds the terminal. To
 drive the server without blocking, call the Astro CLI directly:
 
@@ -102,6 +110,30 @@ Astro detects agents and turns on background mode plus JSON logging by itself,
 so these flags are usually unnecessary. Set `ASTRO_DEV_BACKGROUND=0` to force a
 foreground run, which is the only way to see startup errors that kill the
 process before it is ready.
+
+Its first request costs around fourteen seconds to dependency optimization and
+logs a full-reload error on the way through. Neither is a fault. Warm requests
+land in under a tenth of a second.
+
+`dev:worker` builds the site, applies pending local migrations, seeds the local
+database when the feed table is empty, and serves `dist` through workerd:
+
+```bash
+npm run dev:worker              # build, migrate, seed if empty, start
+npm run dev:worker -- status    # is one running, and where
+npm run dev:worker -- logs -f   # follow its output
+npm run dev:worker -- stop      # shut it down
+```
+
+`--port <n>` overrides the port, `--no-build` serves the `dist` already on
+disk, and `--reseed` rewrites the rides. The port otherwise comes from a hash
+of the worktree path, because wrangler's own default is 8787 for every checkout
+and a second `wrangler dev` on a taken port dies rather than falling back.
+
+It serves the production build, so a rebuild while it runs changes nothing: the
+running worker holds the bundle it started with and has to be restarted. It
+also passes `--var LOCAL_ERRORS:true`, which is what makes `src/fallback.ts`
+re-throw a failed query instead of rendering the empty page a reader would get.
 
 ## Stop Hook
 
