@@ -116,7 +116,7 @@ describe("syncActivity", () => {
     const sizes: number[] = [];
     const counted: ActivityStore = {
       db,
-      batch: (statements) => {
+      batch: async (statements) => {
         sizes.push(statements.length);
         return store.batch(statements);
       },

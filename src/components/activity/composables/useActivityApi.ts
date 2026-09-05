@@ -134,7 +134,7 @@ export function useActivityApi(
       typeof requestIdleCallback === "function"
         ? requestIdleCallback
         : (cb: () => void) => setTimeout(cb, 100);
-    schedule(async () => {
+    async function prefetch() {
       try {
         const { data, error } = await actions.fetchRepos({
           ...state.filters,
@@ -150,7 +150,9 @@ export function useActivityApi(
       } catch {
         // Non-critical: prefetch failure does not block the UI
       }
-    });
+    }
+
+    schedule(() => void prefetch());
   }
 
   // A watcher callback, so nothing is here to await the three reloads. The

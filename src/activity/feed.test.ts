@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 import type { Kysely } from "kysely";
 import { activity as fixture } from "@/components/cycling/fixtures";
 import type { Database } from "@/db";
-import { createTestDb, testStore } from "@/test/db";
+import { createTestDb, testStore, tick } from "@/test/db";
 import {
   buildCyclingActivity,
   queryCyclingActivity,
@@ -632,7 +632,7 @@ describe("readFeedVersion", () => {
     const empty = await readFeedVersion(db);
     await seed(ride("a"));
     const one = await readFeedVersion(db);
-    await new Promise((resolve) => setTimeout(resolve, 2));
+    await tick();
     await publishPowerCurve(store, "a", [{ durationS: 60, watts: 300 }]);
     const curved = await readFeedVersion(db);
     await deleteActivity(store, "a");

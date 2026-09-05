@@ -4,6 +4,7 @@ import { execSync } from "child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { parseArgs } from "util";
+import { setTimeout as delay } from "node:timers/promises";
 import {
   fetchGitHubActivity,
   GITHUB_EPOCH_YEAR,
@@ -24,16 +25,16 @@ async function rateLimitBackoff(rateLimit: RateLimit): Promise<void> {
       { remaining, resetSeconds },
       "Rate limit nearly exhausted, waiting for reset",
     );
-    await new Promise((r) => setTimeout(r, resetMs + 1000));
+    await delay(resetMs + 1000);
   } else if (remaining < 500) {
     const delayMs = Math.max(1000, Math.ceil(resetMs / (remaining / cost)));
     logger.info(
       { remaining, delayMs: Math.round(delayMs) },
       "Rate limit low, throttling",
     );
-    await new Promise((r) => setTimeout(r, delayMs));
+    await delay(delayMs);
   } else {
-    await new Promise((r) => setTimeout(r, 1000));
+    await delay(1000);
   }
 }
 
@@ -177,10 +178,12 @@ async function main() {
   await importActivity(allRepos, values.remote);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   logger.error(
     { error: error instanceof Error ? error.message : error },
     "Backfill failed",
   );
   process.exit(1);
-});
+}

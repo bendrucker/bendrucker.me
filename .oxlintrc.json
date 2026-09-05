@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "vue", "unicorn", "oxc"],
+  "plugins": ["typescript", "vue", "unicorn", "oxc", "promise"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -75,6 +75,19 @@
     "prefer-spread": "error",
     "prefer-template": "error",
     "oxc/no-accumulating-spread": "error",
+    // Asynchronous work is written with `await`. `strict` extends the ban past
+    // the first `await`, so `await fetch(url).then(read)` is caught too.
+    "promise/prefer-await-to-then": [
+      "error",
+      {
+        "strict": true
+      }
+    ],
+    // The executor form exists to wrap a callback API, and the ones this
+    // codebase calls have promise forms already: `node:timers/promises` for a
+    // delay, `Promise.withResolvers` for a deferred one. Disable inline for an
+    // API that has no promise form of its own.
+    "promise/avoid-new": "error",
     "unicorn/no-array-callback-reference": "error",
     "unicorn/prefer-array-find": "error",
     "unicorn/prefer-set-has": "error",
@@ -92,6 +105,19 @@
     // than asserting the shape.
     "typescript/no-unsafe-type-assertion": "error",
     "typescript/no-floating-promises": "error",
+    // The other half of `no-floating-promises`: a promise handed to a caller
+    // that expects `void` is dropped just as silently. Where that is deliberate,
+    // `void` the call, which both rules read as the intent it is.
+    "typescript/no-misused-promises": "error",
+    // A function that returns a promise says `async`, so a throw before its
+    // first `await` reaches the caller as a rejection rather than as a
+    // synchronous exception their `try` around `await` never sees.
+    "typescript/promise-function-async": "error",
+    // `return promise` inside a `try` leaves the block before the promise
+    // settles, so the `catch` never sees its rejection. The default
+    // `in-try-catch` mode asks for the `await` there and drops it elsewhere.
+    "typescript/return-await": "error",
+    "typescript/prefer-promise-reject-errors": "error",
     "typescript/no-implied-eval": "error",
     // `never` reaches a template only through the `_exhaustive` guard on a
     // switch default, where interpolating the unhandled value is the message.
@@ -127,6 +153,15 @@
         "no-unreachable": "off",
         "no-unsafe-negation": "off",
         "no-with": "off"
+      }
+    },
+    {
+      // Scripts are their own entrypoint. A worker rejects top-level await in
+      // the global scope, and a .vue script block that uses it turns the
+      // component async, so the rule stays off everywhere else.
+      "files": ["scripts/**"],
+      "rules": {
+        "unicorn/prefer-top-level-await": "error"
       }
     },
     {

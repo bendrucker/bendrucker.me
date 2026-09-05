@@ -336,20 +336,17 @@ describe("queryRepos pagination", () => {
     expect(page2.hasMore).toBe(false);
   });
 
-  it("throws InvalidCursorError for malformed recent cursor", async () => {
-    const err = await queryRepos(db, { cursor: "garbage" }).catch((e) => e);
-    expect(err).toBeInstanceOf(InvalidCursorError);
-    expect(err.cursor).toBe("garbage");
-  });
-
-  it("throws InvalidCursorError for malformed offset cursor", async () => {
-    const err = await queryRepos(db, {
-      sort: "stars",
-      cursor: "not-a-number",
-    }).catch((e) => e);
-    expect(err).toBeInstanceOf(InvalidCursorError);
-    expect(err.cursor).toBe("not-a-number");
-  });
+  it.each([
+    ["recent", { cursor: "garbage" }],
+    ["offset", { sort: "stars", cursor: "not-a-number" }],
+  ] as const)(
+    "throws InvalidCursorError for a malformed %s cursor",
+    async (_label, options) => {
+      const rejects = expect(queryRepos(db, options)).rejects;
+      await rejects.toThrow(InvalidCursorError);
+      await rejects.toMatchObject({ cursor: options.cursor });
+    },
+  );
 });
 
 describe("queryLanguages", () => {

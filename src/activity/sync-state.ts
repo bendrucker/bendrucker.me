@@ -10,7 +10,7 @@ export interface SyncState {
   changedAt: string;
 }
 
-export function readSyncState(
+export async function readSyncState(
   db: Kysely<Database>,
 ): Promise<SyncState | undefined> {
   return db

@@ -1,11 +1,21 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import SQLite from "better-sqlite3";
 import { CamelCasePlugin, Kysely, SqliteDialect } from "kysely";
 import type { ActivityStore } from "@/activity/store";
 import type { Database } from "@/db";
 
 const MIGRATIONS_DIR = path.resolve(import.meta.dirname, "../../migrations");
+
+/**
+ * Wait out the clock between two writes. `updatedAt` is stamped from
+ * `new Date().toISOString()`, so writes within the same millisecond carry the
+ * same timestamp and a test comparing them sees no change.
+ */
+export async function tick(): Promise<void> {
+  await delay(2);
+}
 
 export function createTestDb(): Kysely<Database> {
   const sqlite = new SQLite(":memory:");
@@ -30,7 +40,7 @@ export function createTestDb(): Kysely<Database> {
 export function testStore(db: Kysely<Database>): ActivityStore {
   return {
     db,
-    batch: (statements) =>
+    batch: async (statements) =>
       db.transaction().execute(async (trx) => {
         let changes = 0;
         for (const statement of statements) {

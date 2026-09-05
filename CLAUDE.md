@@ -32,14 +32,32 @@ npm run story:build   # Static story book into .histoire/dist
 checker attached, several seconds rather than a fraction of one, so CI runs it
 in place of `lint` rather than after it.
 
-Four rules need the type checker. `typescript/no-unsafe-type-assertion` is the
+Eight rules need the type checker. `typescript/no-unsafe-type-assertion` is the
 one that shapes how code gets written: data arriving from KV, a GraphQL
 response, or a file is parsed with a zod schema and typed from it via `z.infer`,
-rather than asserted with `as`. `no-floating-promises`, `no-implied-eval`, and
-`restrict-template-expressions` catch what their names say.
+rather than asserted with `as`. `no-floating-promises`, `no-misused-promises`,
+`promise-function-async`, `return-await`, `prefer-promise-reject-errors`,
+`no-implied-eval`, and `restrict-template-expressions` catch what their names
+say.
 
 tsgolint reads only `.ts`, so a cast or a dropped promise in a `.vue` or
 `.astro` file reaches no linter and is the reviewer's to catch.
+
+### Async
+
+Asynchronous work is written with `await`. `promise/prefer-await-to-then` bans
+`then`, `catch`, and `finally` chains, including after an `await`, and
+`promise/avoid-new` bans the executor form, so a delay comes from
+`node:timers/promises` and a deferred from `Promise.withResolvers`. Wrapping a
+callback API with no promise form of its own is what the inline disable is for.
+
+A function that returns a promise says `async`, and a promise passed where a
+`void` return is expected is either awaited or prefixed with `void` to say the
+drop is deliberate.
+
+Only `scripts/` may use top-level await, which `unicorn/prefer-top-level-await`
+requires there. A worker rejects it in the global scope, and a `.vue` script
+block that uses it turns the component async.
 
 ### Component Stories
 
