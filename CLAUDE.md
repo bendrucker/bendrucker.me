@@ -135,6 +135,10 @@ running worker holds the bundle it started with and has to be restarted. It
 also passes `--var LOCAL_ERRORS:true`, which is what makes `src/fallback.ts`
 re-throw a failed query instead of rendering the empty page a reader would get.
 
+`.claude/skills/local-loop/SKILL.md` covers the rest of getting a change on
+screen: seeding, the URLs worth requesting, and screenshotting both themes at
+both widths.
+
 ## Stop Hook
 
 `.claude/hooks/verify.sh` runs on turns touching a file Prettier, a linter, or
