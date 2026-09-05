@@ -9,9 +9,8 @@ import {
 } from "@/photos";
 
 /**
- * The 48px square a card shows, cut from the photo rather than the whole
- * photo scaled by the browser: a Strava original is several hundred
- * kilobytes, and a log renders a strip of them per ride.
+ * The 48px square a card shows, cut from the photo: a Strava original is
+ * several hundred kilobytes, and a log renders a strip of them per ride.
  */
 export const GET: APIRoute = async ({ params, cache }) => {
   if (!isPhotoKey(params.key)) {
@@ -29,8 +28,8 @@ export const GET: APIRoute = async ({ params, cache }) => {
       .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
       .output({ format: "image/jpeg", quality: 80 });
   } catch {
-    // The original still draws the card. A redirect rather than the bytes
-    // keeps the failure short-lived at the edge.
+    // The original still draws the card. A redirect keeps the failure
+    // short-lived at the edge.
     return new Response(null, {
       status: 302,
       headers: { location: `/photos/${params.key}` },

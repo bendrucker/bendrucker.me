@@ -28,11 +28,10 @@ export interface ActivityVersions {
 }
 
 /**
- * Both datasets go into every activity page's tag rather than the one the
- * page reads, which costs a re-render of the other page when either changes
- * and saves the middleware knowing which page is which. The variant is part
- * of the tag because `/activity/code` serves HTML or markdown at one URL, by
- * `Accept`.
+ * Both datasets go into every activity page's tag, which costs a re-render
+ * of the other page when either changes and saves the middleware knowing
+ * which page is which. The variant is part of the tag because
+ * `/activity/code` serves HTML or markdown at one URL, by `Accept`.
  *
  * The tag is weak because Cloudflare drops a strong one from any HTML it may
  * rewrite on the way out, which is every HTML response on the zone. The

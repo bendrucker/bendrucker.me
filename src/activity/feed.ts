@@ -158,9 +158,8 @@ export async function queryCyclingActivity(
       .select(RIDE_COLUMNS)
       .where("sport", "=", "ride")
       .execute(),
-    // Every measured ride's points on the ladder, rather than one aggregate
-    // ladder: the year a point counts toward is the ride's local one, which
-    // only the entries know.
+    // Every measured ride's points on the ladder: the year a point counts
+    // toward is the ride's local one, which only the entries know.
     db
       .selectFrom("activityPowerCurve")
       .innerJoin(
@@ -330,7 +329,6 @@ export function buildCyclingActivity(
   return assembleFeed(layout, curve, now);
 }
 
-/** The feed grouped into its months, with the log's window marked out. */
 interface Layout {
   /** Every ride, newest first. */
   entries: Entry[];
