@@ -129,10 +129,6 @@ so these flags are usually unnecessary. Set `ASTRO_DEV_BACKGROUND=0` to force a
 foreground run, which is the only way to see startup errors that kill the
 process before it is ready.
 
-Its first request costs around fourteen seconds to dependency optimization and
-logs a full-reload error on the way through. Neither is a fault. Warm requests
-land in under a tenth of a second.
-
 `dev:worker` builds the site, applies pending local migrations, seeds the local
 database when the feed table is empty, and serves `dist` through workerd:
 
@@ -143,10 +139,9 @@ npm run dev:worker -- logs -f   # follow its output
 npm run dev:worker -- stop      # shut it down
 ```
 
-`--port <n>` overrides the port, `--no-build` serves the `dist` already on
-disk, and `--reseed` rewrites the rides. The port otherwise comes from a hash
-of the worktree path, because wrangler's own default is 8787 for every checkout
-and a second `wrangler dev` on a taken port dies rather than falling back.
+The port comes from a hash of the worktree path, because wrangler's own
+default is 8787 for every checkout and a second `wrangler dev` on a taken port
+dies rather than falling back.
 
 It serves the production build, so a rebuild while it runs changes nothing: the
 running worker holds the bundle it started with and has to be restarted. It

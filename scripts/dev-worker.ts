@@ -11,9 +11,6 @@
 //   npm run dev:worker -- logs      what it has printed
 //   npm run dev:worker -- logs -f   follow it
 //   npm run dev:worker -- stop      shut it down
-//
-// Flags on the start command: `--port <n>` to override the port, `--no-build`
-// to serve the `dist` already on disk, `--reseed` to rewrite the rides.
 
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -28,6 +25,7 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { logger } from "@workspace/logger";
 import { z } from "zod";
+import { connectD1 } from "./d1";
 
 const DATABASE = "bendrucker-activity";
 
@@ -48,9 +46,6 @@ const READY_POLL_MS = 250;
 
 const state = z.object({ pid: z.int().positive(), port: z.int().positive() });
 type State = z.infer<typeof state>;
-
-const countRow = z.object({ n: z.int() });
-const queryResult = z.array(z.object({ results: z.array(z.unknown()) })).min(1);
 
 async function main(): Promise<void> {
   const [command = "start"] = process.argv.slice(2);
@@ -73,15 +68,11 @@ async function start(): Promise<void> {
     return;
   }
 
-  if (!process.argv.includes("--no-build")) {
-    run("npm", ["run", "build"]);
-  }
-
+  run("npm", ["run", "build"]);
   run("wrangler", ["d1", "migrations", "apply", DATABASE, "--local"]);
 
-  const reseed = process.argv.includes("--reseed");
-  if (reseed || rideCount() === 0) {
-    run("npm", ["run", "seed", "--", ...(reseed ? ["--reset"] : [])]);
+  if ((await rideCount()) === 0) {
+    run("npm", ["run", "seed"]);
   }
 
   const port = choosePort();
@@ -176,35 +167,21 @@ function readState(): State | null {
 
 /** Stable per worktree, so two checkouts do not collide on one port. */
 function choosePort(): number {
-  const flag = process.argv.indexOf("--port");
-  if (flag !== -1) {
-    const value = Number(process.argv[flag + 1]);
-    if (!Number.isInteger(value) || value <= 0) {
-      throw new Error("--port takes a port number");
-    }
-    return value;
-  }
   const digest = createHash("sha256").update(process.cwd()).digest();
   return PORT_BASE + (digest.readUInt16BE(0) % PORT_RANGE);
 }
 
-function rideCount(): number {
-  const stdout = execFileSync(
-    "wrangler",
-    [
-      "d1",
-      "execute",
-      DATABASE,
-      "--local",
-      "--json",
-      "--command",
-      "select count(*) as n from activity_feed",
-    ],
-    { encoding: "utf-8" },
-  );
-  const [first] = queryResult.parse(JSON.parse(stdout));
-  const [row] = first!.results;
-  return countRow.parse(row).n;
+async function rideCount(): Promise<number> {
+  const { store, dispose } = await connectD1();
+  try {
+    const row = await store.db
+      .selectFrom("activityFeed")
+      .select(({ fn }) => fn.countAll<number>().as("n"))
+      .executeTakeFirstOrThrow();
+    return row.n;
+  } finally {
+    await dispose();
+  }
 }
 
 /**
