@@ -33,6 +33,16 @@ binding = "SESSION"
 binding = "RAW"
 bucket_name = "activity-hub-raw"
 
+# Resizes ride photos to the thumbnails the cards show. The zone's URL
+# transformations are not enabled, so this binding is the only resizer.
+[images]
+binding = "IMAGES"
+
+# The activity pages' ETag carries the version id, so a browser revalidating
+# after a deploy is handed the new HTML rather than a 304 for the old one.
+[version_metadata]
+binding = "CF_VERSION_METADATA"
+
 [observability]
 enabled = true
 

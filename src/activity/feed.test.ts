@@ -153,22 +153,62 @@ describe("queryCyclingActivity", () => {
     expect(totals.year).toBe(2026);
   });
 
-  it("logs the last twelve months and ranks every ride", async () => {
+  it("logs three months, highlights twelve, and ranks every ride", async () => {
     await seed(
       ride("latest", { startedAt: "2026-07-11T13:00:55Z", distanceM: 10_000 }),
+      ride("logged", { startedAt: "2026-05-11T13:00:55Z", distanceM: 15_000 }),
+      ride("paged", { startedAt: "2026-04-11T13:00:55Z", distanceM: 16_000 }),
       ride("edge", { startedAt: "2025-08-01T13:00:55Z", distanceM: 20_000 }),
+      ride("also", { startedAt: "2025-08-02T13:00:55Z", distanceM: 11_000 }),
       ride("old", { startedAt: "2025-07-31T13:00:55Z", distanceM: 30_000 }),
     );
 
-    const { months, records } = await queryCyclingActivity(db, NOW);
-    expect(months.map((month) => month.key)).toEqual(["2026-07", "2025-08"]);
+    const { months, highlightMonths, records, logCursor } =
+      await queryCyclingActivity(db, NOW);
+    expect(months.map((month) => month.key)).toEqual(["2026-07", "2026-05"]);
+    expect(logCursor).toBe("2026-05");
+    expect(highlightMonths.map((month) => month.key)).toEqual(["2025-08"]);
     const distance = records
       .find((period) => period.period === "all")!
       .lists.find((list) => list.metric === "distance")!;
     expect(distance.rows.map((row) => row.id)).toEqual([
       "old",
       "edge",
-      "latest",
+      "paged",
+      "logged",
+      "also",
+    ]);
+  });
+
+  it("reads the tracks of the log and of the highlights beyond it", async () => {
+    await seed(
+      ride("latest", {
+        startedAt: "2026-07-11T13:00:55Z",
+        polyline: GOOGLE_EXAMPLE,
+      }),
+      ride("longest", {
+        startedAt: "2026-01-11T13:00:55Z",
+        distanceM: 100_000,
+        polyline: GOOGLE_EXAMPLE,
+      }),
+      ride("hilliest", {
+        startedAt: "2026-01-12T13:00:55Z",
+        elevationM: 2_000,
+        polyline: GOOGLE_EXAMPLE,
+      }),
+    );
+
+    const { months, highlightMonths } = await queryCyclingActivity(db, NOW);
+
+    expect(months[0]!.rides[0]!.route).toBeDefined();
+    expect(
+      highlightMonths[0]!.highlights.map((entry) => [
+        entry.ride.id,
+        entry.ride.route !== undefined,
+      ]),
+    ).toEqual([
+      ["longest", true],
+      ["hilliest", true],
     ]);
   });
 
@@ -281,13 +321,15 @@ describe("queryCyclingActivity", () => {
     expect(byId.get("full")!.photos).toEqual([
       {
         id: "raw/strava/activities/1/photos/a.jpg",
-        thumbnailUrl: "/photos/raw/strava/activities/1/photos/a.jpg",
+        thumbnailUrl:
+          "/photos/thumbnails/1/raw/strava/activities/1/photos/a.jpg",
         fullUrl: "/photos/raw/strava/activities/1/photos/a.jpg",
         alt: "Photo 1 from Ride full",
       },
       {
         id: "raw/strava/activities/1/photos/b.jpg",
-        thumbnailUrl: "/photos/raw/strava/activities/1/photos/b.jpg",
+        thumbnailUrl:
+          "/photos/thumbnails/1/raw/strava/activities/1/photos/b.jpg",
         fullUrl: "/photos/raw/strava/activities/1/photos/b.jpg",
         alt: "Photo 2 from Ride full",
       },
@@ -564,7 +606,7 @@ describe("the log's first cursor", () => {
   it("is null when every ride is already in the window", async () => {
     await seed(
       ride("new", { startedAt: "2026-07-11T13:00:55Z" }),
-      ride("old", { startedAt: "2025-09-11T13:00:55Z" }),
+      ride("old", { startedAt: "2026-05-11T13:00:55Z" }),
     );
 
     const data = await queryCyclingActivity(db, NOW);
@@ -596,10 +638,11 @@ describe("readFeedVersion", () => {
     await deleteActivity(store, "a");
     const deleted = await readFeedVersion(db);
 
-    expect(new Set([empty, one, curved]).size).toBe(3);
-    expect(deleted).toBe(empty);
-    expect(empty).toBe("0.0");
-    expect(one).toMatch(/^1\.\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
+    expect(new Set([empty.tag, one.tag, curved.tag]).size).toBe(3);
+    expect(deleted).toEqual(empty);
+    expect(empty).toEqual({ tag: "0.0", updatedAt: null });
+    expect(one.tag).toMatch(/^1\.\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
+    expect(one.updatedAt?.toISOString()).toBe(one.tag.slice(2));
   });
 });
 

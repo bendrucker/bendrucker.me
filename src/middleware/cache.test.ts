@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest";
 import {
   activityCachePolicy,
   activityETag,
+  activityLastModified,
   activityMaxAge,
   cachesResponse,
   etagMatches,
   isActivityPath,
+  notModifiedSince,
+  unchanged,
 } from "./cache";
 
 describe("activityMaxAge", () => {
@@ -53,26 +56,33 @@ describe("activityCachePolicy", () => {
 });
 
 describe("activityETag", () => {
-  const versions = { github: 7, feed: "3.2026-09-01T10:00:00.000Z" };
+  const versions = {
+    github: 7,
+    feed: "3.2026-09-01T10:00:00.000Z",
+    deploy: "a1b2c3d4",
+  };
 
   it("separates the representations served at one URL", () => {
     expect(activityETag(versions, "html")).toBe(
-      '"7-3.2026-09-01T10:00:00.000Z-html"',
+      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-html"',
     );
     expect(activityETag(versions, "md")).toBe(
-      '"7-3.2026-09-01T10:00:00.000Z-md"',
+      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-md"',
     );
   });
 
-  it("moves with either dataset", () => {
+  it("moves with either dataset and with a deploy", () => {
     const html = activityETag(versions, "html");
     expect(activityETag({ ...versions, github: 8 }, "html")).not.toBe(html);
     expect(activityETag({ ...versions, feed: "4.0" }, "html")).not.toBe(html);
+    expect(activityETag({ ...versions, deploy: "e5f6" }, "html")).not.toBe(
+      html,
+    );
   });
 });
 
 describe("etagMatches", () => {
-  const etag = activityETag({ github: 7, feed: "0.0" }, "html");
+  const etag = activityETag({ github: 7, feed: "0.0", deploy: "v1" }, "html");
 
   it("ignores a request with no validator", () => {
     expect(etagMatches(null, etag)).toBe(false);
@@ -80,18 +90,104 @@ describe("etagMatches", () => {
   });
 
   it("matches the same version and representation", () => {
-    expect(etagMatches('"7-0.0-html"', etag)).toBe(true);
-    expect(etagMatches('"6-0.0-html"', etag)).toBe(false);
-    expect(etagMatches('"7-0.0-md"', etag)).toBe(false);
+    expect(etagMatches('"7-0.0-v1-html"', etag)).toBe(true);
+    expect(etagMatches('"6-0.0-v1-html"', etag)).toBe(false);
+    expect(etagMatches('"7-0.0-v1-md"', etag)).toBe(false);
   });
 
   it("compares weakly", () => {
-    expect(etagMatches('W/"7-0.0-html"', etag)).toBe(true);
+    expect(etagMatches('W/"7-0.0-v1-html"', etag)).toBe(true);
   });
 
   it("accepts any entry in a list, and the wildcard", () => {
-    expect(etagMatches('"6-0.0-html", "7-0.0-html"', etag)).toBe(true);
+    expect(etagMatches('"6-0.0-v1-html", "7-0.0-v1-html"', etag)).toBe(true);
     expect(etagMatches("*", etag)).toBe(true);
+  });
+});
+
+describe("activityLastModified", () => {
+  const deploy = new Date("2026-09-01T10:00:00.250Z");
+
+  it("takes the latest of the times, at the second", () => {
+    const feed = new Date("2026-09-05T06:31:43.900Z");
+    expect(
+      activityLastModified({
+        github: new Date("2026-09-04T00:00:00Z"),
+        feed,
+        deploy,
+      }),
+    ).toEqual(new Date("2026-09-05T06:31:43.000Z"));
+  });
+
+  it("stands on the deploy alone before any data lands", () => {
+    expect(activityLastModified({ github: null, feed: null, deploy })).toEqual(
+      new Date("2026-09-01T10:00:00.000Z"),
+    );
+  });
+
+  it("falls back to the epoch with no time at all", () => {
+    expect(
+      activityLastModified({ github: null, feed: null, deploy: null }),
+    ).toEqual(new Date(0));
+  });
+});
+
+describe("notModifiedSince", () => {
+  const lastModified = new Date("2026-09-05T06:31:43.900Z");
+
+  it.each<{ name: string; header: string | null; expected: boolean }>([
+    { name: "no header", header: null, expected: false },
+    { name: "an unparseable header", header: "yesterday", expected: false },
+    {
+      name: "a copy from before the change",
+      header: "Sat, 05 Sep 2026 06:31:42 GMT",
+      expected: false,
+    },
+    {
+      name: "the date the page was served with",
+      header: "Sat, 05 Sep 2026 06:31:43 GMT",
+      expected: true,
+    },
+    {
+      name: "a copy from after the change",
+      header: "Sat, 05 Sep 2026 06:32:00 GMT",
+      expected: true,
+    },
+  ])("$name", ({ header, expected }) => {
+    expect(notModifiedSince(header, lastModified)).toBe(expected);
+  });
+});
+
+describe("unchanged", () => {
+  const validators = {
+    etag: 'W/"7-0.0-v1-html"',
+    lastModified: new Date("2026-09-05T06:31:43Z"),
+  };
+  const current = "Sat, 05 Sep 2026 06:31:43 GMT";
+
+  it("answers by tag when the request carries one", () => {
+    expect(
+      unchanged(
+        new Headers({ "If-None-Match": '"7-0.0-v1-html"' }),
+        validators,
+      ),
+    ).toBe(true);
+    expect(
+      unchanged(
+        new Headers({
+          "If-None-Match": '"6-0.0-v1-html"',
+          "If-Modified-Since": current,
+        }),
+        validators,
+      ),
+    ).toBe(false);
+  });
+
+  it("answers by date when the request has only that", () => {
+    expect(
+      unchanged(new Headers({ "If-Modified-Since": current }), validators),
+    ).toBe(true);
+    expect(unchanged(new Headers(), validators)).toBe(false);
   });
 });
 
