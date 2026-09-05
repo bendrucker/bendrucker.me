@@ -53,26 +53,33 @@ describe("activityCachePolicy", () => {
 });
 
 describe("activityETag", () => {
-  const versions = { github: 7, feed: "3.2026-09-01T10:00:00.000Z" };
+  const versions = {
+    github: 7,
+    feed: "3.2026-09-01T10:00:00.000Z",
+    deploy: "a1b2c3d4",
+  };
 
   it("separates the representations served at one URL", () => {
     expect(activityETag(versions, "html")).toBe(
-      'W/"7-3.2026-09-01T10:00:00.000Z-html"',
+      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-html"',
     );
     expect(activityETag(versions, "md")).toBe(
-      'W/"7-3.2026-09-01T10:00:00.000Z-md"',
+      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-md"',
     );
   });
 
-  it("moves with either dataset", () => {
+  it("moves with either dataset and with a deploy", () => {
     const html = activityETag(versions, "html");
     expect(activityETag({ ...versions, github: 8 }, "html")).not.toBe(html);
     expect(activityETag({ ...versions, feed: "4.0" }, "html")).not.toBe(html);
+    expect(activityETag({ ...versions, deploy: "e5f6" }, "html")).not.toBe(
+      html,
+    );
   });
 });
 
 describe("etagMatches", () => {
-  const etag = activityETag({ github: 7, feed: "0.0" }, "html");
+  const etag = activityETag({ github: 7, feed: "0.0", deploy: "v1" }, "html");
 
   it("ignores a request with no validator", () => {
     expect(etagMatches(null, etag)).toBe(false);
@@ -80,17 +87,17 @@ describe("etagMatches", () => {
   });
 
   it("matches the same version and representation", () => {
-    expect(etagMatches('"7-0.0-html"', etag)).toBe(true);
-    expect(etagMatches('"6-0.0-html"', etag)).toBe(false);
-    expect(etagMatches('"7-0.0-md"', etag)).toBe(false);
+    expect(etagMatches('"7-0.0-v1-html"', etag)).toBe(true);
+    expect(etagMatches('"6-0.0-v1-html"', etag)).toBe(false);
+    expect(etagMatches('"7-0.0-v1-md"', etag)).toBe(false);
   });
 
   it("compares weakly", () => {
-    expect(etagMatches('W/"7-0.0-html"', etag)).toBe(true);
+    expect(etagMatches('W/"7-0.0-v1-html"', etag)).toBe(true);
   });
 
   it("accepts any entry in a list, and the wildcard", () => {
-    expect(etagMatches('"6-0.0-html", "7-0.0-html"', etag)).toBe(true);
+    expect(etagMatches('"6-0.0-v1-html", "7-0.0-v1-html"', etag)).toBe(true);
     expect(etagMatches("*", etag)).toBe(true);
   });
 });

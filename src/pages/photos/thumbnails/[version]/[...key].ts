@@ -23,12 +23,11 @@ export const GET: APIRoute = async ({ params, cache }) => {
     return new Response("Not Found", { status: 404 });
   }
 
-  let thumbnail;
-  try {
-    thumbnail = await env.IMAGES.input(object.body)
-      .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
-      .output({ format: "image/jpeg", quality: 80 });
-  } catch {
+  const thumbnail = await env.IMAGES.input(object.body)
+    .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
+    .output({ format: "image/jpeg", quality: 80 })
+    .catch(() => null);
+  if (thumbnail === null) {
     // The original still draws the card. A redirect keeps the failure
     // short-lived at the edge.
     return new Response(null, {

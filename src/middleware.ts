@@ -1,12 +1,13 @@
 import type { APIContext, MiddlewareHandler } from "astro";
 import { sequence } from "astro:middleware";
+import { env } from "cloudflare:workers";
 import { readFeedVersion } from "./activity/feed";
 import { readSyncState } from "./activity/sync-state";
 import { getDb } from "./db";
 import {
   activityCachePolicy,
   activityETag,
-  browserCacheControl,
+  BROWSER_CACHE_CONTROL,
   cachesResponse,
   etagMatches,
   isActivityPath,
@@ -21,17 +22,17 @@ const cache: MiddlewareHandler = async (context, next) => {
     !context.isPrerendered &&
     isActivityPath(context.url.pathname);
 
-  let browser: string | undefined;
   if (conditional) {
-    const policy = activityCachePolicy(new Date());
     const etag = await syncETag(context);
-    context.cache.set({ ...policy, etag });
-    browser = browserCacheControl(policy);
+    context.cache.set({ ...activityCachePolicy(new Date()), etag });
 
     if (etagMatches(context.request.headers.get("If-None-Match"), etag)) {
       return new Response(null, {
         status: 304,
-        headers: { ...varyHeaders(context), "Cache-Control": browser },
+        headers: {
+          ...varyHeaders(context),
+          "Cache-Control": BROWSER_CACHE_CONTROL,
+        },
       });
     }
   }
@@ -46,11 +47,11 @@ const cache: MiddlewareHandler = async (context, next) => {
   const { status, headers } = response;
   if (!cachesResponse({ status, headers, routed })) {
     context.cache.set(false);
-  } else if (browser !== undefined) {
+  } else if (conditional) {
     // Set once the edge has its answer: the adapter emits the edge's policy
     // as `Cloudflare-CDN-Cache-Control`, leaving `Cache-Control` to the
     // browser, and `cachesResponse` reads a `Cache-Control` as the route's.
-    headers.set("Cache-Control", browser);
+    headers.set("Cache-Control", BROWSER_CACHE_CONTROL);
   }
 
   return response;
@@ -65,7 +66,7 @@ async function syncETag(context: APIContext): Promise<string> {
   const negotiable = representationFor(context.routePattern) !== undefined;
 
   return activityETag(
-    { github: state?.version ?? 0, feed },
+    { github: state?.version ?? 0, feed, deploy: env.CF_VERSION_METADATA.id },
     negotiable && prefersMarkdown(context.request) ? "md" : "html",
   );
 }

@@ -25,6 +25,11 @@ export interface ActivityVersions {
   github: number;
   /** The activity feed's fingerprint, from `readFeedVersion`. */
   feed: string;
+  /**
+   * The Worker version's id. The HTML names hashed assets only this version
+   * serves, so a browser revalidating across a deploy needs a miss.
+   */
+  deploy: string;
 }
 
 /**
@@ -38,20 +43,20 @@ export interface ActivityVersions {
  * bytes it compares are never the same across encodings anyway.
  */
 export function activityETag(
-  { github, feed }: ActivityVersions,
+  { github, feed, deploy }: ActivityVersions,
   variant: "html" | "md",
 ): string {
-  return `W/"${github}-${feed}-${variant}"`;
+  return `W/"${github}-${feed}-${deploy}-${variant}"`;
 }
 
 /**
- * What the browser is told, from the same policy the edge holds. A page held
- * this long revalidates with its tag on the next visit after the sync, which
- * the edge answers with a 304 without waking the Worker.
+ * The browser keeps the page but asks before reusing it. The edge holds the
+ * same response under the same tag and answers the ask with a 304 without
+ * waking the Worker, so a return visit costs one round trip and no body. A
+ * max-age would save that trip and serve, after a deploy, HTML naming assets
+ * the new version no longer has.
  */
-export function browserCacheControl({ maxAge, swr }: CachePolicy): string {
-  return `public, max-age=${maxAge}, stale-while-revalidate=${swr}`;
-}
+export const BROWSER_CACHE_CONTROL = "public, max-age=0, must-revalidate";
 
 export function etagMatches(ifNoneMatch: string | null, etag: string): boolean {
   if (!ifNoneMatch) return false;
