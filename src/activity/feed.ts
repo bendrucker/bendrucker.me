@@ -546,13 +546,12 @@ function best(
 function yearTotals(entries: readonly Entry[], now: Date): YearTotals {
   const year = entries[0]?.year ?? now.getUTCFullYear();
   const inYear = entries.filter((entry) => entry.year === year);
-  const totals: YearTotals = {
+  return {
     year,
     distanceMi: miles(sum(inYear, (entry) => entry.distanceM)),
     elevationFt: feet(sum(inYear, (entry) => entry.elevationM)),
     rideCount: inYear.length,
   };
-  return totals;
 }
 
 function records(

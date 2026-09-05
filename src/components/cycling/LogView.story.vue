@@ -69,7 +69,9 @@ function initState() {
   >
     <Variant title="Log view">
       <template #default="{ state }">
-        <div class="min-h-screen bg-background p-4 pb-[60vh] text-foreground">
+        <div
+          class="min-h-screen bg-background p-4 pb-[60vh] text-foreground sm:pr-14"
+        >
           <PreviewControls :controls="controls" :state="state" />
           <UnitsProvider :units="state.units">
             <LogView

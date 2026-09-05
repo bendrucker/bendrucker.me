@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import StatValue from "./StatValue.vue";
 import { useUnits } from "./useUnits";
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     year: number;
     distanceMi: number;
@@ -17,8 +16,6 @@ const props = withDefaults(
 
 const { distanceUnit, elevationUnit, formatDistance, formatElevation } =
   useUnits();
-
-const rideUnit = computed(() => (props.rideCount === 1 ? "ride" : "rides"));
 </script>
 
 <template>
@@ -52,7 +49,7 @@ const rideUnit = computed(() => (props.rideCount === 1 ? "ride" : "rides"));
       />
       <StatValue
         :value="rideCount.toLocaleString('en-US')"
-        :unit="rideUnit"
+        :unit="rideCount === 1 ? 'ride' : 'rides'"
         size="lg"
       />
     </div>
