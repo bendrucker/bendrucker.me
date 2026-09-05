@@ -52,7 +52,7 @@ export type RideRow = Omit<
   "polyline" | "elevationProfile" | "photoKeys"
 >;
 
-/** The track columns, read only for the rides the log shows. */
+/** The track columns, read only for the rides the page draws a card for. */
 export type TrackRow = Pick<
   FeedRow,
   "activityId" | "polyline" | "elevationProfile" | "photoKeys"
@@ -63,8 +63,14 @@ export interface FeedRows {
   tracks: TrackRow[];
 }
 
-/** Months the log shows, counting back from the month of the latest ride. */
-export const LOG_MONTHS = 12;
+/**
+ * Months the log renders on first load, counting back from the month of the
+ * latest ride. The rest scroll in a page at a time.
+ */
+export const LOG_MONTHS = 3;
+
+/** Months the highlights cover, counting back the same way. */
+export const HIGHLIGHT_MONTHS = 12;
 
 /** Months an older log page carries. */
 export const PAGE_MONTHS = 6;
@@ -125,6 +131,8 @@ const POWER_LADDER = [
   { id: "1h", label: "1 hr", durationS: 3600 },
 ] as const;
 
+const LADDER_DURATIONS = POWER_LADDER.map((rung) => rung.durationS);
+
 // Scoped per month where they are awarded, so the badge can say which month it
 // won rather than leaving "longest" to read as all time.
 const LONGEST = { kind: "longest", icon: "ruler", label: "longest" } as const;
@@ -142,16 +150,17 @@ export async function queryCyclingActivity(
   now: Date = new Date(),
 ): Promise<CyclingActivityData> {
   // Tracks dominate a row's size, so the ranked lists and totals read every
-  // ride without them, and only the log's window pays for its tracks.
+  // ride without them, and only the rides with a card on the page pay for
+  // theirs. Which rides those are is settled by laying the page out first.
   const [rides, curve] = await Promise.all([
     db
       .selectFrom("activityFeed")
       .select(RIDE_COLUMNS)
       .where("sport", "=", "ride")
       .execute(),
-    // Every measured ride's points, rather than one aggregate ladder: the
-    // year a point counts toward is the ride's local one, which only the
-    // entries know.
+    // Every measured ride's points on the ladder, rather than one aggregate
+    // ladder: the year a point counts toward is the ride's local one, which
+    // only the entries know.
     db
       .selectFrom("activityPowerCurve")
       .innerJoin(
@@ -161,6 +170,7 @@ export async function queryCyclingActivity(
       )
       .where("activityFeed.sport", "=", "ride")
       .where("activityFeed.powerSource", "=", "measured")
+      .where("activityPowerCurve.durationS", "in", LADDER_DURATIONS)
       .select([
         "activityPowerCurve.activityId",
         "activityPowerCurve.durationS",
@@ -168,33 +178,40 @@ export async function queryCyclingActivity(
       ])
       .execute(),
   ]);
-  const cutoff = trackCutoff(rides);
-  const tracks =
-    cutoff === null
-      ? []
-      : await db
-          .selectFrom("activityFeed")
-          .select(TRACK_COLUMNS)
-          .where("sport", "=", "ride")
-          .where("startedAt", ">=", cutoff)
-          .execute();
-  return buildCyclingActivity({ rides, tracks }, curve, now);
+  const layout = layoutFeed(toEntries(rides));
+  attachTracks(layout.entries, await queryTracks(db, layout));
+  return assembleFeed(layout, curve, now);
 }
 
 /**
- * The instant before which no ride can fall in the log's window, from the
- * latest ride's month back `LOG_MONTHS`, with slack for the local dates the
- * window is actually keyed on.
+ * The tracks the page draws: every ride in the log's window, and the
+ * highlighted rides from the months before it. The window is bounded on
+ * instants with slack for the local dates it is keyed on, which reads a
+ * few tracks the log then leaves out.
  */
-function trackCutoff(rides: readonly RideRow[]): string | null {
-  let latest = -Infinity;
-  for (const ride of rides) {
-    const instant = Date.parse(ride.startedAt);
-    if (instant > latest) latest = instant;
-  }
-  if (!Number.isFinite(latest)) return null;
-  const month = new Date(latest).toISOString().slice(0, 7);
-  return lowerBound(monthsBefore(month, LOG_MONTHS - 1));
+async function queryTracks(
+  db: Kysely<Database>,
+  { firstKey, months }: Layout,
+): Promise<TrackRow[]> {
+  if (firstKey === null) return [];
+  const since = lowerBound(firstKey);
+  const highlighted = months
+    .filter((month) => month.group.key < firstKey)
+    .flatMap((month) => month.highlights)
+    .flatMap((month) => month.highlights.map((entry) => entry.ride.id));
+  return db
+    .selectFrom("activityFeed")
+    .select(TRACK_COLUMNS)
+    .where("sport", "=", "ride")
+    .where((eb) =>
+      highlighted.length === 0
+        ? eb("startedAt", ">=", since)
+        : eb.or([
+            eb("startedAt", ">=", since),
+            eb("activityId", "in", highlighted),
+          ]),
+    )
+    .execute();
 }
 
 /**
@@ -219,7 +236,8 @@ export async function queryCyclingLogPage(
 
   // A full row answers for both halves of `FeedRows`, so a page builds its
   // entries through the same path the whole feed does.
-  const entries = toEntries({ rides: rows, tracks: rows });
+  const entries = toEntries(rows);
+  attachTracks(entries, rows);
   const inWindow = entries.filter(
     (entry) => entry.monthKey >= start && entry.monthKey < before,
   );
@@ -307,17 +325,49 @@ export function buildCyclingActivity(
   curve: readonly PowerCurvePoint[],
   now: Date,
 ): CyclingActivityData {
-  const entries = toEntries(rows);
-  const firstKey = logWindow(entries);
+  const layout = layoutFeed(toEntries(rows.rides));
+  attachTracks(layout.entries, rows.tracks);
+  return assembleFeed(layout, curve, now);
+}
+
+/** The feed grouped into its months, with the log's window marked out. */
+interface Layout {
+  /** Every ride, newest first. */
+  entries: Entry[];
+  /** The first month the log renders, or null with no rides at all. */
+  firstKey: string | null;
+  /** The highlight window's months, which the log's are the newest of. */
+  months: Month[];
+}
+
+/**
+ * Both windows count back from the latest ride's month, by the local month
+ * each ride is filed under. Entries arrive newest first, so the first one
+ * sets them.
+ */
+function layoutFeed(entries: Entry[]): Layout {
+  const latest = entries[0];
+  if (latest === undefined) return { entries, firstKey: null, months: [] };
+  const firstKey = monthsBefore(latest.monthKey, LOG_MONTHS - 1);
+  const highlightKey = monthsBefore(latest.monthKey, HIGHLIGHT_MONTHS - 1);
   const months = groupMonths(
+    entries.filter((entry) => entry.monthKey >= highlightKey),
+  );
+  return { entries, firstKey, months };
+}
+
+function assembleFeed(
+  { entries, firstKey, months }: Layout,
+  curve: readonly PowerCurvePoint[],
+  now: Date,
+): CyclingActivityData {
+  const logged =
     firstKey === null
       ? []
-      : entries.filter((entry) => entry.monthKey >= firstKey),
-  );
-
+      : months.filter((month) => month.group.key >= firstKey);
   return {
     totals: yearTotals(entries, now),
-    months: months.map((month) => month.group),
+    months: logged.map((month) => month.group),
     highlightMonths: months.flatMap((month) => month.highlights),
     records: records(entries, curve),
     logCursor: initialCursor(entries, firstKey),
@@ -329,22 +379,25 @@ export function buildCyclingActivity(
  * by its own date. The instant can fall on the other side of a month or year
  * boundary in another zone.
  */
-function toEntries({ rides, tracks }: FeedRows): Entry[] {
-  const trackById = new Map(tracks.map((track) => [track.activityId, track]));
+function toEntries(rides: readonly RideRow[]): Entry[] {
   return rides
-    .map((row) => toEntry(row, trackById.get(row.activityId)))
+    .map((row) => toEntry(row))
     .toSorted((a, b) => b.ride.startedAt.localeCompare(a.ride.startedAt));
 }
 
 /**
- * The first month of the log's window: the latest ride's month and the
- * `LOG_MONTHS - 1` before it, by the local month each ride is filed under.
- * Entries arrive newest first, so the first one sets the window.
+ * The months group the same `Ride` objects the entries hold, so a track
+ * attached after the layout reaches every view that shows the ride.
  */
-function logWindow(entries: readonly Entry[]): string | null {
-  const latest = entries[0];
-  if (latest === undefined) return null;
-  return monthsBefore(latest.monthKey, LOG_MONTHS - 1);
+function attachTracks(
+  entries: readonly Entry[],
+  tracks: readonly TrackRow[],
+): void {
+  const byId = new Map(tracks.map((track) => [track.activityId, track]));
+  for (const entry of entries) {
+    const track = byId.get(entry.ride.id);
+    if (track !== undefined) attachTrack(entry.ride, track);
+  }
 }
 
 /**
@@ -361,23 +414,17 @@ function initialCursor(
   return older === undefined ? null : monthAfter(older.monthKey);
 }
 
-function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
+function toEntry(row: RideRow): Entry {
   const startedAt = wallClock(row.startedAt, row.timezone);
   const measured = row.powerSource === "measured";
   const measuredWatts =
     measured && row.averageWatts !== null ? Math.round(row.averageWatts) : null;
-  const polyline = track?.polyline ?? null;
-  const route = polyline === null ? [] : decodePolyline(polyline);
-  const profile =
-    track?.elevationProfile == null
-      ? null
-      : parseJson(elevationProfile, track.elevationProfile);
 
   const ride: Ride = {
     id: row.activityId,
     name: row.name ?? "Ride",
     startedAt,
-    photos: track === undefined ? [] : photos(track, row.name),
+    photos: [],
     badges: [],
     facts: [],
   };
@@ -388,21 +435,6 @@ function toEntry(row: RideRow, track: TrackRow | undefined): Entry {
   if (row.elevationM !== null) ride.elevationFt = feet(row.elevationM);
   if (row.movingS !== null) ride.movingSeconds = Math.round(row.movingS);
   if (measuredWatts !== null) ride.averageWatts = measuredWatts;
-  // The map endpoint reads the stored polyline back through this same helper,
-  // so the basemap it renders is framed on the points the card draws.
-  if (polyline !== null && route.length >= 2)
-    ride.route = thinPolyline(polyline);
-  if (profile !== null && profile.length > 0) {
-    // The profile arrives in metres, the same unit as the total the card
-    // prints, so the longest climb converts the same way.
-    const height = relief(
-      ride.elevationFt,
-      metersToFeet(longestClimb(profile)),
-    );
-    ride.elevationProfile = encodeProfile(
-      thin(normalizeProfile(profile, height), MAX_PROFILE_SAMPLES),
-    );
-  }
 
   return {
     ride,
@@ -443,13 +475,40 @@ function parseJson<T>(schema: z.ZodType<T>, text: string): T | null {
   return result.success ? result.data : null;
 }
 
-function photos(track: TrackRow, name: string | null): RidePhoto[] {
+function attachTrack(ride: Ride, track: TrackRow): void {
+  ride.photos = photos(track, ride.name);
+
+  const route = track.polyline === null ? [] : decodePolyline(track.polyline);
+  // The map endpoint reads the stored polyline back through this same helper,
+  // so the basemap it renders is framed on the points the card draws.
+  if (track.polyline !== null && route.length >= 2) {
+    ride.route = thinPolyline(track.polyline);
+  }
+
+  const profile =
+    track.elevationProfile === null
+      ? null
+      : parseJson(elevationProfile, track.elevationProfile);
+  if (profile !== null && profile.length > 0) {
+    // The profile arrives in metres, the same unit as the total the card
+    // prints, so the longest climb converts the same way.
+    const height = relief(
+      ride.elevationFt,
+      metersToFeet(longestClimb(profile)),
+    );
+    ride.elevationProfile = encodeProfile(
+      thin(normalizeProfile(profile, height), MAX_PROFILE_SAMPLES),
+    );
+  }
+}
+
+function photos(track: TrackRow, name: string): RidePhoto[] {
   const keys = parseJson(photoKeys, track.photoKeys) ?? [];
   return keys.map((key, index) => ({
     id: key,
-    thumbnailUrl: `/photos/${key}`,
+    thumbnailUrl: `/photos/thumbnails/${key}`,
     fullUrl: `/photos/${key}`,
-    alt: `Photo ${index + 1} from ${name ?? "the ride"}`,
+    alt: `Photo ${index + 1} from ${name}`,
   }));
 }
 

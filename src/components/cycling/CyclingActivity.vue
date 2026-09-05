@@ -57,8 +57,12 @@ const {
 const periods = computed(() => props.data.records.map((entry) => entry.period));
 
 // A year without a basemap owes CARTO nothing.
-const hasBasemap = computed(() =>
-  props.data.months.some((month) => month.rides.some((ride) => ride.route)),
+const hasBasemap = computed(
+  () =>
+    props.data.months.some((month) => month.rides.some((ride) => ride.route)) ||
+    props.data.highlightMonths.some((month) =>
+      month.highlights.some((entry) => entry.ride.route),
+    ),
 );
 
 const records = computed(
