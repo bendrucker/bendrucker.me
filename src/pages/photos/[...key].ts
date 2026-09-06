@@ -3,6 +3,7 @@ import { env } from "cloudflare:workers";
 import {
   contentRange,
   isPhotoKey,
+  isVideoKey,
   PHOTO_CACHE,
   PHOTO_CACHE_CONTROL,
 } from "@/photos";
@@ -33,8 +34,12 @@ export const GET: APIRoute = async ({ params, request, cache }) => {
     return new Response("Not Found", { status: 404 });
   }
 
+  // An object stored without a content type would otherwise serve a video's
+  // bytes as a JPEG, which a `<video>` refuses to decode.
+  const fallbackType = isVideoKey(params.key) ? "video/mp4" : "image/jpeg";
+
   const headers = new Headers({
-    "content-type": object.httpMetadata?.contentType ?? "image/jpeg",
+    "content-type": object.httpMetadata?.contentType ?? fallbackType,
     "cache-control": PHOTO_CACHE_CONTROL,
     "accept-ranges": "bytes",
     etag: object.httpEtag,

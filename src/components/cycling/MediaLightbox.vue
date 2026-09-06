@@ -79,6 +79,9 @@ function onOpenChange(value: boolean) {
 function onKeydown(event: KeyboardEvent) {
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
   if (count.value < 2) return;
+  // An arrow press inside a video's own controls seeks it, the same reason the
+  // carousel excludes a video from its drag handling.
+  if (event.target instanceof Element && event.target.closest("video")) return;
   if (event.key === "ArrowLeft") {
     event.preventDefault();
     step(-1);

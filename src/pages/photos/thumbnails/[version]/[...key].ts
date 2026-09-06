@@ -24,13 +24,18 @@ async function cut(body: Parameters<typeof env.IMAGES.input>[0]) {
   }
 }
 
-/** The same square for a video, cut from its first frame, or null where it fails. */
+/**
+ * The same square for a video, cut from its first frame, or null where it
+ * fails. A transform that fails on the far side answers with a status rather
+ * than throwing, and that body must not be cached for a year as a poster.
+ */
 async function cutFrame(body: Parameters<typeof env.MEDIA.input>[0]) {
   try {
-    return await env.MEDIA.input(body)
+    const frame = await env.MEDIA.input(body)
       .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
       .output({ mode: "frame", time: "0s", format: "jpg" })
       .response();
+    return frame.ok ? frame : null;
   } catch {
     return null;
   }
