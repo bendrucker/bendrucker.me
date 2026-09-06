@@ -169,7 +169,7 @@ itself and reports the range it resolved, which `contentRange` formats. A `206`
 skips `cache.set()`, since those bytes must not be served to the next reader
 asking for the whole object.
 
-Media Transformations has no local simulator, so the Cloudflare vite plugin
+Media Transformations has no local simulator, so the Cloudflare Vite plugin
 opens a remote proxy session for the binding and wants a `CLOUDFLARE_API_TOKEN`
 in any non-interactive shell. Nothing calls the binding at build time, so the
 `build` script sets `CLOUDFLARE_VITE_FORCE_LOCAL=true` and CI needs no
