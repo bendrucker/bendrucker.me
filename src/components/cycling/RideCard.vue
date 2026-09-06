@@ -4,7 +4,7 @@ import { rideDate } from "./datetime";
 import ElevationProfile from "./ElevationProfile.vue";
 import FactChip from "./FactChip.vue";
 import LucideIcon from "@/components/LucideIcon.vue";
-import PhotoStrip from "./PhotoStrip.vue";
+import MediaStrip from "./MediaStrip.vue";
 import RideBadge from "./RideBadge.vue";
 import { RIDE_MAP } from "./basemap";
 import RouteMap from "./RouteMap.vue";
@@ -24,7 +24,7 @@ const props = withDefaults(
   { mapWidth: RIDE_MAP.width, mapHeight: RIDE_MAP.height, headingAs: "h3" },
 );
 
-defineEmits<{ openPhoto: [index: number] }>();
+defineEmits<{ openMedia: [index: number] }>();
 
 const {
   distanceUnit,
@@ -137,7 +137,7 @@ const metaLine = computed(() => {
           </div>
         </div>
 
-        <PhotoStrip :photos="ride.photos" @open="$emit('openPhoto', $event)" />
+        <MediaStrip :media="ride.media" @open="$emit('openMedia', $event)" />
 
         <ul v-if="ride.facts.length" class="flex flex-wrap gap-1">
           <li v-for="fact in ride.facts" :key="fact.id">

@@ -75,8 +75,14 @@ export interface ActivityState {
 /** `[latitude, longitude]`, matching the order Strava's encoded polylines use. */
 export type Coordinate = [number, number];
 
-export interface RidePhoto {
+/**
+ * One item a ride carries, a photo or a video. `thumbnailUrl` is a still
+ * either way: a video's is a frame cut from it, which is the only form a card
+ * can afford to show.
+ */
+export interface RideMedia {
   id: string;
+  kind: "photo" | "video";
   thumbnailUrl: string;
   fullUrl: string;
   alt: string;
@@ -174,7 +180,7 @@ export interface Ride {
    * interchangeable at this shape. `profile.ts` decodes it for the chart.
    */
   elevationProfile?: string;
-  photos: RidePhoto[];
+  media: RideMedia[];
   badges: RideBadge[];
   facts: RideFact[];
 }

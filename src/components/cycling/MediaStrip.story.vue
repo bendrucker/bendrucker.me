@@ -10,51 +10,57 @@ import {
   raceRide,
   travelRide,
 } from "./fixtures";
-import PhotoStrip from "./PhotoStrip.vue";
-import type { RidePhoto } from "@/activity/types";
+import MediaStrip from "./MediaStrip.vue";
+import type { RideMedia } from "@/activity/types";
 
-const photoSets: Record<string, RidePhoto[]> = {
-  one: raceRide.photos,
-  three: epicRide.photos,
-  five: travelRide.photos,
-  twelve: crowdedRide.photos,
-  none: bareRide.photos,
+const mediaSets: Record<string, RideMedia[]> = {
+  one: raceRide.media,
+  three: epicRide.media,
+  video: travelRide.media,
+  twelve: crowdedRide.media,
+  none: bareRide.media,
+  broken: travelRide.media.map((item) =>
+    item.kind === "video"
+      ? { ...item, thumbnailUrl: "/missing-poster.jpg" }
+      : item,
+  ),
 };
 
 const controls: StoryControlSet = {
-  photos: {
+  media: {
     type: "select",
-    title: "photos",
+    title: "media",
     options: {
       one: "one photo",
       three: "three photos",
-      five: "five photos",
+      video: "a video first",
       twelve: "twelve photos",
-      none: "no photos",
+      none: "nothing",
+      broken: "video, no poster",
     },
   },
   width: { type: "slider", title: "width", min: 96, max: 340 },
 };
 
 function initState() {
-  return { photos: "twelve", width: 340 };
+  return { media: "video", width: 340 };
 }
 </script>
 
 <template>
   <Story
-    title="Photo strip"
+    title="Media strip"
     group="ride"
     auto-props-disabled
     :layout="{ type: 'grid', width: 340 }"
     :init-state="initState"
   >
-    <Variant title="Photo strip">
+    <Variant title="Media strip">
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
         <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
-          <PhotoStrip
-            :photos="photoSets[state.photos]!"
+          <MediaStrip
+            :media="mediaSets[state.media]!"
             @open="logEvent('open', { index: $event })"
           />
         </div>
@@ -68,9 +74,13 @@ function initState() {
 </template>
 
 <docs lang="md">
-# Photo strip
+# Media strip
 
-The row of thumbnails on a ride card.
+The row of thumbnails on a ride card, photos and videos alike.
+
+A video is its poster frame under a dimmed overlay with a play glyph. The "video,
+no poster" set is what the strip shows when the thumbnail route could not cut a
+frame and answered 404: the tile keeps its size and the glyph stands alone.
 
 Narrow the width until the row overflows: it stays one row, fading out at the
 trailing edge rather than wrapping onto a second. Tapping a thumbnail logs the

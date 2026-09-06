@@ -4,14 +4,14 @@ import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { ref } from "vue";
 import { crowdedRide, raceRide, travelRide } from "./fixtures";
-import PhotoLightbox from "./PhotoLightbox.vue";
-import PhotoStrip from "./PhotoStrip.vue";
-import type { RidePhoto } from "@/activity/types";
+import MediaLightbox from "./MediaLightbox.vue";
+import MediaStrip from "./MediaStrip.vue";
+import type { RideMedia } from "@/activity/types";
 
-const photoSets: Record<string, RidePhoto[]> = {
-  five: travelRide.photos,
-  two: travelRide.photos.slice(0, 2),
-  one: raceRide.photos,
+const mediaSets: Record<string, RideMedia[]> = {
+  five: travelRide.media,
+  two: travelRide.media.slice(0, 2),
+  one: raceRide.media,
   none: [],
 };
 
@@ -24,13 +24,13 @@ function openStrip(index: number) {
 }
 
 const controls: StoryControlSet = {
-  photos: {
+  media: {
     type: "select",
-    title: "photos",
+    title: "media",
     options: {
-      five: "five photos",
-      two: "two photos",
-      one: "one photo, so no arrows",
+      five: "video, four photos",
+      two: "video, one photo",
+      one: "one photo, no arrows",
       none: "none left",
     },
   },
@@ -39,18 +39,18 @@ const controls: StoryControlSet = {
 };
 
 function initState() {
-  return { photos: "five", index: 2, open: false };
+  return { media: "five", index: 2, open: false };
 }
 </script>
 
 <template>
   <Story
-    title="Photo lightbox"
+    title="Media lightbox"
     group="ride"
     auto-props-disabled
     :layout="{ type: 'grid', width: 340 }"
   >
-    <Variant title="Photo lightbox" :init-state="initState">
+    <Variant title="Media lightbox" :init-state="initState">
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
         <button
@@ -58,12 +58,12 @@ function initState() {
           class="rounded border border-border px-2 py-1 text-[11px]"
           @click="state.open = true"
         >
-          open at photo {{ state.index + 1 }} of
-          {{ photoSets[state.photos]!.length }}
+          open at item {{ state.index + 1 }} of
+          {{ mediaSets[state.media]!.length }}
         </button>
-        <PhotoLightbox
+        <MediaLightbox
           v-model:index="state.index"
-          :photos="photoSets[state.photos]!"
+          :media="mediaSets[state.media]!"
           :ride-name="travelRide.name"
           :ride-url="travelRide.stravaUrl"
           :open="state.open"
@@ -77,10 +77,10 @@ function initState() {
     </Variant>
 
     <Variant title="Opened from a strip">
-      <PhotoStrip :photos="crowdedRide.photos" @open="openStrip" />
-      <PhotoLightbox
+      <MediaStrip :media="crowdedRide.media" @open="openStrip" />
+      <MediaLightbox
         v-model:index="fromStrip"
-        :photos="crowdedRide.photos"
+        :media="crowdedRide.media"
         :ride-name="crowdedRide.name"
         :ride-url="crowdedRide.stravaUrl"
         :open="fromStripOpen"
@@ -91,11 +91,15 @@ function initState() {
 </template>
 
 <docs lang="md">
-# Photo lightbox
+# Media lightbox
 
-Full-screen photo viewing, opened from a ride's strip.
+Full-screen viewing, opened from a ride's strip.
 
-Open it, then cut the photo count from the panel while it is still open: the
-index has to survive the array shrinking under it, including to nothing. The
-index slider reaches past the shorter sets on purpose.
+The first item of the five- and two-item sets is a video: it arrives paused with
+controls and nothing buffered, and paging off it stops whatever was playing. A
+photo is an `<img>` as before.
+
+Open it, then cut the count from the panel while it is still open: the index has
+to survive the array shrinking under it, including to nothing. The index slider
+reaches past the shorter sets on purpose.
 </docs>

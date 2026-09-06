@@ -9,24 +9,40 @@ import type {
   PowerBest,
   RankedList,
   Ride,
-  RidePhoto,
+  RideMedia,
 } from "@/activity/types";
 
-function photos(rideId: string, count: number): RidePhoto[] {
+function photos(rideId: string, count: number): RideMedia[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `${rideId}-${index}`,
+    kind: "photo",
     thumbnailUrl: `https://picsum.photos/seed/${rideId}-${index}/240/240`,
     fullUrl: `https://picsum.photos/seed/${rideId}-${index}/1200/800`,
     alt: `Roadside view from the ride, photo ${index + 1}`,
   }));
 }
 
+/**
+ * The stories run without a worker, so a video's poster is a still from the
+ * same series as the photos. The MP4 is MDN's CC0 sample, served over a host
+ * that answers `Range`, which is what the carousel's scrubber needs.
+ */
+function video(rideId: string, index: number): RideMedia {
+  return {
+    id: `${rideId}-video`,
+    kind: "video",
+    thumbnailUrl: `https://picsum.photos/seed/${rideId}-video/240/240`,
+    fullUrl: "https://mdn.github.io/shared-assets/videos/flower.mp4",
+    alt: `Video ${index + 1} from the ride`,
+  };
+}
+
 function ride(
-  overrides: Omit<Ride, "photos" | "badges" | "facts" | "elevationProfile"> &
-    Partial<Pick<Ride, "photos" | "badges" | "facts" | "elevationProfile">>,
+  overrides: Omit<Ride, "media" | "badges" | "facts" | "elevationProfile"> &
+    Partial<Pick<Ride, "media" | "badges" | "facts" | "elevationProfile">>,
 ): Ride {
   return {
-    photos: [],
+    media: [],
     badges: [],
     facts: [],
     elevationProfile: encodeProfile(
@@ -49,7 +65,7 @@ export const epicRide: Ride = ride({
   averageWatts: 194,
   companionCount: 5,
   route: syntheticRoute("19275831643", MARIN, 0.16, 260),
-  photos: photos("19275831643", 3),
+  media: photos("19275831643", 3),
   badges: [
     { kind: "longest", icon: "ruler", label: "longest", scope: "jul" },
     { kind: "new-climb", icon: "mountain", label: "atlas peak" },
@@ -83,7 +99,7 @@ export const raceRide: Ride = ride({
   averageWatts: 288,
   companionCount: 3,
   route: syntheticRoute("18582680583", PENINSULA, 0.03),
-  photos: photos("18582680583", 1),
+  media: photos("18582680583", 1),
   badges: [{ kind: "race", icon: "flag", label: "race" }],
   facts: [{ id: "fast", icon: "gauge", label: "fastest avg · 21.4 mph" }],
 });
@@ -99,7 +115,7 @@ export const travelRide: Ride = ride({
   averageWatts: 168,
   companionCount: 2,
   route: syntheticRoute("19170862418", NAPA, 0.2, 260),
-  photos: photos("19170862418", 5),
+  media: [video("19170862418", 0), ...photos("19170862418", 4)],
   badges: [
     { kind: "new-location", icon: "map-pin", label: "new location" },
     {
@@ -138,7 +154,7 @@ export const crowdedRide: Ride = ride({
   averageWatts: 201,
   companionCount: 12,
   route: syntheticRoute("19090081916", MARIN, 0.09, 240),
-  photos: photos("19090081916", 12),
+  media: photos("19090081916", 12),
   badges: [
     { kind: "new-climb", icon: "mountain", label: "mount vision" },
     { kind: "longest", icon: "ruler", label: "longest", scope: "jun" },
@@ -176,7 +192,7 @@ export const winterRide: Ride = ride({
   averageWatts: 165,
   companionCount: 2,
   route: syntheticRoute("17550120994", MARIN, 0.06),
-  photos: photos("17550120994", 2),
+  media: photos("17550120994", 2),
 });
 
 export const rides: Ride[] = [
