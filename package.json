@@ -24,6 +24,7 @@
     "lighthouse": "lhci autorun",
     "types:generate": "wrangler types && prettier --write worker-configuration.d.ts",
     "test": "vitest run",
+    "seed": "tsx scripts/seed.ts",
     "fetch-activity": "tsx scripts/fetch-github-activity.ts",
     "generate:favicons": "tsx scripts/generate-favicons.ts"
   },

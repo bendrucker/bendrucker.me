@@ -1,5 +1,6 @@
 import { VectorTile, type VectorTileLayer } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
+import { logger } from "@workspace/logger";
 import { TILE_SIZE, type MapTile } from "@/components/cycling/geo";
 
 const TILE_URL =
@@ -96,15 +97,29 @@ export async function fetchTile(
   // and open water has nothing to publish. A tile that errors outright is
   // treated the same way, since one unreachable tile should cost its own
   // square rather than the whole card.
+  //
+  // Ordinary and broken look identical from here, though, and a basemap that
+  // draws nothing at all is not something a card reports. Anything but a 404
+  // is said out loud, so the day CARTO starts turning these down there is a
+  // line saying so rather than a year of blank maps.
   let response: Response;
   try {
     response = await fetch(url, {
       cf: { cacheEverything: true, cacheTtl: TILE_CACHE_SECONDS },
     });
-  } catch {
+  } catch (error) {
+    logger.warn({ error, tile: placement }, "Basemap tile fetch failed");
     return null;
   }
-  if (!response.ok) return null;
+  if (!response.ok) {
+    if (response.status !== 404) {
+      logger.warn(
+        { status: response.status, tile: placement },
+        "Basemap tile refused",
+      );
+    }
+    return null;
+  }
 
   // The tiles are served gzipped, which workerd's fetch decodes on the way in.
   return decodeTile(await response.arrayBuffer());
