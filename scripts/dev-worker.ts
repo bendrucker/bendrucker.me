@@ -12,7 +12,7 @@
 //   npm run dev:worker -- logs -f   follow it
 //   npm run dev:worker -- stop      shut it down
 
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -54,10 +54,14 @@ async function main(): Promise<void> {
       return status();
     case "logs":
       return logs();
+    case "start":
+      return start();
     case "stop":
       return stop();
     default:
-      return start();
+      throw new Error(
+        `Unknown command "${command}". Expected start, status, logs, or stop.`,
+      );
   }
 }
 
@@ -76,6 +80,16 @@ async function start(): Promise<void> {
   }
 
   const port = choosePort();
+
+  // The port is a hash of the worktree path, so two checkouts can collide.
+  // Wrangler would fail to bind while the worker already there kept answering,
+  // and this would hand back a URL serving the other checkout.
+  if (await answering(port)) {
+    throw new Error(
+      `Port ${port} is already answering, so another worktree's worker holds it. Stop that one first.`,
+    );
+  }
+
   mkdirSync(STATE_DIR, { recursive: true });
   writeFileSync(LOG_FILE, "");
 
@@ -103,7 +117,7 @@ async function start(): Promise<void> {
   }
   writeFileSync(PID_FILE, JSON.stringify({ pid: child.pid, port }));
 
-  await waitForReady(port);
+  await waitForReady(port, child);
   logger.info(
     { pid: child.pid, port, url: `http://localhost:${port}`, log: LOG_FILE },
     "Dev worker running",
@@ -184,20 +198,31 @@ async function rideCount(): Promise<number> {
   }
 }
 
+async function answering(port: number): Promise<boolean> {
+  try {
+    await fetch(`http://localhost:${port}/`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Reported ready once the port answers. Wrangler prints its own banner well
  * before workerd binds, so a start that returned on the banner would hand back
- * a URL that refuses the next request.
+ * a URL that refuses the next request. A wrangler that exits instead of
+ * binding ends the wait rather than letting it run to the timeout.
  */
-async function waitForReady(port: number): Promise<void> {
+async function waitForReady(port: number, child: ChildProcess): Promise<void> {
   const deadline = Date.now() + READY_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    try {
-      await fetch(`http://localhost:${port}/`);
-      return;
-    } catch {
-      await sleep(READY_POLL_MS);
+    if (child.exitCode !== null || child.signalCode !== null) {
+      throw new Error(
+        `wrangler dev exited before it bound ${port}. See ${LOG_FILE}`,
+      );
     }
+    if (await answering(port)) return;
+    await sleep(READY_POLL_MS);
   }
   throw new Error(
     `wrangler dev did not answer on ${port} within ${READY_TIMEOUT_MS}ms. See ${LOG_FILE}`,
