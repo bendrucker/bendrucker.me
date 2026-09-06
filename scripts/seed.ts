@@ -95,7 +95,9 @@ async function clear(store: ActivityStore, bucket: R2Bucket): Promise<void> {
   do {
     const listed = await bucket.list({ prefix: PHOTO_PREFIX, cursor });
     await Promise.all(
-      listed.objects.map((object) => bucket.delete(object.key)),
+      listed.objects.map(async (object) => {
+        await bucket.delete(object.key);
+      }),
     );
     cursor = listed.truncated ? listed.cursor : undefined;
   } while (cursor !== undefined);
