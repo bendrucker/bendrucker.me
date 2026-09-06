@@ -39,7 +39,7 @@ export const GET: APIRoute = async ({ params, request, cache }) => {
     // Only a request carrying a range can be unsatisfiable. Anything else is
     // the store failing, and a 416 would blame the reader for it.
     if (!ranged) throw error;
-    return await unsatisfiable(params.key);
+    return unsatisfiable(params.key);
   }
   if (object === null) {
     return new Response("Not Found", { status: 404 });
