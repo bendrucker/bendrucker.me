@@ -43,6 +43,9 @@ const PORT_RANGE = 100;
 
 const READY_TIMEOUT_MS = 30_000;
 const READY_POLL_MS = 250;
+// fetch waits indefinitely for headers, so a listener that accepts the
+// connection and says nothing would outlast the deadline below.
+const READY_PROBE_MS = 2_000;
 
 const state = z.object({ pid: z.int().positive(), port: z.int().positive() });
 type State = z.infer<typeof state>;
@@ -200,7 +203,9 @@ async function rideCount(): Promise<number> {
 
 async function answering(port: number): Promise<boolean> {
   try {
-    await fetch(`http://localhost:${port}/`);
+    await fetch(`http://localhost:${port}/`, {
+      signal: AbortSignal.timeout(READY_PROBE_MS),
+    });
     return true;
   } catch {
     return false;
