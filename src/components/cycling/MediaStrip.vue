@@ -81,7 +81,7 @@ watch(() => props.media.length, measure, { flush: "post" });
           class="block size-12 rounded border border-border bg-muted"
         />
         <!-- A literal black dims the photograph underneath and reads the same
-             in either theme, which a surface token would not. -->
+             in either theme. -->
         <span
           v-if="item.kind === 'video'"
           class="pointer-events-none absolute inset-0 flex items-center justify-center rounded bg-black/45"
