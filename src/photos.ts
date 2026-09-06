@@ -37,6 +37,15 @@ export function isVideoKey(key: string): boolean {
   return VIDEO_KEY.test(key);
 }
 
+// The extensions the Images binding resizes. `PHOTO_KEY` admits any extension,
+// so a key matching neither this nor `VIDEO_KEY` could be carrying anything,
+// and nothing may hand it to an `<img>` on the strength of a guess.
+const IMAGE_KEY = /\.(jpe?g|png|gif|webp|avif|heic|heif)$/i;
+
+export function isImageKey(key: string): boolean {
+  return IMAGE_KEY.test(key);
+}
+
 /**
  * The `content-range` a `206` answers with. R2 resolves whichever of the three
  * shapes the request asked for, so the last byte has to be worked back out

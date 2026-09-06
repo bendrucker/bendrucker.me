@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import {
+  isImageKey,
   isPhotoKey,
   isVideoKey,
   PHOTO_CACHE,
@@ -57,6 +58,18 @@ export const GET: APIRoute = async ({ params, cache }) => {
     return new Response("Not Found", { status: 404 });
   }
 
+  // The URL names the transform, so the original's tag is the thumbnail's.
+  const square = (body: BodyInit | null, type: string) => {
+    cache.set({ ...PHOTO_CACHE, etag: object.httpEtag });
+    return new Response(body, {
+      headers: {
+        "content-type": type,
+        "cache-control": PHOTO_CACHE_CONTROL,
+        etag: object.httpEtag,
+      },
+    });
+  };
+
   if (isVideoKey(params.key)) {
     const frame = await cutFrame(object.body);
     // Falling back to the original is what this route exists to avoid: a card
@@ -65,34 +78,26 @@ export const GET: APIRoute = async ({ params, cache }) => {
     if (frame === null) {
       return new Response("Not Found", { status: 404 });
     }
-
-    cache.set({ ...PHOTO_CACHE, etag: object.httpEtag });
-    return new Response(frame.body, {
-      headers: {
-        "content-type": frame.headers.get("content-type") ?? "image/jpeg",
-        "cache-control": PHOTO_CACHE_CONTROL,
-        etag: object.httpEtag,
-      },
-    });
+    return square(
+      frame.body,
+      frame.headers.get("content-type") ?? "image/jpeg",
+    );
   }
 
   const thumbnail = await cut(object.body);
   if (thumbnail === null) {
-    // The original still draws the card. A redirect keeps the failure
-    // short-lived at the edge.
+    // The original still draws the card, but only where the key names an
+    // image. A key naming neither could be a video, and redirecting a 48px
+    // `<img>` at one downloads the whole file.
+    if (!isImageKey(params.key)) {
+      return new Response("Not Found", { status: 404 });
+    }
+    // A redirect keeps the failure short-lived at the edge.
     return new Response(null, {
       status: 302,
       headers: { location: photoUrl(params.key) },
     });
   }
 
-  // The URL names the transform, so the original's tag is the thumbnail's.
-  cache.set({ ...PHOTO_CACHE, etag: object.httpEtag });
-  return new Response(thumbnail.image(), {
-    headers: {
-      "content-type": thumbnail.contentType(),
-      "cache-control": PHOTO_CACHE_CONTROL,
-      etag: object.httpEtag,
-    },
-  });
+  return square(thumbnail.image(), thumbnail.contentType());
 };

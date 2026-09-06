@@ -2,6 +2,7 @@
 import emblaCarouselVue from "embla-carousel-vue";
 import { watch } from "vue";
 import type { RideMedia } from "@/activity/types";
+import { withinVideo } from "./mediaTarget";
 
 const props = defineProps<{ media: RideMedia[]; index: number }>();
 
@@ -16,10 +17,7 @@ const [viewport, embla] = emblaCarouselVue({
   loop: true,
   duration: 18,
   startIndex: props.index,
-  // A pointer-down on a video's scrubber drags its seek bar. Excluding video
-  // targets keeps Embla from also treating it as a swipe and paging the slide.
-  watchDrag: (_api, event) =>
-    !(event.target instanceof Element && event.target.closest("video")),
+  watchDrag: (_api, event) => !withinVideo(event.target),
 });
 
 // A drag is the one way the position moves without passing through the model.
@@ -101,7 +99,7 @@ function step(delta: number) {
       class="absolute left-3 hidden size-9 items-center justify-center rounded-full border border-border bg-background/90 text-foreground hover:text-accent sm:flex"
       @click="step(-1)"
     >
-      <span aria-hidden="true">‹</span>
+      <span class="icon-[lucide--chevron-left] size-5" aria-hidden="true" />
       <span class="sr-only">Previous item</span>
     </button>
 
@@ -111,7 +109,7 @@ function step(delta: number) {
       class="absolute right-3 hidden size-9 items-center justify-center rounded-full border border-border bg-background/90 text-foreground hover:text-accent sm:flex"
       @click="step(1)"
     >
-      <span aria-hidden="true">›</span>
+      <span class="icon-[lucide--chevron-right] size-5" aria-hidden="true" />
       <span class="sr-only">Next item</span>
     </button>
   </div>

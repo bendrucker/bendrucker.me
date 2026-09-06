@@ -8,6 +8,17 @@ import {
   PHOTO_CACHE_CONTROL,
 } from "@/photos";
 
+/**
+ * The 416 answer, naming the object's length. A browser that asked past the
+ * end works the range it should have asked for out of that.
+ */
+async function unsatisfiable(key: string): Promise<Response> {
+  const headers = new Headers({ "accept-ranges": "bytes" });
+  const head = await env.RAW.head(key);
+  if (head !== null) headers.set("content-range", `bytes */${head.size}`);
+  return new Response("Range Not Satisfiable", { status: 416, headers });
+}
+
 export const GET: APIRoute = async ({ params, request, cache }) => {
   if (!isPhotoKey(params.key)) {
     return new Response("Not Found", { status: 404 });
@@ -24,11 +35,11 @@ export const GET: APIRoute = async ({ params, request, cache }) => {
       params.key,
       ranged ? { range: request.headers } : undefined,
     );
-  } catch {
-    return new Response("Range Not Satisfiable", {
-      status: 416,
-      headers: { "accept-ranges": "bytes" },
-    });
+  } catch (error) {
+    // Only a request carrying a range can be unsatisfiable. Anything else is
+    // the store failing, and a 416 would blame the reader for it.
+    if (!ranged) throw error;
+    return await unsatisfiable(params.key);
   }
   if (object === null) {
     return new Response("Not Found", { status: 404 });

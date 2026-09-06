@@ -12,6 +12,7 @@ import { computed, watch } from "vue";
 import MediaCarousel from "./MediaCarousel.vue";
 import StravaLink from "./StravaLink.vue";
 import type { RideMedia } from "@/activity/types";
+import { withinVideo } from "./mediaTarget";
 
 const props = defineProps<{
   media: RideMedia[];
@@ -78,9 +79,7 @@ function onOpenChange(value: boolean) {
 function onKeydown(event: KeyboardEvent) {
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
   if (count.value < 2) return;
-  // An arrow press inside a video's own controls seeks it, the same reason the
-  // carousel excludes a video from its drag handling.
-  if (event.target instanceof Element && event.target.closest("video")) return;
+  if (withinVideo(event.target)) return;
   if (event.key === "ArrowLeft") {
     event.preventDefault();
     step(-1);
@@ -130,7 +129,7 @@ function onKeydown(event: KeyboardEvent) {
           <div class="ml-auto flex items-center gap-3">
             <StravaLink v-if="rideUrl" :href="rideUrl" :name="rideName" />
             <DialogClose class="text-foreground/70 hover:text-accent">
-              <span aria-hidden="true">✕</span>
+              <span class="icon-[lucide--x] size-4" aria-hidden="true" />
               <span class="sr-only">Close media viewer</span>
             </DialogClose>
           </div>
