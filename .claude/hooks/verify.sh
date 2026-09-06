@@ -60,7 +60,14 @@ fi
 
 # Skip build if source files haven't changed since last successful build
 build_marker="/tmp/claude-stop-hook-build-$(echo "$cwd" | md5sum | cut -d' ' -f1)"
-newest_source=$(git ls-files -- "${glob_patterns[@]}" | xargs stat -f '%m' 2>/dev/null | sort -rn | head -1)
+# Untracked files count here for the same reason they count above: a new file
+# the build would choke on is exactly the one no marker knows about yet.
+newest_source=$(
+  {
+    git ls-files -- "${glob_patterns[@]}"
+    git ls-files --others --exclude-standard -- "${glob_patterns[@]}"
+  } | xargs stat -f '%m' 2>/dev/null | sort -rn | head -1
+)
 
 if [[ -f "$build_marker" ]] && [[ -n "$newest_source" ]]; then
   marker_time=$(stat -f '%m' "$build_marker")
