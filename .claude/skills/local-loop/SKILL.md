@@ -41,9 +41,18 @@ the query is broken or the database is empty, and `dev:worker`'s
 ```bash
 curl -s localhost:$PORT/activity/cycling | grep -c '"route"'   # rides carrying a polyline
 curl -sI localhost:$PORT/activity/cycling | grep -i etag       # feed version
-curl -s localhost:$PORT/activity/cycling/2025-09.json | jq 'keys'
+curl -s localhost:$PORT/activity/cycling/$MONTH.json | jq 'keys'
 curl -s localhost:$PORT/activity/code
 curl -so map.png localhost:$PORT/map/15000227608/11z0jvp/150x140.png
+```
+
+`$MONTH` comes from the page rather than a literal, because the synthetic
+rides cover a rolling window ending today and a month hardcoded once falls
+out of it:
+
+```bash
+MONTH=$(curl -s localhost:$PORT/activity/cycling |
+  grep -o 'data-month-key="[0-9-]*"' | head -1 | cut -d'"' -f2)
 ```
 
 The ETag is `"<version>-<count>.<maxUpdatedAt>-html"`. Re-requesting with
@@ -66,13 +75,22 @@ Set the attribute:
 
 ```bash
 export AGENT_BROWSER_SESSION="$(agent-browser session id --scope worktree --prefix loop)"
-agent-browser set viewport 1280 900
+theme() { agent-browser eval "document.documentElement.setAttribute('data-theme','$1')"; }
+
 agent-browser open http://localhost:$PORT/activity/cycling
-agent-browser screenshot tmp/desktop-light.png
-agent-browser eval "document.documentElement.setAttribute('data-theme','dark'); document.documentElement.classList.add('dark')"
-agent-browser screenshot tmp/desktop-dark.png
+
+agent-browser set viewport 1280 900
+theme light; agent-browser screenshot tmp/desktop-light.png
+theme dark;  agent-browser screenshot tmp/desktop-dark.png
+
 agent-browser set viewport 390 844
+theme light; agent-browser screenshot tmp/phone-light.png
+theme dark;  agent-browser screenshot tmp/phone-dark.png
 ```
+
+Set the attribute for light too. `static/toggle-theme.js` restores whatever
+`localStorage` holds, and the browser session outlives a run, so a shot taken
+without setting it carries the theme the last run left behind.
 
 Both widths and both themes, every time. 390px is where the photo strip
 wrapped and the lightbox clipped. 1280px is where the month rail appears at
