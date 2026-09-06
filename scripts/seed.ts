@@ -11,6 +11,9 @@
 // opposite, so read the flag as "the real rides" rather than "against
 // production".
 //
+// A run replaces what the local database holds, so the rides in it are the
+// ones the last run asked for.
+//
 //   npm run seed              synthetic rides, three years of them
 //   npm run seed -- --remote  the real rides, exported from production D1
 
@@ -25,9 +28,13 @@ import {
   type PowerBest,
   type PublishedActivity,
 } from "../src/activity/publish";
+import type { ActivityStore } from "../src/activity/store";
 import { seedRides, type SeededRide } from "../src/test/rides";
 
 const DATABASE = "bendrucker-activity";
+
+/** Every seeded photo lives under this prefix, which a run clears first. */
+const PHOTO_PREFIX = "raw/strava/";
 
 const PHOTO_WIDTH = 960;
 const PHOTO_HEIGHT = 640;
@@ -39,6 +46,8 @@ async function main(): Promise<void> {
 
   const { store, env, dispose } = await connectD1();
   try {
+    await clear(store, env.RAW);
+
     const rides = remote ? exportProduction() : seedRides();
     for (const { activity, bests } of rides) {
       await publishActivity(store, activity);
@@ -70,6 +79,26 @@ function applyMigrations(): void {
   execFileSync("wrangler", ["d1", "migrations", "apply", DATABASE, "--local"], {
     stdio: "inherit",
   });
+}
+
+/**
+ * Publishing is an upsert, so whatever the last run wrote survives this one:
+ * a synthetic seed after a `--remote` one leaves both sets of rides, and a
+ * row whose shape changed keeps its old columns. Dropping first makes the
+ * database hold the rides the run was asked for and nothing else.
+ */
+async function clear(store: ActivityStore, bucket: R2Bucket): Promise<void> {
+  await store.db.deleteFrom("activityPowerCurve").execute();
+  await store.db.deleteFrom("activityFeed").execute();
+
+  let cursor: string | undefined;
+  do {
+    const listed = await bucket.list({ prefix: PHOTO_PREFIX, cursor });
+    await Promise.all(
+      listed.objects.map((object) => bucket.delete(object.key)),
+    );
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor !== undefined);
 }
 
 // The columns as raw SQL returns them, which is snake case: the CamelCase
@@ -152,8 +181,7 @@ function exportProduction(): SeededRide[] {
 }
 
 function powerSource(value: string): PublishedActivity["powerSource"] {
-  if (value === "measured" || value === "estimated") return value;
-  return "none";
+  return z.enum(["measured", "estimated", "none"]).parse(value);
 }
 
 function query<T>(schema: z.ZodType<T>, sql: string): T[] {
