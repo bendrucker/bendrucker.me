@@ -1,103 +1,66 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
+import type { Cut } from "@/photos";
 import {
-  isImageKey,
   isPhotoKey,
-  isVideoKey,
   PHOTO_CACHE,
-  PHOTO_CACHE_CONTROL,
-  photoUrl,
+  serveThumbnail,
   THUMBNAIL_PX,
   THUMBNAIL_VERSION,
 } from "@/photos";
+
+const SQUARE = {
+  width: THUMBNAIL_PX,
+  height: THUMBNAIL_PX,
+  fit: "cover",
+} as const;
 
 /**
  * The transform, or null where it fails. Narrower than a `try` around the
  * response itself, which would redirect on a failure to read the result.
  */
-async function cut(body: Parameters<typeof env.IMAGES.input>[0]) {
+const image: Cut = async (body) => {
   try {
-    return await env.IMAGES.input(body)
-      .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
+    const square = await env.IMAGES.input(body)
+      .transform(SQUARE)
       .output({ format: "image/jpeg", quality: 80 });
+    return { body: square.image(), contentType: square.contentType() };
   } catch {
     return null;
   }
-}
+};
 
 /**
- * The same square for a video, cut from its first frame, or null where it
- * fails. A transform that fails on the far side answers with a status rather
- * than throwing, and that body must not be cached for a year as a poster.
+ * The same square for a video, cut from its first frame. A transform that fails
+ * on the far side answers with a status rather than throwing, and that body must
+ * not be cached for a year as a poster.
  */
-async function cutFrame(body: Parameters<typeof env.MEDIA.input>[0]) {
+const frame: Cut = async (body) => {
   try {
-    const frame = await env.MEDIA.input(body)
-      .transform({ width: THUMBNAIL_PX, height: THUMBNAIL_PX, fit: "cover" })
+    const cut = await env.MEDIA.input(body)
+      .transform(SQUARE)
       .output({ mode: "frame", time: "0s", format: "jpg" })
       .response();
-    return frame.ok ? frame : null;
+    if (!cut.ok) return null;
+    return {
+      body: cut.body,
+      contentType: cut.headers.get("content-type") ?? "image/jpeg",
+    };
   } catch {
     return null;
   }
-}
+};
 
 /**
- * The 48px square a card shows, cut from the photo: a Strava original is
- * several hundred kilobytes, and a log renders a strip of them per ride. A
- * video's square is cut from its first frame through the Media binding, since
- * the Images binding refuses one and the original runs to megabytes.
+ * The 48px square a card shows, cut from the photo: a Strava original is several
+ * hundred kilobytes, and a log renders a strip of them per ride.
  */
 export const GET: APIRoute = async ({ params, cache }) => {
   if (params.version !== String(THUMBNAIL_VERSION) || !isPhotoKey(params.key)) {
     return new Response("Not Found", { status: 404 });
   }
 
-  const object = await env.RAW.get(params.key);
-  if (object === null) {
-    return new Response("Not Found", { status: 404 });
-  }
-
-  // The URL names the transform, so the original's tag is the thumbnail's.
-  const square = (body: BodyInit | null, type: string) => {
-    cache.set({ ...PHOTO_CACHE, etag: object.httpEtag });
-    return new Response(body, {
-      headers: {
-        "content-type": type,
-        "cache-control": PHOTO_CACHE_CONTROL,
-        etag: object.httpEtag,
-      },
-    });
-  };
-
-  if (isVideoKey(params.key)) {
-    const frame = await cutFrame(object.body);
-    // Falling back to the original is what this route exists to avoid: a card
-    // would pull the whole video into a 48px `<img>` and paint nothing. The
-    // strip draws its own tile for a video with no frame.
-    if (frame === null) {
-      return new Response("Not Found", { status: 404 });
-    }
-    return square(
-      frame.body,
-      frame.headers.get("content-type") ?? "image/jpeg",
-    );
-  }
-
-  const thumbnail = await cut(object.body);
-  if (thumbnail === null) {
-    // The original still draws the card, but only where the key names an
-    // image. A key naming neither could be a video, and redirecting a 48px
-    // `<img>` at one downloads the whole file.
-    if (!isImageKey(params.key)) {
-      return new Response("Not Found", { status: 404 });
-    }
-    // A redirect keeps the failure short-lived at the edge.
-    return new Response(null, {
-      status: 302,
-      headers: { location: photoUrl(params.key) },
-    });
-  }
-
-  return square(thumbnail.image(), thumbnail.contentType());
+  return serveThumbnail(env.RAW, params.key, { image, frame }, (etag) => {
+    cache.set({ ...PHOTO_CACHE, etag });
+  });
 };
