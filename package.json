@@ -43,7 +43,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.3.0",
     "@vueuse/core": "^14.4.0",
-    "astro": "7.2.7",
+    "astro": "7.3.2",
     "culori": "^4.0.2",
     "date-fns": "^4.4.0",
     "embla-carousel-vue": "^8.6.0",
