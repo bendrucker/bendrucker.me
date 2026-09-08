@@ -41,7 +41,7 @@
     "@mapbox/vector-tile": "^3.0.0",
     "@sentry/cloudflare": "^10.70.0",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.3.0",
     "@vueuse/core": "^14.4.0",
     "astro": "7.2.2",
     "culori": "^4.0.2",
