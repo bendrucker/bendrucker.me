@@ -83,7 +83,7 @@
     "histoire": "^1.0.0-beta.1",
     "linguist-languages": "^9.4.0",
     "opentype.js": "^2.0.0",
-    "oxlint": "^1.78.0",
+    "oxlint": "^1.80.0",
     "oxlint-tsgolint": "^7.0.2001",
     "png-to-ico": "^3.0.2",
     "prettier": "^3.9.6",
