@@ -6,6 +6,11 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 14
+    groups:
+      oxlint:
+        patterns:
+          - "oxlint"
+          - "eslint-plugin-oxlint"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
