@@ -7,6 +7,10 @@ updates:
     cooldown:
       default-days: 14
     groups:
+      astro:
+        patterns:
+          - "astro"
+          - "@astrojs/*"
       oxlint:
         patterns:
           - "oxlint"
