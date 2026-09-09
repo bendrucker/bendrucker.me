@@ -1,0 +1,31 @@
+---
+import RepoRow from "@/components/activity/RepoRow.vue";
+import RideRow from "@/components/cycling/RideRow.vue";
+import { SITE } from "@/config";
+import { loadRecentActivity } from "@/home/load";
+import Rail from "./Rail.astro";
+
+/** The two rails every homepage variant shows beneath its masthead. */
+const { rides, repos } = await loadRecentActivity();
+---
+
+<div class="page-column flex flex-col gap-10 pt-8 pb-12 sm:gap-12 sm:pt-10">
+  <Rail label="Cycling" href="/activity/cycling" link="All rides">
+    {
+      rides.map((ride) => (
+        <li>
+          <RideRow ride={ride} />
+        </li>
+      ))
+    }
+  </Rail>
+  <Rail label="Code" href="/activity/code" link="All repos">
+    {
+      repos.map((repo) => (
+        <li>
+          <RepoRow repo={repo} username={SITE.githubUsername} />
+        </li>
+      ))
+    }
+  </Rail>
+</div>

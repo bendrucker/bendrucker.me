@@ -2,32 +2,27 @@
 import Home from "@/layouts/Home.astro";
 
 /**
- * The three homepage layouts under comparison, each a page of its own so
- * they can be opened side by side. The band above is the one they share.
+ * The homepage mastheads under comparison, each a page of its own over the
+ * same rails.
  */
 const variants = [
   {
-    href: "/design/home/columns",
-    label: "Columns",
-    note: "Cycling and code side by side, stacked on a phone.",
+    href: "/design/home/text",
+    label: "Text",
+    note: "The default header with a one-line introduction beneath it.",
   },
   {
-    href: "/design/home/stacked",
-    label: "Stacked",
-    note: "Full-width cycling section, then a full-width code section.",
-  },
-  {
-    href: "/design/home/feed",
-    label: "Feed",
-    note: "One chronological feed with each item marked by its source.",
+    href: "/design/home/band",
+    label: "Band",
+    note: "The photo masthead at half height under the nav-only header.",
   },
 ];
 ---
 
 <Home sourcePath="src/pages/design/home/index.astro">
-  <div class="mx-auto w-full max-w-home px-5 pt-6 sm:pt-11">
+  <div class="page-column pt-8">
     <h2 class="text-xs tracking-[0.14em] text-foreground/45 uppercase">
-      Layouts
+      Mastheads
     </h2>
     <ul role="list" class="mt-3 flex flex-col gap-3">
       {

@@ -1,25 +1,28 @@
 ---
 import Layout from "./Layout.astro";
 import Band from "@/components/home/Band.astro";
+import Intro from "@/components/home/Intro.astro";
 
 /**
- * What every homepage variant shares: the site chrome in its home form, the
- * band, and the main landmark. A variant supplies only the rails.
+ * What every homepage variant shares: the site chrome, a masthead, and the
+ * main landmark. The band is the photo masthead at half height under the
+ * nav-only header; the text masthead is a line under the default header.
  */
 export interface Props {
   sourcePath: string;
+  masthead?: "band" | "text";
 }
 
-const { sourcePath } = Astro.props;
+const { sourcePath, masthead = "text" } = Astro.props;
 ---
 
 <Layout
   description="Programmer, cyclist, and photographer."
   sourcePath={sourcePath}
-  headerVariant="home"
+  headerVariant={masthead === "band" ? "home" : "default"}
 >
   <main id="main-content" data-layout="index">
-    <Band />
+    {masthead === "band" ? <Band /> : <Intro />}
     <slot />
   </main>
 </Layout>
