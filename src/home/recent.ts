@@ -7,7 +7,6 @@ import { SITE } from "@/config";
 import type { Database } from "@/db";
 import { differenceInCalendarDays } from "date-fns";
 
-/** How far back a homepage rail reaches. */
 export const RECENT_DAYS = 30;
 /** What a rail shows when the window holds less than this: the latest few. */
 export const RECENT_MIN = 3;

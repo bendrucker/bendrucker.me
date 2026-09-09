@@ -9,7 +9,6 @@ const LABELS: readonly RecencyLabel[] = [
   "earlier",
 ];
 
-/** Which shelf a date belongs on, when a list is sorted newest first. */
 export function recencyLabel(date: Date, now: Date = new Date()): RecencyLabel {
   const days = differenceInCalendarDays(now, date);
   if (days <= 0) return "today";

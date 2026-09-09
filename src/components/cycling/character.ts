@@ -2,7 +2,6 @@ import type { IconName, Ride } from "@/activity/types";
 
 export type RideTraitKind = "race" | "long" | "hilly";
 
-/** One thing worth saying about a ride at a glance, as an icon with a name. */
 export interface RideTrait {
   kind: RideTraitKind;
   icon: IconName;
@@ -24,10 +23,6 @@ const HILLY = { kind: "hilly", icon: "mountain", label: "Hilly" } as const;
  */
 const RACE_NAME = /\b(race|crit|criterium|tt|time trial)\b/i;
 
-/**
- * What a ride was, in the order worth reading: a race first, then how long
- * it was, then how hilly. A ride with none of these is an ordinary one.
- */
 export function rideTraits(ride: Ride): RideTrait[] {
   const traits: RideTrait[] = [];
   if (
