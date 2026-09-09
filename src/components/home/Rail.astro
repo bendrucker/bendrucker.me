@@ -4,15 +4,16 @@ import RailHeading from "./RailHeading.astro";
 /** A homepage section: its heading row, then a list of rows. */
 export interface Props {
   label: string;
+  icon: "bike" | "code";
   href: string;
   link: string;
 }
 
-const { label, href, link } = Astro.props;
+const { label, icon, href, link } = Astro.props;
 ---
 
 <section>
-  <RailHeading label={label} href={href} link={link} />
+  <RailHeading label={label} icon={icon} href={href} link={link} />
   <ul role="list">
     <slot />
   </ul>

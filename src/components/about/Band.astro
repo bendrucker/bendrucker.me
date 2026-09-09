@@ -6,9 +6,9 @@ import IconBridge from "@/assets/icons/IconBridge.svg";
 import { SITE } from "@/config";
 
 /**
- * The masthead at half its height: the same photo, cropped to head and
- * shoulders, with the name and the city over it. The rails beneath are the
- * navigation the full masthead's link row used to carry.
+ * The photo masthead at half its height, cropped to head and shoulders,
+ * with the name and the city over it. The name is the way home, since the
+ * nav-only header above it carries no site title.
  */
 ---
 
@@ -48,11 +48,12 @@ import { SITE } from "@/config";
     <div
       class="flex w-full items-end justify-between gap-3 sm:max-w-home sm:px-5"
     >
-      <h1
+      <a
+        href="/"
         class="rounded-sm bg-background/66 px-3 py-1.5 text-2xl leading-[1.15] font-semibold tracking-[-0.03em] whitespace-nowrap backdrop-blur-xs sm:px-4 sm:py-2 sm:text-4xl sm:tracking-[-0.035em]"
       >
         {SITE.title}
-      </h1>
+      </a>
       <span
         class="flex items-center gap-1.5 rounded-sm bg-background/66 px-2.5 py-1.5 text-xs whitespace-nowrap text-foreground/60 backdrop-blur-xs sm:gap-2 sm:px-3.5 sm:py-2 sm:text-base"
       >

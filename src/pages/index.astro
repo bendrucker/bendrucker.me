@@ -1,33 +1,8 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import Masthead from "@/components/home/Masthead.astro";
-import WritingNote from "@/components/home/WritingNote.astro";
+import Rails from "@/components/home/Rails.astro";
+import Home from "@/layouts/Home.astro";
 ---
 
-<Layout
-  description="Programmer, cyclist, and photographer."
-  sourcePath="src/pages/index.astro"
-  headerVariant="home"
->
-  <main id="main-content" data-layout="index">
-    <Masthead />
-    <WritingNote />
-    <p class="page-column pb-10 text-sm text-foreground/60">
-      <a
-        href="/design/home"
-        class="underline decoration-dashed underline-offset-4 hover:text-accent"
-      >
-        Homepage drafts
-      </a>
-    </p>
-  </main>
-</Layout>
-
-<script>
-  document.addEventListener("astro:page-load", () => {
-    const mainContent = document.querySelector("#main-content");
-    if (mainContent instanceof HTMLElement && mainContent.dataset.layout) {
-      sessionStorage.setItem("backUrl", "/");
-    }
-  });
-</script>
+<Home sourcePath="src/pages/index.astro">
+  <Rails />
+</Home>

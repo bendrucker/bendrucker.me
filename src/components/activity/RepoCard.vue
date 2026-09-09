@@ -9,6 +9,7 @@ import {
 import type { Repo } from "@/activity/types";
 import LucideIcon from "@/components/LucideIcon.vue";
 import ActivityTooltip from "./ActivityTooltip.vue";
+import { formatStarCount } from "./format";
 
 const props = defineProps<{
   repo: Repo;
@@ -43,12 +44,6 @@ const relativeDate = computed(() => {
 });
 
 const fullDate = computed(() => format(lastActivityDate.value, "PPPp"));
-
-function formatStarCount(count: number): string {
-  if (count < 1000) return count.toString();
-  const thousands = Math.floor(count / 100) / 10;
-  return `${thousands}k`;
-}
 
 function getGitHubSearchUrl(type: "pr" | "review" | "issue" | "merge"): string {
   const repo = props.repo;

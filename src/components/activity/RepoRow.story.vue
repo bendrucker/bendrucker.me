@@ -10,7 +10,7 @@ const username = "bendrucker";
 const hoursAgo = (hours: number) =>
   new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
 
-const summary = {
+const quiet = {
   prCount: 0,
   reviewCount: 0,
   issueCount: 0,
@@ -28,7 +28,13 @@ const repos: Repo[] = [
     stargazerCount: 12,
     createdAt: "2013-01-01T00:00:00Z",
     lastActivity: hoursAgo(3),
-    activitySummary: summary,
+    activitySummary: {
+      prCount: 14,
+      reviewCount: 3,
+      issueCount: 2,
+      mergeCount: 12,
+      hasMergedPRs: true,
+    },
     years: [2026],
   },
   {
@@ -38,10 +44,16 @@ const repos: Repo[] = [
       "Terraform GitHub provider, a long description that runs well past the room a row gives it and has to truncate",
     url: "https://github.com/integrations/terraform-provider-github",
     primaryLanguage: { name: "Go", color: "#00ADD8", extension: "go" },
-    stargazerCount: 900,
+    stargazerCount: 6400,
     createdAt: "2017-06-01T00:00:00Z",
     lastActivity: hoursAgo(30),
-    activitySummary: summary,
+    activitySummary: {
+      prCount: 2,
+      reviewCount: 0,
+      issueCount: 1,
+      mergeCount: 1,
+      hasMergedPRs: true,
+    },
     years: [2026],
   },
   {
@@ -53,7 +65,7 @@ const repos: Repo[] = [
     stargazerCount: 0,
     createdAt: null,
     lastActivity: "2026-08-14T18:00:00Z",
-    activitySummary: summary,
+    activitySummary: quiet,
     years: [2026],
   },
 ];
@@ -99,8 +111,8 @@ function initState() {
 <docs lang="md">
 # Repo row
 
-A repository as one line in a list. The three rows cover a personal repo
-touched this week, an external one whose owner is shown and whose description
-truncates, and one with neither description nor language. Below the small
-breakpoint the description is dropped rather than truncated.
+A repository as a few lines in a list. The three rows cover a personal repo
+touched today with every count, an external one whose owner is shown and
+whose description truncates, and one with neither description, language, nor
+activity. Below the small breakpoint the description takes a line of its own.
 </docs>

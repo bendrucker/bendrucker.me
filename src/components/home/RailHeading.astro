@@ -5,19 +5,27 @@
  */
 export interface Props {
   label: string;
+  icon: "bike" | "code";
   href: string;
   /** The link's text, naming what the full page holds: "All rides". */
   link: string;
   as?: "h2" | "h3";
 }
 
-const { label, href, link, as: Tag = "h2" } = Astro.props;
+const { label, icon, href, link, as: Tag = "h2" } = Astro.props;
+
+/** Written out, since Tailwind never sees an interpolated class. */
+const iconClass =
+  icon === "bike" ? "icon-[lucide--bike]" : "icon-[lucide--code]";
 ---
 
 <div
   class="flex items-baseline justify-between gap-4 border-b border-border pb-2.5"
 >
-  <Tag class="text-xs tracking-[0.14em] text-foreground/45 uppercase">
+  <Tag
+    class="flex items-center gap-1.5 text-xs tracking-[0.14em] text-foreground/45 uppercase"
+  >
+    <span class:list={[iconClass, "size-3.5"]} aria-hidden="true"></span>
     {label}
   </Tag>
   <a
