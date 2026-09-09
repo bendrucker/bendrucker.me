@@ -114,5 +114,5 @@ function initState() {
 A repository as one line in a list. The three rows cover a personal repo
 touched today, an external one whose owner is shown and whose description
 truncates, and one with no description. Below the small breakpoint the
-description takes the line beneath the name.
+description takes the line beneath the name and the owner is left off.
 </docs>

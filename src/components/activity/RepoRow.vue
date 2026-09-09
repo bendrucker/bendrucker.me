@@ -6,7 +6,9 @@ import { formatRecency } from "@/components/recency";
 
 /**
  * One repository as a line in a list: the name, what it is, and how long
- * ago. Below the small breakpoint the description takes the line beneath.
+ * ago. Below the small breakpoint the description takes the line beneath
+ * and an external repository's owner is left off, since the name is what
+ * the reader recognizes and a phone has no room for both.
  */
 const props = defineProps<{ repo: Repo; username: string; now?: Date }>();
 
@@ -26,7 +28,8 @@ const full = computed(() => format(last.value, "PPPp"));
       rel="noopener noreferrer"
       class="max-w-full min-w-0 flex-1 truncate hover:text-accent sm:flex-none"
     >
-      <span v-if="isExternal" class="text-foreground/50">{{ repo.owner }}/</span
+      <span v-if="isExternal" class="hidden text-foreground/50 sm:inline"
+        >{{ repo.owner }}/</span
       >{{ repo.name }}
     </a>
     <time
