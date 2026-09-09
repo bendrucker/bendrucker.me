@@ -2,11 +2,11 @@
 import { computed } from "vue";
 import { format } from "date-fns";
 import type { Repo } from "@/activity/types";
-import LanguageLogo from "./LanguageLogo.vue";
+import LanguageMark from "./LanguageMark.vue";
 
 /**
  * One repository as a line in a list: the name, what it is, and its
- * language as a logo. In a narrow list the description takes the line
+ * language's extension in the corner. In a narrow list the description takes the line
  * beneath and an external repository's owner is left off, since the name
  * is what the reader recognizes and there is no room for both. The list
  * is the container, so a column on a wide page reads the same as a phone.
@@ -22,7 +22,7 @@ const title = computed(
 
 <template>
   <div
-    class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-muted py-2.5 text-sm"
+    class="relative flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-muted py-2.5 pr-8 text-sm"
   >
     <a
       :href="repo.url"
@@ -35,14 +35,13 @@ const title = computed(
         >{{ repo.owner }}/</span
       >{{ repo.name }}
     </a>
-    <LanguageLogo
+    <LanguageMark
       v-if="repo.primaryLanguage"
       :language="repo.primaryLanguage"
-      class="order-2 self-center @md:order-3"
     />
     <span
       v-if="repo.description"
-      class="order-3 min-w-0 basis-full truncate text-xs text-foreground/55 @md:order-2 @md:flex-1 @md:basis-0 @md:text-sm"
+      class="min-w-0 basis-full truncate text-xs text-foreground/55 @md:flex-1 @md:basis-0 @md:text-sm"
     >
       {{ repo.description }}
     </span>
