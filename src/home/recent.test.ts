@@ -59,6 +59,30 @@ describe("queryRecentActivity", () => {
     expect(recent.repos.map((r) => r.name)).toEqual(["newest", "mid", "older"]);
   });
 
+  it("passes over the everyday personal repos, but not a fork of one", async () => {
+    await seed(db, [
+      {
+        owner: "bendrucker",
+        name: "dotfiles",
+        activity: [{ lastActivity: 500 }],
+      },
+      { owner: "other", name: "dotfiles", activity: [{ lastActivity: 400 }] },
+      {
+        owner: "bendrucker",
+        name: "claude",
+        activity: [{ lastActivity: 300 }],
+      },
+      { owner: "bendrucker", name: "kept", activity: [{ lastActivity: 200 }] },
+    ]);
+
+    const recent = await queryRecentActivity(db, NOW);
+
+    expect(recent.repos.map((r) => `${r.owner}/${r.name}`)).toEqual([
+      "other/dotfiles",
+      "bendrucker/kept",
+    ]);
+  });
+
   it("renders empty rails from an empty database", async () => {
     const recent = await queryRecentActivity(db, NOW);
     expect(recent).toEqual({ rides: [], repos: [] });
