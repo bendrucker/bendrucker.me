@@ -5,29 +5,79 @@ import { SITE } from "@/config";
 import { loadRecentActivity } from "@/home/load";
 import Rail from "./Rail.astro";
 
-/** The homepage's two rails side by side, rides above repositories on a phone. */
+/**
+ * The homepage's two rails side by side, or one at a time on a phone,
+ * where a pair of radio buttons styled as the rail headings picks which.
+ * No script: a `:has()` rule hides the rail whose radio is not checked.
+ */
 const { rides, repos } = await loadRecentActivity();
+
+const tab =
+  "flex cursor-pointer items-center gap-1.5 border-b-2 border-transparent pb-2 text-xs tracking-[0.14em] text-foreground/45 uppercase";
 ---
 
-<div
-  class="page-column grid gap-x-8 gap-y-8 pt-6 pb-12 sm:grid-cols-2 sm:gap-x-10 sm:pt-8"
->
-  <Rail label="Cycling" icon="bike" href="/activity/cycling" link="All rides">
-    {
-      rides.map((ride) => (
-        <li>
-          <RideRow ride={ride} />
-        </li>
-      ))
-    }
-  </Rail>
-  <Rail label="Code" icon="code" href="/activity/code" link="All repos">
-    {
-      repos.map((repo) => (
-        <li>
-          <RepoRow repo={repo} username={SITE.githubUsername} />
-        </li>
-      ))
-    }
-  </Rail>
+<div class="page-column pt-6 pb-12 sm:pt-8" data-rails>
+  <fieldset class="flex gap-6 border-b border-border sm:hidden">
+    <legend class="sr-only">Which activity to show</legend>
+    <input type="radio" name="rail" id="rail-cycling" class="sr-only" checked />
+    <label for="rail-cycling" class={tab}>
+      <span class="icon-[lucide--bike] size-3.5" aria-hidden="true"></span>
+      Cycling
+    </label>
+    <input type="radio" name="rail" id="rail-code" class="sr-only" />
+    <label for="rail-code" class={tab}>
+      <span class="icon-[lucide--code] size-3.5" aria-hidden="true"></span>
+      Code
+    </label>
+  </fieldset>
+  <div class="grid gap-x-8 sm:grid-cols-2 sm:gap-x-10">
+    <div data-rail="cycling">
+      <Rail
+        label="Cycling"
+        icon="bike"
+        href="/activity/cycling"
+        link="All rides"
+      >
+        {
+          rides.map((ride) => (
+            <li>
+              <RideRow ride={ride} />
+            </li>
+          ))
+        }
+      </Rail>
+    </div>
+    <div data-rail="code">
+      <Rail label="Code" icon="code" href="/activity/code" link="All repos">
+        {
+          repos.map((repo) => (
+            <li>
+              <RepoRow repo={repo} username={SITE.githubUsername} />
+            </li>
+          ))
+        }
+      </Rail>
+    </div>
+  </div>
 </div>
+
+<style>
+  @media (width < 40rem) {
+    [data-rails]:has(#rail-code:checked) [data-rail="cycling"],
+    [data-rails]:has(#rail-cycling:checked) [data-rail="code"] {
+      display: none;
+    }
+
+    [data-rails]:has(#rail-cycling:checked) label[for="rail-cycling"],
+    [data-rails]:has(#rail-code:checked) label[for="rail-code"] {
+      margin-bottom: -1px;
+      border-color: var(--color-accent);
+      color: var(--color-foreground);
+    }
+
+    [data-rails] input:focus-visible + label {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+  }
+</style>

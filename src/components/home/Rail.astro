@@ -1,7 +1,11 @@
 ---
 import RailHeading from "./RailHeading.astro";
 
-/** A homepage section: its heading row, then a list of rows. */
+/**
+ * A homepage section: its heading row, then a list of rows. On a phone the
+ * tabs above stand in for the heading, so the link to the full page moves
+ * beneath the list.
+ */
 export interface Props {
   label: string;
   icon: "bike" | "code";
@@ -13,8 +17,17 @@ const { label, icon, href, link } = Astro.props;
 ---
 
 <section>
-  <RailHeading label={label} icon={icon} href={href} link={link} />
+  <div class="hidden sm:block">
+    <RailHeading label={label} icon={icon} href={href} link={link} />
+  </div>
   <ul role="list" class="@container">
     <slot />
   </ul>
+  <a
+    href={href}
+    class="mt-3 inline-flex items-center gap-1 text-xs text-foreground/60 underline decoration-dashed underline-offset-4 hover:text-accent sm:hidden"
+  >
+    {link}
+    <span class="icon-[lucide--arrow-right] size-3.5" aria-hidden="true"></span>
+  </a>
 </section>
