@@ -2,14 +2,23 @@
 import RepoRow from "@/components/activity/RepoRow.vue";
 import RideRow from "@/components/cycling/RideRow.vue";
 import { SITE } from "@/config";
+import { latelySentence } from "@/home/lately";
 import { loadRecentActivity } from "@/home/load";
 import Rail from "./Rail.astro";
 
-/** The homepage's two rails: the latest rides, then the latest repositories. */
-const { rides, repos } = await loadRecentActivity();
+/**
+ * The week in a sentence, then the two rails side by side, rides above
+ * repositories on a phone.
+ */
+const { rides, repos, week } = await loadRecentActivity();
 ---
 
-<div class="page-column flex flex-col gap-8 pt-6 pb-12 sm:gap-10 sm:pt-8">
+<p class="page-column pt-2 text-base text-foreground/60">
+  {latelySentence(week)}
+</p>
+<div
+  class="page-column grid gap-x-8 gap-y-8 pt-6 pb-12 sm:grid-cols-2 sm:gap-x-10 sm:pt-8"
+>
   <Rail label="Cycling" icon="bike" href="/activity/cycling" link="All rides">
     {
       rides.map((ride) => (

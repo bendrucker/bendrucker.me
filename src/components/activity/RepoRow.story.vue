@@ -92,7 +92,7 @@ function initState() {
         <PreviewControls :controls="controls" :state="state" />
         <ul
           role="list"
-          class="border-t border-muted"
+          class="@container border-t border-muted"
           :style="{ width: `${state.width}px`, maxWidth: '100%' }"
         >
           <li v-for="repo in repos" :key="repo.url">
@@ -113,6 +113,6 @@ function initState() {
 
 A repository as one line in a list. The three rows cover a personal repo
 touched today, an external one whose owner is shown and whose description
-truncates, and one with no description. Below the small breakpoint the
-description takes the line beneath the name and the owner is left off.
+truncates, and one with no description. Narrow the list and the description
+takes the line beneath the name and the owner is left off.
 </docs>

@@ -31,7 +31,7 @@ function initState() {
         <UnitsProvider :units="state.units">
           <ul
             role="list"
-            class="border-t border-muted"
+            class="@container border-t border-muted"
             :style="{ width: `${state.width}px`, maxWidth: '100%' }"
           >
             <li v-for="ride in rides" :key="ride.id">

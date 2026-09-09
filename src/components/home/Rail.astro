@@ -14,7 +14,7 @@ const { label, icon, href, link } = Astro.props;
 
 <section>
   <RailHeading label={label} icon={icon} href={href} link={link} />
-  <ul role="list">
+  <ul role="list" class="@container">
     <slot />
   </ul>
 </section>
