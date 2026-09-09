@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, test, expect, beforeEach } from "vitest";
 import type { Kysely } from "kysely";
 import type { Database } from "@/db";
 import { createTestDb, seed, testStore } from "@/test/db";
 import { publishActivity, type PublishedActivity } from "@/activity/publish";
 import type { ActivityStore } from "@/activity/store";
-import { queryRecentActivity, RECENT_COUNT } from "./recent";
+import {
+  queryRecentActivity,
+  RECENT_MAX,
+  RECENT_MIN,
+  recentWindow,
+} from "./recent";
 
 let db: Kysely<Database>;
 let store: ActivityStore;
@@ -36,7 +41,7 @@ function ride(id: string, day: number): PublishedActivity {
 }
 
 describe("queryRecentActivity", () => {
-  it("takes the newest rides, each with its track, and the latest repos", async () => {
+  it("takes the month's rides newest first and the latest few old repos", async () => {
     for (const day of [3, 11, 7, 1, 9]) {
       await publishActivity(store, ride(`r${day}`, day));
     }
@@ -53,9 +58,13 @@ describe("queryRecentActivity", () => {
 
     const recent = await queryRecentActivity(db, NOW);
 
-    expect(recent.rides.map((r) => r.id)).toEqual(["r11", "r9", "r7"]);
-    expect(recent.rides).toHaveLength(RECENT_COUNT);
-    expect(recent.rides.every((r) => r.route !== undefined)).toBe(true);
+    expect(recent.rides.map((r) => r.id)).toEqual([
+      "r11",
+      "r9",
+      "r7",
+      "r3",
+      "r1",
+    ]);
     expect(recent.repos.map((r) => r.name)).toEqual(["newest", "mid", "older"]);
   });
 
@@ -86,5 +95,31 @@ describe("queryRecentActivity", () => {
   it("renders empty rails from an empty database", async () => {
     const recent = await queryRecentActivity(db, NOW);
     expect(recent).toEqual({ rides: [], repos: [] });
+  });
+});
+
+describe("recentWindow", () => {
+  const now = new Date("2026-03-15T12:00:00Z");
+  const daysAgo = (days: number) =>
+    new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  test.each<{ name: string; ages: number[]; expected: number }>([
+    { name: "nothing", ages: [], expected: 0 },
+    { name: "one old item", ages: [90], expected: 1 },
+    {
+      name: "a quiet month keeps the latest few",
+      ages: [40, 50, 60, 70],
+      expected: RECENT_MIN,
+    },
+    { name: "a normal month", ages: [1, 5, 12, 20, 29, 31, 45], expected: 5 },
+    {
+      name: "a busy month is capped",
+      ages: Array.from({ length: 30 }, (_, i) => i),
+      expected: RECENT_MAX,
+    },
+  ])("$name", ({ ages, expected }) => {
+    const items = ages.map((age) => daysAgo(age));
+    expect(recentWindow(items, (item) => item, now)).toEqual(
+      items.slice(0, expected),
+    );
   });
 });

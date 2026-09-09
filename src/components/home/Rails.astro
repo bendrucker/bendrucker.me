@@ -7,9 +7,9 @@ import Rail from "./Rail.astro";
 
 /**
  * The homepage's two rails side by side, or on a phone a track that snaps
- * one rail at a time, swiped or tapped into view through the tab row.
- * The track scrolls without the script; the script keeps the tabs in
- * step with it.
+ * one rail at a time, swiped or tapped into view through the tab row,
+ * which sticks to the top while the rail scrolls. The track scrolls
+ * without the script; the script keeps the tabs in step with it.
  */
 const { rides, repos } = await loadRecentActivity();
 
@@ -21,7 +21,7 @@ const tab =
   <div
     role="tablist"
     aria-label="Activity"
-    class="flex gap-6 border-b border-border sm:hidden"
+    class="sticky top-0 z-10 flex gap-6 border-b border-border bg-background pt-3 sm:hidden"
   >
     <button
       type="button"
