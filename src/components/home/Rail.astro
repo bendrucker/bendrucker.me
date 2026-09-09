@@ -2,9 +2,9 @@
 import RailHeading from "./RailHeading.astro";
 
 /**
- * A homepage section: its heading row, then a list of rows. On a phone the
- * tabs above stand in for the heading, so the link to the full page moves
- * beneath the list.
+ * A homepage section: its heading row, the stat band, then a list of rows.
+ * On a phone the tabs above stand in for the heading, so the link to the
+ * full page moves beneath the list.
  */
 export interface Props {
   label: string;
@@ -20,6 +20,7 @@ const { label, icon, href, link } = Astro.props;
   <div class="hidden sm:block">
     <RailHeading label={label} icon={icon} href={href} link={link} />
   </div>
+  <slot name="band" />
   <ul role="list" class="@container">
     <slot />
   </ul>

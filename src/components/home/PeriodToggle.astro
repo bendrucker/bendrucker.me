@@ -1,0 +1,43 @@
+---
+import { PERIODS, type Period } from "@/home/stats";
+
+/**
+ * The window the stat bands cover, chosen once for the whole page. A radio
+ * group rather than tabs: the rails beneath stay put, only their numbers
+ * change. The script in `Rails.astro` reads the choice and moves the
+ * numbers.
+ */
+export interface Props {
+  selected: Period;
+}
+
+const { selected } = Astro.props;
+
+const NAMES: Record<Period, string> = {
+  month: "This month",
+  year: "This year",
+  all: "All time",
+};
+---
+
+<div
+  role="radiogroup"
+  aria-label="Totals over"
+  data-period-toggle
+  class="flex divide-x divide-border overflow-hidden rounded-md border border-border text-[11px] sm:inline-flex"
+>
+  {
+    PERIODS.map((period) => (
+      <button
+        type="button"
+        role="radio"
+        aria-checked={period === selected}
+        data-period={period}
+        tabindex={period === selected ? 0 : -1}
+        class="flex-1 px-3 py-1.5 text-center whitespace-nowrap text-foreground/70 transition-colors hover:text-foreground aria-checked:bg-foreground aria-checked:font-bold aria-checked:text-background sm:flex-none sm:py-1"
+      >
+        {NAMES[period]}
+      </button>
+    ))
+  }
+</div>

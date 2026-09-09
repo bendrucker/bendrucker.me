@@ -1,0 +1,68 @@
+---
+import { formatStat, type StatKind } from "@/home/format";
+import { PERIODS, type ByPeriod, type Period } from "@/home/stats";
+
+/**
+ * The numbers across the top of a rail. A stat carrying a value per period
+ * follows the page's toggle; one carrying a single number is pinned to the
+ * caption it came with, which is how the code band stays honest while only
+ * a year of it exists.
+ */
+export interface Stat {
+  kind: StatKind;
+  value: number | ByPeriod<number>;
+  unit: string;
+  /** Names the number for the accessibility tree, where the unit is not enough. */
+  label?: string;
+}
+
+export interface Props {
+  stats: Stat[];
+  /** The caption over the band, per period when it follows the toggle. */
+  caption: string | ByPeriod<string>;
+  selected: Period;
+}
+
+const { stats, caption, selected } = Astro.props;
+
+const follows = typeof caption !== "string";
+const captionText = follows ? caption[selected] : caption;
+const captions = follows
+  ? JSON.stringify(Object.fromEntries(PERIODS.map((p) => [p, caption[p]])))
+  : undefined;
+
+function current(stat: Stat): number {
+  return typeof stat.value === "number" ? stat.value : stat.value[selected];
+}
+---
+
+<div class="border-b border-border py-3">
+  <p
+    class="mb-1.5 text-[0.65rem] tracking-[0.14em] text-foreground/40 uppercase"
+    data-period-caption={captions}
+  >
+    {captionText}
+  </p>
+  <dl class="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+    {
+      stats.map((stat) => (
+        <div class="flex items-baseline gap-1">
+          <dt class="sr-only">{stat.label ?? stat.unit}</dt>
+          <dd
+            class="font-sans text-2xl leading-none font-extrabold tracking-tight tabular-nums"
+            data-stat={typeof stat.value === "number" ? undefined : ""}
+            data-kind={stat.kind}
+            data-values={
+              typeof stat.value === "number"
+                ? undefined
+                : JSON.stringify(stat.value)
+            }
+          >
+            {formatStat(current(stat), stat.kind)}
+          </dd>
+          <dd class="text-xs font-semibold text-foreground/70">{stat.unit}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</div>

@@ -10,8 +10,8 @@ import { differenceInCalendarDays } from "date-fns";
 export const RECENT_DAYS = 30;
 /** What a rail shows when the window holds less than this: the latest few. */
 export const RECENT_MIN = 3;
-/** Where a busy month gets cut off, so the page has a bottom. */
-export const RECENT_MAX = 15;
+/** Where a busy month gets cut off: a tease, with the totals above it. */
+export const RECENT_MAX = 6;
 
 /**
  * Personal repositories touched so often they would hold the code rail

@@ -8,8 +8,9 @@ import { useUnits } from "./useUnits";
 
 /**
  * One ride as a line in a list: the name, an icon for anything notable
- * about it, and how far. A tease of the ride, for a page whose job is to
- * say what has been going on lately. When it was is the list's to say.
+ * about it, and how far, to the mile. A tease of the ride, for a page whose
+ * job is to say what has been going on lately. When it was is the list's to
+ * say.
  */
 const props = defineProps<{ ride: Ride }>();
 
@@ -42,7 +43,7 @@ const full = computed(() => rideDate(props.ride.startedAt).full);
       v-if="ride.distanceMi !== undefined"
       class="ml-auto shrink-0 text-foreground/70 tabular-nums"
     >
-      {{ formatDistance(ride.distanceMi) }} {{ distanceUnit }}
+      {{ formatDistance(ride.distanceMi, 0) }} {{ distanceUnit }}
     </span>
   </div>
 </template>
