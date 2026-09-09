@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
 import type { Repo } from "@/activity/types";
+import { SITE } from "@/config";
 import LanguageMark from "./LanguageMark.vue";
 
 /**
@@ -16,7 +18,7 @@ const props = defineProps<{ repo: Repo; username: string }>();
 const isExternal = computed(() => props.repo.owner !== props.username);
 const title = computed(
   () =>
-    `${props.repo.owner}/${props.repo.name}, last active ${format(new Date(props.repo.lastActivity), "PPP")}`,
+    `${props.repo.owner}/${props.repo.name}, last active ${format(new TZDate(new Date(props.repo.lastActivity), SITE.timezone), "PPP")}`,
 );
 </script>
 

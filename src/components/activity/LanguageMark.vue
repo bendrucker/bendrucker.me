@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { languageLabel } from "./language";
 
 /**
  * A repository's primary language in the row's corner as its file
@@ -11,10 +12,7 @@ const props = defineProps<{
   language: { name: string; color: string; extension: string | null };
 }>();
 
-const label = computed(() => {
-  const { extension, name } = props.language;
-  return extension ? extension.slice(1) : name.toLowerCase();
-});
+const label = computed(() => languageLabel(props.language));
 </script>
 
 <template>

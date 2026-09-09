@@ -24,7 +24,7 @@ const repos: Repo[] = [
     owner: username,
     description: "This is my personal website (bendrucker.me)",
     url: "https://github.com/bendrucker/bendrucker.me",
-    primaryLanguage: { name: "TypeScript", color: "#3178c6", extension: "ts" },
+    primaryLanguage: { name: "TypeScript", color: "#3178c6", extension: ".ts" },
     stargazerCount: 12,
     createdAt: "2013-01-01T00:00:00Z",
     lastActivity: hoursAgo(3),
@@ -43,7 +43,7 @@ const repos: Repo[] = [
     description:
       "Terraform GitHub provider, a long description that runs well past the room a row gives it and has to truncate",
     url: "https://github.com/integrations/terraform-provider-github",
-    primaryLanguage: { name: "Go", color: "#00ADD8", extension: "go" },
+    primaryLanguage: { name: "Go", color: "#00ADD8", extension: ".go" },
     stargazerCount: 6400,
     createdAt: "2017-06-01T00:00:00Z",
     lastActivity: hoursAgo(30),
@@ -111,10 +111,9 @@ function initState() {
 <docs lang="md">
 # Repo row
 
-A repository as one line in a list, its language's extension in the corner
-in its color. The
-three rows cover a personal repo, an external one whose owner is shown and
-whose description truncates, and one with neither description nor language.
-Narrow the list and the description takes the line beneath the name and the
-owner is left off.
+A repository as one line in a list, its language's extension in the corner in
+its color. The three rows cover a personal repo, an external one whose owner is
+shown and whose description truncates, and one with neither description nor
+language. Narrow the list and the description takes the line beneath the name
+and the owner is left off.
 </docs>
