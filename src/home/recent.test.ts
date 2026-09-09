@@ -59,39 +59,6 @@ describe("queryRecentActivity", () => {
     expect(recent.repos.map((r) => r.name)).toEqual(["newest", "mid", "older"]);
   });
 
-  it("sums the last seven days for the lately line", async () => {
-    for (const day of [15, 14, 9, 8, 1]) {
-      await publishActivity(store, ride(`r${day}`, day));
-    }
-    await publishActivity(store, {
-      ...ride("race", 12),
-      name: "Golden Gate Crit",
-    });
-    const daySeconds = 24 * 60 * 60;
-    const nowSeconds = NOW.getTime() / 1000;
-    await seed(db, [
-      {
-        owner: "bendrucker",
-        name: "fresh",
-        activity: [{ lastActivity: nowSeconds - daySeconds }],
-      },
-      {
-        owner: "other",
-        name: "stale",
-        activity: [{ lastActivity: nowSeconds - 20 * daySeconds }],
-      },
-    ]);
-
-    const { week } = await queryRecentActivity(db, NOW);
-
-    expect(week).toEqual({
-      rideCount: 4,
-      distanceMi: expect.closeTo(4 * 24.85, 1),
-      raceCount: 1,
-      repoCount: 1,
-    });
-  });
-
   it("passes over the everyday personal repos, but not a fork of one", async () => {
     await seed(db, [
       {
@@ -118,10 +85,6 @@ describe("queryRecentActivity", () => {
 
   it("renders empty rails from an empty database", async () => {
     const recent = await queryRecentActivity(db, NOW);
-    expect(recent).toEqual({
-      rides: [],
-      repos: [],
-      week: { rideCount: 0, distanceMi: 0, raceCount: 0, repoCount: 0 },
-    });
+    expect(recent).toEqual({ rides: [], repos: [] });
   });
 });
