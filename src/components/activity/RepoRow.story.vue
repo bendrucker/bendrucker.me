@@ -111,8 +111,8 @@ function initState() {
 <docs lang="md">
 # Repo row
 
-A repository as a few lines in a list. The three rows cover a personal repo
-touched today with every count, an external one whose owner is shown and
-whose description truncates, and one with neither description, language, nor
-activity. Below the small breakpoint the description takes a line of its own.
+A repository as one line in a list. The three rows cover a personal repo
+touched today, an external one whose owner is shown and whose description
+truncates, and one with no description. Below the small breakpoint the
+description takes the line beneath the name.
 </docs>
