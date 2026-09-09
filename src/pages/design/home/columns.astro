@@ -1,0 +1,41 @@
+---
+import Home from "@/layouts/Home.astro";
+import Rail from "@/components/home/columns/Rail.astro";
+import MapCredits from "@/components/home/MapCredits.astro";
+import RideCard from "@/components/cycling/RideCard.vue";
+import RepoCard from "@/components/activity/RepoCard.vue";
+import { loadRecentActivity } from "@/home/load";
+import { SITE } from "@/config";
+
+const { rides, repos } = await loadRecentActivity();
+---
+
+<Home sourcePath="src/pages/design/home/columns.astro">
+  <div class="mx-auto w-full max-w-home px-5 pt-6 pb-12 sm:pt-11">
+    <div
+      class="grid grid-cols-1 gap-8 lg:grid-cols-[3fr_2fr] lg:items-start lg:gap-6"
+    >
+      <Rail label="Cycling" href="/activity/cycling" link="All rides">
+        {
+          rides.map((ride) => (
+            <li>
+              <RideCard ride={ride} />
+            </li>
+          ))
+        }
+      </Rail>
+      <Rail label="Code" href="/activity/code" link="All repos">
+        {
+          repos.map((repo) => (
+            <li>
+              <RepoCard repo={repo} username={SITE.githubUsername} />
+            </li>
+          ))
+        }
+      </Rail>
+    </div>
+    <div class="mt-8">
+      <MapCredits rides={rides} />
+    </div>
+  </div>
+</Home>

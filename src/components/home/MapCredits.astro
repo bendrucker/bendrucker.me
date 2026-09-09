@@ -1,0 +1,37 @@
+---
+import { BASEMAP_CREDITS } from "@/components/cycling/basemap";
+import type { Ride } from "@/activity/types";
+
+/**
+ * CARTO's free basemap tier is granted in exchange for keeping its credit and
+ * OpenStreetMap's visible. A card cannot hold them, so a page with a basemap
+ * on it renders this once beneath its rails.
+ */
+export interface Props {
+  rides: Ride[];
+}
+
+const { rides } = Astro.props;
+const hasBasemap = rides.some((ride) => ride.route !== undefined);
+---
+
+{
+  hasBasemap && (
+    <p class="text-[10px] text-foreground/50">
+      maps
+      {BASEMAP_CREDITS.map((credit, index) => (
+        <>
+          {index > 0 && ", "}&copy;{" "}
+          <a
+            href={credit.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hover:text-accent"
+          >
+            {credit.label}
+          </a>
+        </>
+      ))}
+    </p>
+  )
+}

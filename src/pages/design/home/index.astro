@@ -1,0 +1,48 @@
+---
+import Home from "@/layouts/Home.astro";
+
+/**
+ * The three homepage layouts under comparison, each a page of its own so
+ * they can be opened side by side. The band above is the one they share.
+ */
+const variants = [
+  {
+    href: "/design/home/columns",
+    label: "Columns",
+    note: "Cycling and code side by side, stacked on a phone.",
+  },
+  {
+    href: "/design/home/stacked",
+    label: "Stacked",
+    note: "Full-width cycling section, then a full-width code section.",
+  },
+  {
+    href: "/design/home/feed",
+    label: "Feed",
+    note: "One chronological feed with each item marked by its source.",
+  },
+];
+---
+
+<Home sourcePath="src/pages/design/home/index.astro">
+  <div class="mx-auto w-full max-w-home px-5 pt-6 sm:pt-11">
+    <h2 class="text-xs tracking-[0.14em] text-foreground/45 uppercase">
+      Layouts
+    </h2>
+    <ul role="list" class="mt-3 flex flex-col gap-3">
+      {
+        variants.map((variant) => (
+          <li>
+            <a
+              href={variant.href}
+              class="text-base underline decoration-dashed underline-offset-4 hover:text-accent"
+            >
+              {variant.label}
+            </a>
+            <p class="text-sm text-foreground/60">{variant.note}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Home>

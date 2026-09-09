@@ -1,0 +1,21 @@
+---
+import FeedHeader from "@/components/home/feed/FeedHeader.astro";
+import FeedItem from "@/components/home/feed/FeedItem.astro";
+import MapCredits from "@/components/home/MapCredits.astro";
+import { mergeRecent } from "@/home/feed";
+import { loadRecentActivity } from "@/home/load";
+import Home from "@/layouts/Home.astro";
+
+const { rides, repos } = await loadRecentActivity();
+const feed = mergeRecent(rides, repos);
+---
+
+<Home sourcePath="src/pages/design/home/feed.astro">
+  <div class="mx-auto flex w-full max-w-app flex-col gap-6 px-5 pt-6 sm:pt-11">
+    <FeedHeader />
+    <ol role="list" class="flex flex-col gap-4">
+      {feed.map((item) => <FeedItem item={item} />)}
+    </ol>
+    <MapCredits rides={rides} />
+  </div>
+</Home>
