@@ -1,20 +1,35 @@
 ---
 import RepoRow from "@/components/activity/RepoRow.vue";
 import RideRow from "@/components/cycling/RideRow.vue";
+import { parseRideTime } from "@/components/cycling/datetime";
+import { groupByRecency } from "@/components/recency";
 import { SITE } from "@/config";
 import { loadRecentActivity } from "@/home/load";
 import Rail from "./Rail.astro";
+import RailGroup from "./RailGroup.astro";
 
 /**
  * The homepage's two rails side by side, or on a phone a track that snaps
  * one rail at a time, swiped or tapped into view through the tab row,
  * which sticks to the top while the rail scrolls. The track scrolls
- * without the script; the script keeps the tabs in step with it.
+ * without the script; the script keeps the tab row's indicator under the
+ * rail in view, moving with a swipe and ahead of a tap.
  */
 const { rides, repos } = await loadRecentActivity();
+const now = new Date();
+const rideGroups = groupByRecency(
+  rides,
+  (ride) => parseRideTime(ride.startedAt),
+  now,
+);
+const repoGroups = groupByRecency(
+  repos,
+  (repo) => new Date(repo.lastActivity),
+  now,
+);
 
 const tab =
-  "-mb-px flex cursor-pointer items-center gap-1.5 border-b-2 border-transparent pb-2 text-xs tracking-[0.14em] text-foreground/45 uppercase aria-selected:border-accent aria-selected:text-foreground";
+  "flex cursor-pointer items-center gap-1.5 pb-2 text-xs tracking-[0.14em] text-foreground/45 uppercase transition-colors aria-selected:text-foreground";
 ---
 
 <div class="page-column pt-6 pb-12 sm:pt-8" data-rails>
@@ -40,11 +55,17 @@ const tab =
       id="tab-code"
       aria-controls="rail-code"
       aria-selected="false"
+      tabindex="-1"
       class={tab}
     >
       <span class="icon-[lucide--code] size-3.5" aria-hidden="true"></span>
       Code
     </button>
+    <span
+      data-indicator
+      aria-hidden="true"
+      class="absolute bottom-0 left-0 h-0.5 w-0 bg-accent transition-[transform,width] duration-200 ease-out"
+    ></span>
   </div>
   <div
     data-track
@@ -63,10 +84,14 @@ const tab =
         link="All rides"
       >
         {
-          rides.map((ride) => (
-            <li>
-              <RideRow ride={ride} />
-            </li>
+          rideGroups.map((group) => (
+            <RailGroup label={group.label}>
+              {group.items.map((ride) => (
+                <li>
+                  <RideRow ride={ride} />
+                </li>
+              ))}
+            </RailGroup>
           ))
         }
       </Rail>
@@ -79,10 +104,14 @@ const tab =
     >
       <Rail label="Code" icon="code" href="/activity/code" link="All repos">
         {
-          repos.map((repo) => (
-            <li>
-              <RepoRow repo={repo} username={SITE.githubUsername} />
-            </li>
+          repoGroups.map((group) => (
+            <RailGroup label={group.label}>
+              {group.items.map((repo) => (
+                <li>
+                  <RepoRow repo={repo} username={SITE.githubUsername} />
+                </li>
+              ))}
+            </RailGroup>
           ))
         }
       </Rail>
@@ -93,8 +122,9 @@ const tab =
 <script>
   function wireRails(root: HTMLElement) {
     const track = root.querySelector<HTMLElement>("[data-track]");
+    const indicator = root.querySelector<HTMLElement>("[data-indicator]");
     const tabs = [...root.querySelectorAll<HTMLButtonElement>("[role=tab]")];
-    if (!track || tabs.length === 0) return;
+    if (!track || !indicator || tabs.length === 0) return;
 
     const panels = tabs.map((tab) =>
       root.querySelector<HTMLElement>(`#${tab.getAttribute("aria-controls")}`),
@@ -107,12 +137,36 @@ const tab =
       });
     }
 
+    /** Puts the indicator at a point between tabs: 0.5 is halfway to the second. */
+    const place = (position: number) => {
+      const from = tabs[Math.floor(position)];
+      const to = tabs[Math.min(Math.ceil(position), tabs.length - 1)];
+      if (!from || !to) return;
+      const fraction = position - Math.floor(position);
+      const left =
+        from.offsetLeft + (to.offsetLeft - from.offsetLeft) * fraction;
+      const width =
+        from.offsetWidth + (to.offsetWidth - from.offsetWidth) * fraction;
+      indicator.style.transform = `translateX(${left}px)`;
+      indicator.style.width = `${width}px`;
+    };
+
+    const position = () => track.scrollLeft / track.clientWidth;
+
+    // A tap moves the indicator first and lets the track catch up, so the
+    // scroll it causes must not drag the indicator back along the way.
+    let leading = false;
+    let settle: ReturnType<typeof setTimeout> | undefined;
+
     tabs.forEach((tab, index) => {
       tab.addEventListener("click", () => {
         const panel = panels[index];
+        leading = true;
+        indicator.style.transitionDuration = "";
+        place(index);
+        select(index);
         if (panel)
           track.scrollTo({ left: panel.offsetLeft, behavior: "smooth" });
-        select(index);
       });
       tab.addEventListener("keydown", (event) => {
         const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
@@ -124,17 +178,24 @@ const tab =
       });
     });
 
-    // The track's own position is the truth once a swipe settles, so a
-    // tap and a swipe end in the same state.
-    let settle: ReturnType<typeof setTimeout> | undefined;
     track.addEventListener("scroll", () => {
       clearTimeout(settle);
       settle = setTimeout(() => {
-        const index = Math.round(track.scrollLeft / track.clientWidth);
-        if (tabs[index]?.getAttribute("aria-selected") !== "true")
-          select(index);
-      }, 80);
+        leading = false;
+      }, 120);
+      if (leading) return;
+      indicator.style.transitionDuration = "0s";
+      place(position());
+      const index = Math.round(position());
+      if (tabs[index]?.getAttribute("aria-selected") !== "true") select(index);
     });
+
+    const settled = () => {
+      indicator.style.transitionDuration = "0s";
+      place(Math.round(position()));
+    };
+    window.addEventListener("resize", settled);
+    settled();
   }
 
   document.addEventListener("astro:page-load", () => {

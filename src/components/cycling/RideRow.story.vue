@@ -52,7 +52,7 @@ function initState() {
 # Ride row
 
 A ride as one line in a list: name, an icon for a race, a long ride, or a
-hilly one, distance, and how long ago. Every fixture is in the list, so the
+hilly one, and distance. Every fixture is in the list, so the
 long name, the ride with no Strava link, and the one with no stats are all
 on screen. Narrow the width to see the name truncate ahead of the rest.
 </docs>

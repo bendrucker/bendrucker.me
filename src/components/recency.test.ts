@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { formatRecency } from "./recency";
+import { groupByRecency, recencyLabel } from "./recency";
 
 const now = new Date(2026, 8, 8, 12);
+const daysAgo = (days: number) =>
+  new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
-describe("formatRecency", () => {
+describe("recencyLabel", () => {
   test.each<{ name: string; date: Date; expected: string }>([
     { name: "earlier today", date: new Date(2026, 8, 8, 6), expected: "today" },
     {
@@ -11,20 +13,27 @@ describe("formatRecency", () => {
       date: new Date(2026, 8, 7, 23, 30),
       expected: "yesterday",
     },
-    { name: "three days back", date: new Date(2026, 8, 5), expected: "3d ago" },
-    { name: "a week back", date: new Date(2026, 8, 1), expected: "1w ago" },
-    {
-      name: "three weeks back",
-      date: new Date(2026, 7, 18),
-      expected: "3w ago",
-    },
-    { name: "a month back", date: new Date(2026, 7, 8), expected: "Aug 8" },
-    {
-      name: "last year",
-      date: new Date(2025, 11, 30),
-      expected: "Dec 30, 2025",
-    },
+    { name: "three days back", date: daysAgo(3), expected: "this week" },
+    { name: "six days back", date: daysAgo(6), expected: "this week" },
+    { name: "a week back", date: daysAgo(7), expected: "earlier" },
+    { name: "a month back", date: daysAgo(30), expected: "earlier" },
   ])("$name", ({ date, expected }) => {
-    expect(formatRecency(date, now)).toBe(expected);
+    expect(recencyLabel(date, now)).toBe(expected);
+  });
+});
+
+describe("groupByRecency", () => {
+  test("shelves items in order and skips empty shelves", () => {
+    const items = [daysAgo(0), daysAgo(0), daysAgo(3), daysAgo(20)];
+    const groups = groupByRecency(items, (item) => item, now);
+    expect(groups.map((group) => [group.label, group.items.length])).toEqual([
+      ["today", 2],
+      ["this week", 1],
+      ["earlier", 1],
+    ]);
+  });
+
+  test("shelves nothing from nothing", () => {
+    expect(groupByRecency([], (item: Date) => item, now)).toEqual([]);
   });
 });
