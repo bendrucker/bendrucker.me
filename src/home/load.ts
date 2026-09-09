@@ -11,6 +11,10 @@ export async function loadRecentActivity(): Promise<RecentActivity> {
     return await queryRecentActivity(await getDb());
   } catch (error) {
     rethrowLocally(error, "Failed to load recent activity");
-    return { rides: [], repos: [] };
+    return {
+      rides: [],
+      repos: [],
+      week: { rideCount: 0, distanceMi: 0, raceCount: 0, repoCount: 0 },
+    };
   }
 }
