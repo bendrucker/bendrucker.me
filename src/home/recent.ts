@@ -1,5 +1,5 @@
 import type { Kysely } from "kysely";
-import { queryCyclingActivity } from "@/activity/feed";
+import { queryLatestRides, wallClock } from "@/activity/feed";
 import { queryRepos } from "@/activity/query";
 import type { Repo, Ride } from "@/activity/types";
 import { parseRideTime } from "@/components/cycling/datetime";
@@ -22,6 +22,20 @@ export const EVERYDAY_REPOS = new Set(["bendrucker.me", "claude", "dotfiles"]);
 function isEveryday(repo: Repo): boolean {
   return repo.owner === SITE.githubUsername && EVERYDAY_REPOS.has(repo.name);
 }
+
+/**
+ * An instant as the site's own wall clock. Calendar words like "today" are
+ * compared on wall clocks: a ride's own, and the site's for everything else.
+ * The Worker keeps UTC, where a San Francisco evening is already tomorrow.
+ */
+export function siteWallClock(instant: Date): Date {
+  return parseRideTime(wallClock(instant.toISOString(), SITE.timezone));
+}
+
+export const rideWhen = (ride: Ride): Date => parseRideTime(ride.startedAt);
+
+export const repoWhen = (repo: Repo): Date =>
+  siteWallClock(new Date(repo.lastActivity));
 
 /**
  * The items from the last `RECENT_DAYS`, never fewer than `RECENT_MIN` when
@@ -47,29 +61,26 @@ export interface RecentActivity {
   repos: Repo[];
 }
 
-/**
- * The head of each activity page's own query: the cycling feed's months
- * flatten to rides newest first, and the repo query already orders by last
- * contribution, minus the everyday repositories.
- */
-export async function queryRecentActivity(
+export async function queryRecentRides(
   db: Kysely<Database>,
   now: Date = new Date(),
-): Promise<RecentActivity> {
-  const [cycling, code] = await Promise.all([
-    queryCyclingActivity(db, now),
-    queryRepos(db, {}),
-  ]);
-  return {
-    rides: recentWindow(
-      cycling.months.flatMap((month) => month.rides),
-      (ride) => parseRideTime(ride.startedAt),
-      now,
-    ),
-    repos: recentWindow(
-      code.repos.filter((repo) => !isEveryday(repo)),
-      (repo) => new Date(repo.lastActivity),
-      now,
-    ),
-  };
+): Promise<Ride[]> {
+  const rides = await queryLatestRides(db, RECENT_MAX);
+  return recentWindow(rides, rideWhen, siteWallClock(now));
+}
+
+/**
+ * The head of the code page's own query, which already orders by last
+ * contribution, minus the everyday repositories.
+ */
+export async function queryRecentRepos(
+  db: Kysely<Database>,
+  now: Date = new Date(),
+): Promise<Repo[]> {
+  const { repos } = await queryRepos(db, {});
+  return recentWindow(
+    repos.filter((repo) => !isEveryday(repo)),
+    repoWhen,
+    siteWallClock(now),
+  );
 }

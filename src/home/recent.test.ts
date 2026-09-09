@@ -4,11 +4,15 @@ import type { Database } from "@/db";
 import { createTestDb, seed, testStore } from "@/test/db";
 import { publishActivity, type PublishedActivity } from "@/activity/publish";
 import type { ActivityStore } from "@/activity/store";
+import { recencyLabel } from "@/components/recency";
 import {
-  queryRecentActivity,
+  queryRecentRepos,
+  queryRecentRides,
   RECENT_MAX,
   RECENT_MIN,
   recentWindow,
+  rideWhen,
+  siteWallClock,
 } from "./recent";
 
 let db: Kysely<Database>;
@@ -40,11 +44,46 @@ function ride(id: string, day: number): PublishedActivity {
   };
 }
 
-describe("queryRecentActivity", () => {
-  it("takes the month's rides newest first and the latest few old repos", async () => {
+describe("queryRecentRides", () => {
+  it("takes the month's rides newest first", async () => {
     for (const day of [3, 11, 7, 1, 9]) {
       await publishActivity(store, ride(`r${day}`, day));
     }
+
+    const rides = await queryRecentRides(db, NOW);
+
+    expect(rides.map((r) => r.id)).toEqual(["r11", "r9", "r7", "r3", "r1"]);
+  });
+
+  it("leaves commutes out, as the feed's months do", async () => {
+    await publishActivity(store, ride("long", 10));
+    await publishActivity(store, { ...ride("commute", 11), distanceM: 5000 });
+
+    const rides = await queryRecentRides(db, NOW);
+
+    expect(rides.map((r) => r.id)).toEqual(["long"]);
+  });
+
+  it("reads today by the ride's clock and the site's, not the worker's", async () => {
+    // Seven in the evening in Los Angeles on the 14th is the 15th in UTC.
+    await publishActivity(store, {
+      ...ride("late", 14),
+      startedAt: "2026-03-15T02:00:00.000Z",
+    });
+    const now = new Date("2026-03-15T03:00:00Z");
+
+    const [late] = await queryRecentRides(db, now);
+
+    expect(recencyLabel(rideWhen(late!), siteWallClock(now))).toBe("today");
+  });
+
+  it("renders an empty rail from an empty database", async () => {
+    expect(await queryRecentRides(db, NOW)).toEqual([]);
+  });
+});
+
+describe("queryRecentRepos", () => {
+  it("takes the latest few old repos", async () => {
     await seed(db, [
       { owner: "bendrucker", name: "old", activity: [{ lastActivity: 100 }] },
       {
@@ -56,16 +95,9 @@ describe("queryRecentActivity", () => {
       { owner: "bendrucker", name: "older", activity: [{ lastActivity: 200 }] },
     ]);
 
-    const recent = await queryRecentActivity(db, NOW);
+    const repos = await queryRecentRepos(db, NOW);
 
-    expect(recent.rides.map((r) => r.id)).toEqual([
-      "r11",
-      "r9",
-      "r7",
-      "r3",
-      "r1",
-    ]);
-    expect(recent.repos.map((r) => r.name)).toEqual(["newest", "mid", "older"]);
+    expect(repos.map((r) => r.name)).toEqual(["newest", "mid", "older"]);
   });
 
   it("passes over the everyday personal repos, but not a fork of one", async () => {
@@ -84,17 +116,16 @@ describe("queryRecentActivity", () => {
       { owner: "bendrucker", name: "kept", activity: [{ lastActivity: 200 }] },
     ]);
 
-    const recent = await queryRecentActivity(db, NOW);
+    const repos = await queryRecentRepos(db, NOW);
 
-    expect(recent.repos.map((r) => `${r.owner}/${r.name}`)).toEqual([
+    expect(repos.map((r) => `${r.owner}/${r.name}`)).toEqual([
       "other/dotfiles",
       "bendrucker/kept",
     ]);
   });
 
-  it("renders empty rails from an empty database", async () => {
-    const recent = await queryRecentActivity(db, NOW);
-    expect(recent).toEqual({ rides: [], repos: [] });
+  it("renders an empty rail from an empty database", async () => {
+    expect(await queryRecentRepos(db, NOW)).toEqual([]);
   });
 });
 

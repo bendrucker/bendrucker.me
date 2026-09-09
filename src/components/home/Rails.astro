@@ -1,10 +1,10 @@
 ---
 import RepoRow from "@/components/activity/RepoRow.vue";
 import RideRow from "@/components/cycling/RideRow.vue";
-import { parseRideTime } from "@/components/cycling/datetime";
 import { groupByRecency } from "@/components/recency";
 import { SITE } from "@/config";
 import { loadRecentActivity } from "@/home/load";
+import { repoWhen, rideWhen, siteWallClock } from "@/home/recent";
 import Rail from "./Rail.astro";
 import RailGroup from "./RailGroup.astro";
 
@@ -16,17 +16,9 @@ import RailGroup from "./RailGroup.astro";
  * rail in view, moving with a swipe and ahead of a tap.
  */
 const { rides, repos } = await loadRecentActivity();
-const now = new Date();
-const rideGroups = groupByRecency(
-  rides,
-  (ride) => parseRideTime(ride.startedAt),
-  now,
-);
-const repoGroups = groupByRecency(
-  repos,
-  (repo) => new Date(repo.lastActivity),
-  now,
-);
+const today = siteWallClock(new Date());
+const rideGroups = groupByRecency(rides, rideWhen, today);
+const repoGroups = groupByRecency(repos, repoWhen, today);
 
 const tab =
   "flex cursor-pointer items-center gap-1.5 pb-2 text-xs tracking-[0.14em] text-foreground/45 uppercase transition-colors aria-selected:text-foreground";
@@ -194,7 +186,13 @@ const tab =
       indicator.style.transitionDuration = "0s";
       place(Math.round(position()));
     };
-    window.addEventListener("resize", settled);
+    // The rails are wired again on every page load and the window outlives
+    // them, so the listener leaves with the page.
+    const controller = new AbortController();
+    window.addEventListener("resize", settled, { signal: controller.signal });
+    document.addEventListener("astro:before-swap", () => controller.abort(), {
+      once: true,
+    });
     settled();
   }
 

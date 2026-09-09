@@ -53,11 +53,11 @@ export default defineConfig({
   cache: {
     provider: cacheCloudflare(),
   },
-  // On-demand routes that only change on deploy. `/activity` is absent because
-  // its max-age is aligned to the hourly GitHub sync and computed per request
-  // in src/middleware.ts. Prerendered routes are not cached at runtime.
+  // On-demand routes that only change on deploy. `/` and `/activity` are
+  // absent because their max-age is aligned to the hourly GitHub sync and
+  // computed per request in src/middleware.ts. Prerendered routes are not
+  // cached at runtime.
   routeRules: {
-    "/": DEPLOY_SCOPED_CACHE,
     "/about": DEPLOY_SCOPED_CACHE,
     "/about.md": DEPLOY_SCOPED_CACHE,
     "/posts/[...slug]": DEPLOY_SCOPED_CACHE,

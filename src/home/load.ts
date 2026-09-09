@@ -1,16 +1,42 @@
 import { getDb } from "@/db";
 import { rethrowLocally } from "@/fallback";
-import { queryRecentActivity, type RecentActivity } from "./recent";
+import {
+  queryRecentRepos,
+  queryRecentRides,
+  type RecentActivity,
+} from "./recent";
 
 /**
- * What a homepage variant renders. Empty rails on a failed query, except
- * locally, where the failure is thrown so the page says what broke.
+ * Each rail falls back to empty on its own, so a failed repo query still
+ * leaves the rides up. Locally the failure is thrown so the page says what
+ * broke.
  */
 export async function loadRecentActivity(): Promise<RecentActivity> {
+  const now = new Date();
+  const [rides, repos] = await Promise.all([
+    attempt(
+      async () => queryRecentRides(await getDb(), now),
+      "Failed to load recent rides",
+      [],
+    ),
+    attempt(
+      async () => queryRecentRepos(await getDb(), now),
+      "Failed to load recent repos",
+      [],
+    ),
+  ]);
+  return { rides, repos };
+}
+
+async function attempt<T>(
+  query: () => Promise<T>,
+  message: string,
+  empty: T,
+): Promise<T> {
   try {
-    return await queryRecentActivity(await getDb());
+    return await query();
   } catch (error) {
-    rethrowLocally(error, "Failed to load recent activity");
-    return { rides: [], repos: [] };
+    rethrowLocally(error, message);
+    return empty;
   }
 }
