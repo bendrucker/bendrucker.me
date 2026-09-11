@@ -7,7 +7,7 @@ import type { ActivityStore } from "@/activity/store";
 import {
   queryCodeRecords,
   queryRideRecords,
-  tickerItems,
+  recordItems,
   type CodeRecords,
   type RideRecords,
 } from "./records";
@@ -165,7 +165,7 @@ describe("queryCodeRecords", () => {
   });
 });
 
-describe("tickerItems", () => {
+describe("recordItems", () => {
   const rides: RideRecords = {
     longest: {
       name: "Skaggs",
@@ -191,7 +191,7 @@ describe("tickerItems", () => {
   };
 
   it("alternates cycling and code, linking what has a page", () => {
-    const items = tickerItems(rides, code);
+    const items = recordItems(rides, code);
 
     expect(items.map((item) => item.text)).toEqual([
       "Longest ride: Skaggs, 271 mi in 2023",
@@ -216,6 +216,6 @@ describe("tickerItems", () => {
       rideCount: 0,
       movingHours: 0,
     };
-    expect(tickerItems(empty, { firstYear: null, starred: [] })).toEqual([]);
+    expect(recordItems(empty, { firstYear: null, starred: [] })).toEqual([]);
   });
 });

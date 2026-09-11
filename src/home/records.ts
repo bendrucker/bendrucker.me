@@ -135,21 +135,21 @@ export async function queryCodeRecords(
   };
 }
 
-export interface TickerItem {
+export interface RecordItem {
   text: string;
   href?: string;
 }
 
 /**
- * The lifetime facts the ticker runs through, cycling and code alternating
- * so neither rail reads as the point of the page. A fact whose data is
+ * The lifetime facts under the rails, cycling and code alternating so
+ * neither rail reads as the point of the page. A fact whose data is
  * missing drops out rather than reading as zero.
  */
-export function tickerItems(
+export function recordItems(
   rides: RideRecords,
   code: CodeRecords,
-): TickerItem[] {
-  const cycling: TickerItem[] = [];
+): RecordItem[] {
+  const cycling: RecordItem[] = [];
   if (rides.longest) {
     cycling.push({
       text: `Longest ride: ${rides.longest.name}, ${formatStat(rides.longest.distanceMi, "distance")} mi in ${rides.longest.year}`,
@@ -183,7 +183,7 @@ export function tickerItems(
     });
   }
 
-  const coding: TickerItem[] = [];
+  const coding: RecordItem[] = [];
   if (code.firstYear !== null) {
     coding.push({
       text: `On GitHub since ${code.firstYear}`,
@@ -197,7 +197,7 @@ export function tickerItems(
     });
   }
 
-  const items: TickerItem[] = [];
+  const items: RecordItem[] = [];
   const length = Math.max(cycling.length, coding.length);
   for (let i = 0; i < length; i++) {
     const ride = cycling[i];

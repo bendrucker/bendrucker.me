@@ -8,8 +8,8 @@ import {
 import {
   queryCodeRecords,
   queryRideRecords,
-  tickerItems,
-  type TickerItem,
+  recordItems,
+  type RecordItem,
 } from "./records";
 import {
   queryCodeTotals,
@@ -21,8 +21,8 @@ import {
 
 export interface HomeData extends RecentActivity {
   cyclingTotals: ByPeriod<CyclingTotals>;
-  codeTotals: CodeTotals;
-  ticker: TickerItem[];
+  codeTotals: ByPeriod<CodeTotals>;
+  records: RecordItem[];
 }
 
 const NO_TOTALS: CyclingTotals = {
@@ -31,13 +31,15 @@ const NO_TOTALS: CyclingTotals = {
   rideCount: 0,
 };
 
+const NO_CODE: CodeTotals = { prCount: 0, reviewCount: 0, repoCount: 0 };
+
 /**
  * Each piece falls back to empty on its own, so a failed repo query still
  * leaves the rides up. Locally the failure is thrown so the page says what
  * broke.
  */
 export async function loadHome(now: Date = new Date()): Promise<HomeData> {
-  const [rides, repos, cyclingTotals, codeTotals, ticker] = await Promise.all([
+  const [rides, repos, cyclingTotals, codeTotals, records] = await Promise.all([
     attempt(
       async () => queryRecentRides(await getDb(), now),
       "Failed to load recent rides",
@@ -56,7 +58,7 @@ export async function loadHome(now: Date = new Date()): Promise<HomeData> {
     attempt(
       async () => queryCodeTotals(await getDb(), now),
       "Failed to load code totals",
-      { prCount: 0, reviewCount: 0, repoCount: 0 },
+      { month: NO_CODE, year: NO_CODE, all: NO_CODE },
     ),
     attempt(
       async () => {
@@ -65,13 +67,13 @@ export async function loadHome(now: Date = new Date()): Promise<HomeData> {
           queryRideRecords(db),
           queryCodeRecords(db),
         ]);
-        return tickerItems(rideRecords, codeRecords);
+        return recordItems(rideRecords, codeRecords);
       },
-      "Failed to load the ticker",
+      "Failed to load the records",
       [],
     ),
   ]);
-  return { rides, repos, cyclingTotals, codeTotals, ticker };
+  return { rides, repos, cyclingTotals, codeTotals, records };
 }
 
 async function attempt<T>(

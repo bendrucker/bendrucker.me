@@ -14,4 +14,8 @@ describe("formatStat", () => {
     expect(formatStat(507114, "elevation")).toBe("507k");
     expect(formatStat(7815454, "elevation")).toBe("7.8M");
   });
+
+  it("dashes a number the data cannot give", () => {
+    expect(formatStat(null, "count")).toBe("—");
+  });
 });

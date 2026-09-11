@@ -5,26 +5,26 @@ import { groupByRecency } from "@/components/recency";
 import { SITE } from "@/config";
 import { loadHome } from "@/home/load";
 import { repoWhen, rideWhen, siteWallClock } from "@/home/recent";
-import { PERIODS, periodLabel, type Period } from "@/home/stats";
-import PeriodToggle from "./PeriodToggle.astro";
+import { PERIODS, type Period } from "@/home/stats";
 import Rail from "./Rail.astro";
 import RailGroup from "./RailGroup.astro";
 import StatBand from "./StatBand.astro";
-import Ticker from "./Ticker.astro";
+import Records from "./Records.astro";
 
 /**
  * The homepage's two rails side by side, or on a phone a track that snaps
  * one rail at a time, swiped or tapped into view through the tab row,
  * which sticks to the top while the rail scrolls. Each rail opens on its
- * totals over the period the toggle above selects, then the latest few
- * rows, and a ticker of lifetime records runs beneath both.
+ * totals over the window its band's toggle selects, then the latest few
+ * rows, and a footnote of lifetime records sits beneath both.
  *
  * The track scrolls without the script; the script keeps the tab row's
  * indicator under the rail in view, moving with a swipe and ahead of a
  * tap, and counts the totals to their new values when the period changes.
  */
 const now = new Date();
-const { rides, repos, cyclingTotals, codeTotals, ticker } = await loadHome(now);
+const { rides, repos, cyclingTotals, codeTotals, records } =
+  await loadHome(now);
 const today = siteWallClock(now);
 const rideGroups = groupByRecency(rides, rideWhen, today);
 const repoGroups = groupByRecency(repos, repoWhen, today);
@@ -32,13 +32,10 @@ const repoGroups = groupByRecency(repos, repoWhen, today);
 /** The middle distance: recent enough to move, long enough to add up. */
 const selected: Period = "year";
 
-const captions = Object.fromEntries(
-  PERIODS.map((period) => [period, periodLabel(period, now)]),
-) as Record<Period, string>;
-const byPeriod = (pick: (period: Period) => number) =>
+const byPeriod = (pick: (period: Period) => number | null) =>
   Object.fromEntries(PERIODS.map((period) => [period, pick(period)])) as Record<
     Period,
-    number
+    number | null
   >;
 
 const cyclingStats = [
@@ -62,9 +59,21 @@ const cyclingStats = [
 ];
 
 const codeStats = [
-  { kind: "count" as const, value: codeTotals.prCount, unit: "PRs" },
-  { kind: "count" as const, value: codeTotals.reviewCount, unit: "reviews" },
-  { kind: "count" as const, value: codeTotals.repoCount, unit: "repos" },
+  {
+    kind: "count" as const,
+    value: byPeriod((p) => codeTotals[p].prCount),
+    unit: "PRs",
+  },
+  {
+    kind: "count" as const,
+    value: byPeriod((p) => codeTotals[p].reviewCount),
+    unit: "reviews",
+  },
+  {
+    kind: "count" as const,
+    value: byPeriod((p) => codeTotals[p].repoCount),
+    unit: "repos",
+  },
 ];
 
 const tab =
@@ -72,9 +81,6 @@ const tab =
 ---
 
 <div class="page-column pt-5 pb-10 sm:pt-6" data-rails>
-  <div class="mb-4 sm:flex sm:justify-end">
-    <PeriodToggle selected={selected} />
-  </div>
   <div
     role="tablist"
     aria-label="Activity"
@@ -125,12 +131,7 @@ const tab =
         href="/activity/cycling"
         link="All rides"
       >
-        <StatBand
-          slot="band"
-          stats={cyclingStats}
-          caption={captions}
-          selected={selected}
-        />
+        <StatBand slot="band" stats={cyclingStats} selected={selected} />
         {
           rideGroups.map((group) => (
             <RailGroup label={group.label}>
@@ -151,12 +152,7 @@ const tab =
       class="w-full shrink-0 snap-start sm:w-auto"
     >
       <Rail label="Code" icon="code" href="/activity/code" link="All repos">
-        <StatBand
-          slot="band"
-          stats={codeStats}
-          caption={captions.year}
-          selected={selected}
-        />
+        <StatBand slot="band" stats={codeStats} selected={selected} />
         {
           repoGroups.map((group) => (
             <RailGroup label={group.label}>
@@ -172,7 +168,7 @@ const tab =
     </div>
   </div>
 </div>
-<Ticker items={ticker} />
+<Records items={records} />
 
 <script>
   import { formatStat, type StatKind } from "@/home/format";
@@ -188,50 +184,39 @@ const tab =
     return value === "distance" || value === "elevation" || value === "count";
   }
 
-  /** The number a stat shows for each period, as the server rendered it. */
-  function values(stat: HTMLElement): Partial<Record<Period, number>> {
+  /** The number a stat shows for each window, as the server rendered it. */
+  function values(stat: HTMLElement): Partial<Record<Period, number | null>> {
     const parsed: unknown = JSON.parse(stat.dataset.values ?? "{}");
-    const out: Partial<Record<Period, number>> = {};
+    const out: Partial<Record<Period, number | null>> = {};
     if (typeof parsed !== "object" || parsed === null) return out;
     for (const period of PERIODS) {
       const value = Reflect.get(parsed, period);
-      if (typeof value === "number") out[period] = value;
+      if (typeof value === "number" || value === null) out[period] = value;
     }
     return out;
   }
 
   function wirePeriods(root: HTMLElement) {
-    const toggle = root.querySelector<HTMLElement>("[data-period-toggle]");
-    if (!toggle) return;
-    const radios = [
+    const groups = [
+      ...root.querySelectorAll<HTMLElement>("[data-period-toggle]"),
+    ].map((toggle) => [
       ...toggle.querySelectorAll<HTMLButtonElement>("[role=radio]"),
-    ];
+    ]);
+    const radios = groups.flat();
+    if (radios.length === 0) return;
     const stats = [...root.querySelectorAll<HTMLElement>("[data-stat]")].map(
       (el) => ({
         el,
         kind: isKind(el.dataset.kind) ? el.dataset.kind : ("count" as const),
         values: values(el),
-        shown: 0,
+        shown: null as number | null,
       }),
     );
-    const captions = [
-      ...root.querySelectorAll<HTMLElement>("[data-period-caption]"),
-    ];
     const still = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     let frame = 0;
     function show(period: Period) {
       for (const stat of stats) stat.shown = stat.values[period] ?? 0;
-      for (const caption of captions) {
-        const parsed: unknown = JSON.parse(
-          caption.dataset.periodCaption ?? "{}",
-        );
-        const text =
-          typeof parsed === "object" && parsed !== null
-            ? Reflect.get(parsed, period)
-            : undefined;
-        if (typeof text === "string") caption.textContent = text;
-      }
       cancelAnimationFrame(frame);
       const from = stats.map((stat) => Number(stat.el.dataset.shown ?? 0));
       const started = performance.now();
@@ -242,49 +227,59 @@ const tab =
         // Ease out: the number lands softly rather than stopping dead.
         const eased = 1 - (1 - progress) ** 3;
         stats.forEach((stat, i) => {
-          const at = from[i]! + (stat.shown - from[i]!) * eased;
+          const to = stat.shown;
+          const at = to === null ? null : from[i]! + (to - from[i]!) * eased;
           stat.el.textContent = formatStat(at, stat.kind);
         });
         if (progress < 1) frame = requestAnimationFrame(paint);
         else
-          for (const stat of stats) stat.el.dataset.shown = String(stat.shown);
+          for (const stat of stats) {
+            if (stat.shown === null) delete stat.el.dataset.shown;
+            else stat.el.dataset.shown = String(stat.shown);
+          }
       };
       frame = requestAnimationFrame(paint);
     }
 
     // The value each stat is showing, so the next change counts from
-    // there rather than from zero.
+    // there rather than from zero. A dash counts up from zero.
     const initial = radios.find(
       (r) => r.getAttribute("aria-checked") === "true",
     );
     const start = initial?.dataset.period;
     if (isPeriod(start ?? null)) {
       for (const stat of stats) {
-        stat.el.dataset.shown = String(stat.values[start as Period] ?? 0);
+        const value = stat.values[start as Period];
+        if (typeof value === "number") stat.el.dataset.shown = String(value);
       }
     }
 
-    function choose(radio: HTMLButtonElement) {
-      const period = radio.dataset.period ?? null;
-      if (!isPeriod(period)) return;
+    function choose(period: Period) {
       for (const r of radios) {
-        r.setAttribute("aria-checked", String(r === radio));
-        r.tabIndex = r === radio ? 0 : -1;
+        const checked = r.dataset.period === period;
+        r.setAttribute("aria-checked", String(checked));
+        r.tabIndex = checked ? 0 : -1;
       }
       show(period);
     }
 
-    radios.forEach((radio, index) => {
-      radio.addEventListener("click", () => choose(radio));
-      radio.addEventListener("keydown", (event) => {
-        const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
-        if (step === undefined) return;
-        event.preventDefault();
-        const next = radios[(index + step + radios.length) % radios.length];
-        next?.focus();
-        if (next) choose(next);
+    for (const group of groups) {
+      group.forEach((radio, index) => {
+        radio.addEventListener("click", () => {
+          const period = radio.dataset.period ?? null;
+          if (isPeriod(period)) choose(period);
+        });
+        radio.addEventListener("keydown", (event) => {
+          const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+          if (step === undefined) return;
+          event.preventDefault();
+          const next = group[(index + step + group.length) % group.length];
+          const period = next?.dataset.period ?? null;
+          next?.focus();
+          if (isPeriod(period)) choose(period);
+        });
       });
-    });
+    }
   }
 
   function wireRails(root: HTMLElement) {
