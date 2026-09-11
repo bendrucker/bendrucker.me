@@ -216,7 +216,10 @@ const tab =
 
     let frame = 0;
     function show(period: Period) {
-      for (const stat of stats) stat.shown = stat.values[period] ?? 0;
+      for (const stat of stats) {
+        const value = stat.values[period];
+        stat.shown = value === undefined ? 0 : value;
+      }
       cancelAnimationFrame(frame);
       const from = stats.map((stat) => Number(stat.el.dataset.shown ?? 0));
       const started = performance.now();
