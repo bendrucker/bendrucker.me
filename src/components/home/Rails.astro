@@ -5,32 +5,30 @@ import { groupByRecency } from "@/components/recency";
 import { SITE } from "@/config";
 import { loadHome } from "@/home/load";
 import { repoWhen, rideWhen, siteWallClock } from "@/home/recent";
-import { PERIODS, type Period } from "@/home/stats";
+import { DEFAULT_PERIOD, PERIODS, type Period } from "@/home/stats";
+import PeriodToggle from "./PeriodToggle.astro";
 import Rail from "./Rail.astro";
 import RailGroup from "./RailGroup.astro";
 import StatBand from "./StatBand.astro";
-import Records from "./Records.astro";
 
 /**
  * The homepage's two rails side by side, or on a phone a track that snaps
  * one rail at a time, swiped or tapped into view through the tab row,
  * which sticks to the top while the rail scrolls. Each rail opens on its
- * totals over the window its band's toggle selects, then the latest few
- * rows, and a footnote of lifetime records sits beneath both.
+ * totals over the window the page's toggle selects, then the latest few
+ * rows, then a row on to the full page.
  *
  * The track scrolls without the script; the script keeps the tab row's
  * indicator under the rail in view, moving with a swipe and ahead of a
  * tap, and counts the totals to their new values when the period changes.
  */
 const now = new Date();
-const { rides, repos, cyclingTotals, codeTotals, records } =
-  await loadHome(now);
+const { rides, repos, cyclingTotals, codeTotals } = await loadHome(now);
 const today = siteWallClock(now);
 const rideGroups = groupByRecency(rides, rideWhen, today);
 const repoGroups = groupByRecency(repos, repoWhen, today);
 
-/** The middle distance: recent enough to move, long enough to add up. */
-const selected: Period = "year";
+const selected = DEFAULT_PERIOD;
 
 const byPeriod = (pick: (period: Period) => number | null) =>
   Object.fromEntries(PERIODS.map((period) => [period, pick(period)])) as Record<
@@ -114,6 +112,7 @@ const tab =
       aria-hidden="true"
       class="absolute bottom-0 left-0 h-0.5 w-0 bg-accent transition-[transform,width] duration-200 ease-out"
     ></span>
+    <PeriodToggle selected={selected} class="ml-auto self-center pb-2" />
   </div>
   <div
     data-track
@@ -129,7 +128,7 @@ const tab =
         label="Cycling"
         icon="bike"
         href="/activity/cycling"
-        link="All rides"
+        more="More rides"
       >
         <StatBand slot="band" stats={cyclingStats} selected={selected} />
         {
@@ -151,7 +150,7 @@ const tab =
       aria-labelledby="tab-code"
       class="w-full shrink-0 snap-start sm:w-auto"
     >
-      <Rail label="Code" icon="code" href="/activity/code" link="All repos">
+      <Rail label="Code" icon="code" href="/activity/code" more="More repos">
         <StatBand slot="band" stats={codeStats} selected={selected} />
         {
           repoGroups.map((group) => (
@@ -168,7 +167,6 @@ const tab =
     </div>
   </div>
 </div>
-<Records items={records} />
 
 <script>
   import { formatStat, type StatKind } from "@/home/format";
@@ -196,7 +194,9 @@ const tab =
     return out;
   }
 
-  function wirePeriods(root: HTMLElement) {
+  // The desktop toggle sits in the intro, outside the rails, so the page
+  // is the scope.
+  function wirePeriods(root: Document) {
     const groups = [
       ...root.querySelectorAll<HTMLElement>("[data-period-toggle]"),
     ].map((toggle) => [
@@ -212,6 +212,9 @@ const tab =
         shown: null as number | null,
       }),
     );
+    const captions = [
+      ...root.querySelectorAll<HTMLElement>("[data-period-caption]"),
+    ];
     const still = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     let frame = 0;
@@ -219,6 +222,16 @@ const tab =
       for (const stat of stats) {
         const value = stat.values[period];
         stat.shown = value === undefined ? 0 : value;
+      }
+      for (const caption of captions) {
+        const parsed: unknown = JSON.parse(
+          caption.dataset.periodCaption ?? "{}",
+        );
+        const text =
+          typeof parsed === "object" && parsed !== null
+            ? Reflect.get(parsed, period)
+            : undefined;
+        if (typeof text === "string") caption.textContent = text;
       }
       cancelAnimationFrame(frame);
       const from = stats.map((stat) => Number(stat.el.dataset.shown ?? 0));
@@ -372,7 +385,7 @@ const tab =
   document.addEventListener("astro:page-load", () => {
     document.querySelectorAll<HTMLElement>("[data-rails]").forEach((root) => {
       wireRails(root);
-      wirePeriods(root);
     });
+    wirePeriods(document);
   });
 </script>

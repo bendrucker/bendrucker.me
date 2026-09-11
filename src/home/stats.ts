@@ -5,6 +5,9 @@ import type { Database } from "@/db";
 export const PERIODS = ["month", "year", "all"] as const;
 export type Period = (typeof PERIODS)[number];
 
+/** The middle distance: recent enough to move, long enough to add up. */
+export const DEFAULT_PERIOD: Period = "year";
+
 /** What the toggle shows for a window, and what it says to a screen reader. */
 export const PERIOD_LABELS: Record<Period, { short: string; name: string }> = {
   month: { short: "30d", name: "Past 30 days" },

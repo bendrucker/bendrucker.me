@@ -6,13 +6,12 @@
 export interface Props {
   label: string;
   icon: "bike" | "code";
+  /** The full page, linked as "All". */
   href: string;
-  /** The link's text, naming what the full page holds: "All rides". */
-  link: string;
   as?: "h2" | "h3";
 }
 
-const { label, icon, href, link, as: Tag = "h2" } = Astro.props;
+const { label, icon, href, as: Tag = "h2" } = Astro.props;
 
 /** Written out, since Tailwind never sees an interpolated class. */
 const iconClass =
@@ -32,7 +31,7 @@ const iconClass =
     href={href}
     class="inline-flex items-center gap-1 text-xs text-foreground/60 underline decoration-dashed underline-offset-4 hover:text-accent"
   >
-    {link}
+    All
     <span class="icon-[lucide--arrow-right] size-3.5" aria-hidden="true"></span>
   </a>
 </div>

@@ -6,12 +6,6 @@ import {
   type RecentActivity,
 } from "./recent";
 import {
-  queryCodeRecords,
-  queryRideRecords,
-  recordItems,
-  type RecordItem,
-} from "./records";
-import {
   queryCodeTotals,
   queryCyclingTotals,
   type ByPeriod,
@@ -22,7 +16,6 @@ import {
 export interface HomeData extends RecentActivity {
   cyclingTotals: ByPeriod<CyclingTotals>;
   codeTotals: ByPeriod<CodeTotals>;
-  records: RecordItem[];
 }
 
 const NO_TOTALS: CyclingTotals = {
@@ -39,7 +32,7 @@ const NO_CODE: CodeTotals = { prCount: 0, reviewCount: 0, repoCount: 0 };
  * broke.
  */
 export async function loadHome(now: Date = new Date()): Promise<HomeData> {
-  const [rides, repos, cyclingTotals, codeTotals, records] = await Promise.all([
+  const [rides, repos, cyclingTotals, codeTotals] = await Promise.all([
     attempt(
       async () => queryRecentRides(await getDb(), now),
       "Failed to load recent rides",
@@ -60,20 +53,8 @@ export async function loadHome(now: Date = new Date()): Promise<HomeData> {
       "Failed to load code totals",
       { month: NO_CODE, year: NO_CODE, all: NO_CODE },
     ),
-    attempt(
-      async () => {
-        const db = await getDb();
-        const [rideRecords, codeRecords] = await Promise.all([
-          queryRideRecords(db),
-          queryCodeRecords(db),
-        ]);
-        return recordItems(rideRecords, codeRecords);
-      },
-      "Failed to load the records",
-      [],
-    ),
   ]);
-  return { rides, repos, cyclingTotals, codeTotals, records };
+  return { rides, repos, cyclingTotals, codeTotals };
 }
 
 async function attempt<T>(

@@ -1,8 +1,15 @@
 ---
+import PeriodToggle from "@/components/home/PeriodToggle.astro";
 import Rails from "@/components/home/Rails.astro";
+import { DEFAULT_PERIOD } from "@/home/stats";
 import Home from "@/layouts/Home.astro";
 ---
 
 <Home sourcePath="src/pages/index.astro">
+  <PeriodToggle
+    slot="aside"
+    selected={DEFAULT_PERIOD}
+    class="hidden shrink-0 sm:flex"
+  />
   <Rails />
 </Home>

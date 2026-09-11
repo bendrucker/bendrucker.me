@@ -2,23 +2,24 @@
 import RailHeading from "./RailHeading.astro";
 
 /**
- * A homepage section: its heading row, the stat band, then a list of rows.
- * On a phone the tabs above stand in for the heading, so the link to the
- * full page moves beneath the list.
+ * A homepage section: its heading row, the stat band, the list of rows, and
+ * a row at the foot pointing on to the full page. On a phone the tabs above
+ * stand in for the heading.
  */
 export interface Props {
   label: string;
   icon: "bike" | "code";
   href: string;
-  link: string;
+  /** What the foot row offers: "More rides". */
+  more: string;
 }
 
-const { label, icon, href, link } = Astro.props;
+const { label, icon, href, more } = Astro.props;
 ---
 
 <section>
   <div class="hidden sm:block">
-    <RailHeading label={label} icon={icon} href={href} link={link} />
+    <RailHeading label={label} icon={icon} href={href} />
   </div>
   <slot name="band" />
   <ul role="list" class="@container">
@@ -26,9 +27,10 @@ const { label, icon, href, link } = Astro.props;
   </ul>
   <a
     href={href}
-    class="mt-3 inline-flex items-center gap-1 text-xs text-foreground/60 underline decoration-dashed underline-offset-4 hover:text-accent sm:hidden"
+    class="flex items-center justify-center gap-1 py-3 text-xs text-foreground/50 transition-colors hover:text-accent"
   >
-    {link}
-    <span class="icon-[lucide--arrow-right] size-3.5" aria-hidden="true"></span>
+    <span class="icon-[lucide--chevron-down] size-3.5" aria-hidden="true"
+    ></span>
+    {more}
   </a>
 </section>

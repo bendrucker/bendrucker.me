@@ -1,11 +1,15 @@
 ---
 import { formatStat, type StatKind } from "@/home/format";
-import type { ByPeriod, Period } from "@/home/stats";
-import PeriodToggle from "./PeriodToggle.astro";
+import {
+  PERIOD_LABELS,
+  PERIODS,
+  type ByPeriod,
+  type Period,
+} from "@/home/stats";
 
 /**
- * The numbers across the top of a rail, one value per window, with the
- * window toggle standing where a caption would.
+ * The numbers across the top of a rail, one value per window, captioned
+ * with the window the page's toggle has chosen.
  */
 export interface Stat {
   kind: StatKind;
@@ -21,12 +25,19 @@ export interface Props {
 }
 
 const { stats, selected } = Astro.props;
+
+const captions = Object.fromEntries(
+  PERIODS.map((period) => [period, PERIOD_LABELS[period].name.toLowerCase()]),
+);
 ---
 
 <div class="border-b border-border py-3">
-  <div class="mb-1.5">
-    <PeriodToggle selected={selected} />
-  </div>
+  <p
+    class="mb-1.5 text-[0.65rem] tracking-[0.14em] text-foreground/40 uppercase"
+    data-period-caption={JSON.stringify(captions)}
+  >
+    {captions[selected]}
+  </p>
   <dl class="flex flex-wrap items-baseline gap-x-5 gap-y-2">
     {
       stats.map((stat) => (
