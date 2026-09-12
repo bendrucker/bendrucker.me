@@ -4,11 +4,7 @@ const BLOG_PATH = "src/content/blog";
 
 /**
  * Slug of a blog post: its directories under `src/content/blog` followed by its
- * file name, slugified, with no leading or trailing slash. This is the value
- * the `[...slug]` rest param takes.
- *
- * @param id - id of the blog post
- * @param filePath - the blog post full file location
+ * file name, slugified, with no leading or trailing slash.
  */
 export function getSlug(id: string, filePath: string | undefined): string {
   const directories =
