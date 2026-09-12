@@ -22,12 +22,9 @@ export function getSlug(id: string, filePath: string | undefined): string {
 }
 
 /**
- * Canonical site path of a blog post. Carries the trailing slash `trailingSlash:
- * "always"` canonicalizes on, so a link built from this reaches the post without
- * a redirect.
- *
- * @param id - id of the blog post
- * @param filePath - the blog post full file location
+ * Canonical site path of a blog post. Carries the trailing slash
+ * `trailingSlash: "always"` canonicalizes on, so a link built from this reaches
+ * the post without a redirect.
  */
 export function getPath(id: string, filePath: string | undefined): string {
   return `/posts/${getSlug(id, filePath)}/`;
