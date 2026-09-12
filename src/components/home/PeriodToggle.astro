@@ -1,0 +1,42 @@
+---
+import { PERIOD_LABELS, PERIODS, type Period } from "@/home/stats";
+
+/**
+ * The window every stat band covers, set in caption type so it reads as a
+ * label rather than a control. One shows at a time: at the intro line's
+ * end on a desktop, at the tab row's end on a phone. The script in
+ * `Rails.astro` keeps every copy agreed.
+ */
+export interface Props {
+  selected: Period;
+  class?: string;
+}
+
+const { selected, class: className } = Astro.props;
+---
+
+<div
+  role="radiogroup"
+  aria-label="Totals over"
+  data-period-toggle
+  class:list={[
+    "flex gap-3 text-[0.65rem] tracking-[0.14em] uppercase",
+    className,
+  ]}
+>
+  {
+    PERIODS.map((period) => (
+      <button
+        type="button"
+        role="radio"
+        aria-checked={period === selected}
+        aria-label={PERIOD_LABELS[period].name}
+        data-period={period}
+        tabindex={period === selected ? 0 : -1}
+        class="cursor-pointer text-foreground/35 transition-colors hover:text-foreground/70 aria-checked:text-foreground"
+      >
+        {PERIOD_LABELS[period].short}
+      </button>
+    ))
+  }
+</div>

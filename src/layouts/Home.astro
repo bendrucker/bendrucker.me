@@ -1,0 +1,35 @@
+---
+import Layout from "./Layout.astro";
+import Intro from "@/components/home/Intro.astro";
+
+/**
+ * The homepage's chrome: the default header, the introduction, and the main
+ * landmark. The `aside` slot passes through to the introduction's right end.
+ */
+export interface Props {
+  sourcePath: string;
+}
+
+const { sourcePath } = Astro.props;
+---
+
+<Layout
+  description="Programmer, cyclist, and photographer."
+  sourcePath={sourcePath}
+>
+  <main id="main-content" data-layout="index">
+    <Intro>
+      <slot name="aside" slot="aside" />
+    </Intro>
+    <slot />
+  </main>
+</Layout>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const mainContent = document.querySelector("#main-content");
+    if (mainContent instanceof HTMLElement && mainContent.dataset.layout) {
+      sessionStorage.setItem("backUrl", "/");
+    }
+  });
+</script>

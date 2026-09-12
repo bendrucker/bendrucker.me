@@ -1,0 +1,59 @@
+---
+import { formatStat, type StatKind } from "@/home/format";
+import {
+  PERIOD_LABELS,
+  PERIODS,
+  type ByPeriod,
+  type Period,
+} from "@/home/stats";
+
+/**
+ * The numbers across the top of a rail, one value per window, captioned
+ * with the window the page's toggle has chosen.
+ */
+export interface Stat {
+  kind: StatKind;
+  value: ByPeriod<number | null>;
+  unit: string;
+  /** Names the number for the accessibility tree, where the unit is not enough. */
+  label?: string;
+}
+
+export interface Props {
+  stats: Stat[];
+  selected: Period;
+}
+
+const { stats, selected } = Astro.props;
+
+const captions = Object.fromEntries(
+  PERIODS.map((period) => [period, PERIOD_LABELS[period].name.toLowerCase()]),
+);
+---
+
+<div class="border-b border-border py-3">
+  <p
+    class="mb-1.5 text-[0.65rem] tracking-[0.14em] text-foreground/40 uppercase"
+    data-period-caption={JSON.stringify(captions)}
+  >
+    {captions[selected]}
+  </p>
+  <dl class="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+    {
+      stats.map((stat) => (
+        <div class="flex items-baseline gap-1">
+          <dt class="sr-only">{stat.label ?? stat.unit}</dt>
+          <dd
+            class="font-sans text-2xl leading-none font-extrabold tracking-tight tabular-nums"
+            data-stat
+            data-kind={stat.kind}
+            data-values={JSON.stringify(stat.value)}
+          >
+            {formatStat(stat.value[selected], stat.kind)}
+          </dd>
+          <dd class="text-xs font-semibold text-foreground/70">{stat.unit}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</div>

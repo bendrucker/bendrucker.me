@@ -1,0 +1,51 @@
+<script setup lang="ts">
+import { computed } from "vue";
+import { TZDate } from "@date-fns/tz";
+import { format } from "date-fns";
+import type { Repo } from "@/activity/types";
+import { SITE } from "@/config";
+import LanguageMark from "./LanguageMark.vue";
+
+/**
+ * One repository as a line in a list: the name, what it is, and its
+ * language's extension in the corner. In a narrow list the description takes the line
+ * beneath and an external repository's owner is left off, since the name
+ * is what the reader recognizes and there is no room for both. The list
+ * is the container, so a column on a wide page reads the same as a phone.
+ */
+const props = defineProps<{ repo: Repo; username: string }>();
+
+const isExternal = computed(() => props.repo.owner !== props.username);
+const title = computed(
+  () =>
+    `${props.repo.owner}/${props.repo.name}, last active ${format(new TZDate(new Date(props.repo.lastActivity), SITE.timezone), "PPP")}`,
+);
+</script>
+
+<template>
+  <div
+    class="relative flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-muted py-2.5 pr-8 text-sm"
+  >
+    <a
+      :href="repo.url"
+      target="_blank"
+      rel="noopener noreferrer"
+      :title="title"
+      class="max-w-full min-w-0 flex-1 truncate hover:text-accent @md:flex-none"
+    >
+      <span v-if="isExternal" class="hidden text-foreground/50 @md:inline"
+        >{{ repo.owner }}/</span
+      >{{ repo.name }}
+    </a>
+    <LanguageMark
+      v-if="repo.primaryLanguage"
+      :language="repo.primaryLanguage"
+    />
+    <span
+      v-if="repo.description"
+      class="min-w-0 basis-full truncate text-xs text-foreground/55 @md:flex-1 @md:basis-0 @md:text-sm"
+    >
+      {{ repo.description }}
+    </span>
+  </div>
+</template>

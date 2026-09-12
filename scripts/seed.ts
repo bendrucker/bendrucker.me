@@ -190,7 +190,9 @@ function query<T>(schema: z.ZodType<T>, sql: string): T[] {
   const stdout = execFileSync(
     "wrangler",
     ["d1", "execute", DATABASE, "--remote", "--json", "--command", sql],
-    { encoding: "utf-8" },
+    // The whole ride archive comes back as one JSON document, several times
+    // the 1 MiB Node buffers a child's stdout in by default.
+    { encoding: "utf-8", maxBuffer: 256 * 1024 * 1024 },
   );
   const [first] = queryResult.parse(JSON.parse(stdout));
   return first!.results.map((row) => schema.parse(row));

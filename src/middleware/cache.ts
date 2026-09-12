@@ -5,6 +5,10 @@
 // Everything else changes only on deploy and is covered by `routeRules` in
 // astro.config.ts, and the Workers Cache key includes the Worker version, so
 // deploys invalidate it regardless of TTL.
+import { TZDate } from "@date-fns/tz";
+import { format, startOfDay } from "date-fns";
+import { SITE } from "@/config";
+
 const ACTIVITY_SYNC_BUFFER_SECONDS = 300;
 
 export interface CachePolicy {
@@ -12,12 +16,37 @@ export interface CachePolicy {
   swr: number;
 }
 
+/**
+ * The pages that render from the activity database, whose freshness tracks
+ * the hourly sync rather than the deploy. The homepage's rails read the same
+ * rows the activity pages do.
+ */
 export function isActivityPath(pathname: string): boolean {
-  return pathname.startsWith("/activity");
+  return pathname === "/" || pathname.startsWith("/activity");
 }
 
 export function activityCachePolicy(now: Date): CachePolicy {
   return { maxAge: activityMaxAge(now), swr: 3600 };
+}
+
+export interface SiteDay {
+  /** `YYYY-MM-DD` in the site's timezone. */
+  date: string;
+  /** The instant that day began. */
+  startedAt: Date;
+}
+
+/**
+ * The site's current calendar day. A page says "today" and "yesterday" of
+ * rows that stand still while the day turns over, so the day is a version
+ * of the page as much as the data is.
+ */
+export function siteDay(now: Date): SiteDay {
+  const local = new TZDate(now, SITE.timezone);
+  return {
+    date: format(local, "yyyy-MM-dd"),
+    startedAt: new Date(startOfDay(local).getTime()),
+  };
 }
 
 export interface ActivityVersions {
@@ -30,6 +59,8 @@ export interface ActivityVersions {
    * serves, so a browser revalidating across a deploy needs a miss.
    */
   deploy: string;
+  /** The site's calendar date, from `siteDay`. */
+  day: string;
 }
 
 /**
@@ -44,10 +75,10 @@ export interface ActivityVersions {
  * tag.
  */
 export function activityETag(
-  { github, feed, deploy }: ActivityVersions,
+  { github, feed, deploy, day }: ActivityVersions,
   variant: "html" | "md",
 ): string {
-  return `W/"${github}-${feed}-${deploy}-${variant}"`;
+  return `W/"${github}-${feed}-${deploy}-${day}-${variant}"`;
 }
 
 export interface ActivityTimes {
@@ -57,6 +88,8 @@ export interface ActivityTimes {
   feed: Date | null;
   /** When the Worker version was uploaded. */
   deploy: Date | null;
+  /** When the site's current day began, from `siteDay`. */
+  day: Date | null;
 }
 
 /**
@@ -64,7 +97,7 @@ export interface ActivityTimes {
  * page moves whenever any of them does, so the latest is when it last did.
  */
 export function activityLastModified(times: ActivityTimes): Date {
-  const instants = [times.github, times.feed, times.deploy]
+  const instants = [times.github, times.feed, times.deploy, times.day]
     .filter((time) => time !== null)
     .map((time) => time.getTime())
     .filter((instant) => !Number.isNaN(instant));

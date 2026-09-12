@@ -1,0 +1,18 @@
+---
+import { SITE } from "@/config";
+
+/**
+ * The homepage's opening line under the site header. The header already
+ * carries the name as its title link, so the heading here is for the
+ * outline and the reader sees only the line. The `aside` slot sits at the
+ * line's right end, where the rails' window toggle goes on a desktop.
+ */
+---
+
+<div class="page-column flex items-baseline justify-between gap-6 pt-6 sm:pt-8">
+  <h1 class="sr-only">{SITE.title}</h1>
+  <p class="text-base text-foreground/60">
+    Programmer, cyclist, and photographer in San Francisco.
+  </p>
+  <slot name="aside" />
+</div>

@@ -8,6 +8,7 @@ import {
   etagMatches,
   isActivityPath,
   notModifiedSince,
+  siteDay,
   unchanged,
 } from "./cache";
 
@@ -37,10 +38,11 @@ describe("isActivityPath", () => {
   it("matches the routes whose freshness tracks the sync", () => {
     expect(isActivityPath("/activity/code")).toBe(true);
     expect(isActivityPath("/activity/code/2024")).toBe(true);
+    expect(isActivityPath("/")).toBe(true);
   });
 
   it("leaves everything else to routeRules", () => {
-    expect(isActivityPath("/")).toBe(false);
+    expect(isActivityPath("/about")).toBe(false);
     expect(isActivityPath("/posts/some-post")).toBe(false);
     expect(isActivityPath("/llms.txt")).toBe(false);
   });
@@ -60,29 +62,49 @@ describe("activityETag", () => {
     github: 7,
     feed: "3.2026-09-01T10:00:00.000Z",
     deploy: "a1b2c3d4",
+    day: "2026-09-05",
   };
 
   it("separates the representations served at one URL", () => {
     expect(activityETag(versions, "html")).toBe(
-      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-html"',
+      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-2026-09-05-html"',
     );
     expect(activityETag(versions, "md")).toBe(
-      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-md"',
+      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-2026-09-05-md"',
     );
   });
 
-  it("moves with either dataset and with a deploy", () => {
+  it("moves with either dataset, with a deploy, and with the day", () => {
     const html = activityETag(versions, "html");
     expect(activityETag({ ...versions, github: 8 }, "html")).not.toBe(html);
     expect(activityETag({ ...versions, feed: "4.0" }, "html")).not.toBe(html);
     expect(activityETag({ ...versions, deploy: "e5f6" }, "html")).not.toBe(
       html,
     );
+    expect(activityETag({ ...versions, day: "2026-09-06" }, "html")).not.toBe(
+      html,
+    );
+  });
+});
+
+describe("siteDay", () => {
+  it("turns over at the site's midnight, not the Worker's", () => {
+    // Ten in the evening in San Francisco on the 8th is the 9th in UTC.
+    const evening = siteDay(new Date("2026-09-09T05:00:00Z"));
+    expect(evening.date).toBe("2026-09-08");
+    expect(evening.startedAt).toEqual(new Date("2026-09-08T07:00:00Z"));
+
+    const morning = siteDay(new Date("2026-09-09T08:00:00Z"));
+    expect(morning.date).toBe("2026-09-09");
+    expect(morning.startedAt).toEqual(new Date("2026-09-09T07:00:00Z"));
   });
 });
 
 describe("etagMatches", () => {
-  const etag = activityETag({ github: 7, feed: "0.0", deploy: "v1" }, "html");
+  const etag = activityETag(
+    { github: 7, feed: "0.0", deploy: "v1", day: "d" },
+    "html",
+  );
 
   it("ignores a request with no validator", () => {
     expect(etagMatches(null, etag)).toBe(false);
@@ -90,17 +112,19 @@ describe("etagMatches", () => {
   });
 
   it("matches the same version and representation", () => {
-    expect(etagMatches('"7-0.0-v1-html"', etag)).toBe(true);
-    expect(etagMatches('"6-0.0-v1-html"', etag)).toBe(false);
-    expect(etagMatches('"7-0.0-v1-md"', etag)).toBe(false);
+    expect(etagMatches('"7-0.0-v1-d-html"', etag)).toBe(true);
+    expect(etagMatches('"6-0.0-v1-d-html"', etag)).toBe(false);
+    expect(etagMatches('"7-0.0-v1-d-md"', etag)).toBe(false);
   });
 
   it("compares weakly", () => {
-    expect(etagMatches('W/"7-0.0-v1-html"', etag)).toBe(true);
+    expect(etagMatches('W/"7-0.0-v1-d-html"', etag)).toBe(true);
   });
 
   it("accepts any entry in a list, and the wildcard", () => {
-    expect(etagMatches('"6-0.0-v1-html", "7-0.0-v1-html"', etag)).toBe(true);
+    expect(etagMatches('"6-0.0-v1-d-html", "7-0.0-v1-d-html"', etag)).toBe(
+      true,
+    );
     expect(etagMatches("*", etag)).toBe(true);
   });
 });
@@ -115,19 +139,25 @@ describe("activityLastModified", () => {
         github: new Date("2026-09-04T00:00:00Z"),
         feed,
         deploy,
+        day: new Date("2026-09-05T07:00:00Z"),
       }),
-    ).toEqual(new Date("2026-09-05T06:31:43.000Z"));
+    ).toEqual(new Date("2026-09-05T07:00:00.000Z"));
   });
 
   it("stands on the deploy alone before any data lands", () => {
-    expect(activityLastModified({ github: null, feed: null, deploy })).toEqual(
-      new Date("2026-09-01T10:00:00.000Z"),
-    );
+    expect(
+      activityLastModified({ github: null, feed: null, deploy, day: null }),
+    ).toEqual(new Date("2026-09-01T10:00:00.000Z"));
   });
 
   it("falls back to the epoch with no time at all", () => {
     expect(
-      activityLastModified({ github: null, feed: null, deploy: null }),
+      activityLastModified({
+        github: null,
+        feed: null,
+        deploy: null,
+        day: null,
+      }),
     ).toEqual(new Date(0));
   });
 });
@@ -160,7 +190,7 @@ describe("notModifiedSince", () => {
 
 describe("unchanged", () => {
   const validators = {
-    etag: 'W/"7-0.0-v1-html"',
+    etag: 'W/"7-0.0-v1-d-html"',
     lastModified: new Date("2026-09-05T06:31:43Z"),
   };
   const current = "Sat, 05 Sep 2026 06:31:43 GMT";
@@ -168,14 +198,14 @@ describe("unchanged", () => {
   it("answers by tag when the request carries one", () => {
     expect(
       unchanged(
-        new Headers({ "If-None-Match": '"7-0.0-v1-html"' }),
+        new Headers({ "If-None-Match": '"7-0.0-v1-d-html"' }),
         validators,
       ),
     ).toBe(true);
     expect(
       unchanged(
         new Headers({
-          "If-None-Match": '"6-0.0-v1-html"',
+          "If-None-Match": '"6-0.0-v1-d-html"',
           "If-Modified-Since": current,
         }),
         validators,

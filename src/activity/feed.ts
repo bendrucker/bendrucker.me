@@ -184,6 +184,31 @@ export async function queryCyclingActivity(
 }
 
 /**
+ * The latest rides the feed would card, newest first by wall clock, with no
+ * track, media, or badge attached: what a page that names a ride wants,
+ * without the feed. Commutes stay out here as they do from the months.
+ */
+export async function queryLatestRides(
+  db: Kysely<Database>,
+  limit: number,
+): Promise<Ride[]> {
+  const rows = await db
+    .selectFrom("activityFeed")
+    .select(RIDE_COLUMNS)
+    .where("sport", "=", "ride")
+    .where((eb) =>
+      eb.or([
+        eb("distanceM", "is", null),
+        eb("distanceM", ">=", COMMUTE_MAX_DISTANCE_M),
+      ]),
+    )
+    .orderBy("startedAt", "desc")
+    .limit(limit)
+    .execute();
+  return toEntries(rows).map((entry) => entry.ride);
+}
+
+/**
  * The tracks the page draws: every ride in the log's window, and the
  * highlighted rides from the months before it. The window is bounded on
  * instants with slack for the local dates it is keyed on, which reads a
@@ -462,7 +487,7 @@ function toEntry(row: RideRow): Entry {
  * formatter to show as-is. `TZDate` accepts any zone name and yields an
  * invalid date for one it cannot resolve, so the check is on the result.
  */
-function wallClock(startedAt: string, timezone: string): string {
+export function wallClock(startedAt: string, timezone: string): string {
   const instant = new Date(startedAt);
   if (Number.isNaN(instant.getTime())) return startedAt;
   const zoned = new TZDate(instant, timezone);

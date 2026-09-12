@@ -1,0 +1,36 @@
+---
+import RailHeading from "./RailHeading.astro";
+
+/**
+ * A homepage section: its heading row, the stat band, the list of rows, and
+ * a row at the foot pointing on to the full page. On a phone the tabs above
+ * stand in for the heading.
+ */
+export interface Props {
+  label: string;
+  icon: "bike" | "code";
+  href: string;
+  /** What the foot row offers: "More rides". */
+  more: string;
+}
+
+const { label, icon, href, more } = Astro.props;
+---
+
+<section>
+  <div class="hidden sm:block">
+    <RailHeading label={label} icon={icon} href={href} />
+  </div>
+  <slot name="band" />
+  <ul role="list" class="@container">
+    <slot />
+  </ul>
+  <a
+    href={href}
+    class="flex items-center justify-center gap-1 py-3 text-xs text-foreground/50 transition-colors hover:text-accent"
+  >
+    <span class="icon-[lucide--chevron-down] size-3.5" aria-hidden="true"
+    ></span>
+    {more}
+  </a>
+</section>
