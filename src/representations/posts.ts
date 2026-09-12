@@ -1,5 +1,5 @@
 import { getCollection } from "astro:content";
-import { getPath } from "@/blog/path";
+import { getPath, getSlug } from "@/blog/path";
 import { getSortedPosts, postFilter } from "@/blog/posts";
 import type { Representation } from "./types";
 
@@ -13,7 +13,7 @@ export const posts: Representation = {
 
     const entries = await getCollection("blog", postFilter);
     const entry = entries.find(
-      (post) => getPath(post.id, post.filePath) === `/posts/${slug}`,
+      (post) => getSlug(post.id, post.filePath) === slug,
     );
     if (entry?.body == null) return null;
     return `# ${entry.data.title}\n\n${entry.body}`;

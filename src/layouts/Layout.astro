@@ -9,6 +9,8 @@ import "@/styles/global.css";
 
 export interface Props {
   title?: string;
+  /** Article title for structured data, without the `| Ben Drucker` suffix. */
+  headline?: string;
   author?: string;
   profile?: string;
   description?: string;
@@ -23,11 +25,12 @@ export interface Props {
 
 const {
   title = SITE.title,
+  headline = title,
   author = SITE.author,
   profile = SITE.profile,
   description = SITE.desc,
   ogImage = SITE.ogImage ? `/${SITE.ogImage}` : "/og.png",
-  canonicalURL = new URL(Astro.url.pathname, Astro.url),
+  canonicalURL = new URL(Astro.url.pathname, Astro.site),
   pubDatetime,
   modDatetime,
   scrollSmooth = false,
@@ -35,7 +38,11 @@ const {
   headerVariant = "default",
 } = Astro.props;
 
-const socialImageURL = new URL(ogImage, Astro.url);
+// Absolute URLs resolve against the configured site rather than the inbound
+// request. An on-demand page served over http would otherwise advertise an
+// `http://` canonical, and because those responses share one cache entry with
+// the https ones, a single http crawl poisons the canonical every reader gets.
+const socialImageURL = new URL(ogImage, Astro.site);
 
 const markdownURL = representationFor(Astro.routePattern)
   ? new URL(`${Astro.url.pathname.replace(/\/$/, "")}.md`, Astro.site)
@@ -45,7 +52,10 @@ const structuredData = pubDatetime
   ? {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
-      headline: title,
+      headline,
+      description,
+      url: `${canonicalURL}`,
+      mainEntityOfPage: `${canonicalURL}`,
       image: `${socialImageURL}`,
       datePublished: pubDatetime.toISOString(),
       ...(modDatetime && { dateModified: modDatetime.toISOString() }),

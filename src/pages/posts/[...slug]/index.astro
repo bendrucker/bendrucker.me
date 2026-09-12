@@ -1,17 +1,26 @@
 ---
+import type { GetStaticPaths } from "astro";
 import { getCollection } from "astro:content";
 import PostDetails from "@/layouts/PostDetails.astro";
 import { getSortedPosts } from "@/blog/posts";
-import { getPath } from "@/blog/path";
+import { getSlug } from "@/blog/path";
 
-const pathname = Astro.url.pathname.replace(/\/$/, "");
+// `@astrojs/sitemap` only sees routes that exist at build time, so on-demand
+// posts were absent from the sitemap entirely. Every page that links to a post
+// already prerenders, so this also settles the `postFilter` scheduling window
+// at one moment across the whole site rather than per request.
+export const prerender = true;
 
-const sortedPosts = getSortedPosts(await getCollection("blog"));
-const post = sortedPosts.find((p) => getPath(p.id, p.filePath) === pathname);
+export const getStaticPaths = (async () => {
+  const posts = getSortedPosts(await getCollection("blog"));
 
-if (!post) {
-  return new Response(null, { status: 404 });
-}
+  return posts.map((post) => ({
+    params: { slug: getSlug(post.id, post.filePath) },
+    props: { post, posts },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post, posts } = Astro.props;
 ---
 
-<PostDetails post={post} posts={sortedPosts} />
+<PostDetails {post} {posts} />

@@ -39,7 +39,7 @@ describe("posts", () => {
     const entries = await posts.list();
     expect(entries).toEqual([
       {
-        path: "/posts/hello-world",
+        path: "/posts/hello-world/",
         title: "Hello, World",
         description: undefined,
       },

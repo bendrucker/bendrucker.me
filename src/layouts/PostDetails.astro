@@ -7,7 +7,7 @@ import ShareLinks from "@/components/ShareLinks.astro";
 import BackButton from "@/components/BackButton.astro";
 import BackToTopButton from "@/components/BackToTopButton.astro";
 import kebabcase from "lodash.kebabcase";
-import { getPath } from "@/blog/path";
+import { getPath, getSlug } from "@/blog/path";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
 import { SITE } from "@/config";
@@ -44,16 +44,15 @@ if (typeof initOgImage === "string") {
 
 // Use dynamic OG image if enabled and no remote|local ogImage
 if (!ogImageUrl && SITE.dynamicOgImage) {
-  ogImageUrl = `${getPath(post.id, post.filePath)}/index.png`;
+  ogImageUrl = `/posts/${getSlug(post.id, post.filePath)}/index.png`;
 }
 
 // Resolve OG image URL (or fallback to SITE.ogImage / default `og.png`)
-const ogImage = ogImageUrl
-  ? new URL(ogImageUrl, Astro.url.origin).href
-  : undefined;
+const ogImage = ogImageUrl ? new URL(ogImageUrl, Astro.site).href : undefined;
 
 const layoutProps = {
   title: `${title} | ${SITE.title}`,
+  headline: title,
   author,
   description,
   pubDatetime,
