@@ -3,7 +3,6 @@ import type { APIContext } from "astro";
 
 const entry = {
   id: "hello-world",
-  filePath: "src/content/blog/hello-world.md",
   body: "The body of the post.",
   data: { title: "Hello, World", draft: false, pubDatetime: "2013-01-01" },
 };
@@ -39,7 +38,7 @@ describe("posts", () => {
     const entries = await posts.list();
     expect(entries).toEqual([
       {
-        path: "/posts/hello-world/",
+        path: "/posts/hello-world",
         title: "Hello, World",
         description: undefined,
       },

@@ -1,31 +1,11 @@
-import kebabcase from "lodash.kebabcase";
-
-const BLOG_PATH = "src/content/blog";
+import { SITE } from "@/config";
 
 /**
- * Slug of a blog post: its directories under `src/content/blog` followed by its
- * file name, slugified, with no leading or trailing slash.
+ * Canonical site path of a blog post, carrying whichever trailing slash
+ * `astro.config.ts` canonicalizes on, so a link built from this reaches the
+ * post without a redirect.
  */
-export function getSlug(id: string, filePath: string | undefined): string {
-  const directories =
-    filePath
-      ?.replace(BLOG_PATH, "")
-      .split("/")
-      .filter((segment) => segment !== "")
-      .filter((segment) => !segment.startsWith("_")) // exclude "_drafts" and friends
-      .slice(0, -1) // drop the file name, which `id` supplies
-      .map((segment) => kebabcase(segment)) ?? [];
-
-  const name = id.split("/").at(-1) ?? id;
-
-  return [...directories, name].join("/");
-}
-
-/**
- * Canonical site path of a blog post. Carries the trailing slash
- * `trailingSlash: "always"` canonicalizes on, so a link built from this reaches
- * the post without a redirect.
- */
-export function getPath(id: string, filePath: string | undefined): string {
-  return `/posts/${getSlug(id, filePath)}/`;
+export function getPath(id: string): string {
+  const slash = SITE.trailingSlash === "always" ? "/" : "";
+  return `/posts/${id}${slash}`;
 }

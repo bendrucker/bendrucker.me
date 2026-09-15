@@ -1,5 +1,4 @@
 import { getCollection } from "astro:content";
-import { getPath, getSlug } from "@/blog/path";
 import { getSortedPosts, postFilter } from "@/blog/posts";
 import type { Representation } from "./types";
 
@@ -12,9 +11,7 @@ export const posts: Representation = {
     if (!slug) return null;
 
     const entries = await getCollection("blog", postFilter);
-    const entry = entries.find(
-      (post) => getSlug(post.id, post.filePath) === slug,
-    );
+    const entry = entries.find((post) => post.id === slug);
     if (entry?.body == null) return null;
     return `# ${entry.data.title}\n\n${entry.body}`;
   },
@@ -22,7 +19,8 @@ export const posts: Representation = {
   async list() {
     const entries = await getCollection("blog");
     return getSortedPosts(entries).map((post) => ({
-      path: getPath(post.id, post.filePath),
+      // `/llms.txt` appends `.md` to this, so it carries no trailing slash.
+      path: `/posts/${post.id}`,
       title: post.data.title,
       description: post.data.description,
     }));

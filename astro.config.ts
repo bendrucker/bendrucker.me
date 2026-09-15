@@ -44,17 +44,11 @@ function copyStaticFiles(src: string, dest: string) {
 export default defineConfig({
   site: SITE.website,
   output: "server",
-  // One URL per page. Astro serves both `/about` and `/about/` by default, each
-  // claiming itself canonical, which splits every page into two competing URLs.
-  //
-  // The trailing slash wins because the prerendered half of the site cannot do
-  // otherwise: `build.format: "directory"` writes `<slug>/index.html`, and
-  // Cloudflare's asset server redirects the bare path to the directory form. Set
-  // to `never`, a post's canonical named a URL that 307s away to the one it was
-  // trying to deny. The `file` format sidesteps that redirect but writes
-  // `<slug>.html`, and the extension then leaks into `Astro.url.pathname` and
-  // out into the canonical.
-  trailingSlash: "always",
+  // One URL per page: Astro otherwise serves `/about` and `/about/` as two
+  // pages that each claim to be canonical. The slash is the direction that
+  // works, because Cloudflare redirects the bare path to the
+  // `<slug>/index.html` that `build.format: "directory"` writes.
+  trailingSlash: SITE.trailingSlash,
   // Interactive runs stay human-readable. `npm run dev:json` opts into
   // machine-readable logs for tools that parse them.
   ...(process.env.ASTRO_LOG_JSON ? { logger: logHandlers.json() } : {}),
@@ -71,15 +65,16 @@ export default defineConfig({
     "/": DEPLOY_SCOPED_CACHE,
     "/about": DEPLOY_SCOPED_CACHE,
     "/about.md": DEPLOY_SCOPED_CACHE,
-    // The post itself prerenders, so only its markdown representation is served
-    // on demand and has anything to cache.
-    "/posts/[...slug].md": DEPLOY_SCOPED_CACHE,
     "/og.png": DEPLOY_SCOPED_CACHE,
     "/llms.txt": DEPLOY_SCOPED_CACHE,
   },
   integrations: [
     sitemap({
-      filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
+      // `page` is an absolute URL whose tail moves with `trailingSlash`, so the
+      // comparison is against its path.
+      filter: (page) =>
+        SITE.showArchives ||
+        new URL(page).pathname.replace(/\/$/, "") !== "/archives",
     }),
     vue(),
     ...(isDev
