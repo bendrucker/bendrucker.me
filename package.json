@@ -39,7 +39,7 @@
     "@cf-wasm/satori": "^0.4.0",
     "@date-fns/tz": "^1.5.0",
     "@mapbox/vector-tile": "^3.0.0",
-    "@sentry/cloudflare": "^10.70.0",
+    "@sentry/cloudflare": "^10.73.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.3.0",
     "@vueuse/core": "^14.4.0",
