@@ -44,6 +44,11 @@ function copyStaticFiles(src: string, dest: string) {
 export default defineConfig({
   site: SITE.website,
   output: "server",
+  // One URL per page: Astro otherwise serves `/about` and `/about/` as two
+  // pages that each claim to be canonical. The slash is the direction that
+  // works, because Cloudflare redirects the bare path to the
+  // `<slug>/index.html` that `build.format: "directory"` writes.
+  trailingSlash: SITE.trailingSlash,
   // Interactive runs stay human-readable. `npm run dev:json` opts into
   // machine-readable logs for tools that parse them.
   ...(process.env.ASTRO_LOG_JSON ? { logger: logHandlers.json() } : {}),
@@ -60,14 +65,16 @@ export default defineConfig({
     "/": DEPLOY_SCOPED_CACHE,
     "/about": DEPLOY_SCOPED_CACHE,
     "/about.md": DEPLOY_SCOPED_CACHE,
-    "/posts/[...slug]": DEPLOY_SCOPED_CACHE,
-    "/posts/[...slug].md": DEPLOY_SCOPED_CACHE,
     "/og.png": DEPLOY_SCOPED_CACHE,
     "/llms.txt": DEPLOY_SCOPED_CACHE,
   },
   integrations: [
     sitemap({
-      filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
+      // `page` is an absolute URL whose tail moves with `trailingSlash`, so the
+      // comparison is against its path.
+      filter: (page) =>
+        SITE.showArchives ||
+        new URL(page).pathname.replace(/\/$/, "") !== "/archives",
     }),
     vue(),
     ...(isDev

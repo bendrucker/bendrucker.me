@@ -1,17 +1,22 @@
 ---
+import type { GetStaticPaths } from "astro";
 import { getCollection } from "astro:content";
 import PostDetails from "@/layouts/PostDetails.astro";
 import { getSortedPosts } from "@/blog/posts";
-import { getPath } from "@/blog/path";
 
-const pathname = Astro.url.pathname.replace(/\/$/, "");
+// `@astrojs/sitemap` only lists routes that exist at build time.
+export const prerender = true;
 
-const sortedPosts = getSortedPosts(await getCollection("blog"));
-const post = sortedPosts.find((p) => getPath(p.id, p.filePath) === pathname);
+export const getStaticPaths = (async () => {
+  const posts = getSortedPosts(await getCollection("blog"));
 
-if (!post) {
-  return new Response(null, { status: 404 });
-}
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post, posts },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post, posts } = Astro.props;
 ---
 
-<PostDetails post={post} posts={sortedPosts} />
+<PostDetails {post} {posts} />
