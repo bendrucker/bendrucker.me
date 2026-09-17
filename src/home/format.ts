@@ -1,5 +1,5 @@
 /**
- * The numbers on the homepage's stat bands, formatted the same on the
+ * The numbers on the homepage's stat tiles, formatted the same on the
  * server and in the script that animates a window change. Distances and
  * counts take commas. Climbing runs to millions of feet over a career, so
  * it compacts once it passes six digits, where a full number stops being

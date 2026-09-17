@@ -1,0 +1,54 @@
+---
+import { formatStat, type StatKind } from "@/home/format";
+import type { ByPeriod, Period } from "@/home/stats";
+import PeriodToggle from "./PeriodToggle.astro";
+
+/**
+ * The totals across the top of the homepage, one tile per number: a label
+ * over the figure and its unit. The grid sets the layout, two columns on a
+ * phone and three on a desktop, where the figures are larger. The window
+ * toggle sits in the first tile, at the right of its label, and drives
+ * every tile.
+ */
+export interface Stat {
+  kind: StatKind;
+  label: string;
+  value: ByPeriod<number | null>;
+  unit: string;
+}
+
+export interface Props {
+  stats: Stat[];
+  selected: Period;
+}
+
+const { stats, selected } = Astro.props;
+---
+
+<div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+  {
+    stats.map((stat, index) => (
+      <div class="flex min-w-0 flex-col gap-2 rounded bg-muted/50 px-3 py-3 sm:gap-2.5 sm:px-4.5 sm:pt-4 sm:pb-3.5">
+        <div class="flex items-baseline justify-between gap-2">
+          <span class="text-[0.65rem] tracking-[0.14em] text-foreground/40 uppercase">
+            {stat.label}
+          </span>
+          {index === 0 && <PeriodToggle selected={selected} />}
+        </div>
+        <p class="flex items-baseline gap-1">
+          <span
+            class="font-sans text-[1.625rem] leading-none font-extrabold tracking-tight tabular-nums sm:text-[2.125rem]"
+            data-stat
+            data-kind={stat.kind}
+            data-values={JSON.stringify(stat.value)}
+          >
+            {formatStat(stat.value[selected], stat.kind)}
+          </span>
+          <span class="text-xs font-semibold text-foreground/70">
+            {stat.unit}
+          </span>
+        </p>
+      </div>
+    ))
+  }
+</div>
