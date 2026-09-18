@@ -29,8 +29,8 @@ export function useUnits() {
     distanceUnit: computed(() => format.distanceUnit(units.value)),
     elevationUnit: computed(() => format.elevationUnit(units.value)),
     speedUnit: computed(() => format.speedUnit(units.value)),
-    formatDistance: (miles: number) =>
-      format.formatDistance(miles, units.value),
+    formatDistance: (miles: number, digits?: number) =>
+      format.formatDistance(miles, units.value, digits),
     formatElevation: (feet: number) =>
       format.formatElevation(feet, units.value),
     formatSpeed: (mph: number) => format.formatSpeed(mph, units.value),

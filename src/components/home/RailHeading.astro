@@ -1,0 +1,37 @@
+---
+/**
+ * The row that opens a homepage rail: what it holds at left, where the rest
+ * of it lives at right.
+ */
+export interface Props {
+  label: string;
+  icon: "bike" | "code";
+  /** The full page, linked as "All". */
+  href: string;
+  as?: "h2" | "h3";
+}
+
+const { label, icon, href, as: Tag = "h2" } = Astro.props;
+
+/** Written out, since Tailwind never sees an interpolated class. */
+const iconClass =
+  icon === "bike" ? "icon-[lucide--bike]" : "icon-[lucide--code]";
+---
+
+<div
+  class="flex items-baseline justify-between gap-4 border-b border-border pb-2.5"
+>
+  <Tag
+    class="flex items-center gap-1.5 text-xs tracking-[0.14em] text-foreground/45 uppercase"
+  >
+    <span class:list={[iconClass, "size-3.5"]} aria-hidden="true"></span>
+    {label}
+  </Tag>
+  <a
+    href={href}
+    class="inline-flex items-center gap-1 text-xs text-foreground/60 underline decoration-dashed underline-offset-4 hover:text-accent"
+  >
+    All
+    <span class="icon-[lucide--arrow-right] size-3.5" aria-hidden="true"></span>
+  </a>
+</div>

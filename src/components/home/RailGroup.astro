@@ -1,0 +1,19 @@
+---
+/** A shelf inside a rail: a recency label over the rows that belong to it. */
+export interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<li>
+  <p
+    class="pt-3 pb-0.5 text-[0.65rem] tracking-[0.14em] text-foreground/40 uppercase"
+  >
+    {label}
+  </p>
+  <ul role="list">
+    <slot />
+  </ul>
+</li>

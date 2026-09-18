@@ -1,0 +1,38 @@
+---
+import { PERIOD_LABELS, PERIODS, type Period } from "@/home/stats";
+
+/**
+ * The window every stat tile covers, set in caption type so it reads as a
+ * label rather than a control. It sits above the tiles at their right
+ * edge, and the script in `Rails.astro` counts every tile to the window
+ * it picks.
+ */
+export interface Props {
+  selected: Period;
+}
+
+const { selected } = Astro.props;
+---
+
+<div
+  role="radiogroup"
+  aria-label="Totals over"
+  data-period-toggle
+  class="flex shrink-0 gap-2 text-[0.65rem] tracking-[0.14em] uppercase"
+>
+  {
+    PERIODS.map((period) => (
+      <button
+        type="button"
+        role="radio"
+        aria-checked={period === selected}
+        aria-label={PERIOD_LABELS[period].name}
+        data-period={period}
+        tabindex={period === selected ? 0 : -1}
+        class="cursor-pointer text-foreground/35 transition-colors hover:text-foreground/70 aria-checked:text-foreground"
+      >
+        {PERIOD_LABELS[period].short}
+      </button>
+    ))
+  }
+</div>

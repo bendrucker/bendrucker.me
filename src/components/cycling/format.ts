@@ -16,11 +16,15 @@ export function speedUnit(units: Units): string {
   return units === "imperial" ? "mph" : "km/h";
 }
 
-export function formatDistance(miles: number, units: Units): string {
+export function formatDistance(
+  miles: number,
+  units: Units,
+  digits = 1,
+): string {
   const value = units === "imperial" ? miles : miles * KM_PER_MILE;
   return value.toLocaleString("en-US", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   });
 }
 

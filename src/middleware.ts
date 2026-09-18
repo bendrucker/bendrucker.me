@@ -11,6 +11,7 @@ import {
   BROWSER_CACHE_CONTROL,
   cachesResponse,
   isActivityPath,
+  siteDay,
   unchanged,
   type Validators,
 } from "./middleware/cache";
@@ -67,16 +68,23 @@ async function activityValidators(context: APIContext): Promise<Validators> {
   ]);
   const negotiable = representationFor(context.routePattern) !== undefined;
   const { id, timestamp } = env.CF_VERSION_METADATA;
+  const day = siteDay(new Date());
 
   return {
     etag: activityETag(
-      { github: state?.version ?? 0, feed: feed.tag, deploy: id },
+      {
+        github: state?.version ?? 0,
+        feed: feed.tag,
+        deploy: id,
+        day: day.date,
+      },
       negotiable && prefersMarkdown(context.request) ? "md" : "html",
     ),
     lastModified: activityLastModified({
       github: readTimestamp(state?.changedAt ?? null),
       feed: feed.updatedAt,
       deploy: readTimestamp(timestamp),
+      day: day.startedAt,
     }),
   };
 }
