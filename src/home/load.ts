@@ -24,7 +24,12 @@ const NO_TOTALS: CyclingTotals = {
   rideCount: 0,
 };
 
-const NO_CODE: CodeTotals = { prCount: 0, reviewCount: 0, repoCount: 0 };
+const NO_CODE: CodeTotals = {
+  prCount: 0,
+  reviewCount: 0,
+  repoCount: 0,
+  approximate: false,
+};
 
 /**
  * Each piece falls back to empty on its own, so a failed repo query still

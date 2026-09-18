@@ -29,6 +29,8 @@ export interface CodeTotals {
   prCount: number | null;
   reviewCount: number | null;
   repoCount: number;
+  /** Whether the pull request and review counts are near rather than exact. */
+  approximate: boolean;
 }
 
 /**
@@ -81,9 +83,11 @@ export async function queryCyclingTotals(
 /**
  * The GitHub sync keeps one row per repository per year, stamped with the
  * last activity in it. A row belongs to a window when that stamp does, which
- * counts repositories exactly and counts a year's pull requests and reviews
- * closely enough. Over thirty days it would count a whole year's worth, so
- * those two stay null until the code hub publishes event-level data.
+ * counts repositories exactly and all time exactly. Over the past year a row
+ * from the prior calendar year brings that whole year's pull requests and
+ * reviews with it, so those two are near rather than exact and are marked
+ * so. Over thirty days they would count a whole year's worth, so they stay
+ * null. Both wait on the code hub publishing event-level data.
  */
 export async function queryCodeTotals(
   db: Kysely<Database>,
@@ -105,6 +109,7 @@ export async function queryCodeTotals(
     prCount: period === "month" ? null : (totals[period].prCount ?? 0),
     reviewCount: period === "month" ? null : (totals[period].reviewCount ?? 0),
     repoCount: totals[period].repoCount,
+    approximate: period === "year",
   });
   return { month: counts("month"), year: counts("year"), all: counts("all") };
 }

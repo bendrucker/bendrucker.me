@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   activityCachePolicy,
+  untilSiteMidnight,
   activityETag,
   activityLastModified,
   activityMaxAge,
@@ -54,6 +55,33 @@ describe("activityCachePolicy", () => {
       maxAge: 2100,
       swr: 3600,
     });
+  });
+
+  it("expires at the site's midnight when that comes before the sync", () => {
+    // 23:50 in Los Angeles on the 5th, an hour and ten from the next sync mark.
+    expect(activityCachePolicy(new Date("2026-07-06T06:50:00Z"))).toEqual({
+      maxAge: 600,
+      swr: 0,
+    });
+  });
+
+  it("keeps stale-while-revalidate from reaching past midnight", () => {
+    // 22:10 in Los Angeles: fresh until 23:05, then stale only until midnight.
+    expect(activityCachePolicy(new Date("2026-07-06T05:10:00Z"))).toEqual({
+      maxAge: 3300,
+      swr: 3300,
+    });
+  });
+});
+
+describe("untilSiteMidnight", () => {
+  it("counts to the site's next midnight, not UTC's", () => {
+    // 21:00 in Los Angeles on the 5th, three hours from its midnight.
+    expect(untilSiteMidnight(new Date("2026-07-06T04:00:00Z"))).toBe(3 * 3600);
+  });
+
+  it("stays positive at the stroke", () => {
+    expect(untilSiteMidnight(new Date("2026-07-06T07:00:00Z"))).toBe(24 * 3600);
   });
 });
 

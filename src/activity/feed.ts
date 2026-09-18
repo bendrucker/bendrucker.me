@@ -2,7 +2,7 @@
 // shaped into what the cycling page renders. The stories fill the same shape
 // by hand in `src/components/cycling/fixtures.ts`.
 import { TZDate } from "@date-fns/tz";
-import { format } from "date-fns";
+import { format, subHours } from "date-fns";
 import { sql, type Kysely, type Selectable } from "kysely";
 import { z } from "zod";
 import {
@@ -184,28 +184,53 @@ export async function queryCyclingActivity(
 }
 
 /**
+ * The furthest apart two zones' clocks can be: a ride with a later wall
+ * clock than another started no more than this long before it.
+ */
+const ZONE_SPREAD_HOURS = 26;
+
+/**
  * The latest rides the feed would card, newest first by wall clock, with no
  * track, media, or badge attached: what a page that names a ride wants,
  * without the feed. Commutes stay out here as they do from the months.
+ *
+ * The rows are ordered by instant and the rides by wall clock, which agree
+ * except across zones, so the query reads on past the limit by the widest
+ * the zones can disagree before the rides are sorted and cut.
  */
 export async function queryLatestRides(
   db: Kysely<Database>,
   limit: number,
 ): Promise<Ride[]> {
-  const rows = await db
-    .selectFrom("activityFeed")
-    .select(RIDE_COLUMNS)
-    .where("sport", "=", "ride")
-    .where((eb) =>
-      eb.or([
-        eb("distanceM", "is", null),
-        eb("distanceM", ">=", COMMUTE_MAX_DISTANCE_M),
-      ]),
-    )
+  const carded = () =>
+    db
+      .selectFrom("activityFeed")
+      .select(RIDE_COLUMNS)
+      .where("sport", "=", "ride")
+      .where((eb) =>
+        eb.or([
+          eb("distanceM", "is", null),
+          eb("distanceM", ">=", COMMUTE_MAX_DISTANCE_M),
+        ]),
+      );
+  const byInstant = await carded()
     .orderBy("startedAt", "desc")
     .limit(limit)
     .execute();
-  return toEntries(rows).map((entry) => entry.ride);
+  const last = byInstant.at(-1);
+  const rows =
+    byInstant.length < limit || last === undefined
+      ? byInstant
+      : await carded()
+          .where(
+            "startedAt",
+            ">=",
+            subHours(new Date(last.startedAt), ZONE_SPREAD_HOURS).toISOString(),
+          )
+          .execute();
+  return toEntries(rows)
+    .slice(0, limit)
+    .map((entry) => entry.ride);
 }
 
 /**

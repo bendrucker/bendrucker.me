@@ -29,11 +29,13 @@ const repoGroups = groupByRecency(repos, repoWhen, today);
 
 const selected = DEFAULT_PERIOD;
 
-const byPeriod = (pick: (period: Period) => number | null) =>
+const byPeriod = <T,>(pick: (period: Period) => T) =>
   Object.fromEntries(PERIODS.map((period) => [period, pick(period)])) as Record<
     Period,
-    number | null
+    T
   >;
+
+const codeApproximate = byPeriod((p) => codeTotals[p].approximate);
 
 const stats = [
   {
@@ -57,12 +59,14 @@ const stats = [
   {
     kind: "count" as const,
     label: "Pull requests",
+    approximate: codeApproximate,
     value: byPeriod((p) => codeTotals[p].prCount),
     unit: "PRs",
   },
   {
     kind: "count" as const,
     label: "Reviews",
+    approximate: codeApproximate,
     value: byPeriod((p) => codeTotals[p].reviewCount),
     unit: "reviews",
   },
@@ -187,6 +191,17 @@ const tab =
     return out;
   }
 
+  /** The windows over which a stat's number is near rather than exact. */
+  function approximate(stat: HTMLElement): Partial<Record<Period, boolean>> {
+    const parsed: unknown = JSON.parse(stat.dataset.approximate ?? "{}");
+    const out: Partial<Record<Period, boolean>> = {};
+    if (typeof parsed !== "object" || parsed === null) return out;
+    for (const period of PERIODS) {
+      if (Reflect.get(parsed, period) === true) out[period] = true;
+    }
+    return out;
+  }
+
   function wirePeriods(root: HTMLElement) {
     const toggle = root.querySelector<HTMLElement>("[data-period-toggle]");
     const radios = [
@@ -198,7 +213,9 @@ const tab =
         el,
         kind: isKind(el.dataset.kind) ? el.dataset.kind : ("count" as const),
         values: values(el),
+        approximate: approximate(el),
         shown: null as number | null,
+        about: false,
       }),
     );
     const still = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -208,6 +225,7 @@ const tab =
       for (const stat of stats) {
         const value = stat.values[period];
         stat.shown = value === undefined ? 0 : value;
+        stat.about = stat.approximate[period] === true;
       }
       cancelAnimationFrame(frame);
       const from = stats.map((stat) => Number(stat.el.dataset.shown ?? 0));
@@ -221,7 +239,7 @@ const tab =
         stats.forEach((stat, i) => {
           const to = stat.shown;
           const at = to === null ? null : from[i]! + (to - from[i]!) * eased;
-          stat.el.textContent = formatStat(at, stat.kind);
+          stat.el.textContent = formatStat(at, stat.kind, stat.about);
         });
         if (progress < 1) frame = requestAnimationFrame(paint);
         else

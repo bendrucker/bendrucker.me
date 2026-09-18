@@ -17,5 +17,11 @@ describe("formatStat", () => {
 
   it("dashes a number the data cannot give", () => {
     expect(formatStat(null, "count")).toBe("—");
+    expect(formatStat(null, "count", true)).toBe("—");
+  });
+
+  it("marks a number the data can only give closely", () => {
+    expect(formatStat(854, "count", true)).toBe("~854");
+    expect(formatStat(507114, "elevation", true)).toBe("~507k");
   });
 });

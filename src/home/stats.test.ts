@@ -128,14 +128,30 @@ describe("queryCodeTotals", () => {
       prCount: null,
       reviewCount: null,
       repoCount: 1,
+      approximate: false,
     });
-    expect(totals.year).toEqual({ prCount: 5, reviewCount: 5, repoCount: 2 });
-    expect(totals.all).toEqual({ prCount: 14, reviewCount: 5, repoCount: 2 });
+    expect(totals.year).toEqual({
+      prCount: 5,
+      reviewCount: 5,
+      repoCount: 2,
+      approximate: true,
+    });
+    expect(totals.all).toEqual({
+      prCount: 14,
+      reviewCount: 5,
+      repoCount: 2,
+      approximate: false,
+    });
   });
 
   it("is zeros with nothing synced", async () => {
     const totals = await queryCodeTotals(db, NOW);
-    expect(totals.year).toEqual({ prCount: 0, reviewCount: 0, repoCount: 0 });
+    expect(totals.year).toEqual({
+      prCount: 0,
+      reviewCount: 0,
+      repoCount: 0,
+      approximate: true,
+    });
     expect(totals.month.repoCount).toBe(0);
   });
 });

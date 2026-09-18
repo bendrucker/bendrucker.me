@@ -55,6 +55,33 @@ describe("queryRecentRides", () => {
     expect(rides.map((r) => r.id)).toEqual(["r11", "r9", "r7", "r3", "r1"]);
   });
 
+  it("orders by wall clock past the limit when the zones disagree", async () => {
+    // Six rides in Los Angeles, then one in Tokyo that started earlier by
+    // the instant and later by its own clock than the sixth of them.
+    for (const day of [8, 7, 6, 5, 4, 3]) {
+      await publishActivity(store, {
+        ...ride(`la${day}`, day),
+        startedAt: `2026-03-${String(day).padStart(2, "0")}T17:00:00.000Z`,
+      });
+    }
+    await publishActivity(store, {
+      ...ride("tokyo", 3),
+      startedAt: "2026-03-03T15:30:00.000Z",
+      timezone: "Asia/Tokyo",
+    });
+
+    const rides = await queryRecentRides(db, NOW);
+
+    expect(rides.map((r) => r.id)).toEqual([
+      "la8",
+      "la7",
+      "la6",
+      "la5",
+      "la4",
+      "tokyo",
+    ]);
+  });
+
   it("leaves commutes out, as the feed's months do", async () => {
     await publishActivity(store, ride("long", 10));
     await publishActivity(store, { ...ride("commute", 11), distanceM: 5000 });

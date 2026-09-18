@@ -6,10 +6,11 @@
 // astro.config.ts, and the Workers Cache key includes the Worker version, so
 // deploys invalidate it regardless of TTL.
 import { TZDate } from "@date-fns/tz";
-import { format, startOfDay } from "date-fns";
+import { addDays, format, startOfDay } from "date-fns";
 import { SITE } from "@/config";
 
 const ACTIVITY_SYNC_BUFFER_SECONDS = 300;
+const ACTIVITY_SWR_SECONDS = 3600;
 
 export interface CachePolicy {
   maxAge: number;
@@ -25,8 +26,24 @@ export function isActivityPath(pathname: string): boolean {
   return pathname === "/" || pathname.startsWith("/activity");
 }
 
+/**
+ * Fresh until the next sync lands or the site's day turns, whichever comes
+ * first. The day is part of every activity page's validators, but a cached
+ * response is served without consulting them until its max-age is up, and
+ * stale-while-revalidate can serve it once more after that. Neither may
+ * carry yesterday's page past midnight, so both stop there.
+ */
 export function activityCachePolicy(now: Date): CachePolicy {
-  return { maxAge: activityMaxAge(now), swr: 3600 };
+  const maxAge = Math.min(activityMaxAge(now), untilSiteMidnight(now));
+  const swr = Math.min(ACTIVITY_SWR_SECONDS, untilSiteMidnight(now) - maxAge);
+  return { maxAge, swr };
+}
+
+/** Seconds until the site's calendar day turns over. */
+export function untilSiteMidnight(now: Date): number {
+  const local = new TZDate(now, SITE.timezone);
+  const next = addDays(startOfDay(local), 1);
+  return Math.max(1, Math.ceil((next.getTime() - now.getTime()) / 1000));
 }
 
 export interface SiteDay {
