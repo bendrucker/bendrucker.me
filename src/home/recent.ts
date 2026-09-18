@@ -28,12 +28,8 @@ const SHELF: WindowSize = { min: 2, max: 3 };
  */
 export const EVERYDAY_REPOS = new Set(["bendrucker.me", "claude", "dotfiles"]);
 
-function isPersonal(repo: Repo): boolean {
-  return repo.owner === SITE.githubUsername;
-}
-
 function isEveryday(repo: Repo): boolean {
-  return isPersonal(repo) && EVERYDAY_REPOS.has(repo.name);
+  return repo.owner === SITE.githubUsername && EVERYDAY_REPOS.has(repo.name);
 }
 
 /**
@@ -91,25 +87,27 @@ export async function queryRecentRides(
 }
 
 /**
- * The head of the code page's own query, which already orders by last
- * contribution, shelved by who owns the repository and minus the everyday
- * ones.
+ * The head of the code page's own query for each owner, which already
+ * orders by last contribution, minus the everyday repositories. Each shelf
+ * gets a page of its own, so a run of personal work cannot push the
+ * contributions off the first page before the shelf is cut.
  */
 export async function queryRecentRepos(
   db: Kysely<Database>,
   now: Date = new Date(),
 ): Promise<RepoShelves> {
-  const { repos } = await queryRepos(db, {});
   const today = siteWallClock(now);
-  const shelf = (keep: (repo: Repo) => boolean) =>
-    recentWindow(
-      repos.filter((repo) => keep(repo)),
+  const [external, personal] = await Promise.all([
+    queryRepos(db, { owner: "external" }),
+    queryRepos(db, { owner: "personal" }),
+  ]);
+  return {
+    contributions: recentWindow(external.repos, repoWhen, today, SHELF),
+    personal: recentWindow(
+      personal.repos.filter((repo) => !isEveryday(repo)),
       repoWhen,
       today,
       SHELF,
-    );
-  return {
-    contributions: shelf((repo) => !isPersonal(repo)),
-    personal: shelf((repo) => isPersonal(repo) && !isEveryday(repo)),
+    ),
   };
 }

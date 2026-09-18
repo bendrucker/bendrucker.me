@@ -130,6 +130,22 @@ describe("queryRecentRepos", () => {
     expect(repos.personal.map((r) => r.name)).toEqual(["newest", "older"]);
   });
 
+  it("shelves contributions a page of personal work would bury", async () => {
+    await seed(db, [
+      ...Array.from({ length: 25 }, (_, i) => ({
+        owner: "bendrucker",
+        name: `mine${i}`,
+        activity: [{ lastActivity: 1000 - i }],
+      })),
+      { owner: "other", name: "theirs", activity: [{ lastActivity: 5 }] },
+    ]);
+
+    const repos = await queryRecentRepos(db, NOW);
+
+    expect(repos.contributions.map((r) => r.name)).toEqual(["theirs"]);
+    expect(repos.personal.map((r) => r.name)).toEqual(["mine0", "mine1"]);
+  });
+
   it("passes over the everyday personal repos, but not a fork of one", async () => {
     await seed(db, [
       {
