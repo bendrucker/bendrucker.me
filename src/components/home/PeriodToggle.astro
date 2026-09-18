@@ -3,8 +3,9 @@ import { PERIOD_LABELS, PERIODS, type Period } from "@/home/stats";
 
 /**
  * The window every stat tile covers, set in caption type so it reads as a
- * label rather than a control. It sits in the first tile, and the script
- * in `Rails.astro` counts every tile to the window it picks.
+ * label rather than a control. It sits above the tiles at their right
+ * edge, and the script in `Rails.astro` counts every tile to the window
+ * it picks.
  */
 export interface Props {
   selected: Period;

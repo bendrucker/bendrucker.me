@@ -4,11 +4,10 @@ import type { ByPeriod, Period } from "@/home/stats";
 import PeriodToggle from "./PeriodToggle.astro";
 
 /**
- * The totals across the top of the homepage, one tile per number: a label
+ * The homepage's totals beneath the rails, one tile per number: a label
  * over the figure and its unit. The grid sets the layout, two columns on a
  * phone and three on a desktop, where the figures are larger. The window
- * toggle sits in the first tile, at the right of its label, and drives
- * every tile.
+ * toggle sits above the grid at its right edge and drives every tile.
  */
 export interface Stat {
   kind: StatKind;
@@ -27,16 +26,16 @@ export interface Props {
 const { stats, selected } = Astro.props;
 ---
 
+<div class="flex justify-end pb-2.5">
+  <PeriodToggle selected={selected} />
+</div>
 <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
   {
-    stats.map((stat, index) => (
+    stats.map((stat) => (
       <div class="flex min-w-0 flex-col gap-2 rounded bg-muted/50 px-3 py-3 sm:gap-2.5 sm:px-4.5 sm:pt-4 sm:pb-3.5">
-        <div class="flex items-baseline justify-between gap-2">
-          <span class="text-[0.65rem] tracking-[0.14em] text-foreground/40 uppercase">
-            {stat.label}
-          </span>
-          {index === 0 && <PeriodToggle selected={selected} />}
-        </div>
+        <span class="text-[0.65rem] tracking-[0.14em] text-foreground/40 uppercase">
+          {stat.label}
+        </span>
         <p class="flex items-baseline gap-1">
           <span
             class="font-sans text-[1.625rem] leading-none font-extrabold tracking-tight tabular-nums sm:text-[2.125rem]"

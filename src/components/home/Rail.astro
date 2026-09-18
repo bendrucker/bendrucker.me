@@ -4,7 +4,9 @@ import RailHeading from "./RailHeading.astro";
 /**
  * A homepage section: its heading row, the list of rows, and a row at the
  * foot pointing on to the full page. On a phone the tabs above stand in
- * for the heading.
+ * for the heading. The section fills its column so the two rails stand
+ * the same height, with the foot of each at the bottom. A phone shows one
+ * rail at a time, so there the section takes its own height.
  */
 export interface Props {
   label: string;
@@ -15,11 +17,11 @@ export interface Props {
 const { label, icon, href } = Astro.props;
 ---
 
-<section>
+<section class="flex flex-col sm:h-full">
   <div class="hidden sm:block">
     <RailHeading label={label} icon={icon} href={href} />
   </div>
-  <ul role="list" class="@container">
+  <ul role="list" class="@container sm:flex-1">
     <slot />
   </ul>
   <a
