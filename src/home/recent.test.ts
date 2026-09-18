@@ -110,7 +110,7 @@ describe("queryRecentRides", () => {
 });
 
 describe("queryRecentRepos", () => {
-  it("takes the latest few old repos", async () => {
+  it("shelves the latest few old repos by whose they are", async () => {
     await seed(db, [
       { owner: "bendrucker", name: "old", activity: [{ lastActivity: 100 }] },
       {
@@ -119,12 +119,15 @@ describe("queryRecentRepos", () => {
         activity: [{ lastActivity: 400 }],
       },
       { owner: "other", name: "mid", activity: [{ lastActivity: 300 }] },
+      { owner: "other", name: "first", activity: [{ lastActivity: 50 }] },
       { owner: "bendrucker", name: "older", activity: [{ lastActivity: 200 }] },
+      { owner: "bendrucker", name: "oldest", activity: [{ lastActivity: 10 }] },
     ]);
 
     const repos = await queryRecentRepos(db, NOW);
 
-    expect(repos.map((r) => r.name)).toEqual(["newest", "mid", "older"]);
+    expect(repos.contributions.map((r) => r.name)).toEqual(["mid", "first"]);
+    expect(repos.personal.map((r) => r.name)).toEqual(["newest", "older"]);
   });
 
   it("passes over the everyday personal repos, but not a fork of one", async () => {
@@ -145,14 +148,15 @@ describe("queryRecentRepos", () => {
 
     const repos = await queryRecentRepos(db, NOW);
 
-    expect(repos.map((r) => `${r.owner}/${r.name}`)).toEqual([
-      "other/dotfiles",
-      "bendrucker/kept",
-    ]);
+    expect(repos.contributions.map((r) => r.name)).toEqual(["dotfiles"]);
+    expect(repos.personal.map((r) => r.name)).toEqual(["kept"]);
   });
 
   it("renders an empty rail from an empty database", async () => {
-    expect(await queryRecentRepos(db, NOW)).toEqual([]);
+    expect(await queryRecentRepos(db, NOW)).toEqual({
+      contributions: [],
+      personal: [],
+    });
   });
 });
 
@@ -178,6 +182,18 @@ describe("recentWindow", () => {
     const items = ages.map((age) => daysAgo(age));
     expect(recentWindow(items, (item) => item, now)).toEqual(
       items.slice(0, expected),
+    );
+  });
+
+  it("takes a smaller share for a shelf", () => {
+    const size = { min: 2, max: 3 };
+    const busy = [1, 2, 3, 4, 5].map((age) => daysAgo(age));
+    const quiet = [40, 50, 60].map((age) => daysAgo(age));
+    expect(recentWindow(busy, (item) => item, now, size)).toEqual(
+      busy.slice(0, 3),
+    );
+    expect(recentWindow(quiet, (item) => item, now, size)).toEqual(
+      quiet.slice(0, 2),
     );
   });
 });

@@ -46,7 +46,7 @@ export async function loadHome(now: Date = new Date()): Promise<HomeData> {
     attempt(
       async () => queryRecentRepos(await getDb(), now),
       "Failed to load recent repos",
-      [],
+      { contributions: [], personal: [] },
     ),
     attempt(
       async () => queryCyclingTotals(await getDb(), now),
