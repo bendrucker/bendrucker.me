@@ -39,46 +39,41 @@ const byPeriod = <T,>(pick: (period: Period) => T) =>
     T
   >;
 
-const codeApproximate = byPeriod((p) => codeTotals[p].approximate);
-
 const stats = [
   {
     kind: "distance" as const,
     label: "Distance",
     value: byPeriod((p) => cyclingTotals[p].distanceMi),
     unit: "mi",
+    rail: "cycling" as const,
   },
   {
     kind: "elevation" as const,
     label: "Climbing",
     value: byPeriod((p) => cyclingTotals[p].elevationFt),
     unit: "ft",
+    rail: "cycling" as const,
   },
   {
     kind: "count" as const,
     label: "Rides",
     value: byPeriod((p) => cyclingTotals[p].rideCount),
     unit: "rides",
+    rail: "cycling" as const,
   },
   {
     kind: "count" as const,
     label: "Pull requests",
-    approximate: codeApproximate,
     value: byPeriod((p) => codeTotals[p].prCount),
     unit: "PRs",
-  },
-  {
-    kind: "count" as const,
-    label: "Reviews",
-    approximate: codeApproximate,
-    value: byPeriod((p) => codeTotals[p].reviewCount),
-    unit: "reviews",
+    rail: "code" as const,
   },
   {
     kind: "count" as const,
     label: "Repos",
     value: byPeriod((p) => codeTotals[p].repoCount),
     unit: "repos",
+    rail: "code" as const,
   },
 ];
 
@@ -197,17 +192,6 @@ const tab =
     return out;
   }
 
-  /** The windows over which a stat's number is near rather than exact. */
-  function approximate(stat: HTMLElement): Partial<Record<Period, boolean>> {
-    const parsed: unknown = JSON.parse(stat.dataset.approximate ?? "{}");
-    const out: Partial<Record<Period, boolean>> = {};
-    if (typeof parsed !== "object" || parsed === null) return out;
-    for (const period of PERIODS) {
-      if (Reflect.get(parsed, period) === true) out[period] = true;
-    }
-    return out;
-  }
-
   function wirePeriods(root: HTMLElement) {
     const toggle = root.querySelector<HTMLElement>("[data-period-toggle]");
     const radios = [
@@ -219,9 +203,7 @@ const tab =
         el,
         kind: isKind(el.dataset.kind) ? el.dataset.kind : ("count" as const),
         values: values(el),
-        approximate: approximate(el),
         shown: null as number | null,
-        about: false,
       }),
     );
     const still = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -231,7 +213,6 @@ const tab =
       for (const stat of stats) {
         const value = stat.values[period];
         stat.shown = value === undefined ? 0 : value;
-        stat.about = stat.approximate[period] === true;
       }
       cancelAnimationFrame(frame);
       const from = stats.map((stat) => Number(stat.el.dataset.shown ?? 0));
@@ -245,7 +226,7 @@ const tab =
         stats.forEach((stat, i) => {
           const to = stat.shown;
           const at = to === null ? null : from[i]! + (to - from[i]!) * eased;
-          stat.el.textContent = formatStat(at, stat.kind, stat.about);
+          stat.el.textContent = formatStat(at, stat.kind);
         });
         if (progress < 1) frame = requestAnimationFrame(paint);
         else
