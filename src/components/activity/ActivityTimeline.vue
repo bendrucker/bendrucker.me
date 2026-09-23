@@ -40,7 +40,7 @@ const rootRef = ref<HTMLDivElement | null>(null);
 const headerRef = ref<HTMLDivElement | null>(null);
 
 const clock = shallowRef(serverClock(props.renderedAt));
-const calendarYear = activityYear(clock.value.now);
+const calendarYear = computed(() => activityYear(clock.value.now));
 
 const reposWithDividers = computed(() => {
   const items: Array<
@@ -53,7 +53,7 @@ const reposWithDividers = computed(() => {
   for (const repo of state.repos) {
     const year = activityYear(repo.lastActivity);
     if (showDividers && year !== lastYear) {
-      if (year !== calendarYear) {
+      if (year !== calendarYear.value) {
         items.push({ type: "divider", year, key: `year-${year}` });
       }
       lastYear = year;
@@ -80,7 +80,7 @@ function selectLanguage(language: string | null) {
 }
 
 function navigateToYear(year: number) {
-  if (year === calendarYear) {
+  if (year === calendarYear.value) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
@@ -92,7 +92,7 @@ function navigateToYear(year: number) {
 
 onMounted(() => {
   clock.value = readerClock();
-  state.currentYear = calendarYear;
+  state.currentYear = calendarYear.value;
   prefetchNext();
   fetchLanguages();
   fetchYears();
