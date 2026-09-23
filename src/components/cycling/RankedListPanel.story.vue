@@ -28,9 +28,12 @@ const lists: Record<string, RankedList> = {
   },
   longNames: {
     ...distance,
-    rows: distance.rows.map((row, index) =>
-      index === 0 ? { ...row, name: crowdedRide.name } : row,
-    ),
+    rows: distance.rows.map((row, index) => {
+      if (index === 0) return { ...row, name: crowdedRide.name };
+      if (index === 1)
+        return { ...row, name: crowdedRide.name, href: undefined };
+      return row;
+    }),
   },
   single: { ...efforts, rows: efforts.rows.slice(0, 1) },
   empty: { ...distance, rows: [] },
@@ -47,7 +50,7 @@ const controls: StoryControlSet = {
       climbs: "largest climbs",
       efforts: "best efforts",
       mixedLinks: "some rows linked",
-      longNames: "a long name",
+      longNames: "long names",
       single: "a single row",
       empty: "no rows",
     },
@@ -92,5 +95,6 @@ Each list carries its own metric, which decides whether a row reads as a
 distance, a height, a duration, or a clock time. Rows link back to Strava only
 when the row came from a ride: longest rides links every row, longest time links
 none, largest climbs ranks segments rather than rides, and the mixed list is the
-one to check.
+one to check. Long names truncate to one line, linked or not, and keep the
+full name in a hover title.
 </docs>
