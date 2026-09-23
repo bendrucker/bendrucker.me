@@ -23,8 +23,14 @@ export function serverClock(renderedAt: string): Clock {
   return { now: new Date(renderedAt), zone: "UTC" };
 }
 
+/** Reads the time afresh, so a card added by a later page is dated from then. */
 export function readerClock(): Clock {
-  return { now: new Date(), zone: undefined };
+  return {
+    get now() {
+      return new Date();
+    },
+    zone: undefined,
+  };
 }
 
 function zoned(clock: Clock): { in?: ContextFn<Date> } {
@@ -40,11 +46,12 @@ export interface ActivityDate {
 
 export function activityDate(value: string, clock: Clock): ActivityDate {
   const date = new Date(value);
+  const now = clock.now;
   const options = zoned(clock);
-  const days = differenceInCalendarDays(clock.now, date, options);
+  const days = differenceInCalendarDays(now, date, options);
   let relative: string;
   if (days === 0) {
-    relative = formatDistanceStrict(date, clock.now, { addSuffix: true });
+    relative = formatDistanceStrict(date, now, { addSuffix: true });
   } else if (days === 1) {
     relative = "Yesterday";
   } else {

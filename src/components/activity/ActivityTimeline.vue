@@ -6,9 +6,10 @@ import {
   useInfiniteScroll,
   useMutationObserver,
 } from "@vueuse/core";
-import { computed, onMounted, ref, shallowRef, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { TooltipProvider } from "reka-ui";
 import { useActivityApi } from "./composables/useActivityApi";
+import { useClock } from "./composables/useClock";
 import type { Repo } from "@/activity/types";
 import FilterControls from "./FilterControls.vue";
 import LanguageBar from "./LanguageBar.vue";
@@ -16,7 +17,7 @@ import RepoCard from "./RepoCard.vue";
 import YearDivider from "./YearDivider.vue";
 import TimelineRail from "./TimelineRail.vue";
 import LoadingPulse from "./LoadingPulse.vue";
-import { activityYear, readerClock, serverClock } from "./clock";
+import { activityYear } from "./clock";
 
 const props = defineProps<{
   initialRepos: Repo[];
@@ -39,7 +40,7 @@ const { state, fetchRepos, fetchLanguages, fetchYears, prefetchNext } =
 const rootRef = ref<HTMLDivElement | null>(null);
 const headerRef = ref<HTMLDivElement | null>(null);
 
-const clock = shallowRef(serverClock(props.renderedAt));
+const clock = useClock(props.renderedAt);
 const calendarYear = computed(() => activityYear(clock.value.now));
 
 const reposWithDividers = computed(() => {
@@ -91,7 +92,6 @@ function navigateToYear(year: number) {
 }
 
 onMounted(() => {
-  clock.value = readerClock();
   state.currentYear = calendarYear.value;
   prefetchNext();
   fetchLanguages();

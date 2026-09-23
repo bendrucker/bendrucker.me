@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it, test } from "vitest";
+import { afterEach, describe, expect, it, test, vi } from "vitest";
 import {
   activityDate,
   activityYear,
   createdLabel,
   isNewRepo,
+  readerClock,
   serverClock,
   type Clock,
 } from "./clock";
@@ -50,6 +51,22 @@ describe("serverClock", () => {
       render,
     );
     for (const other of others) expect(other).toEqual(utc);
+  });
+});
+
+describe("readerClock", () => {
+  // A card added by a later page of results is dated from when it arrives.
+  it("reads the time afresh", () => {
+    vi.useFakeTimers();
+    try {
+      const clock = readerClock();
+      vi.setSystemTime(new Date("2026-09-22T03:00:00Z"));
+      const first = clock.now;
+      vi.setSystemTime(new Date("2026-09-22T04:00:00Z"));
+      expect(clock.now.getTime() - first.getTime()).toBe(60 * 60 * 1000);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

@@ -4,6 +4,7 @@ import { TooltipProvider } from "reka-ui";
 import { actions } from "astro:actions";
 import type { Repo, Language, YearCount, FilterState } from "@/activity/types";
 import { debounce } from "./composables/useActivityApi";
+import { useClock } from "./composables/useClock";
 import LucideIcon from "@/components/LucideIcon.vue";
 import FilterControls from "./FilterControls.vue";
 import LanguageBar from "./LanguageBar.vue";
@@ -16,7 +17,11 @@ const props = defineProps<{
   year: number;
   years: YearCount[];
   username: string;
+  /** When the server rendered the page, so hydration can match its dates. */
+  renderedAt: string;
 }>();
+
+const clock = useClock(props.renderedAt);
 
 const state = reactive<{
   repos: Repo[];
@@ -215,6 +220,7 @@ onMounted(() => {
           :key="`${repo.owner}/${repo.name}`"
           :repo="repo"
           :username="username"
+          :clock="clock"
         />
       </div>
 
