@@ -2,7 +2,10 @@
 @import "./typography.css";
 @import "./about.css";
 
-@plugin "@iconify/tailwind4";
+/* `site` holds the icons no collection has, drawn to Lucide's grid and stroke. */
+@plugin "@iconify/tailwind4" {
+  icon-sets: from-folder(site, "./src/icons");
+}
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
@@ -83,4 +86,14 @@ html[data-theme="dark"] {
 /* Anything that has been anchored to should have extra scroll margin */
 :target {
   scroll-margin-block: 1rem;
+}
+
+@theme {
+  --animate-blink: blink 1s step-end infinite;
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
 }

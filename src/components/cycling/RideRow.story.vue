@@ -31,7 +31,7 @@ function initState() {
         <UnitsProvider :units="state.units">
           <ul
             role="list"
-            class="@container border-t border-muted"
+            class="text-sm"
             :style="{ width: `${state.width}px`, maxWidth: '100%' }"
           >
             <li v-for="ride in rides" :key="ride.id">
@@ -51,8 +51,7 @@ function initState() {
 <docs lang="md">
 # Ride row
 
-A ride as one line in a list: name, an icon for a race, a long ride, or a
-hilly one, and distance. Every fixture is in the list, so the
-long name, the ride with no Strava link, and the one with no stats are all
-on screen. Narrow the width to see the name truncate ahead of the rest.
+A ride as one line in a list: name and distance. Every fixture is in the list,
+so the long name, the ride with no Strava link, and the one with no stats are
+all on screen. Narrow the width to see the name truncate ahead of the rest.
 </docs>

@@ -512,7 +512,7 @@ function toEntry(row: RideRow): Entry {
  * formatter to show as-is. `TZDate` accepts any zone name and yields an
  * invalid date for one it cannot resolve, so the check is on the result.
  */
-export function wallClock(startedAt: string, timezone: string): string {
+function wallClock(startedAt: string, timezone: string): string {
   const instant = new Date(startedAt);
   if (Number.isNaN(instant.getTime())) return startedAt;
   const zoned = new TZDate(instant, timezone);

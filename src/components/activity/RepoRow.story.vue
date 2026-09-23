@@ -92,11 +92,11 @@ function initState() {
         <PreviewControls :controls="controls" :state="state" />
         <ul
           role="list"
-          class="@container border-t border-muted"
+          class="text-sm"
           :style="{ width: `${state.width}px`, maxWidth: '100%' }"
         >
           <li v-for="repo in repos" :key="repo.url">
-            <RepoRow :repo="repo" :username="username" />
+            <RepoRow :repo="repo" />
           </li>
         </ul>
       </template>
@@ -111,9 +111,7 @@ function initState() {
 <docs lang="md">
 # Repo row
 
-A repository as one line in a list, its language's extension in the corner in
-its color. The three rows cover a personal repo, an external one whose owner is
-shown and whose description truncates, and one with neither description nor
-language. Narrow the list and the description takes the line beneath the name
-and the owner is left off.
+A repository as one line in a list: name and language extension. The three
+rows cover a personal repo, an external one, and one with neither description
+nor language. Narrow the list to see the name truncate ahead of the extension.
 </docs>

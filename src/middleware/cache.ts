@@ -5,12 +5,7 @@
 // Everything else changes only on deploy and is covered by `routeRules` in
 // astro.config.ts, and the Workers Cache key includes the Worker version, so
 // deploys invalidate it regardless of TTL.
-import { TZDate } from "@date-fns/tz";
-import { addDays, format, startOfDay } from "date-fns";
-import { SITE } from "@/config";
-
 const ACTIVITY_SYNC_BUFFER_SECONDS = 300;
-const ACTIVITY_SWR_SECONDS = 3600;
 
 export interface CachePolicy {
   maxAge: number;
@@ -19,51 +14,15 @@ export interface CachePolicy {
 
 /**
  * The pages that render from the activity database, whose freshness tracks
- * the hourly sync rather than the deploy. The homepage's rails read the same
- * rows the activity pages do.
+ * the hourly sync rather than the deploy. The homepage lists the same rows
+ * the activity pages do.
  */
 export function isActivityPath(pathname: string): boolean {
   return pathname === "/" || pathname.startsWith("/activity");
 }
 
-/**
- * Fresh until the next sync lands or the site's day turns, whichever comes
- * first. The day is part of every activity page's validators, but a cached
- * response is served without consulting them until its max-age is up, and
- * stale-while-revalidate can serve it once more after that. Neither may
- * carry yesterday's page past midnight, so both stop there.
- */
 export function activityCachePolicy(now: Date): CachePolicy {
-  const maxAge = Math.min(activityMaxAge(now), untilSiteMidnight(now));
-  const swr = Math.min(ACTIVITY_SWR_SECONDS, untilSiteMidnight(now) - maxAge);
-  return { maxAge, swr };
-}
-
-/** Seconds until the site's calendar day turns over. */
-export function untilSiteMidnight(now: Date): number {
-  const local = new TZDate(now, SITE.timezone);
-  const next = addDays(startOfDay(local), 1);
-  return Math.max(1, Math.ceil((next.getTime() - now.getTime()) / 1000));
-}
-
-export interface SiteDay {
-  /** `YYYY-MM-DD` in the site's timezone. */
-  date: string;
-  /** The instant that day began. */
-  startedAt: Date;
-}
-
-/**
- * The site's current calendar day. A page says "today" and "yesterday" of
- * rows that stand still while the day turns over, so the day is a version
- * of the page as much as the data is.
- */
-export function siteDay(now: Date): SiteDay {
-  const local = new TZDate(now, SITE.timezone);
-  return {
-    date: format(local, "yyyy-MM-dd"),
-    startedAt: new Date(startOfDay(local).getTime()),
-  };
+  return { maxAge: activityMaxAge(now), swr: 3600 };
 }
 
 export interface ActivityVersions {
@@ -76,8 +35,6 @@ export interface ActivityVersions {
    * serves, so a browser revalidating across a deploy needs a miss.
    */
   deploy: string;
-  /** The site's calendar date, from `siteDay`. */
-  day: string;
 }
 
 /**
@@ -92,10 +49,10 @@ export interface ActivityVersions {
  * tag.
  */
 export function activityETag(
-  { github, feed, deploy, day }: ActivityVersions,
+  { github, feed, deploy }: ActivityVersions,
   variant: "html" | "md",
 ): string {
-  return `W/"${github}-${feed}-${deploy}-${day}-${variant}"`;
+  return `W/"${github}-${feed}-${deploy}-${variant}"`;
 }
 
 export interface ActivityTimes {
@@ -105,8 +62,6 @@ export interface ActivityTimes {
   feed: Date | null;
   /** When the Worker version was uploaded. */
   deploy: Date | null;
-  /** When the site's current day began, from `siteDay`. */
-  day: Date | null;
 }
 
 /**
@@ -114,7 +69,7 @@ export interface ActivityTimes {
  * page moves whenever any of them does, so the latest is when it last did.
  */
 export function activityLastModified(times: ActivityTimes): Date {
-  const instants = [times.github, times.feed, times.deploy, times.day]
+  const instants = [times.github, times.feed, times.deploy]
     .filter((time) => time !== null)
     .map((time) => time.getTime())
     .filter((instant) => !Number.isNaN(instant));
