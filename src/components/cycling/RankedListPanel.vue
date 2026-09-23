@@ -70,20 +70,23 @@ const rows = computed<DisplayRow[]>(() =>
         >
           {{ row.rank }}
         </span>
-        <span class="min-w-0 text-[12px]">
+        <span class="flex min-w-0 items-baseline text-[12px]">
           <!-- A list mixes linked and unlinked rows, so the linked ones need a
                mark that survives without a pointer and without color. -->
           <a
             v-if="row.href"
             :href="row.href"
+            :title="row.name"
             target="_blank"
             rel="noopener noreferrer"
-            class="underline decoration-border decoration-dotted underline-offset-2 hover:text-accent"
+            class="min-w-0 truncate underline decoration-border decoration-dotted underline-offset-2 hover:text-accent"
           >
             {{ row.name }}
           </a>
-          <template v-else>{{ row.name }}</template>
-          <span v-if="row.detail" class="ml-1.5 text-foreground/70">
+          <span v-else :title="row.name" class="min-w-0 truncate">
+            {{ row.name }}
+          </span>
+          <span v-if="row.detail" class="ml-1.5 shrink-0 text-foreground/70">
             {{ row.detail }}
           </span>
         </span>
