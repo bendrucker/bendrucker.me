@@ -68,6 +68,21 @@ export function thumbnailUrl(key: string): string {
   return `/photos/thumbnails/${THUMBNAIL_VERSION}/${key}`;
 }
 
+/**
+ * The request Astro routes for a photo URL. `trailingSlash: "always"` ends every
+ * route pattern in a slash unless the route's name ends in an extension, which
+ * a rest param cannot. Astro doesn't redirect a path ending in one either, so
+ * `/photos/<key>.jpg` would reach the 404 page instead of either photo route.
+ */
+export function routablePhotoRequest(request: Request): Request {
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith("/photos/") || url.pathname.endsWith("/")) {
+    return request;
+  }
+  url.pathname += "/";
+  return new Request(url, request);
+}
+
 /** What a photo response reads off a stored object. */
 export interface PhotoObject {
   body: ReadableStream;
