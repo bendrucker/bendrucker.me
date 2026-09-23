@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
-import {
-  formatDistanceToNowStrict,
-  isToday,
-  isYesterday,
-  format,
-} from "date-fns";
 import type { Repo } from "@/activity/types";
 import LucideIcon from "@/components/LucideIcon.vue";
 import ActivityTooltip from "./ActivityTooltip.vue";
+import {
+  activityDate,
+  activityYear,
+  createdLabel,
+  isNewRepo,
+  type Clock,
+} from "./clock";
 
 const props = defineProps<{
   repo: Repo;
   username: string;
+  clock: Clock;
 }>();
 
 const isMac = ref(true);
@@ -22,27 +24,19 @@ onMounted(() => {
 
 const isExternal = computed(() => props.repo.owner !== props.username);
 
-const isNew = computed(() => {
-  if (!props.repo.createdAt) return false;
-  const threeMonthsAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
-  return new Date(props.repo.createdAt).getTime() > threeMonthsAgo;
-});
+const isNew = computed(
+  () => !!props.repo.createdAt && isNewRepo(props.repo.createdAt, props.clock),
+);
 
-const createdTitle = computed(() => {
-  if (!props.repo.createdAt) return "";
-  return `Created ${format(new Date(props.repo.createdAt), "PPP")}`;
-});
+const createdTitle = computed(() =>
+  props.repo.createdAt ? createdLabel(props.repo.createdAt, props.clock) : "",
+);
 
 const lastActivityDate = computed(() => new Date(props.repo.lastActivity));
 
-const relativeDate = computed(() => {
-  const d = lastActivityDate.value;
-  if (isToday(d)) return formatDistanceToNowStrict(d, { addSuffix: true });
-  if (isYesterday(d)) return "Yesterday";
-  return format(d, "MMM d");
-});
-
-const fullDate = computed(() => format(lastActivityDate.value, "PPPp"));
+const lastActivity = computed(() =>
+  activityDate(props.repo.lastActivity, props.clock),
+);
 
 function formatStarCount(count: number): string {
   if (count < 1000) return count.toString();
@@ -57,7 +51,7 @@ function getGitHubSearchUrl(type: "pr" | "review" | "issue" | "merge"): string {
   const years = repo.years ?? [];
   const oldestYear = years.length
     ? Math.min(...years)
-    : new Date().getFullYear();
+    : activityYear(props.clock.now);
   const timeFilter = `created:>${oldestYear}-01-01`;
 
   let query = "";
@@ -213,8 +207,11 @@ function handleKeydown(e: KeyboardEvent) {
         </div>
       </div>
       <div class="flex-shrink-0 text-sm text-foreground/60 sm:text-right">
-        <time :datetime="lastActivityDate.toISOString()" :title="fullDate">
-          {{ relativeDate }}
+        <time
+          :datetime="lastActivityDate.toISOString()"
+          :title="lastActivity.full"
+        >
+          {{ lastActivity.relative }}
         </time>
         <div
           class="mt-1 hidden items-center justify-end gap-1 text-xs text-foreground/30 group-focus-within/card:flex"
