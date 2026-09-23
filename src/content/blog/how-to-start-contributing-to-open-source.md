@@ -29,7 +29,7 @@ While it's increasingly common for companies to allow employees to devote work h
 
 Make it easy for someone to help you. Use proper [GitHub Flavored Markdown](https://help.github.com/articles/github-flavored-markdown#syntax-highlighting), especially [syntax highlighting](https://help.github.com/articles/github-flavored-markdown#syntax-highlighting). Include links to the relevant lines in your own project. Don't make a veteran contributor work harder than they need to: they're already helping you for free.
 
-Managing a project for a diverse group of "customers" is exceptionally difficult. There's a huge difference between building a project for yourself and building one that tens of thousands of people will depend on. It's generally much easier to add new behaviors as an end user than to strip out defaults ([example](https://github.com/tgriesser/bookshelf/issues/241#issuecomment-35385630)). If you think a particular feature should be part of the core library, come prepared with:
+Managing a project for a diverse group of "customers" is exceptionally difficult. There's a huge difference between building a project for yourself and building one that tens of thousands of people will depend on. It's generally much easier to add new behaviors as an end user than to strip out defaults ([example](https://github.com/bookshelf/bookshelf/issues/241#issuecomment-35385630)). If you think a particular feature should be part of the core library, come prepared with:
 
 1. A fully functional implementation that you patched in in your own application(s);
 2. A convincing argument for why your addition belongs in the library rather than in "[userland](https://github.com/joyent/node/wiki/node-core-vs-userland)," left to individual developers to implement as they choose.

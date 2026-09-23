@@ -8,7 +8,7 @@ tags:
 description: Put productivity tools to work for you, not the other way around.
 ---
 
-Daniel Kahneman’s [Thinking, Fast and Slow](http://amzn.com/B00555X8OA), while not directly concerned with productivity, got me thinking about my own routine. Until recently I was a [Things](http://culturedcode.com/things/) devotee, feeding items into my Inbox and diligently tagging, grouping, and scheduling every task with painstaking detail and devotion. Using a single pipeline, I assumed, would form more consistent habits and reduce the cognitive overhead of juggling multiple tools.
+Daniel Kahneman’s [Thinking, Fast and Slow](https://www.amazon.com/dp/B00555X8OA), while not directly concerned with productivity, got me thinking about my own routine. Until recently I was a [Things](http://culturedcode.com/things/) devotee, feeding items into my Inbox and diligently tagging, grouping, and scheduling every task with painstaking detail and devotion. Using a single pipeline, I assumed, would form more consistent habits and reduce the cognitive overhead of juggling multiple tools.
 
 But that’s just not how the human brain works. I became skilled at feeding information into the system I’d devised, but struggled to identify what I should actually be doing at any given moment. _Thinking Fast and Slow_ is based on the idea that the brain has two discrete modes—one which is fast, emotional, and instinctive, and another which is slow, deliberate, and effortful. Based on Kahneman’s theory, I split my single pipeline in two, splitting my workload into small and big chunks.
 
@@ -28,4 +28,4 @@ This isn’t a pitch for Clear or Asana. Use the tools that feel right to you. I
 
 Another tool that we use at [Valet.io](http://valet.io), called [iDoneThis](http://idonethis.com/), emails each team member at 6 pm to ask, “What did you get done today?” and shares the responses in a digest the next morning. It doesn’t solve a technically complex problem, but routinely engaging in the very natural act of sharing what we’ve accomplished has had tremendous value. It helps us see how our small accomplishments fit together as we build a much bigger vision.
 
-Don’t let being productive stop you from being creative. Think big and small—don’t choose a one size fits all solution. Get your plan of action on paper as quickly as possible. [Be unstructured](http://www.fastcompany.com/3009536/leadership-now/why-productive-people-have-empty-schedules), and get back to building.
+Don’t let being productive stop you from being creative. Think big and small—don’t choose a one size fits all solution. Get your plan of action on paper as quickly as possible. [Be unstructured](https://web.archive.org/web/20130606223358/http://www.fastcompany.com/3009536/leadership-now/why-productive-people-have-empty-schedules), and get back to building.

@@ -15,7 +15,7 @@ I've emphasized before that, monolithic as this ecosystem may be, it's [built en
 
 ## Open Source Microcosms
 
-Open source is composed of an an incredibly rich collection of communities and ecosystems. As an individual developer, "How do I get into open source?" is far too broad a question. Companies like Github have a [special role in advancing and building community infrastructure](http://words.steveklabnik.com/is-npm-worth-26mm). They think about open source in the aggregate so you don't have to.
+Open source is composed of an an incredibly rich collection of communities and ecosystems. As an individual developer, "How do I get into open source?" is far too broad a question. Companies like Github have a [special role in advancing and building community infrastructure](https://steveklabnik.com/writing/is-npm-worth-26mm/). They think about open source in the aggregate so you don't have to.
 
 Academically, I find the macro-level role of open source deeply fascinating. But as a developer, these academic concerns are largely irrelevant. The social, historical, and technical intracacies of an individual project far outweigh any shared characteristics of a broader "open source community." I'd even contend that such a community doesn't exist at all. A set of many loosely linked communities with shared values does not imply the existence of a single unified community.
 
