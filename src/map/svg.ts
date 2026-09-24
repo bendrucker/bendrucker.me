@@ -172,10 +172,9 @@ function matchesClass(rule: PaintRule, feature: DecodedFeature): boolean {
 }
 
 /**
- * A tile covers far more than the card, and an overzoomed one four times its
- * own square, so most of its features fall outside what the card shows. Those
- * are dropped rather than left to the clip: resvg panics with `unreachable` on
- * some clipped paths that lie wholly off the canvas, and the route answers 500.
+ * Out-of-bounds features are dropped rather than left to the clip: resvg
+ * panics with `unreachable` on some clipped paths that lie wholly off the
+ * canvas, and the route answers 500.
  */
 function pathData(
   feature: DecodedFeature,

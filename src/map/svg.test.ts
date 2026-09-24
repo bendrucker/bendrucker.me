@@ -33,7 +33,6 @@ function polygon(featureClass?: string): DecodedFeature {
   };
 }
 
-/** A small triangle with its corner at `at` on both axes of the tile. */
 function triangleAt(at: number): DecodedFeature {
   return {
     type: 3,
