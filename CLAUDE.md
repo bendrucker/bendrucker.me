@@ -27,6 +27,8 @@ npm run lint:types    # oxlint's type-aware rules, via tsgolint
 npm run format        # Prettier
 npm run story:dev     # Histoire component stories on :6006
 npm run story:build   # Static story book into .histoire/dist
+npm run preview -- deploy   # Build and deploy this branch as a Worker Preview
+npm run preview -- delete   # Remove this branch's previews and database
 ```
 
 The suite is the cheapest check here, a few seconds for the whole of it, and
@@ -325,6 +327,46 @@ All deploy via GitHub Actions matrix on push to `main`. Use `@workspace/logger` 
 | ------ | ------------------------------ | -------------------- |
 | www    | `wrangler.toml`                | Main site, reads D1  |
 | github | `workers/github/wrangler.toml` | GitHub activity → D1 |
+
+### Previews
+
+A pull request deploys `www` and `stories` as Worker Previews named
+`pr-<number>`, and `npm run preview -- deploy` does the same for the branch a
+worktree is on, named after the branch. A preview inherits the assets, routes,
+and compatibility settings of its `wrangler.toml` and nothing else. Every other
+binding comes from the `previews` block, so a new binding goes in both places
+or the preview runs without it, which wrangler warns about rather than failing.
+A worker with no `previews` block, even an empty one, cannot be previewed.
+
+A root build leaves `.wrangler/deploy/config.json` redirecting wrangler to the
+built config, and wrangler run inside `workers/*` finds that redirect and stops
+because the base paths differ. Set it aside to preview the story book by hand.
+
+A preview isolates the deployment alone. A D1 binding is shared with
+production unless it names a different database, so `scripts/preview.ts` gives each
+preview a database of its own, `bendrucker-activity-<name>`, seeded from a dump
+of production with `d1_migrations` included and then migrated by the branch. A
+migration meets real rows before it meets production, and two pull requests
+never meet each other. A committed binding can name only one database, so the
+script points `ACTIVITY_DB` at the preview's in the built config the Vite
+plugin writes to `dist/server/wrangler.json`, which is what `wrangler preview`
+deploys, and in a generated `wrangler.preview.json` for `d1 migrations apply`,
+which only takes a database its config names. The session KV namespace and the
+photo bucket are shared: sessions
+go unused, the seeded rows name production's photos, and the photo routes only
+read.
+
+`cleanup.yml` removes a pull request's previews and database when it closes.
+`sweep-previews.yml` runs nightly and removes whatever that missed, but only
+resources whose pull request is closed. A branch-named preview is matched to the
+pull requests opened from that branch, and one with no pull request is never
+swept, since nothing says it is idle. Delete those with `npm run preview --
+delete` from the branch.
+
+Cron triggers never fire on a preview, so the `github` worker is not previewed.
+A pull request runs its deploy as a dry run to check the bundle. A service
+binding from another worker's preview reaches the production `Publish`
+entrypoint, never a preview of it.
 
 Run `npx wrangler types` after changing any `wrangler.toml`. The `types` CI job
 regenerates types at the root and in each worker. On a pull request from a

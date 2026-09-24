@@ -11,7 +11,7 @@
     "dev:json": "ASTRO_LOG_JSON=1 astro dev",
     "build": "npm run build:packages && npm run types:generate && astro check && CLOUDFLARE_VITE_FORCE_LOCAL=true astro build",
     "build:packages": "npm run build --workspace=packages/logger -- --force && npm run build --workspace=packages/github -- --force",
-    "preview": "astro preview",
+    "preview": "tsx scripts/preview.ts",
     "sync": "astro sync",
     "story:dev": "histoire dev",
     "story:build": "histoire build",
@@ -93,7 +93,7 @@
     "typescript": "^6.0.3",
     "vitest": "^4.1.11",
     "vue-eslint-parser": "^10.4.1",
-    "wrangler": "^4.123.0"
+    "wrangler": "^4.136.3"
   },
   "overrides": {
     "zod": "$zod",

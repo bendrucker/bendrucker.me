@@ -5,9 +5,40 @@ on:
     types: [closed]
 
 permissions:
+  contents: read
   deployments: write
 
 jobs:
+  previews:
+    # deploy.yml's guard: a Dependabot pull request never had one.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: "☁️ Checkout repository"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: "📦 Setup Node.js"
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: "📦 Install dependencies"
+        run: npm ci
+
+      - name: "🔧 Build shared packages"
+        run: npm run build:packages
+
+      - name: "🧹 Delete the previews and their database"
+        run: npm run preview -- delete --name "pr-$PR"
+        env:
+          PR: ${{ github.event.number }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
   cleanup:
     runs-on: ubuntu-latest
     steps:
