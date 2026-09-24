@@ -181,9 +181,9 @@ describe("basemapSvg", () => {
     expect(await render()).not.toContain("<g ");
   });
 
-  // Twelve rides answered 500 for every map: resvg panics with `unreachable`
-  // on a clipped path lying wholly below the canvas. Near the far corner of
-  // each tile, this triangle lands there for the tiles that overhang the card.
+  // resvg panics with `unreachable` on some clipped paths lying wholly off the
+  // canvas. A triangle near each tile's far corner lands below it for the tiles
+  // that overhang the card.
   it("rasterizes tiles whose geometry overhangs the card", async () => {
     vi.mocked(fetchTile).mockResolvedValue(
       tileWith({ water: [triangleAt(3000)] }),

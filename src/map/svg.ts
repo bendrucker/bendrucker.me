@@ -182,29 +182,38 @@ function pathData(
   close: boolean,
   visible: Bounds,
 ): string {
+  const rings = feature.rings.map((ring) =>
+    ring.map((point) => toCard(point.x, point.y)),
+  );
+  if (!reaches(rings.flat(), visible)) return "";
+
   let data = "";
-  let left = Infinity;
-  let top = Infinity;
-  let right = -Infinity;
-  let bottom = -Infinity;
-  for (const ring of feature.rings) {
-    for (const [index, point] of ring.entries()) {
-      const [x, y] = toCard(point.x, point.y);
-      left = Math.min(left, x);
-      top = Math.min(top, y);
-      right = Math.max(right, x);
-      bottom = Math.max(bottom, y);
+  for (const ring of rings) {
+    for (const [index, [x, y]] of ring.entries()) {
       data += `${index === 0 ? "M" : "L"}${round(x)} ${round(y)}`;
     }
     if (close && ring.length > 0) data += "Z";
   }
+  return data;
+}
 
-  const missed =
-    right < visible.left ||
-    left > visible.right ||
-    bottom < visible.top ||
-    top > visible.bottom;
-  return missed ? "" : data;
+function reaches(points: Array<[number, number]>, visible: Bounds): boolean {
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  for (const [x, y] of points) {
+    left = Math.min(left, x);
+    top = Math.min(top, y);
+    right = Math.max(right, x);
+    bottom = Math.max(bottom, y);
+  }
+  return (
+    right >= visible.left &&
+    left <= visible.right &&
+    bottom >= visible.top &&
+    top <= visible.bottom
+  );
 }
 
 function round(value: number): number {
