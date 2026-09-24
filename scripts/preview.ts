@@ -72,21 +72,22 @@ function main(): void {
     },
   });
   const [command = "deploy"] = positionals;
-  const name = values.name ?? branchName();
+  // Resolved per command: a sweep runs from a detached checkout with no branch.
+  const name = (): string => values.name ?? branchName();
 
   switch (command) {
     case "deploy":
-      prepare(name);
+      prepare(name());
       run("npm", ["run", "build"]);
       run("cp", [".assetsignore", "dist/"]);
-      patchBuiltConfig(name);
-      return run(WRANGLER, ["preview", "--name", name]);
+      patchBuiltConfig(name());
+      return run(WRANGLER, ["preview", "--name", name()]);
     case "prepare":
-      return prepare(name);
+      return prepare(name());
     case "config":
-      return patchBuiltConfig(name);
+      return patchBuiltConfig(name());
     case "delete":
-      return remove(name);
+      return remove(name());
     case "sweep":
       return sweep(values["dry-run"]);
     default:
