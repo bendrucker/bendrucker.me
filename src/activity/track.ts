@@ -11,7 +11,7 @@ export const MAX_ROUTE_POINTS = 300;
 export const MAX_PROFILE_SAMPLES = 100;
 
 const EARTH_RADIUS_MI = 3959;
-const DEGREES_TO_RADIANS = Math.PI / 180;
+export const DEGREES_TO_RADIANS = Math.PI / 180;
 
 /** The top of the range a sample quantizes to: a byte, which two hex digits spell. */
 const PROFILE_TOP = 255;

@@ -1,6 +1,7 @@
 // What a climb is called, read from OpenStreetMap around its summit.
 import { logger } from "@workspace/logger";
 import { z } from "zod";
+import { DEGREES_TO_RADIANS } from "./track";
 import type { Coordinate } from "./types";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
@@ -13,7 +14,6 @@ const PEAK_RADIUS_M = 1000;
 const ROAD_RADIUS_M = 60;
 
 const EARTH_RADIUS_M = 6_371_000;
-const DEGREES_TO_RADIANS = Math.PI / 180;
 
 /**
  * Classes a car could drive. A fire trail or a path crossing the summit is

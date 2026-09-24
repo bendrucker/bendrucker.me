@@ -1,9 +1,12 @@
-import { decodePolyline, MAX_ROUTE_POINTS, thin } from "@/activity/track";
+import {
+  DEGREES_TO_RADIANS,
+  decodePolyline,
+  MAX_ROUTE_POINTS,
+  thin,
+} from "@/activity/track";
 import type { Coordinate } from "@/activity/types";
 
 export { decodePolyline };
-
-const DEGREES_TO_RADIANS = Math.PI / 180;
 
 export const TILE_SIZE = 256;
 

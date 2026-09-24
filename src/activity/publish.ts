@@ -169,28 +169,24 @@ export async function nameStoredClimbs(
   stored: StoredClimb[],
   nameClimbs: ClimbNamer,
 ): Promise<NamedClimb[]> {
-  const known = new Map(
+  const names = new Map<string, string | null>(
     stored.flatMap((climb) =>
       climb.name === null
         ? []
         : [[summitKey([climb.summitLat, climb.summitLng]), climb.name]],
     ),
   );
-  const unnamed = climbs.filter((climb) => !known.has(summitKey(climb.summit)));
-  const looked =
-    unnamed.length === 0
-      ? []
-      : await nameClimbs(unnamed.map((climb) => climb.summit));
-  const found = new Map(
-    unnamed.map((climb, index) => [
-      summitKey(climb.summit),
-      looked[index] ?? null,
-    ]),
-  );
-  return climbs.map((climb) => {
-    const key = summitKey(climb.summit);
-    return { ...climb, name: known.get(key) ?? found.get(key) ?? null };
-  });
+  const unnamed = climbs.filter((climb) => !names.has(summitKey(climb.summit)));
+  if (unnamed.length > 0) {
+    const looked = await nameClimbs(unnamed.map((climb) => climb.summit));
+    for (const [index, climb] of unnamed.entries()) {
+      names.set(summitKey(climb.summit), looked[index] ?? null);
+    }
+  }
+  return climbs.map((climb) => ({
+    ...climb,
+    name: names.get(summitKey(climb.summit)) ?? null,
+  }));
 }
 
 /** A polyline stores five decimal places, so two equal summits agree to those. */
