@@ -118,7 +118,7 @@ describe("publishActivity", () => {
     expect(route.length).toBeLessThanOrEqual(301);
     expect(route.at(-1)).toEqual(decodePolyline(polyline).at(-1));
     const profile: unknown = JSON.parse(row.elevationProfile!);
-    expect(profile).toHaveLength(101);
+    expect(profile).toHaveLength(100);
     expect(profile).toEqual(expect.arrayContaining([0, 999]));
   });
 

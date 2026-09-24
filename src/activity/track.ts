@@ -17,21 +17,16 @@ export const DEGREES_TO_RADIANS = Math.PI / 180;
 const PROFILE_TOP = 255;
 
 /**
- * Every `step`th item plus the last, so a long series keeps its shape and
- * both endpoints within a bounded size.
+ * At most `max` items spread evenly across the series, both endpoints
+ * included, so a sample's index stays a fixed share of the whole.
  */
 export function thin<T>(items: readonly T[], max: number): T[] {
-  const step = Math.max(1, Math.ceil(items.length / max));
-  const kept: T[] = [];
-  let lastKept = -1;
-  for (let i = 0; i < items.length; i += step) {
-    kept.push(items[i]!);
-    lastKept = i;
-  }
-  if (items.length > 0 && lastKept !== items.length - 1) {
-    kept.push(items[items.length - 1]!);
-  }
-  return kept;
+  if (items.length <= max) return [...items];
+  const last = items.length - 1;
+  return Array.from(
+    { length: max },
+    (_, index) => items[Math.round((index * last) / (max - 1))]!,
+  );
 }
 
 /** A stored route bounded to `MAX_ROUTE_POINTS`, in both forms it is read in. */
