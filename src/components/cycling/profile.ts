@@ -1,3 +1,4 @@
+import { climbSpans } from "@/activity/climb";
 import { decodeProfile } from "@/activity/track";
 
 export { decodeProfile };
@@ -21,9 +22,6 @@ const BIG_DAY_FEET = 8000;
  */
 const ROLLER_FEET = 500;
 const BIG_CLIMB_FEET = 3000;
-
-/** How far a ride may dip mid-climb, as a share of its altitude range. */
-const DESCENT_TOLERANCE = 0.05;
 
 /** Height the biggest day stands in, as a fraction of the chart. */
 const MAX_RELIEF = 0.75;
@@ -86,32 +84,9 @@ function logScale(
   return Number.isNaN(ratio) ? 0 : Math.min(1, Math.max(0, ratio));
 }
 
-/**
- * The biggest continuous climb in a series of altitudes, in whatever unit they
- * arrive in. A dip shallower than `DESCENT_TOLERANCE` of the ride's altitude
- * range is a false flat within a climb rather than the end of one.
- */
+/** The biggest continuous climb in a series of altitudes, as `climbSpans` delimits them. */
 export function longestClimb(altitudes: number[]): number {
-  const finite = altitudes.filter((altitude) => Number.isFinite(altitude));
-  if (finite.length === 0) return 0;
-  const tolerance =
-    (Math.max(...finite) - Math.min(...finite)) * DESCENT_TOLERANCE;
-
-  let longest = 0;
-  let trough = finite[0]!;
-  let peak = trough;
-  for (const altitude of finite) {
-    if (altitude > peak) {
-      peak = altitude;
-      longest = Math.max(longest, peak - trough);
-    } else if (peak - altitude > tolerance) {
-      trough = altitude;
-      peak = altitude;
-    } else if (altitude < trough) {
-      trough = altitude;
-    }
-  }
-  return longest;
+  return Math.max(0, ...climbSpans(altitudes).map((span) => span.gain));
 }
 
 /** Deterministic elevation samples for a ride, evenly spaced. */

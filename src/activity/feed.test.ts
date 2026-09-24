@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 import type { Kysely } from "kysely";
 import { activity as fixture } from "@/components/cycling/fixtures";
 import type { Database } from "@/db";
-import { createTestDb, testStore, tick } from "@/test/db";
+import { createTestDb, noClimbNames, testStore, tick } from "@/test/db";
 import {
   buildCyclingActivity,
   queryCyclingActivity,
@@ -56,7 +56,7 @@ function ride(
 }
 
 async function seed(...rides: PublishedActivity[]) {
-  for (const row of rides) await publishActivity(store, row);
+  for (const row of rides) await publishActivity(store, row, noClimbNames);
 }
 
 describe("queryCyclingActivity", () => {

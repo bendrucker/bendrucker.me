@@ -3,6 +3,7 @@ import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import SQLite from "better-sqlite3";
 import { CamelCasePlugin, Kysely, SqliteDialect } from "kysely";
+import type { ClimbNamer } from "@/activity/climb-name";
 import type { ActivityStore } from "@/activity/store";
 import type { Database } from "@/db";
 
@@ -51,6 +52,10 @@ export function testStore(db: Kysely<Database>): ActivityStore {
       }),
   };
 }
+
+/** A namer for a write that has no Overpass to ask, leaving every climb unnamed. */
+export const noClimbNames: ClimbNamer = async (summits) =>
+  summits.map(() => null);
 
 export interface SeedRepo {
   owner: string;

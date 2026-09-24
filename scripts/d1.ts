@@ -12,12 +12,13 @@ import SQLite from "better-sqlite3";
 // The bindings a script reaches through the proxy. `env` comes back alongside
 // the store because the seed writes ride photos into R2 as well as rows into
 // D1, and two proxies would be two Miniflare instances over one state
-// directory.
+// directory. Remote bindings stay off: `MEDIA` has no local simulator, so
+// leaving them on opens a remote session that needs a login no script uses.
 export async function connectD1() {
   const { env, dispose } = await getPlatformProxy<{
     ACTIVITY_DB: D1Database;
     RAW: R2Bucket;
-  }>();
+  }>({ remoteBindings: false });
   return { store: d1Store(env.ACTIVITY_DB), env, dispose };
 }
 

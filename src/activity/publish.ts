@@ -1,10 +1,13 @@
 // What activity-hub's Publish entrypoint writes: the validation and the SQL,
 // kept out of `src/publish.ts` so they load outside the Workers runtime, where
 // `cloudflare:workers` does not resolve and a test cannot import the class.
-import type { CompiledQuery } from "kysely";
+import type { CompiledQuery, Kysely } from "kysely";
 import { z } from "zod";
+import type { Database } from "../db";
+import { findClimbs, type Climb } from "./climb";
+import type { ClimbNamer } from "./climb-name";
 import type { ActivityStore } from "./store";
-import { MAX_PROFILE_SAMPLES, thin, thinPolyline } from "./track";
+import { MAX_PROFILE_SAMPLES, thin, thinTrack } from "./track";
 
 // The hub branches on this name to decide whether a failure is permanent. RPC
 // carries a thrown error's name and message and drops its stack.
@@ -65,12 +68,31 @@ export type PowerBest = z.infer<typeof powerBests>[number];
 export async function publishActivity(
   store: ActivityStore,
   row: unknown,
+  nameClimbs: ClimbNamer,
 ): Promise<void> {
   const activity = parse(publishedActivity, row, "activity");
   // The hub sends every point the head unit logged. A card draws a few
   // hundred, and a season of full tracks is more than one request can hold,
   // so the track is thinned once here rather than on every read.
-  await store.db
+  const track =
+    activity.polyline === null ? null : thinTrack(activity.polyline);
+  const profile =
+    activity.elevationProfile === null
+      ? null
+      : thin(activity.elevationProfile, MAX_PROFILE_SAMPLES);
+
+  // Climbs come from the thinned track, the same input the backfill reads
+  // back out of the table, so a ride ranks the same whichever wrote it.
+  const climbs =
+    track === null || profile === null
+      ? []
+      : await nameStoredClimbs(
+          findClimbs(profile, track.coordinates),
+          await storedClimbs(store.db, activity.activityId),
+          nameClimbs,
+        );
+
+  const upsert = store.db
     .insertInto("activityFeed")
     .values({
       activityId: activity.activityId,
@@ -84,14 +106,8 @@ export async function publishActivity(
       elevationM: activity.elevationM,
       averageWatts: activity.averageWatts,
       powerSource: activity.powerSource,
-      polyline:
-        activity.polyline === null ? null : thinPolyline(activity.polyline),
-      elevationProfile:
-        activity.elevationProfile === null
-          ? null
-          : JSON.stringify(
-              thin(activity.elevationProfile, MAX_PROFILE_SAMPLES),
-            ),
+      polyline: track?.route ?? null,
+      elevationProfile: profile === null ? null : JSON.stringify(profile),
       photoKeys: JSON.stringify(activity.photoKeys),
       updatedAt: new Date().toISOString(),
     })
@@ -113,7 +129,108 @@ export async function publishActivity(
         updatedAt: eb.ref("excluded.updatedAt"),
       })),
     )
+    .compile();
+
+  await store.batch([
+    upsert,
+    ...climbStatements(store.db, activity.activityId, climbs),
+  ]);
+}
+
+export interface NamedClimb extends Climb {
+  name: string | null;
+}
+
+export type StoredClimb = Pick<
+  Database["activityClimb"],
+  "summitLat" | "summitLng" | "name"
+>;
+
+async function storedClimbs(
+  db: Kysely<Database>,
+  activityId: string,
+): Promise<StoredClimb[]> {
+  return db
+    .selectFrom("activityClimb")
+    .select(["summitLat", "summitLng", "name"])
+    .where("activityId", "=", activityId)
     .execute();
+}
+
+/**
+ * Names `climbs`, reusing the name already stored for a summit where there is
+ * one and asking `nameClimbs` only for the rest. A re-publish usually changes
+ * the title or the photos rather than the route, and a lookup is a request to
+ * a shared public server. A stored null is asked again, since it may be what
+ * a busy server left behind.
+ */
+export async function nameStoredClimbs(
+  climbs: Climb[],
+  stored: StoredClimb[],
+  nameClimbs: ClimbNamer,
+): Promise<NamedClimb[]> {
+  const known = new Map(
+    stored.flatMap((climb) =>
+      climb.name === null
+        ? []
+        : [[summitKey([climb.summitLat, climb.summitLng]), climb.name]],
+    ),
+  );
+  const unnamed = climbs.filter((climb) => !known.has(summitKey(climb.summit)));
+  const looked =
+    unnamed.length === 0
+      ? []
+      : await nameClimbs(unnamed.map((climb) => climb.summit));
+  const found = new Map(
+    unnamed.map((climb, index) => [
+      summitKey(climb.summit),
+      looked[index] ?? null,
+    ]),
+  );
+  return climbs.map((climb) => {
+    const key = summitKey(climb.summit);
+    return { ...climb, name: known.get(key) ?? found.get(key) ?? null };
+  });
+}
+
+/** A polyline stores five decimal places, so two equal summits agree to those. */
+function summitKey([lat, lng]: Climb["summit"]): string {
+  return `${lat.toFixed(5)},${lng.toFixed(5)}`;
+}
+
+/**
+ * Replaces an activity's climbs. The delete comes first and the inserts
+ * travel with it, so a ride whose route lost a climb does not keep it.
+ */
+export function climbStatements(
+  db: Kysely<Database>,
+  activityId: string,
+  climbs: NamedClimb[],
+): CompiledQuery[] {
+  const statements: CompiledQuery[] = [
+    db
+      .deleteFrom("activityClimb")
+      .where("activityId", "=", activityId)
+      .compile(),
+  ];
+  if (climbs.length > 0) {
+    statements.push(
+      db
+        .insertInto("activityClimb")
+        .values(
+          climbs.map((climb, position) => ({
+            activityId,
+            position,
+            gainM: climb.gainM,
+            summitLat: climb.summit[0],
+            summitLng: climb.summit[1],
+            name: climb.name,
+          })),
+        )
+        .compile(),
+    );
+  }
+  return statements;
 }
 
 // Replaces the whole ladder rather than merging into it, so a rebuild that
@@ -159,8 +276,8 @@ export async function publishPowerCurve(
   await store.batch(statements);
 }
 
-// The power curve goes explicitly rather than through the foreign key's
-// cascade, which only fires where D1 has foreign keys enabled.
+// The power curve and climbs go explicitly rather than through the foreign
+// keys' cascade, which only fires where D1 has foreign keys enabled.
 export async function deleteActivity(
   store: ActivityStore,
   activityId: unknown,
@@ -171,6 +288,7 @@ export async function deleteActivity(
       .deleteFrom("activityPowerCurve")
       .where("activityId", "=", id)
       .compile(),
+    store.db.deleteFrom("activityClimb").where("activityId", "=", id).compile(),
     store.db.deleteFrom("activityFeed").where("activityId", "=", id).compile(),
   ]);
 }

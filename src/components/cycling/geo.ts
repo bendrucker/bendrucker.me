@@ -3,7 +3,6 @@ import type { Coordinate } from "@/activity/types";
 
 export { decodePolyline };
 
-const EARTH_RADIUS_MI = 3959;
 const DEGREES_TO_RADIANS = Math.PI / 180;
 
 export const TILE_SIZE = 256;
@@ -20,17 +19,6 @@ const VIEWPORT_PADDING = 12;
  * far enough to leave the one before it.
  */
 const PATH_GRID = 0.5;
-
-export function haversineMiles(a: Coordinate, b: Coordinate): number {
-  const latDelta = (b[0] - a[0]) * DEGREES_TO_RADIANS;
-  const lonDelta = (b[1] - a[1]) * DEGREES_TO_RADIANS;
-  const chord =
-    Math.sin(latDelta / 2) ** 2 +
-    Math.cos(a[0] * DEGREES_TO_RADIANS) *
-      Math.cos(b[0] * DEGREES_TO_RADIANS) *
-      Math.sin(lonDelta / 2) ** 2;
-  return 2 * EARTH_RADIUS_MI * Math.asin(Math.sqrt(chord));
-}
 
 export interface MapTile {
   key: string;
