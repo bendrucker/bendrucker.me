@@ -200,15 +200,10 @@ function handleKeydown(e: KeyboardEvent) {
             </a>
           </ActivityTooltip>
           <ActivityTooltip v-if="repo.stargazerCount > 0" label="GitHub stars">
-            <a
-              :href="`${repo.url}/stargazers`"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center gap-1 transition-colors hover:text-accent focus:text-accent focus:underline focus:outline-none"
-            >
+            <span class="flex items-center gap-1">
               <LucideIcon name="star" class="flex-shrink-0" />
               <span>{{ formatStarCount(repo.stargazerCount) }}</span>
-            </a>
+            </span>
           </ActivityTooltip>
         </div>
       </div>
