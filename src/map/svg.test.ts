@@ -1,3 +1,4 @@
+import { Resvg } from "@cf-wasm/resvg/node";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Coordinate } from "@/activity/types";
 import { basemapSvg } from "./svg";
@@ -27,6 +28,20 @@ function polygon(featureClass?: string): DecodedFeature {
         { x: 0, y: 0 },
         { x: 4096, y: 0 },
         { x: 4096, y: 4096 },
+      ],
+    ],
+  };
+}
+
+/** A small triangle with its corner at `at` on both axes of the tile. */
+function triangleAt(at: number): DecodedFeature {
+  return {
+    type: 3,
+    rings: [
+      [
+        { x: at, y: at },
+        { x: at + 150, y: at },
+        { x: at, y: at + 150 },
       ],
     ],
   };
@@ -158,5 +173,23 @@ describe("basemapSvg", () => {
   it("renders without a tile that failed to load", async () => {
     vi.mocked(fetchTile).mockResolvedValue(null);
     expect(await render()).toContain("<svg");
+  });
+
+  it("leaves out geometry that falls outside the card", async () => {
+    vi.mocked(fetchTile).mockResolvedValue(
+      tileWith({ water: [triangleAt(-8192)] }),
+    );
+    expect(await render()).not.toContain("<g ");
+  });
+
+  // Twelve rides answered 500 for every map: resvg panics with `unreachable`
+  // on a clipped path lying wholly below the canvas. Near the far corner of
+  // each tile, this triangle lands there for the tiles that overhang the card.
+  it("rasterizes tiles whose geometry overhangs the card", async () => {
+    vi.mocked(fetchTile).mockResolvedValue(
+      tileWith({ water: [triangleAt(3000)] }),
+    );
+    const resvg = await Resvg.async(await render());
+    expect(resvg.render().asPng().length).toBeGreaterThan(0);
   });
 });

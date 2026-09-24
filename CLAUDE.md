@@ -235,6 +235,11 @@ refused rather than guessed at, since Astro decodes a path param with
 leaves the route line on the card's own ground. The story book has no worker and
 renders every card that way.
 
+A render that throws still answers 500. The card degrades the same way it does
+for a 404, and the error stays uncached, so the next deploy redraws it, and it
+stays visible in the worker's `/map/` status rate. A placeholder PNG would hide
+the bug behind a year-long immutable cache.
+
 A card carries both themes as separate images and swaps them with CSS, because
 the site's theme is an attribute a reader toggles rather than an OS setting.
 That costs two image requests where one is shown, in exchange for a toggle that
