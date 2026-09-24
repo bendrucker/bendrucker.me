@@ -1,6 +1,3 @@
-// The climbs a ride contains, located on its route. A climb is a segment of
-// the elevation profile, and the summit is where that segment ends, which is
-// the point OpenStreetMap is asked to name.
 import { haversineMiles } from "./track";
 import type { Coordinate } from "./types";
 

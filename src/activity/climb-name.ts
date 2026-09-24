@@ -1,7 +1,4 @@
-// What a climb is called, read from OpenStreetMap around its summit. A named
-// peak is the name a rider uses for a climb that tops out on a mountain, and
-// the road is the name for one that crests a ridge or a pass on the way
-// somewhere else. Anything past those is guessing, so the rest go unnamed.
+// What a climb is called, read from OpenStreetMap around its summit.
 import { logger } from "@workspace/logger";
 import { z } from "zod";
 import type { Coordinate } from "./types";
@@ -13,7 +10,6 @@ const TIMEOUT_MS = 8000;
 /** How far a peak may stand from the summit and still name it, in metres. */
 const PEAK_RADIUS_M = 1000;
 
-/** How far the summit may sit from a road's line, in metres. */
 const ROAD_RADIUS_M = 60;
 
 const EARTH_RADIUS_M = 6_371_000;
@@ -121,12 +117,7 @@ export function pickClimbName(
   return road?.replace(/ Road$/, "") ?? null;
 }
 
-/**
- * One Overpass request for every summit on a ride, so a publish costs one
- * call to a shared public server however many climbs it holds. Any failure
- * leaves every climb unnamed: a climb without a name falls back to its ride's, and a
- * publish must never fail because OpenStreetMap was busy.
- */
+/** One Overpass request for every summit on a ride, so a publish costs one call to a shared public server however many climbs it holds. Any failure leaves every climb unnamed, since a publish must never fail because OpenStreetMap was busy. */
 export async function lookupClimbNames(
   summits: Coordinate[],
   fetcher: typeof fetch = fetch,

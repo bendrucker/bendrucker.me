@@ -53,7 +53,6 @@ export function testStore(db: Kysely<Database>): ActivityStore {
   };
 }
 
-/** A namer for a write that has no Overpass to ask, leaving every climb unnamed. */
 export const noClimbNames: ClimbNamer = async (summits) =>
   summits.map(() => null);
 

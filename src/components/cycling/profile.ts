@@ -84,7 +84,6 @@ function logScale(
   return Number.isNaN(ratio) ? 0 : Math.min(1, Math.max(0, ratio));
 }
 
-/** The biggest continuous climb in a series of altitudes, as `climbSpans` delimits them. */
 export function longestClimb(altitudes: number[]): number {
   return Math.max(0, ...climbSpans(altitudes).map((span) => span.gain));
 }

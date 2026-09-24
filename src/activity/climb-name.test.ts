@@ -8,7 +8,6 @@ import type { Coordinate } from "./types";
 
 const METRES_PER_DEGREE = 111_195;
 
-/** A point `north` and `east` metres from `origin`. */
 function offset(origin: Coordinate, north: number, east: number): Coordinate {
   return [
     origin[0] + north / METRES_PER_DEGREE,
