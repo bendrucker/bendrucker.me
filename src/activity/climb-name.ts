@@ -117,7 +117,12 @@ export function pickClimbName(
   return road?.replace(/ Road$/, "") ?? null;
 }
 
-/** One Overpass request for every summit on a ride, so a publish costs one call to a shared public server however many climbs it holds. Any failure leaves every climb unnamed, since a publish must never fail because OpenStreetMap was busy. */
+/**
+ * One Overpass request for every summit on a ride, so a publish costs one
+ * call to a shared public server however many climbs it holds. Any failure
+ * leaves every climb unnamed, since a publish must never fail because
+ * OpenStreetMap was busy.
+ */
 export async function lookupClimbNames(
   summits: Coordinate[],
   fetcher: typeof fetch = fetch,
