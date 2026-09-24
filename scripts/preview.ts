@@ -41,8 +41,8 @@ const databases = z.array(database);
 
 /** What `wrangler d1 execute --json` prints: one entry per statement. */
 const tableNames = z
-  .array(z.object({ results: z.array(z.object({ name: z.string() })) }))
-  .min(1);
+  .tuple([z.object({ results: z.array(z.object({ name: z.string() })) })])
+  .rest(z.unknown());
 
 const pullRequest = z.object({
   number: z.number(),
@@ -76,12 +76,14 @@ function main(): void {
   const name = (): string => values.name ?? branchName();
 
   switch (command) {
-    case "deploy":
-      prepare(name());
+    case "deploy": {
+      const target = name();
+      prepare(target);
       run("npm", ["run", "build"]);
       run("cp", [".assetsignore", "dist/"]);
-      patchBuiltConfig(name());
-      return run(WRANGLER, ["preview", "--name", name()]);
+      patchBuiltConfig(target);
+      return run(WRANGLER, ["preview", "--name", target]);
+    }
     case "prepare":
       return prepare(name());
     case "config":
@@ -99,13 +101,15 @@ function main(): void {
 
 function prepare(name: string): void {
   const target = databaseName(name);
-  if (find(target) === undefined) {
-    run(WRANGLER, ["d1", "create", target]);
-  }
+  const db = find(target) ?? create(target);
   if (!tables(target).includes("activity_feed")) {
     seed(target);
   }
-  writeMigrateConfig(name);
+  writeConfig(
+    MIGRATE_CONFIG,
+    experimental_readRawConfig({ config: CONFIG }).rawConfig,
+    db,
+  );
   run(WRANGLER, [
     "d1",
     "migrations",
@@ -115,6 +119,15 @@ function prepare(name: string): void {
     "--config",
     MIGRATE_CONFIG,
   ]);
+}
+
+function create(target: string): Database {
+  run(WRANGLER, ["d1", "create", target]);
+  const db = find(target);
+  if (db === undefined) {
+    throw new Error(`Created ${target} but it is missing from d1 list.`);
+  }
+  return db;
 }
 
 /** The dump carries `d1_migrations`, so `apply` adds only the branch's own. */
@@ -135,46 +148,43 @@ function seed(target: string): void {
   logger.info({ target, tables: source }, "Seeded from production");
 }
 
-/** `d1 migrations apply` only takes a database its config names. */
-function writeMigrateConfig(name: string): void {
-  const config = experimental_readRawConfig({ config: CONFIG }).rawConfig;
-  writeFileSync(
-    MIGRATE_CONFIG,
-    `${JSON.stringify(withPreviewDatabase(config, name), null, 2)}\n`,
-  );
-}
-
 /** The Vite plugin redirects wrangler here, so the preview binds what this says. */
 function patchBuiltConfig(name: string): void {
-  const config: unknown = JSON.parse(readFileSync(BUILT_CONFIG, "utf-8"));
-  writeFileSync(
+  const target = databaseName(name);
+  const db = find(target);
+  if (db === undefined) {
+    throw new Error(`Database ${target} does not exist. Run prepare first.`);
+  }
+  writeConfig(
     BUILT_CONFIG,
-    `${JSON.stringify(withPreviewDatabase(config, name), null, 2)}\n`,
+    JSON.parse(readFileSync(BUILT_CONFIG, "utf-8")),
+    db,
   );
 }
 
-function withPreviewDatabase(input: unknown, name: string): object {
-  const target = databaseName(name);
-  const found = find(target);
-  if (found === undefined) {
-    throw new Error(`Database ${target} does not exist. Run prepare first.`);
-  }
+function writeConfig(file: string, input: unknown, db: Database): void {
+  writeFileSync(
+    file,
+    `${JSON.stringify(withPreviewDatabase(input, db), null, 2)}\n`,
+  );
+}
 
+function withPreviewDatabase(input: unknown, db: Database): object {
   const config = rawConfig.parse(input);
-  const activity = config.d1_databases.find((db) => db.binding === BINDING);
+  const activity = config.d1_databases.find((d) => d.binding === BINDING);
   if (activity === undefined) {
     throw new Error(`The config has no ${BINDING} database binding.`);
   }
   const binding = {
     ...activity,
-    database_name: found.name,
-    database_id: found.uuid,
+    database_name: db.name,
+    database_id: db.uuid,
   };
-  logger.info({ name, database: found.name }, "Bound the preview database");
+  logger.info({ database: db.name }, "Bound the preview database");
   return {
     ...config,
     d1_databases: [
-      ...config.d1_databases.filter((db) => db.binding !== BINDING),
+      ...config.d1_databases.filter((d) => d.binding !== BINDING),
       binding,
     ],
     previews: {
@@ -185,13 +195,12 @@ function withPreviewDatabase(input: unknown, name: string): object {
 }
 
 /** Previews first: a failed delete then leaves the database for the sweeper. */
-function remove(name: string): void {
+function remove(name: string, db = find(databaseName(name))): void {
   for (const worker of WORKERS) {
     deletePreview(worker, name);
   }
-  const target = databaseName(name);
-  if (find(target) !== undefined) {
-    run(WRANGLER, ["d1", "delete", target, "--skip-confirmation"]);
+  if (db !== undefined) {
+    run(WRANGLER, ["d1", "delete", db.name, "--skip-confirmation"]);
   }
   logger.info({ name }, "Deleted preview resources");
 }
@@ -212,7 +221,7 @@ function sweep(dryRun: boolean): void {
       { name, pullRequests: prs.map((pr) => pr.number), dryRun },
       "Sweeping preview resources",
     );
-    if (!dryRun) remove(name);
+    if (!dryRun) remove(name, db);
     swept += 1;
   }
 
@@ -306,7 +315,7 @@ function tables(target: string): string[] {
     { encoding: "utf-8" },
   );
   const [first] = tableNames.parse(JSON.parse(stdout));
-  return first!.results.map((row) => row.name);
+  return first.results.map((row) => row.name);
 }
 
 function databaseName(name: string): string {

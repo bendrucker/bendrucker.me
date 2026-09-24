@@ -352,16 +352,17 @@ script points `ACTIVITY_DB` at the preview's in the built config the Vite
 plugin writes to `dist/server/wrangler.json`, which is what `wrangler preview`
 deploys, and in a generated `wrangler.preview.json` for `d1 migrations apply`,
 which only takes a database its config names. The session KV namespace and the
-photo bucket are shared: sessions
-go unused, the seeded rows name production's photos, and the photo routes only
-read.
+photo bucket are shared: sessions go unused, the seeded rows name production's
+photos, and the photo routes only read.
 
 `cleanup.yml` removes a pull request's previews and database when it closes.
 `sweep-previews.yml` runs nightly and removes whatever that missed, but only
 resources whose pull request is closed. A branch-named preview is matched to the
 pull requests opened from that branch, and one with no pull request is never
 swept, since nothing says it is idle. Delete those with `npm run preview --
-delete` from the branch.
+delete` from the branch. Both delete the previews named in the script's
+`WORKERS` list, so a worker added to the deploy matrix with `previews: true`
+goes there too, or its previews outlive their pull requests.
 
 Cron triggers never fire on a preview, so the `github` worker is not previewed.
 A pull request runs its deploy as a dry run to check the bundle. A service
