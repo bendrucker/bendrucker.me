@@ -9,6 +9,7 @@ import {
 import { computed, onMounted, ref, watch } from "vue";
 import { TooltipProvider } from "reka-ui";
 import { useActivityApi } from "./composables/useActivityApi";
+import { useClock } from "./composables/useClock";
 import type { Repo } from "@/activity/types";
 import FilterControls from "./FilterControls.vue";
 import LanguageBar from "./LanguageBar.vue";
@@ -16,6 +17,7 @@ import RepoCard from "./RepoCard.vue";
 import YearDivider from "./YearDivider.vue";
 import TimelineRail from "./TimelineRail.vue";
 import LoadingPulse from "./LoadingPulse.vue";
+import { activityYear } from "./clock";
 
 const props = defineProps<{
   initialRepos: Repo[];
@@ -23,6 +25,8 @@ const props = defineProps<{
   initialHasMore: boolean;
   initialCursor: string | null;
   username: string;
+  /** When the server rendered the page, so hydration can match its dates. */
+  renderedAt: string;
 }>();
 
 const { state, fetchRepos, fetchLanguages, fetchYears, prefetchNext } =
@@ -36,7 +40,8 @@ const { state, fetchRepos, fetchLanguages, fetchYears, prefetchNext } =
 const rootRef = ref<HTMLDivElement | null>(null);
 const headerRef = ref<HTMLDivElement | null>(null);
 
-const calendarYear = new Date().getFullYear();
+const clock = useClock(props.renderedAt);
+const calendarYear = computed(() => activityYear(clock.value.now));
 
 const reposWithDividers = computed(() => {
   const items: Array<
@@ -47,9 +52,9 @@ const reposWithDividers = computed(() => {
   let lastYear: number | null = null;
 
   for (const repo of state.repos) {
-    const year = new Date(repo.lastActivity).getFullYear();
+    const year = activityYear(repo.lastActivity);
     if (showDividers && year !== lastYear) {
-      if (year !== calendarYear) {
+      if (year !== calendarYear.value) {
         items.push({ type: "divider", year, key: `year-${year}` });
       }
       lastYear = year;
@@ -62,7 +67,7 @@ const reposWithDividers = computed(() => {
 const loadedYears = computed(() => {
   const years = new Set<number>();
   for (const repo of state.repos) {
-    years.add(new Date(repo.lastActivity).getFullYear());
+    years.add(activityYear(repo.lastActivity));
   }
   return years;
 });
@@ -76,7 +81,7 @@ function selectLanguage(language: string | null) {
 }
 
 function navigateToYear(year: number) {
-  if (year === calendarYear) {
+  if (year === calendarYear.value) {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
@@ -87,7 +92,7 @@ function navigateToYear(year: number) {
 }
 
 onMounted(() => {
-  state.currentYear = calendarYear;
+  state.currentYear = calendarYear.value;
   prefetchNext();
   fetchLanguages();
   fetchYears();
@@ -208,7 +213,12 @@ useIntersectionObserver(
       <div class="space-y-3">
         <template v-for="item in reposWithDividers" :key="item.key">
           <YearDivider v-if="item.type === 'divider'" :year="item.year" />
-          <RepoCard v-else :repo="item.repo" :username="username" />
+          <RepoCard
+            v-else
+            :repo="item.repo"
+            :username="username"
+            :clock="clock"
+          />
         </template>
       </div>
 

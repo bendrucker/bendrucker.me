@@ -2,6 +2,7 @@ import { refDebounced, useDebounceFn } from "@vueuse/core";
 import { computed, reactive, watch } from "vue";
 import { actions } from "astro:actions";
 import type { Repo, ActivityState } from "@/activity/types";
+import { activityYear } from "../clock";
 
 // `useDebounceFn` returns a promisified wrapper. Callers here fire and forget,
 // so this keeps the original signature by discarding that promise.
@@ -88,9 +89,9 @@ export function useActivityApi(
       state.hasMore = data.hasMore;
       state.total = data.total;
       if (state.filters.sort === "recent" && data.repos.length > 0) {
-        state.currentYear = new Date(data.repos[0].lastActivity).getFullYear();
+        state.currentYear = activityYear(data.repos[0].lastActivity);
       } else if (state.filters.sort !== "recent") {
-        state.currentYear = new Date().getFullYear();
+        state.currentYear = activityYear(new Date());
       }
     } finally {
       state.loading = false;
