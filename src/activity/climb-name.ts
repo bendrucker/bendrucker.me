@@ -1,7 +1,7 @@
 // What a climb is called, read from OpenStreetMap around its summit.
 import { logger } from "@workspace/logger";
+import CheapRuler from "cheap-ruler";
 import { z } from "zod";
-import { DEGREES_TO_RADIANS } from "./track";
 import type { Coordinate } from "./types";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
@@ -12,8 +12,6 @@ const TIMEOUT_MS = 8000;
 const PEAK_RADIUS_M = 1000;
 
 const ROAD_RADIUS_M = 60;
-
-const EARTH_RADIUS_M = 6_371_000;
 
 /**
  * Classes a car could drive. A fire trail or a path crossing the summit is
@@ -77,6 +75,11 @@ export function pickClimbName(
   elements: OverpassElement[],
   summit: Coordinate,
 ): string | null {
+  // Every distance here is under a kilometre, where a flat projection is off
+  // by less than a rounding error.
+  const ruler = new CheapRuler(summit[0], "meters");
+  const at = lngLat(summit);
+
   const peak = nearest(
     elements.flatMap((item) =>
       item.type === "node" &&
@@ -85,7 +88,7 @@ export function pickClimbName(
         ? [
             {
               name: item.tags.name,
-              distance: metresBetween(summit, [item.lat, item.lon]),
+              distance: ruler.distance(at, [item.lon, item.lat]),
             },
           ]
         : [],
@@ -95,34 +98,27 @@ export function pickClimbName(
   if (peak !== null) return peak.replace(DIRECTIONAL_PEAK, "");
 
   const road = nearest(
-    elements.flatMap((item) =>
-      item.type === "way" &&
-      item.tags?.name !== undefined &&
-      ROAD_CLASSES.has(item.tags.highway ?? "")
-        ? [
-            {
-              name: item.tags.name,
-              distance: distanceToLine(
-                summit,
-                item.geometry.flatMap((node): Coordinate[] =>
-                  node === null ? [] : [[node.lat, node.lon]],
-                ),
-              ),
-            },
-          ]
-        : [],
-    ),
+    elements.flatMap((item) => {
+      if (
+        item.type !== "way" ||
+        item.tags?.name === undefined ||
+        !ROAD_CLASSES.has(item.tags.highway ?? "")
+      ) {
+        return [];
+      }
+      const line = item.geometry.flatMap((node): [number, number][] =>
+        node === null ? [] : [[node.lon, node.lat]],
+      );
+      if (line.length === 0) return [];
+      const closest = ruler.pointOnLine(line, at).point;
+      return [{ name: item.tags.name, distance: ruler.distance(at, closest) }];
+    }),
     ROAD_RADIUS_M,
   );
   return road?.replace(/ Road$/, "") ?? null;
 }
 
-/**
- * One Overpass request for every summit on a ride, so a publish costs one
- * call to a shared public server however many climbs it holds. Any failure
- * leaves every climb unnamed, since a publish must never fail because
- * OpenStreetMap was busy.
- */
+/** Names every summit on a ride from one Overpass request, or none if it fails. */
 export async function lookupClimbNames(
   summits: Coordinate[],
   fetcher: typeof fetch = fetch,
@@ -170,40 +166,7 @@ function nearest(
   return best?.name ?? null;
 }
 
-/**
- * Metres east and north of `origin`. Every distance here is under a
- * kilometre, where a flat projection is off by less than a rounding error.
- */
-function project(origin: Coordinate, target: Coordinate): [number, number] {
-  return [
-    (target[1] - origin[1]) *
-      DEGREES_TO_RADIANS *
-      EARTH_RADIUS_M *
-      Math.cos(origin[0] * DEGREES_TO_RADIANS),
-    (target[0] - origin[0]) * DEGREES_TO_RADIANS * EARTH_RADIUS_M,
-  ];
-}
-
-function metresBetween(a: Coordinate, b: Coordinate): number {
-  return Math.hypot(...project(a, b));
-}
-
-/** From `origin` to the closest point on the polyline through `line`. */
-function distanceToLine(origin: Coordinate, line: Coordinate[]): number {
-  const points = line.map((node) => project(origin, node));
-  if (points.length === 1) return Math.hypot(...points[0]!);
-  let closest = Number.POSITIVE_INFINITY;
-  for (let index = 1; index < points.length; index++) {
-    const [ax, ay] = points[index - 1]!;
-    const [bx, by] = points[index]!;
-    const dx = bx - ax;
-    const dy = by - ay;
-    const length = dx * dx + dy * dy;
-    const along =
-      length === 0
-        ? 0
-        : Math.min(1, Math.max(0, -(ax * dx + ay * dy) / length));
-    closest = Math.min(closest, Math.hypot(ax + along * dx, ay + along * dy));
-  }
-  return closest;
+/** cheap-ruler takes longitude first. */
+function lngLat([lat, lng]: Coordinate): [number, number] {
+  return [lng, lat];
 }
