@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { logger } from "@workspace/logger";
 import { writeFileSync } from "fs";
 import { join } from "path";
@@ -8,6 +8,7 @@ import { d1Store } from "../src/activity/store";
 import { syncActivity, syncStatements } from "../src/activity/sync";
 import type { CompiledQuery } from "kysely";
 import SQLite from "better-sqlite3";
+import { z } from "zod";
 
 // The bindings a script reaches through the proxy. `env` comes back alongside
 // the store because the seed writes ride photos into R2 as well as rows into
@@ -32,13 +33,36 @@ export function formatSql(compiled: CompiledQuery): string {
   return `${sql};`;
 }
 
-export function executeRemote(statements: string[]) {
+const DATABASE = "bendrucker-activity";
+
+/** Production, or the Miniflare state the dev servers and the seed share. */
+export type D1Target = "remote" | "local";
+
+export function executeD1(statements: string[], target: D1Target = "remote") {
   const sqlFile = join(process.cwd(), "tmp", "d1-import.sql");
   writeFileSync(sqlFile, `${statements.join("\n")}\n`);
-  execSync(
-    `wrangler d1 execute bendrucker-activity --remote --file=${sqlFile}`,
+  execFileSync(
+    "wrangler",
+    ["d1", "execute", DATABASE, `--${target}`, `--file=${sqlFile}`],
     { encoding: "utf-8" },
   );
+}
+
+/** What `wrangler d1 execute --json` prints: one entry per statement. */
+const queryResult = z.array(z.object({ results: z.array(z.unknown()) })).min(1);
+
+export function queryD1<T>(
+  schema: z.ZodType<T>,
+  sql: string,
+  target: D1Target = "remote",
+): T[] {
+  const stdout = execFileSync(
+    "wrangler",
+    ["d1", "execute", DATABASE, `--${target}`, "--json", "--command", sql],
+    { encoding: "utf-8" },
+  );
+  const [first] = queryResult.parse(JSON.parse(stdout));
+  return first!.results.map((row) => schema.parse(row));
 }
 
 /**
@@ -54,7 +78,7 @@ export async function importActivity(
   try {
     if (remote) {
       const statements = syncStatements(store.db, repos);
-      executeRemote(statements.map((statement) => formatSql(statement)));
+      executeD1(statements.map((statement) => formatSql(statement)));
       logger.info(
         { statements: statements.length, remote },
         "Imported activity data to D1",

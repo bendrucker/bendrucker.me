@@ -305,6 +305,30 @@ Windowing trades away in-page search and linear screen-reader access to months
 the reader has scrolled past. The rail and `scrollToSection` still reach every
 month, and a section mounts as soon as it is scrolled to.
 
+## Biggest Climbs
+
+The PRs tab ranks climbs from `activity_climb`, one row per climb, so a ride
+over Diablo and then Hamilton places twice. The rows are written at publish
+time because a name costs an Overpass request, which a page render can't make.
+
+A climb is a segment of the walk `climbSpans` in `src/activity/climb.ts`
+performs over the stored profile: a dip deeper than 5% of the ride's altitude
+range ends one segment and starts the next. A segment gaining at least 150 m is
+stored. Climbs come from the thinned profile and route the feed stores, so a
+backfilled ride and a freshly published one rank the same.
+
+`pickClimbName` names a climb after the nearest OpenStreetMap peak or pass
+within a kilometre of its summit, less a directional suffix like "West Peak".
+Failing that, it takes the nearest drivable road within 60 m, less a trailing
+" Road". A climb OSM can't name is labeled with its ride and never merged with
+another. The list keeps each name's biggest effort. The OSM credit beneath the
+cycling views covers these names.
+
+`publishActivity` reuses a stored name for an unchanged summit, so only a
+changed route asks Overpass again. After a change to the climb or naming rule,
+`npm run backfill:climbs` recomputes every ride's climbs from production D1.
+`-- --dry-run` prints them first.
+
 ## Theme
 
 CSS vars in `global.css` → Tailwind: `bg-background`, `text-foreground`, `bg-accent`, `text-accent`, `bg-muted`, `text-muted`, `border-border`. Dark mode via `data-theme="dark"` / `dark:` prefix. No `skin-*` classes.

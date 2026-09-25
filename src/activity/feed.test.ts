@@ -547,9 +547,7 @@ describe("queryCyclingActivity", () => {
 
     const { records } = await queryCyclingActivity(db, NOW);
 
-    expect(
-      climbRows(records, "all").map(([id, name]) => [id, name]),
-    ).toEqual([
+    expect(climbRows(records, "all").map(([id, name]) => [id, name])).toEqual([
       ["a:0", "Ride a"],
       ["b:0", "Ride b"],
       ["a:1", "Ride a"],
@@ -764,7 +762,14 @@ function climb(
   gainM: number,
   name: string | null,
 ) {
-  return { activityId, position, gainM, summitLat: 37.88, summitLng: -121.91, name };
+  return {
+    activityId,
+    position,
+    gainM,
+    summitLat: 37.88,
+    summitLng: -121.91,
+    name,
+  };
 }
 
 async function storeClimbs(...rows: ReturnType<typeof climb>[]) {
