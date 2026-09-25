@@ -10,25 +10,23 @@ export const MAX_ROUTE_POINTS = 300;
 /** Samples a stored profile keeps. A card's chart draws at a width where more is invisible. */
 export const MAX_PROFILE_SAMPLES = 100;
 
+const EARTH_RADIUS_MI = 3959;
+export const DEGREES_TO_RADIANS = Math.PI / 180;
+
 /** The top of the range a sample quantizes to: a byte, which two hex digits spell. */
 const PROFILE_TOP = 255;
 
 /**
- * Every `step`th item plus the last, so a long series keeps its shape and
- * both endpoints within a bounded size.
+ * At most `max` items spread evenly across the series, both endpoints
+ * included, so a sample's index stays a fixed share of the whole.
  */
 export function thin<T>(items: readonly T[], max: number): T[] {
-  const step = Math.max(1, Math.ceil(items.length / max));
-  const kept: T[] = [];
-  let lastKept = -1;
-  for (let i = 0; i < items.length; i += step) {
-    kept.push(items[i]!);
-    lastKept = i;
-  }
-  if (items.length > 0 && lastKept !== items.length - 1) {
-    kept.push(items[items.length - 1]!);
-  }
-  return kept;
+  if (items.length <= max) return [...items];
+  const last = items.length - 1;
+  return Array.from(
+    { length: max },
+    (_, index) => items[Math.round((index * last) / (max - 1))]!,
+  );
 }
 
 /** A stored route bounded to `MAX_ROUTE_POINTS`, in both forms it is read in. */
@@ -153,4 +151,15 @@ export function decodeProfile(encoded: string): number[] {
     samples.push(Number.parseInt(pair, 16) / PROFILE_TOP);
   }
   return samples;
+}
+
+export function haversineMiles(a: Coordinate, b: Coordinate): number {
+  const latDelta = (b[0] - a[0]) * DEGREES_TO_RADIANS;
+  const lonDelta = (b[1] - a[1]) * DEGREES_TO_RADIANS;
+  const chord =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(a[0] * DEGREES_TO_RADIANS) *
+      Math.cos(b[0] * DEGREES_TO_RADIANS) *
+      Math.sin(lonDelta / 2) ** 2;
+  return 2 * EARTH_RADIUS_MI * Math.asin(Math.sqrt(chord));
 }

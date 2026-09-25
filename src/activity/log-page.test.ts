@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 import type { Kysely } from "kysely";
 import type { Database } from "@/db";
-import { createTestDb, testStore } from "@/test/db";
+import { createTestDb, noClimbNames, testStore } from "@/test/db";
 import { queryCyclingLogPage } from "./feed";
 import type { LogPage } from "./types";
 import { logPage } from "./log-page";
@@ -59,14 +59,17 @@ describe("logPage", () => {
         elevationProfile: [1, 2, 3],
         photoKeys: ["raw/strava/activities/1/photos/one.jpg"],
       }),
+      noClimbNames,
     );
     await publishActivity(
       store,
       ride("b", { startedAt: "2026-02-14T13:00:55Z", distanceM: 90_000 }),
+      noClimbNames,
     );
     await publishActivity(
       store,
       ride("c", { startedAt: "2025-06-14T13:00:55Z" }),
+      noClimbNames,
     );
 
     const page = await queryCyclingLogPage(db, "2026-04");

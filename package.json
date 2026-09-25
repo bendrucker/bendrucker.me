@@ -44,6 +44,7 @@
     "@types/node": "^26.4.0",
     "@vueuse/core": "^14.4.0",
     "astro": "7.3.2",
+    "cheap-ruler": "^4.1.0",
     "culori": "^4.0.2",
     "date-fns": "^4.4.0",
     "embla-carousel-vue": "^8.6.0",

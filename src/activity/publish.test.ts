@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type { Kysely } from "kysely";
 import type { Database } from "@/db";
-import { createTestDb, testStore, tick } from "@/test/db";
+import { createTestDb, noClimbNames, testStore, tick } from "@/test/db";
 import {
   deleteActivity,
   publishActivity,
@@ -10,7 +10,8 @@ import {
   type PublishedActivity,
 } from "./publish";
 import type { ActivityStore } from "./store";
-import { decodePolyline } from "./track";
+import { decodePolyline, encodePolyline } from "./track";
+import type { Coordinate } from "./types";
 
 let db: Kysely<Database>;
 let store: ActivityStore;
@@ -42,13 +43,36 @@ function activity(
   };
 }
 
+// Eleven points due north, so profile sample `i` of eleven sits on point `i`.
+const climbRoute: Coordinate[] = Array.from({ length: 11 }, (_, i) => [
+  37 + i * 0.01,
+  -122,
+]);
+
+function hillyRide(profile: number[]): PublishedActivity {
+  return activity({
+    polyline: encodePolyline(climbRoute),
+    elevationProfile: profile,
+  });
+}
+
+const twoClimbs = [0, 200, 400, 300, 100, 0, 300, 600, 500, 400, 300];
+
+async function climbRows() {
+  return db
+    .selectFrom("activityClimb")
+    .selectAll()
+    .orderBy("position")
+    .execute();
+}
+
 async function feedRow() {
   return db.selectFrom("activityFeed").selectAll().executeTakeFirstOrThrow();
 }
 
 describe("publishActivity", () => {
   it("writes SI units and JSON-encodes the array columns", async () => {
-    await publishActivity(store, activity());
+    await publishActivity(store, activity(), noClimbNames);
 
     const row = await feedRow();
     expect(row.distanceM).toBe(42500);
@@ -60,10 +84,11 @@ describe("publishActivity", () => {
   });
 
   it("replaces an activity that was already published", async () => {
-    await publishActivity(store, activity());
+    await publishActivity(store, activity(), noClimbNames);
     await publishActivity(
       store,
       activity({ name: "Renamed", distanceM: 50000, elevationProfile: null }),
+      noClimbNames,
     );
 
     const rows = await db.selectFrom("activityFeed").selectAll().execute();
@@ -82,6 +107,7 @@ describe("publishActivity", () => {
         polyline,
         elevationProfile: Array.from({ length: 1000 }, (_, i) => i),
       }),
+      noClimbNames,
     );
 
     const row = await db
@@ -92,7 +118,7 @@ describe("publishActivity", () => {
     expect(route.length).toBeLessThanOrEqual(301);
     expect(route.at(-1)).toEqual(decodePolyline(polyline).at(-1));
     const profile: unknown = JSON.parse(row.elevationProfile!);
-    expect(profile).toHaveLength(101);
+    expect(profile).toHaveLength(100);
     expect(profile).toEqual(expect.arrayContaining([0, 999]));
   });
 
@@ -111,11 +137,101 @@ describe("publishActivity", () => {
         elevationProfile: null,
         photoKeys: [],
       }),
+      noClimbNames,
     );
 
     const row = await feedRow();
     expect(row.polyline).toBeNull();
     expect(JSON.parse(row.photoKeys)).toEqual([]);
+  });
+
+  it("stores each climb in ride order with the name found for it", async () => {
+    const asked: Coordinate[][] = [];
+    await publishActivity(store, hillyRide(twoClimbs), async (summits) => {
+      asked.push(summits);
+      return ["Mount Diablo", null];
+    });
+
+    expect(asked).toEqual([[climbRoute[2], climbRoute[7]]]);
+    expect(await climbRows()).toEqual([
+      {
+        activityId: "a1",
+        position: 0,
+        gainM: 400,
+        summitLat: 37.02,
+        summitLng: -122,
+        name: "Mount Diablo",
+      },
+      {
+        activityId: "a1",
+        position: 1,
+        gainM: 600,
+        summitLat: 37.07,
+        summitLng: -122,
+        name: null,
+      },
+    ]);
+  });
+
+  it("replaces the climbs a re-publish no longer finds", async () => {
+    await publishActivity(store, hillyRide(twoClimbs), noClimbNames);
+    await publishActivity(
+      store,
+      hillyRide([0, 0, 0, 0, 0, 0, 300, 600, 500, 400, 300]),
+      noClimbNames,
+    );
+
+    const rows = await climbRows();
+    expect(rows.map((row) => [row.position, row.gainM])).toEqual([[0, 600]]);
+  });
+
+  it("reuses stored names rather than looking the same summits up again", async () => {
+    await publishActivity(store, hillyRide(twoClimbs), async () => [
+      "Mount Diablo",
+      "Mount Hamilton",
+    ]);
+    await publishActivity(
+      store,
+      { ...hillyRide(twoClimbs), name: "Renamed" },
+      async () => {
+        throw new Error("should not look anything up");
+      },
+    );
+
+    expect((await climbRows()).map((row) => row.name)).toEqual([
+      "Mount Diablo",
+      "Mount Hamilton",
+    ]);
+  });
+
+  it("asks again for a summit stored without a name", async () => {
+    await publishActivity(store, hillyRide(twoClimbs), async () => [
+      "Mount Diablo",
+      null,
+    ]);
+    const asked: Coordinate[][] = [];
+    await publishActivity(store, hillyRide(twoClimbs), async (summits) => {
+      asked.push(summits);
+      return ["Mount Hamilton"];
+    });
+
+    expect(asked).toEqual([[climbRoute[7]]]);
+    expect((await climbRows()).map((row) => row.name)).toEqual([
+      "Mount Diablo",
+      "Mount Hamilton",
+    ]);
+  });
+
+  it("stores no climbs for a ride without a route", async () => {
+    await publishActivity(
+      store,
+      { ...hillyRide(twoClimbs), polyline: null },
+      async () => {
+        throw new Error("should not look anything up");
+      },
+    );
+
+    expect(await climbRows()).toEqual([]);
   });
 
   // A wrong shape has to surface as ValidationError specifically: the hub
@@ -130,13 +246,15 @@ describe("publishActivity", () => {
     ["a non-array elevation profile", { ...activity(), elevationProfile: 12 }],
     ["a non-string photo key", { ...activity(), photoKeys: [7] }],
   ])("rejects %s", async (_label, row) => {
-    await expect(publishActivity(store, row)).rejects.toThrow(ValidationError);
+    await expect(publishActivity(store, row, noClimbNames)).rejects.toThrow(
+      ValidationError,
+    );
   });
 });
 
 describe("publishPowerCurve", () => {
   it("replaces the whole ladder", async () => {
-    await publishActivity(store, activity());
+    await publishActivity(store, activity(), noClimbNames);
     await publishPowerCurve(store, "a1", [
       { durationS: 5, watts: 900 },
       { durationS: 300, watts: 320 },
@@ -151,7 +269,7 @@ describe("publishPowerCurve", () => {
   });
 
   it("moves the activity's updatedAt so the feed version changes", async () => {
-    await publishActivity(store, activity());
+    await publishActivity(store, activity(), noClimbNames);
     const before = (await feedRow()).updatedAt;
     await tick();
     await publishPowerCurve(store, "a1", [{ durationS: 60, watts: 400 }]);
@@ -160,7 +278,7 @@ describe("publishPowerCurve", () => {
   });
 
   it("clears the ladder when an activity stops having one", async () => {
-    await publishActivity(store, activity());
+    await publishActivity(store, activity(), noClimbNames);
     await publishPowerCurve(store, "a1", [{ durationS: 5, watts: 900 }]);
     await publishPowerCurve(store, "a1", []);
 
@@ -189,8 +307,8 @@ describe("publishPowerCurve", () => {
 });
 
 describe("deleteActivity", () => {
-  it("removes the activity and its power curve", async () => {
-    await publishActivity(store, activity());
+  it("removes the activity, its power curve, and its climbs", async () => {
+    await publishActivity(store, hillyRide(twoClimbs), noClimbNames);
     await publishPowerCurve(store, "a1", [{ durationS: 5, watts: 900 }]);
 
     await deleteActivity(store, "a1");
@@ -201,6 +319,7 @@ describe("deleteActivity", () => {
     expect(
       await db.selectFrom("activityPowerCurve").selectAll().execute(),
     ).toEqual([]);
+    expect(await climbRows()).toEqual([]);
   });
 
   it("is a no-op for an activity that was never published", async () => {
