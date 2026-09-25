@@ -1,0 +1,48 @@
+---
+import RepoRow from "@/components/activity/RepoRow.vue";
+import RideRow from "@/components/cycling/RideRow.vue";
+import { loadHome } from "@/home/load";
+import Rail from "./Rail.astro";
+
+/**
+ * The homepage's two short lists, side by side on a wide page and stacked
+ * on a phone: the latest few rides and repositories, each a link away from
+ * the rest. The title and the rule after it fade from left to right, the
+ * way the recent past recedes.
+ */
+const { rides, repos } = await loadHome();
+---
+
+<section aria-labelledby="lately" class="page-column pt-8 pb-12 sm:pt-10">
+  <div class="mb-5 flex items-center gap-3">
+    <h2
+      id="lately"
+      class="bg-linear-to-r from-foreground/70 to-foreground/20 bg-clip-text text-xs tracking-[0.2em] text-transparent italic"
+    >
+      Lately
+    </h2>
+    <span
+      class="h-px flex-1 bg-linear-to-r from-border to-transparent"
+      aria-hidden="true"></span>
+  </div>
+  <div class="grid gap-y-6 sm:grid-cols-2 sm:gap-x-12">
+    <Rail label="Rides" mark="wheel" href="/activity/cycling">
+      {
+        rides.map((ride) => (
+          <li>
+            <RideRow ride={ride} />
+          </li>
+        ))
+      }
+    </Rail>
+    <Rail label="Repos" mark="cursor" href="/activity/code">
+      {
+        repos.map((repo) => (
+          <li>
+            <RepoRow repo={repo} />
+          </li>
+        ))
+      }
+    </Rail>
+  </div>
+</section>

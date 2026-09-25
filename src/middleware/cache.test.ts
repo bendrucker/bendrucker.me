@@ -37,10 +37,11 @@ describe("isActivityPath", () => {
   it("matches the routes whose freshness tracks the sync", () => {
     expect(isActivityPath("/activity/code")).toBe(true);
     expect(isActivityPath("/activity/code/2024")).toBe(true);
+    expect(isActivityPath("/")).toBe(true);
   });
 
   it("leaves everything else to routeRules", () => {
-    expect(isActivityPath("/")).toBe(false);
+    expect(isActivityPath("/about")).toBe(false);
     expect(isActivityPath("/posts/some-post")).toBe(false);
     expect(isActivityPath("/llms.txt")).toBe(false);
   });

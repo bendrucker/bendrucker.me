@@ -1,0 +1,136 @@
+---
+/**
+ * A homepage list: a heading that links to the full page, over a few rows.
+ * Hovering the heading springs its mark out beside the label: a cursor that
+ * blinks, or a wheel that spins up, then coasts to a stop once the pointer
+ * leaves before it tucks away again.
+ */
+export interface Props {
+  label: string;
+  mark: "wheel" | "cursor";
+  href: string;
+}
+
+const { label, mark, href } = Astro.props;
+
+/**
+ * Hidden until the heading is hovered or focused, then sliding out from
+ * behind the label. The curve starts slow and overshoots, so the reveal
+ * gathers speed and lands with a bounce. A rolling wheel holds it out.
+ */
+const reveal =
+  "opacity-0 transition-[translate,opacity] duration-300 ease-[cubic-bezier(0.6,0,0.3,1.6)] group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 group-data-rolling:translate-x-0 group-data-rolling:opacity-100 motion-reduce:transition-none";
+
+/** The mark hangs in the margin, so the label stays in line with the rows. */
+const hanging = "absolute inset-y-0 right-full my-auto translate-x-1.5";
+---
+
+<section>
+  <h3 class="mb-1 text-xs text-foreground/35">
+    <a
+      href={href}
+      class="group relative inline-flex items-center hover:text-accent"
+      data-wheel-link={mark === "wheel" ? "" : undefined}
+    >
+      {
+        mark === "wheel" && (
+          <span
+            class:list={[
+              "mr-1 icon-[site--wheel] size-3 sm:mr-1.5 sm:size-3.5",
+              hanging,
+              reveal,
+            ]}
+            data-wheel
+            aria-hidden="true"
+          />
+        )
+      }
+      {
+        mark === "cursor" && (
+          <span
+            class:list={[
+              "mr-1 h-[1.1em] w-[1ch] bg-current motion-safe:group-hover:animate-blink motion-safe:group-focus-visible:animate-blink",
+              hanging,
+              reveal,
+            ]}
+            aria-hidden="true"
+          />
+        )
+      }
+      {label}
+    </a>
+  </h3>
+  <ul role="list" class="text-[0.8125rem] text-foreground/60">
+    <slot />
+  </ul>
+</section>
+
+<script>
+  /** Degrees per second at a full roll. */
+  const CRUISE = 390;
+  /** How quickly the wheel closes on its cruising speed, per second. */
+  const SPIN_UP = 2.5;
+  /**
+   * Coasting loses a share of its speed to drag and a constant amount to
+   * friction, each second. Drag alone never quite stops, and leaves the
+   * wheel crawling for seconds.
+   */
+  const DRAG = 1.2;
+  const FRICTION = 140;
+
+  function wireWheel(link: HTMLElement, signal: AbortSignal) {
+    const wheel = link.querySelector<HTMLElement>("[data-wheel]");
+    if (!wheel) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    let driven = false;
+    let speed = 0;
+    let angle = 0;
+    let frame = 0;
+    let last = 0;
+
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.1);
+      last = now;
+      speed = driven
+        ? speed + (CRUISE - speed) * (1 - Math.exp(-SPIN_UP * dt))
+        : Math.max(0, speed - (speed * DRAG + FRICTION) * dt);
+      angle = (angle + speed * dt) % 360;
+      wheel.style.rotate = `${angle}deg`;
+      if (!driven && speed === 0) {
+        frame = 0;
+        delete link.dataset.rolling;
+        return;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+
+    const drive = (on: boolean) => {
+      driven = on;
+      if (still.matches) return;
+      if (on) link.dataset.rolling = "";
+      if (frame === 0) {
+        last = performance.now();
+        frame = requestAnimationFrame(tick);
+      }
+    };
+
+    link.addEventListener("pointerenter", () => drive(true), { signal });
+    link.addEventListener("pointerleave", () => drive(false), { signal });
+    link.addEventListener("focus", () => drive(true), { signal });
+    link.addEventListener("blur", () => drive(false), { signal });
+    signal.addEventListener("abort", () => cancelAnimationFrame(frame));
+  }
+
+  document.addEventListener("astro:page-load", () => {
+    // Wired again on every page load, so the listeners and any frame in
+    // flight leave with the page.
+    const controller = new AbortController();
+    document.addEventListener("astro:before-swap", () => controller.abort(), {
+      once: true,
+    });
+    document
+      .querySelectorAll<HTMLElement>("[data-wheel-link]")
+      .forEach((link) => wireWheel(link, controller.signal));
+  });
+</script>

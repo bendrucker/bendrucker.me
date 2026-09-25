@@ -13,6 +13,7 @@ import {
 } from "reka-ui";
 import type { Language } from "@/activity/types";
 import { desaturateColor, pickLabelColor } from "./language-colors";
+import { languageLabel } from "./language";
 
 const OVERFLOW_THRESHOLD = 2;
 
@@ -35,11 +36,6 @@ const chipsVisible = computed(
   () => manualChips.value || props.selectedLanguage !== null,
 );
 
-function langShort(lang: Language): string {
-  if (!lang.extension) return lang.name.toLowerCase();
-  return lang.extension.slice(1);
-}
-
 function stripedGradient(languages: typeof overflowLangs.value): string {
   const stripeWidth = 3;
   const stops: string[] = [];
@@ -58,7 +54,7 @@ const segments = computed<Segment[]>(() =>
   props.languages.map((lang) => {
     const pct = total.value > 0 ? (lang.count / total.value) * 100 : 0;
     const textColor = pickLabelColor(lang.color);
-    return { ...lang, pct, textColor, short: langShort(lang) };
+    return { ...lang, pct, textColor, short: languageLabel(lang) };
   }),
 );
 
