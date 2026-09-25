@@ -501,6 +501,78 @@ describe("queryCyclingActivity", () => {
     );
   });
 
+  it("ranks a named climb once, by its biggest effort", async () => {
+    await seed(
+      ride("hamilton", { startedAt: "2026-04-25T13:00:00Z" }),
+      ride("diablo", { startedAt: "2026-05-02T13:00:00Z" }),
+    );
+    await storeClimbs(
+      climb("hamilton", 0, 900, "Mount Diablo"),
+      climb("hamilton", 1, 1_100, "Mount Hamilton"),
+      climb("diablo", 0, 1_000, "Mount Diablo"),
+    );
+
+    const { records } = await queryCyclingActivity(db, NOW);
+
+    expect(climbRows(records, "all")).toEqual([
+      ["hamilton:1", "Mount Hamilton", "'26", 3_609],
+      ["diablo:0", "Mount Diablo", "'26", 3_281],
+    ]);
+    const [top] = records[0]!.lists.find((list) => list.id === "climb")!.rows;
+    expect(top!.href).toBe("https://www.strava.com/activities/hamilton");
+  });
+
+  it("places two climbs from one ride", async () => {
+    await seed(ride("double"));
+    await storeClimbs(
+      climb("double", 0, 700, "Mount Diablo"),
+      climb("double", 1, 600, "Mount Hamilton"),
+    );
+
+    const { records } = await queryCyclingActivity(db, NOW);
+
+    expect(climbRows(records, "all").map(([id]) => id)).toEqual([
+      "double:0",
+      "double:1",
+    ]);
+  });
+
+  it("labels unnamed climbs with their ride and never merges them", async () => {
+    await seed(ride("a"), ride("b", { startedAt: "2026-07-12T13:00:55Z" }));
+    await storeClimbs(
+      climb("a", 0, 400, null),
+      climb("a", 1, 300, null),
+      climb("b", 0, 350, null),
+    );
+
+    const { records } = await queryCyclingActivity(db, NOW);
+
+    expect(
+      climbRows(records, "all").map(([id, name]) => [id, name]),
+    ).toEqual([
+      ["a:0", "Ride a"],
+      ["b:0", "Ride b"],
+      ["a:1", "Ride a"],
+    ]);
+  });
+
+  it("gives each year only the climbs its own rides hold", async () => {
+    await seed(
+      ride("older", { startedAt: "2025-07-11T13:00:55Z" }),
+      ride("newer"),
+    );
+    await storeClimbs(
+      climb("older", 0, 1_200, "Mount Diablo"),
+      climb("newer", 0, 800, "Mount Diablo"),
+    );
+
+    const { records } = await queryCyclingActivity(db, NOW);
+
+    expect(climbRows(records, "all").map(([id]) => id)).toEqual(["older:0"]);
+    expect(climbRows(records, "2026").map(([id]) => id)).toEqual(["newer:0"]);
+    expect(climbRows(records, "2025").map(([id]) => id)).toEqual(["older:0"]);
+  });
+
   it("ignores other sports", async () => {
     await seed(ride("run", { sport: "run" }), ride("ride"));
 
@@ -681,10 +753,38 @@ describe("contract", () => {
       keys(fixture.records[0]!.powerBests[0]),
     );
     expect(
-      buildCyclingActivity({ rides: [], tracks: [] }, [], NOW).months,
+      buildCyclingActivity({ rides: [], tracks: [] }, [], [], NOW).months,
     ).toEqual([]);
   });
 });
+
+function climb(
+  activityId: string,
+  position: number,
+  gainM: number,
+  name: string | null,
+) {
+  return { activityId, position, gainM, summitLat: 37.88, summitLng: -121.91, name };
+}
+
+async function storeClimbs(...rows: ReturnType<typeof climb>[]) {
+  await db.insertInto("activityClimb").values(rows).execute();
+}
+
+function climbRows(
+  records: CyclingActivityData["records"],
+  period: string,
+): [string, string, string | undefined, number][] {
+  const list = records
+    .find((entry) => entry.period === period)!
+    .lists.find((entry) => entry.id === "climb");
+  return (list?.rows ?? []).map((row) => [
+    row.id,
+    row.name,
+    row.detail,
+    row.value,
+  ]);
+}
 
 function rideIds(page: { months: { rides: { id: string }[] }[] }): string[] {
   return page.months.flatMap((month) => month.rides.map((entry) => entry.id));
