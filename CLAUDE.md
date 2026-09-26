@@ -18,15 +18,17 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 ## Commands
 
 ```bash
-npm run dev           # Spotlight + Astro dev server
-npm run dev:json      # Astro dev server with JSON logs (no Spotlight)
-npm run build         # packages → wrangler types → astro check → astro build
-npm test              # vitest, whole suite
-npm run lint          # oxlint + ESLint
-npm run lint:types    # oxlint's type-aware rules, via tsgolint
-npm run format        # Prettier
-npm run story:dev     # Histoire component stories on :6006
-npm run story:build   # Static story book into .histoire/dist
+npm run dev                # Spotlight + Astro dev server
+npm run dev:json           # Astro dev server with JSON logs (no Spotlight)
+npm run build              # packages → wrangler types → astro check → astro build
+npm test                   # vitest, whole suite
+npm run lint               # oxlint + ESLint
+npm run lint:types         # oxlint's type-aware rules, via tsgolint
+npm run format             # Prettier
+npm run story:dev          # Histoire component stories on :6006
+npm run story:build        # Static story book into .histoire/dist
+npm run preview -- deploy  # Build and deploy this branch as a Worker Preview
+npm run preview -- delete  # Remove this branch's previews and database
 ```
 
 The suite is the cheapest check here, a few seconds for the whole of it, and
@@ -324,12 +326,30 @@ pattern, and `IconName` in `types.ts` is the list of names it accepts.
 
 ## Workers
 
-All deploy via GitHub Actions matrix on push to `main`. Use `@workspace/logger` for logging.
+All deploy via GitHub Actions matrix on push to `main`, and a pull request
+deploys Worker Previews of them (below). Use `@workspace/logger` for logging.
 
-| Worker | Config                         | Purpose              |
-| ------ | ------------------------------ | -------------------- |
-| www    | `wrangler.toml`                | Main site, reads D1  |
-| github | `workers/github/wrangler.toml` | GitHub activity → D1 |
+| Worker  | Config                          | Purpose              |
+| ------- | ------------------------------- | -------------------- |
+| www     | `wrangler.toml`                 | Main site, reads D1  |
+| github  | `workers/github/wrangler.toml`  | GitHub activity → D1 |
+| stories | `workers/stories/wrangler.toml` | Component story book |
+
+### Previews
+
+A pull request deploys `www` and `stories` as Worker Previews named
+`pr-<number>`, and `npm run preview -- deploy` previews `www` for the current
+branch. A preview takes only assets, routes, and compatibility settings from the
+top level of `wrangler.toml`, so a new binding goes in the `previews` block too.
+
+Each preview gets its own D1 database, `bendrucker-activity-<name>`, seeded from
+production and migrated by the branch. `cleanup.yml` deletes a pull request's
+previews and database when it closes, and `sweep-previews.yml` nightly deletes
+any whose pull request has closed. A branch preview with no pull request is
+never swept. A worker added to the deploy matrix with `previews: true` also goes
+in the script's `WORKERS` list, or its previews are never deleted.
+
+### Generated Types
 
 Run `npx wrangler types` after changing any `wrangler.toml`. The `types` CI job
 regenerates types at the root and in each worker. On a pull request from a
