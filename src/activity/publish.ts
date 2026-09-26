@@ -190,7 +190,7 @@ export async function nameStoredClimbs(
 }
 
 /** A polyline stores five decimal places, so two equal summits agree to those. */
-function summitKey([lat, lng]: Climb["summit"]): string {
+export function summitKey([lat, lng]: Climb["summit"]): string {
   return `${lat.toFixed(5)},${lng.toFixed(5)}`;
 }
 

@@ -8,7 +8,13 @@
 //   npm run backfill:climbs -- --dry-run   print the climbs without writing them
 //   npm run backfill:climbs                rewrite production
 //   npm run backfill:climbs -- --local     rewrite the local database
+//
+// Every name Overpass returns is kept in `tmp/climb-names.json`, so a run that
+// stops partway resumes where it left off, and the write after a dry run
+// stores the names the dry run printed without asking again.
 
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import {
@@ -28,17 +34,26 @@ import { lookupClimbNames, type ClimbNamer } from "../src/activity/climb-name";
 import {
   climbStatements,
   nameStoredClimbs,
+  summitKey,
   type NamedClimb,
   type StoredClimb,
 } from "../src/activity/publish";
 import { decodePolyline } from "../src/activity/track";
 import { executeD1, formatSql, queryD1, type D1Target } from "./d1";
 
-/** Overpass asks for no more than one or two requests at a time per client. */
-const LOOKUP_INTERVAL_MS = 1500;
-const LOOKUP_ATTEMPTS = 5;
-const LOOKUP_TIMEOUT_MS = 20_000;
+/**
+ * Overpass hands each client a couple of slots and refuses connections from
+ * one that keeps asking after a 429, which 1.5 s between `out geom` queries
+ * was enough to trigger.
+ */
+const LOOKUP_INTERVAL_MS = 5000;
+const LOOKUP_ATTEMPTS = 6;
+const LOOKUP_BACKOFF_MS = 15_000;
+const LOOKUP_TIMEOUT_MS = 30_000;
 const RETRY_STATUSES = new Set([429, 504]);
+
+const NAMES_FILE = join(process.cwd(), "tmp", "climb-names.json");
+const cachedNames = z.record(z.string(), z.string().nullable());
 
 const FEET_PER_METER = 3.28084;
 
@@ -98,7 +113,7 @@ async function main(): Promise<void> {
     (climb) => climb.activity_id,
   );
 
-  const nameClimbs = pacedNamer();
+  const nameClimbs = cachedNamer(strictNamer());
   const backfilled: Backfilled[] = [];
   for (const ride of rides) {
     const climbs =
@@ -168,34 +183,82 @@ function rideStatements(
 }
 
 /**
- * Publish's namer, spaced out and retried. Overpass answers a burst with 429
- * and a busy moment with 504, and `lookupClimbNames` reads either as a ride
- * with nothing to name.
+ * Publish's namer, spaced out and retried, and throwing where publish would
+ * settle for nulls. `lookupClimbNames` reads a failed request as a ride with
+ * nothing to name, and a backfill storing that for every ride is worse than
+ * one that stops.
  */
-function pacedNamer(): ClimbNamer {
+function strictNamer(): ClimbNamer {
   let last = 0;
+  let failure: string | null = null;
   const retrying: typeof fetch = async (input, init) => {
     for (let attempt = 1; ; attempt++) {
       await delay(Math.max(0, last + LOOKUP_INTERVAL_MS - Date.now()));
       last = Date.now();
-      const response = await fetch(input, {
-        ...init,
-        // The caller's timeout spans every attempt and would lapse during
-        // the backoff, so each attempt carries its own.
-        signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
-      });
-      if (!RETRY_STATUSES.has(response.status) || attempt === LOOKUP_ATTEMPTS) {
-        return response;
+      let reason: string;
+      try {
+        const response = await fetch(input, {
+          ...init,
+          // The caller's timeout spans every attempt and would lapse during
+          // the backoff, so each attempt carries its own.
+          signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
+        });
+        if (response.ok) return response;
+        if (!RETRY_STATUSES.has(response.status)) {
+          failure = `Overpass answered ${response.status}`;
+          return response;
+        }
+        reason = `status ${response.status}`;
+      } catch (error) {
+        reason = error instanceof Error ? error.message : String(error);
       }
-      const backoff = 2 ** attempt * 1000;
+      if (attempt === LOOKUP_ATTEMPTS) {
+        failure = `Overpass failed ${attempt} times, last with ${reason}`;
+        throw new Error(failure);
+      }
+      const backoff = LOOKUP_BACKOFF_MS * 2 ** (attempt - 1);
       logger.warn(
-        { status: response.status, attempt, backoff },
-        "Overpass is busy, retrying",
+        { reason, attempt, backoff },
+        "Overpass lookup failed, retrying",
       );
       await delay(backoff);
     }
   };
-  return async (summits) => lookupClimbNames(summits, retrying);
+  return async (summits) => {
+    const names = await lookupClimbNames(summits, retrying);
+    if (failure !== null) {
+      throw new Error(`${failure}. Rerun to resume from ${NAMES_FILE}.`);
+    }
+    return names;
+  };
+}
+
+/**
+ * Answers a summit from the names file when it can, and records every answer
+ * `inner` gives, null included, as soon as it arrives.
+ */
+function cachedNamer(inner: ClimbNamer): ClimbNamer {
+  const names = new Map(
+    Object.entries(
+      existsSync(NAMES_FILE)
+        ? cachedNames.parse(JSON.parse(readFileSync(NAMES_FILE, "utf-8")))
+        : {},
+    ),
+  );
+  return async (summits) => {
+    const missing = summits.filter((summit) => !names.has(summitKey(summit)));
+    if (missing.length > 0) {
+      const looked = await inner(missing);
+      for (const [index, summit] of missing.entries()) {
+        names.set(summitKey(summit), looked[index] ?? null);
+      }
+      writeFileSync(
+        NAMES_FILE,
+        `${JSON.stringify(Object.fromEntries(names))}\n`,
+      );
+    }
+    return summits.map((summit) => names.get(summitKey(summit)) ?? null);
+  };
 }
 
 function printTable(backfilled: Backfilled[]): void {

@@ -59,7 +59,8 @@ export function queryD1<T>(
   const stdout = execFileSync(
     "wrangler",
     ["d1", "execute", DATABASE, `--${target}`, "--json", "--command", sql],
-    { encoding: "utf-8" },
+    // Every ride's route together runs past the 1 MB default.
+    { encoding: "utf-8", maxBuffer: 256 * 1024 * 1024 },
   );
   const [first] = queryResult.parse(JSON.parse(stdout));
   return first!.results.map((row) => schema.parse(row));
