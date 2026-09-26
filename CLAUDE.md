@@ -333,48 +333,16 @@ deploys Worker Previews of them (below). Use `@workspace/logger` for logging.
 ### Previews
 
 A pull request deploys `www` and `stories` as Worker Previews named
-`pr-<number>`, and `npm run preview -- deploy` does the same for `www` alone,
-named after the branch a worktree is on. A preview inherits the assets, routes,
-and compatibility settings of its `wrangler.toml` and nothing else. Every other
-binding comes from the `previews` block, so a new binding goes in both places
-or the preview runs without it, which wrangler warns about rather than failing.
-A worker with no `previews` block, even an empty one, cannot be previewed.
+`pr-<number>`, and `npm run preview -- deploy` previews `www` for the current
+branch. A preview takes only assets, routes, and compatibility settings from the
+top level of `wrangler.toml`, so a new binding goes in the `previews` block too.
 
-A preview isolates only the deployment. A D1 binding is shared with production
-unless it names a different database, so `scripts/preview.ts` gives each
-preview a database of its own, `bendrucker-activity-<name>`, seeded from a dump
-of production with `d1_migrations` included and then migrated by the branch. A
-migration meets real rows before it meets production, and two pull requests
-never meet each other. A committed binding can name only one database, so the
-script points `ACTIVITY_DB` at the preview's database in two places. It patches
-the built config the Vite plugin writes to `dist/server/wrangler.json`, which
-is what `wrangler preview` deploys. It also writes a generated
-`wrangler.preview.json`, which is what `d1 migrations apply` reads, since that
-command only takes a database its config names. The session KV namespace and
-the photo bucket are shared: sessions go unused, the seeded rows name
-production's photos, and the photo routes only read.
-
-`cleanup.yml` removes a pull request's previews and database when it closes.
-`sweep-previews.yml` runs nightly and removes whatever `cleanup.yml` missed,
-but only resources whose pull request is closed. It finds candidates by listing
-the `bendrucker-activity-*` databases, so a preview that never got one is
-invisible to it. A branch-named preview is matched to the pull requests opened
-from that branch, and a preview with no pull request is never swept, since
-nothing says it is idle. Delete an idle preview with `npm run preview -- delete`
-from its branch. `cleanup.yml` and `sweep-previews.yml` both delete the previews
-named in the script's `WORKERS` list, so a worker added to the deploy matrix
-with `previews: true` needs adding there too, or its previews outlive their
-pull requests.
-
-A root build leaves `.wrangler/deploy/config.json` redirecting wrangler to the
-built config, and running wrangler inside `workers/*` finds that redirect and
-stops because the base paths differ. Set it aside to preview the story book by
-hand.
-
-Cron triggers never fire on a preview, so the `github` worker is not previewed.
-A pull request runs the `github` worker's deploy as a dry run to check the
-bundle. A service binding from another worker's preview reaches the production
-`Publish` entrypoint, never a preview of it.
+Each preview gets its own D1 database, `bendrucker-activity-<name>`, seeded from
+production and migrated by the branch. `cleanup.yml` deletes a pull request's
+previews and database when it closes, and `sweep-previews.yml` nightly deletes
+any whose pull request has closed. A branch preview with no pull request is
+never swept. A worker added to the deploy matrix with `previews: true` also goes
+in the script's `WORKERS` list, or its previews are never deleted.
 
 ### Generated Types
 
