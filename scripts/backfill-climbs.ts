@@ -50,8 +50,12 @@ import { executeD1, formatSql, queryD1, type D1Target } from "./d1";
  * a cooldown after it, and stops accepting connections from a client that
  * keeps asking once it has answered 429. A fixed interval tripped that twice,
  * so every query waits for the status endpoint to report a free slot.
+ *
+ * `overpass-api.de` round-robins between servers that count slots separately,
+ * so a free slot on one says nothing about the next request. The first status
+ * names the server that answered, and every later request goes to it.
  */
-const STATUS_URL = "https://overpass-api.de/api/status";
+const OVERPASS_BASE = "https://overpass-api.de/";
 const SLOT_SLACK_MS = 1000;
 const LOOKUP_ATTEMPTS = 6;
 const LOOKUP_BACKOFF_MS = 15_000;
@@ -196,12 +200,13 @@ function rideStatements(
  */
 function strictNamer(): ClimbNamer {
   let failure: string | null = null;
-  const paced: typeof fetch = async (input, init) => {
+  let base = OVERPASS_BASE;
+  const paced: typeof fetch = async (_input, init) => {
     for (let attempt = 1; ; attempt++) {
       let reason: string;
       try {
-        await waitForSlot();
-        const response = await fetch(input, {
+        base = await waitForSlot(base);
+        const response = await fetch(`${base}api/interpreter`, {
           ...init,
           // The caller's timeout spans every attempt and would lapse during
           // the backoff, so each attempt carries its own.
@@ -238,13 +243,14 @@ function strictNamer(): ClimbNamer {
 }
 
 /**
- * Returns once `/api/status` reports a free slot. The page is plain text,
+ * Returns the server `base` resolves to once its `/api/status` reports a free
+ * slot. The page is plain text: an "Announced endpoint: <host>/" line, then
  * either "2 slots available now." or one "Slot available after: <time>, in 12
  * seconds." line for each slot still cooling down. Asking it costs no slot.
  */
-async function waitForSlot(): Promise<void> {
+async function waitForSlot(base: string): Promise<string> {
   for (;;) {
-    const response = await fetch(STATUS_URL, {
+    const response = await fetch(`${base}api/status`, {
       headers: { "User-Agent": USER_AGENT },
       signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
     });
@@ -252,8 +258,10 @@ async function waitForSlot(): Promise<void> {
       throw new Error(`Overpass status answered ${response.status}`);
     }
     const status = await response.text();
+    const announced = /^Announced endpoint: (\S+?)\/?$/m.exec(status);
+    if (announced !== null) base = `https://${announced[1]}/`;
     const available = /^(\d+) slots? available now/m.exec(status);
-    if (available !== null && Number(available[1]) > 0) return;
+    if (available !== null && Number(available[1]) > 0) return base;
     const waits = [...status.matchAll(/, in (-?\d+) seconds?\./g)].map(
       (match) => Number(match[1]),
     );
