@@ -30,7 +30,11 @@ import { logger } from "@workspace/logger";
 import { z } from "zod";
 import type { Database } from "../src/db";
 import { findClimbs } from "../src/activity/climb";
-import { lookupClimbNames, type ClimbNamer } from "../src/activity/climb-name";
+import {
+  lookupClimbNames,
+  USER_AGENT,
+  type ClimbNamer,
+} from "../src/activity/climb-name";
 import {
   climbStatements,
   nameStoredClimbs,
@@ -42,15 +46,16 @@ import { decodePolyline } from "../src/activity/track";
 import { executeD1, formatSql, queryD1, type D1Target } from "./d1";
 
 /**
- * Overpass hands each client a couple of slots and refuses connections from
- * one that keeps asking after a 429, which 1.5 s between `out geom` queries
- * was enough to trigger.
+ * Overpass gives each client a few slots, each held for a query's runtime and
+ * a cooldown after it, and stops accepting connections from a client that
+ * keeps asking once it has answered 429. A fixed interval tripped that twice,
+ * so every query waits for the status endpoint to report a free slot.
  */
-const LOOKUP_INTERVAL_MS = 5000;
+const STATUS_URL = "https://overpass-api.de/api/status";
+const SLOT_SLACK_MS = 1000;
 const LOOKUP_ATTEMPTS = 6;
 const LOOKUP_BACKOFF_MS = 15_000;
 const LOOKUP_TIMEOUT_MS = 30_000;
-const RETRY_STATUSES = new Set([429, 504]);
 
 const NAMES_FILE = join(process.cwd(), "tmp", "climb-names.json");
 const cachedNames = z.record(z.string(), z.string().nullable());
@@ -183,20 +188,19 @@ function rideStatements(
 }
 
 /**
- * Publish's namer, spaced out and retried, and throwing where publish would
- * settle for nulls. `lookupClimbNames` reads a failed request as a ride with
- * nothing to name, and a backfill storing that for every ride is worse than
- * one that stops.
+ * Publish's namer, paced by Overpass's own slot count and throwing where
+ * publish would settle for nulls. `lookupClimbNames` reads a failed request
+ * as a ride with nothing to name, and a backfill storing that for every ride
+ * is worse than one that stops. A 429 stops the run at once, since asking
+ * again is what gets a client refused.
  */
 function strictNamer(): ClimbNamer {
-  let last = 0;
   let failure: string | null = null;
-  const retrying: typeof fetch = async (input, init) => {
+  const paced: typeof fetch = async (input, init) => {
     for (let attempt = 1; ; attempt++) {
-      await delay(Math.max(0, last + LOOKUP_INTERVAL_MS - Date.now()));
-      last = Date.now();
       let reason: string;
       try {
+        await waitForSlot();
         const response = await fetch(input, {
           ...init,
           // The caller's timeout spans every attempt and would lapse during
@@ -204,11 +208,11 @@ function strictNamer(): ClimbNamer {
           signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
         });
         if (response.ok) return response;
-        if (!RETRY_STATUSES.has(response.status)) {
+        if (response.status !== 504) {
           failure = `Overpass answered ${response.status}`;
           return response;
         }
-        reason = `status ${response.status}`;
+        reason = "status 504";
       } catch (error) {
         reason = error instanceof Error ? error.message : String(error);
       }
@@ -225,12 +229,39 @@ function strictNamer(): ClimbNamer {
     }
   };
   return async (summits) => {
-    const names = await lookupClimbNames(summits, retrying);
+    const names = await lookupClimbNames(summits, paced);
     if (failure !== null) {
       throw new Error(`${failure}. Rerun to resume from ${NAMES_FILE}.`);
     }
     return names;
   };
+}
+
+/**
+ * Returns once `/api/status` reports a free slot. The page is plain text,
+ * either "2 slots available now." or one "Slot available after: <time>, in 12
+ * seconds." line for each slot still cooling down. Asking it costs no slot.
+ */
+async function waitForSlot(): Promise<void> {
+  for (;;) {
+    const response = await fetch(STATUS_URL, {
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(LOOKUP_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+      throw new Error(`Overpass status answered ${response.status}`);
+    }
+    const status = await response.text();
+    const available = /^(\d+) slots? available now/m.exec(status);
+    if (available !== null && Number(available[1]) > 0) return;
+    const waits = [...status.matchAll(/, in (-?\d+) seconds?\./g)].map(
+      (match) => Number(match[1]),
+    );
+    if (waits.length === 0) {
+      throw new Error(`Overpass status reports no slot: ${status}`);
+    }
+    await delay(Math.max(0, Math.min(...waits)) * 1000 + SLOT_SLACK_MS);
+  }
 }
 
 /**

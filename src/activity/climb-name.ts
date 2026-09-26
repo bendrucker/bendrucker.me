@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { Coordinate } from "./types";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
-const USER_AGENT = "bendrucker.me (+https://bendrucker.me)";
+export const USER_AGENT = "bendrucker.me (+https://bendrucker.me)";
 const TIMEOUT_MS = 8000;
 
 /** How far a peak may stand from the summit and still name it, in metres. */
