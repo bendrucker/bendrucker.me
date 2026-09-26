@@ -8,6 +8,13 @@ const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 export const USER_AGENT = "bendrucker.me (+https://bendrucker.me)";
 const TIMEOUT_MS = 8000;
 
+/**
+ * Overpass reserves a query's declared memory before running it, 512 MiB
+ * unless told otherwise, and a busy server answers 504 rather than find that
+ * much. A ride's features come to tens of kilobytes.
+ */
+const MAX_SIZE_BYTES = 32 * 1024 * 1024;
+
 /** How far a peak may stand from the summit and still name it, in metres. */
 const PEAK_RADIUS_M = 1000;
 
@@ -151,7 +158,7 @@ export function overpassQuery(summits: Coordinate[]): string {
     `node(around:${PEAK_RADIUS_M},${lat},${lng})["mountain_pass"="yes"]["name"];`,
     `way(around:${ROAD_RADIUS_M},${lat},${lng})["highway"]["name"];`,
   ]);
-  return `[out:json][timeout:${TIMEOUT_MS / 1000}];(${clauses.join("")});out geom;`;
+  return `[out:json][timeout:${TIMEOUT_MS / 1000}][maxsize:${MAX_SIZE_BYTES}];(${clauses.join("")});out geom;`;
 }
 
 function nearest(
