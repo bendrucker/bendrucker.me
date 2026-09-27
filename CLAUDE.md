@@ -333,18 +333,20 @@ climbs from production D1. `-- --dry-run` prints them first.
 
 ## Indoor Rides
 
-The hub flags trainer and Zwift rides `indoor`. They stay in the log and are
-left out of every record: `records` in `src/activity/feed.ts` drops them before
-any list or power ladder is ranked. A null flag reads as outdoor.
+activity-hub flags trainer and Zwift rides as `indoor`. They stay in the log,
+its monthly highlights, and the year totals, and are left out of every record
+on the PRs tab: `records` in `src/activity/feed.ts` drops them before any list
+or power ladder is ranked. A null flag reads as outdoor.
 
 ## Partial Updates
 
-`Publish.patchActivity` sets scalar columns on a row that already exists,
-without the rest of the payload. A new scalar field goes in `activityPatch` in
+`Publish.patchActivity` updates whitelisted scalar columns on an existing row
+without rewriting the rest of it, and does nothing for an activity that was
+never published. A new scalar field goes in `activityPatch` in
 `src/activity/publish.ts`, whose strict schema rejects any field it does not
-list, and the hub backfills it through `patchActivity` once this site deploys.
-A publish schema version bump stays for changes that need the whole payload
-rebuilt.
+list. activity-hub backfills the field through `patchActivity` once this site
+deploys. A change that needs the whole payload rebuilt still goes through a
+version bump of activity-hub's publish schema, which replays every activity.
 
 ## Theme
 
