@@ -58,7 +58,7 @@ const publishedActivity = z.object({
 
 // The schema is strict, so a hub sending a field this site does not store
 // yet fails rather than having it dropped.
-const activityPatch = z.strictObject({ indoor: z.boolean() });
+const activityUpdate = z.strictObject({ indoor: z.boolean() });
 
 const powerBests = z
   .array(z.object({ durationS: z.int().positive(), watts: z.number() }))
@@ -71,7 +71,7 @@ const powerBests = z
 export type PowerSource = z.infer<typeof powerSource>;
 export type PublishedActivity = z.infer<typeof publishedActivity>;
 export type PowerBest = z.infer<typeof powerBests>[number];
-export type ActivityPatch = z.infer<typeof activityPatch>;
+export type ActivityUpdate = z.infer<typeof activityUpdate>;
 
 export async function publishActivity(
   store: ActivityStore,
@@ -287,20 +287,20 @@ export async function publishPowerCurve(
  * added after the hub's first publish can be backfilled without replaying the
  * whole payload. An activity that was never published is left unwritten.
  */
-export async function patchActivity(
+export async function updateActivity(
   store: ActivityStore,
   activityId: unknown,
   fields: unknown,
 ): Promise<void> {
   const id = parse(text, activityId, "activityId");
-  const patch = parse(activityPatch, fields, "fields");
-  // The feed's cache validator is the latest `updatedAt`, so the patch moves
+  const update = parse(activityUpdate, fields, "fields");
+  // The feed's cache validator is the latest `updatedAt`, so the update moves
   // it along with the columns it sets.
   await store.batch([
     store.db
       .updateTable("activityFeed")
       .set({
-        indoor: storedFlag(patch.indoor),
+        indoor: storedFlag(update.indoor),
         updatedAt: new Date().toISOString(),
       })
       .where("activityId", "=", id)

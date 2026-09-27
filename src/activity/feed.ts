@@ -668,10 +668,8 @@ function yearTotals(entries: readonly Entry[], now: Date): YearTotals {
 }
 
 /**
- * Every list and the power ladder rank outdoor rides only. A trainer ride's
- * climbing and distance are whatever the game says, so a Zwift Ventoux would
- * otherwise top the climbs. The ladders' own lookups key on these entries, so
- * dropping a ride here drops its climbs and its curve with it.
+ * Records rank outdoor rides only. Climbs and power points key on these
+ * entries, so dropping a ride here drops them too.
  */
 function records(
   all: readonly Entry[],

@@ -12,7 +12,7 @@ import {
 import { decodePolyline, decodeProfile } from "./track";
 import {
   deleteActivity,
-  patchActivity,
+  updateActivity,
   publishActivity,
   publishPowerCurve,
   type PublishedActivity,
@@ -620,9 +620,9 @@ describe("queryCyclingActivity", () => {
     expect(records).toEqual([]);
   });
 
-  it("reads a ride patched indoor out of the records", async () => {
+  it("reads a ride updated to indoor out of the records", async () => {
     await seed(ride("road"), ride("trainer", { distanceM: 90_000 }));
-    await patchActivity(store, "trainer", { indoor: true });
+    await updateActivity(store, "trainer", { indoor: true });
 
     const { records } = await queryCyclingActivity(db, NOW);
     const distance = records[0]!.lists.find((list) => list.id === "distance")!;

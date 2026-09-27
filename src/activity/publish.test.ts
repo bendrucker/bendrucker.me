@@ -4,7 +4,7 @@ import type { Database } from "@/db";
 import { createTestDb, noClimbNames, testStore, tick } from "@/test/db";
 import {
   deleteActivity,
-  patchActivity,
+  updateActivity,
   publishActivity,
   publishPowerCurve,
   ValidationError,
@@ -332,13 +332,13 @@ describe("publishPowerCurve", () => {
   });
 });
 
-describe("patchActivity", () => {
-  it("sets only the patched column and moves updatedAt", async () => {
+describe("updateActivity", () => {
+  it("sets only the updated column and moves updatedAt", async () => {
     await publishActivity(store, activity(), noClimbNames);
     const before = await feedRow();
     await tick();
 
-    await patchActivity(store, "a1", { indoor: true });
+    await updateActivity(store, "a1", { indoor: true });
 
     const after = await feedRow();
     expect(after.updatedAt > before.updatedAt).toBe(true);
@@ -353,7 +353,7 @@ describe("patchActivity", () => {
     await publishActivity(store, activity(), noClimbNames);
 
     await expect(
-      patchActivity(store, "a1", { indoor: true, name: "Renamed" }),
+      updateActivity(store, "a1", { indoor: true, name: "Renamed" }),
     ).rejects.toThrow(ValidationError);
     expect((await feedRow()).indoor).toBeNull();
   });
@@ -363,13 +363,13 @@ describe("patchActivity", () => {
     ["no fields", {}],
     ["something that is not an object", true],
   ])("rejects %s", async (_label, fields) => {
-    await expect(patchActivity(store, "a1", fields)).rejects.toThrow(
+    await expect(updateActivity(store, "a1", fields)).rejects.toThrow(
       ValidationError,
     );
   });
 
   it("is a no-op for an activity that was never published", async () => {
-    await patchActivity(store, "gone", { indoor: true });
+    await updateActivity(store, "gone", { indoor: true });
 
     expect(await db.selectFrom("activityFeed").selectAll().execute()).toEqual(
       [],

@@ -340,11 +340,11 @@ or power ladder is ranked. A null flag reads as outdoor.
 
 ## Partial Updates
 
-`Publish.patchActivity` updates whitelisted scalar columns on an existing row
+`Publish.updateActivity` sets whitelisted scalar columns on an existing row
 without rewriting the rest of it, and does nothing for an activity that was
-never published. A new scalar field goes in `activityPatch` in
+never published. A new scalar field goes in `activityUpdate` in
 `src/activity/publish.ts`, whose strict schema rejects any field it does not
-list. activity-hub backfills the field through `patchActivity` once this site
+list. activity-hub backfills the field through `updateActivity` once this site
 deploys. A change that needs the whole payload rebuilt still goes through a
 version bump of activity-hub's publish schema, which replays every activity.
 
