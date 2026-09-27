@@ -56,9 +56,8 @@ const publishedActivity = z.object({
   indoor: z.boolean().optional(),
 });
 
-// The scalar columns a patch may set without the rest of the payload. Strict,
-// so a hub sending a field this site does not store yet fails rather than
-// having it dropped.
+// The schema is strict, so a hub sending a field this site does not store
+// yet fails rather than having it dropped.
 const activityPatch = z.strictObject({ indoor: z.boolean() });
 
 const powerBests = z
