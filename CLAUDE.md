@@ -317,8 +317,10 @@ range ends one segment and starts the next. A segment gaining at least 150 m is
 stored. Climbs come from the thinned profile and route the feed stores, so a
 backfilled ride and a freshly published one rank the same.
 
-`pickClimbName` names a climb after the nearest OpenStreetMap peak or pass
+`pickClimbName` names a climb after the tallest OpenStreetMap peak or pass
 within a kilometre of its summit, less a directional suffix like "West Peak".
+A ride often tops out below the summit its climb is known by, beside a lesser
+knoll, so the tallest peak in reach beats the nearest.
 Failing that, it takes the nearest drivable road within 60 m, less a trailing
 " Road". A climb OSM can't name is labeled with its ride and never merged with
 another. The list keeps each name's biggest effort. The OSM credit beneath the
