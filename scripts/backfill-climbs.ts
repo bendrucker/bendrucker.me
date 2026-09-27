@@ -9,12 +9,12 @@
 //   npm run backfill:climbs                rewrite production
 //   npm run backfill:climbs -- --local     rewrite the local database
 //
-// Every name Overpass returns is kept in `tmp/climb-names.json`, so a run that
-// stops partway resumes where it left off, and the write after a dry run
-// stores the names the dry run printed without asking again. The file holds
-// the naming rule's answers at the time, so move it aside before the first run
-// after that rule changes.
+// Every name Overpass returns is kept in `tmp/`, so a run that stops partway
+// resumes where it left off, and the write after a dry run stores the names
+// the dry run printed without asking again. The file is keyed to a hash of
+// the naming code, so a change to the rule starts from an empty cache.
 
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -31,7 +31,7 @@ import {
 import { logger } from "@workspace/logger";
 import { z } from "zod";
 import type { Database } from "../src/db";
-import { findClimbs } from "../src/activity/climb";
+import { findClimbs, type Climb } from "../src/activity/climb";
 import {
   lookupClimbNames,
   USER_AGENT,
@@ -39,11 +39,11 @@ import {
 } from "../src/activity/climb-name";
 import {
   climbStatements,
-  nameStoredClimbs,
   summitKey,
   type NamedClimb,
 } from "../src/activity/publish";
 import { decodePolyline } from "../src/activity/track";
+import { metersToFeet } from "../src/components/cycling/format";
 import { executeD1, formatSql, queryD1, type D1Target } from "./d1";
 
 /**
@@ -62,10 +62,17 @@ const LOOKUP_ATTEMPTS = 6;
 const LOOKUP_BACKOFF_MS = 15_000;
 const LOOKUP_TIMEOUT_MS = 30_000;
 
-const NAMES_FILE = join(process.cwd(), "tmp", "climb-names.json");
+const NAMES_FILE = join(
+  process.cwd(),
+  "tmp",
+  `climb-names-${createHash("sha256")
+    .update(
+      readFileSync(join(import.meta.dirname, "../src/activity/climb-name.ts")),
+    )
+    .digest("hex")
+    .slice(0, 12)}.json`,
+);
 const cachedNames = z.record(z.string(), z.string().nullable());
-
-const FEET_PER_METER = 3.28084;
 
 const storedRide = z.object({
   activity_id: z.string(),
@@ -120,9 +127,7 @@ async function main(): Promise<void> {
           );
     backfilled.push({
       ride,
-      // Publish reuses a stored name for an unchanged summit. A backfill runs
-      // because the rule changed, so every summit is named afresh.
-      climbs: await nameStoredClimbs(climbs, [], nameClimbs),
+      climbs: await nameEvery(climbs, nameClimbs),
     });
   }
 
@@ -153,9 +158,21 @@ async function main(): Promise<void> {
 }
 
 /**
- * The same replacement a publish makes, plus a bump of the ride's
- * `updated_at`, which is what moves the feed's cache validator.
+ * Names every climb, where publish reuses a stored name for an unchanged
+ * summit. A backfill runs because the rule changed.
  */
+async function nameEvery(
+  climbs: Climb[],
+  nameClimbs: ClimbNamer,
+): Promise<NamedClimb[]> {
+  const names = await nameClimbs(climbs.map((climb) => climb.summit));
+  return climbs.map((climb, index) => ({
+    ...climb,
+    name: names[index] ?? null,
+  }));
+}
+
+/** Publish's climb replacement, plus the `updated_at` bump that moves the feed's cache validator. */
 function rideStatements(
   activityId: string,
   climbs: NamedClimb[],
@@ -290,7 +307,7 @@ function printTable(backfilled: Backfilled[]): void {
       ride.name ?? ride.activity_id,
       ride.started_at.slice(0, 10),
       String(position),
-      String(Math.round(climb.gainM * FEET_PER_METER)),
+      String(Math.round(metersToFeet(climb.gainM))),
       climb.name ?? "",
     ]);
   const table = [["ride", "date", "pos", "gain ft", "name"], ...rows];

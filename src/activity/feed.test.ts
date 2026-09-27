@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
-import type { Kysely } from "kysely";
+import type { Insertable, Kysely } from "kysely";
 import { activity as fixture } from "@/components/cycling/fixtures";
-import type { Database } from "@/db";
+import type { ActivityClimbTable, Database } from "@/db";
 import { createTestDb, noClimbNames, testStore, tick } from "@/test/db";
 import {
   buildCyclingActivity,
@@ -507,9 +507,9 @@ describe("queryCyclingActivity", () => {
       ride("diablo", { startedAt: "2026-05-02T13:00:00Z" }),
     );
     await storeClimbs(
-      climb("hamilton", 0, 900, "Mount Diablo"),
-      climb("hamilton", 1, 1_100, "Mount Hamilton"),
-      climb("diablo", 0, 1_000, "Mount Diablo"),
+      climb("hamilton", { gainM: 900, name: "Mount Diablo" }),
+      climb("hamilton", { position: 1, gainM: 1_100, name: "Mount Hamilton" }),
+      climb("diablo", { gainM: 1_000, name: "Mount Diablo" }),
     );
 
     const { records } = await queryCyclingActivity(db, NOW);
@@ -525,8 +525,8 @@ describe("queryCyclingActivity", () => {
   it("places two climbs from one ride", async () => {
     await seed(ride("double"));
     await storeClimbs(
-      climb("double", 0, 700, "Mount Diablo"),
-      climb("double", 1, 600, "Mount Hamilton"),
+      climb("double", { gainM: 700, name: "Mount Diablo" }),
+      climb("double", { position: 1, gainM: 600, name: "Mount Hamilton" }),
     );
 
     const { records } = await queryCyclingActivity(db, NOW);
@@ -540,9 +540,9 @@ describe("queryCyclingActivity", () => {
   it("labels unnamed climbs with their ride and never merges them", async () => {
     await seed(ride("a"), ride("b", { startedAt: "2026-07-12T13:00:55Z" }));
     await storeClimbs(
-      climb("a", 0, 400, null),
-      climb("a", 1, 300, null),
-      climb("b", 0, 350, null),
+      climb("a", { gainM: 400 }),
+      climb("a", { position: 1, gainM: 300 }),
+      climb("b", { gainM: 350 }),
     );
 
     const { records } = await queryCyclingActivity(db, NOW);
@@ -560,8 +560,8 @@ describe("queryCyclingActivity", () => {
       ride("newer"),
     );
     await storeClimbs(
-      climb("older", 0, 1_200, "Mount Diablo"),
-      climb("newer", 0, 800, "Mount Diablo"),
+      climb("older", { gainM: 1_200, name: "Mount Diablo" }),
+      climb("newer", { gainM: 800, name: "Mount Diablo" }),
     );
 
     const { records } = await queryCyclingActivity(db, NOW);
@@ -758,17 +758,16 @@ describe("contract", () => {
 
 function climb(
   activityId: string,
-  position: number,
-  gainM: number,
-  name: string | null,
-) {
+  overrides: Partial<Insertable<ActivityClimbTable>> = {},
+): Insertable<ActivityClimbTable> {
   return {
     activityId,
-    position,
-    gainM,
+    position: 0,
+    gainM: 500,
     summitLat: 37.88,
     summitLng: -121.91,
-    name,
+    name: null,
+    ...overrides,
   };
 }
 

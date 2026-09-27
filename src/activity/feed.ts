@@ -198,6 +198,10 @@ export async function queryCyclingActivity(
         "activityClimb.gainM",
         "activityClimb.name",
       ])
+      // A named climb keeps its first effort on a tie, so the earliest ride
+      // wins the same way on every render.
+      .orderBy("activityFeed.startedAt")
+      .orderBy("activityClimb.position")
       .execute(),
   ]);
   const layout = layoutFeed(toEntries(rides));

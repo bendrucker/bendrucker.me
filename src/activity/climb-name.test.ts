@@ -51,60 +51,64 @@ function roadPast(
 const summit: Coordinate = [37.9235, -122.5965];
 
 describe("pickClimbName", () => {
-  it("names a climb after a peak and drops its directional suffix", () => {
-    const elements = [
-      peak("Mount Tamalpais West Peak", offset(summit, 367, 0)),
-      roadPast(summit, "Ridgecrest Boulevard", "tertiary", 10),
-    ];
-
-    expect(pickClimbName(elements, summit)).toBe("Mount Tamalpais");
-  });
-
-  it("names a climb after the tallest peak in reach, not a nearer knoll", () => {
-    const elements = [
-      peak("Mount Love", offset(summit, 0, 172), "1955.79"),
-      peak("Kuwohi", offset(summit, 0, -582), "2024.79"),
-      roadPast(summit, "Kuwohi Access Road", "residential", 5),
-    ];
-
-    expect(pickClimbName(elements, summit)).toBe("Kuwohi");
-  });
-
-  it("ranks a peak without an elevation below one with it", () => {
-    const elements = [
-      peak("Unsurveyed Knob", offset(summit, 0, 50)),
-      peak("Mount Diablo", offset(summit, 0, 400), "1173"),
-    ];
-
-    expect(pickClimbName(elements, summit)).toBe("Mount Diablo");
-  });
-
-  it("takes the road when the only peak stands too far away", () => {
-    const elements = [
-      peak("Ballou Point", offset(summit, 0, 1212)),
-      roadPast(summit, "Tunitas Creek Road", "secondary", 20),
-    ];
-
-    expect(pickClimbName(elements, summit)).toBe("Tunitas Creek");
-  });
-
-  it("prefers a road to a nearer fire trail", () => {
-    const elements = [
-      roadPast(summit, "Cadd Dunlavy Fire Trail", "track", 5),
-      roadPast(summit, "Pine Flat Road", "unclassified", 40),
-    ];
-
-    expect(pickClimbName(elements, summit)).toBe("Pine Flat");
-  });
-
-  it("ignores a road gathered for another summit", () => {
-    const elements = [roadPast(summit, "Geysers Road", "unclassified", 500)];
-
-    expect(pickClimbName(elements, summit)).toBeNull();
-  });
-
-  it("names nothing when OpenStreetMap has nothing nearby", () => {
-    expect(pickClimbName([], summit)).toBeNull();
+  test.each<{
+    name: string;
+    elements: OverpassElement[];
+    expected: string | null;
+  }>([
+    {
+      name: "names a climb after a peak and drops its directional suffix",
+      elements: [
+        peak("Mount Tamalpais West Peak", offset(summit, 367, 0)),
+        roadPast(summit, "Ridgecrest Boulevard", "tertiary", 10),
+      ],
+      expected: "Mount Tamalpais",
+    },
+    {
+      name: "names a climb after the tallest peak in reach, not a nearer knoll",
+      elements: [
+        peak("Mount Love", offset(summit, 0, 172), "1955.79"),
+        peak("Kuwohi", offset(summit, 0, -582), "2024.79"),
+        roadPast(summit, "Kuwohi Access Road", "residential", 5),
+      ],
+      expected: "Kuwohi",
+    },
+    {
+      name: "ranks a peak without an elevation below one with it",
+      elements: [
+        peak("Unsurveyed Knob", offset(summit, 0, 50)),
+        peak("Mount Diablo", offset(summit, 0, 400), "1173"),
+      ],
+      expected: "Mount Diablo",
+    },
+    {
+      name: "takes the road when the only peak stands too far away",
+      elements: [
+        peak("Ballou Point", offset(summit, 0, 1212)),
+        roadPast(summit, "Tunitas Creek Road", "secondary", 20),
+      ],
+      expected: "Tunitas Creek",
+    },
+    {
+      name: "prefers a road to a nearer fire trail",
+      elements: [
+        roadPast(summit, "Cadd Dunlavy Fire Trail", "track", 5),
+        roadPast(summit, "Pine Flat Road", "unclassified", 40),
+      ],
+      expected: "Pine Flat",
+    },
+    {
+      name: "ignores a road gathered for another summit",
+      elements: [roadPast(summit, "Geysers Road", "unclassified", 500)],
+      expected: null,
+    },
+    {
+      name: "names nothing when OpenStreetMap has nothing nearby",
+      elements: [],
+      expected: null,
+    },
+  ])("$name", ({ elements, expected }) => {
+    expect(pickClimbName(elements, summit)).toBe(expected);
   });
 });
 
