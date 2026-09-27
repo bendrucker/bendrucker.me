@@ -23,6 +23,9 @@ function nullable<T extends z.ZodType>(schema: T) {
   return schema.nullish().transform((value) => value ?? null);
 }
 
+// SQLite has no boolean, and D1 and better-sqlite3 disagree on binding one.
+const flag = z.boolean().transform(Number);
+
 const powerSource = z.enum(["measured", "estimated", "none"]);
 
 // The schema is the definition: the type below is inferred from it, so a field
@@ -56,9 +59,9 @@ const publishedActivity = z.object({
   indoor: z.boolean().optional(),
 });
 
-// The schema is strict, so a hub sending a field this site does not store
-// yet fails rather than having it dropped.
-const activityUpdate = z.strictObject({ indoor: z.boolean() });
+// Parses straight to column values. The schema is strict, so a hub sending a
+// field this site does not store yet fails rather than having it dropped.
+const activityUpdate = z.strictObject({ indoor: flag });
 
 const powerBests = z
   .array(z.object({ durationS: z.int().positive(), watts: z.number() }))
@@ -71,7 +74,7 @@ const powerBests = z
 export type PowerSource = z.infer<typeof powerSource>;
 export type PublishedActivity = z.infer<typeof publishedActivity>;
 export type PowerBest = z.infer<typeof powerBests>[number];
-export type ActivityUpdate = z.infer<typeof activityUpdate>;
+export type ActivityUpdate = z.input<typeof activityUpdate>;
 
 export async function publishActivity(
   store: ActivityStore,
@@ -117,7 +120,7 @@ export async function publishActivity(
       polyline: track?.route ?? null,
       elevationProfile: profile === null ? null : JSON.stringify(profile),
       photoKeys: JSON.stringify(activity.photoKeys),
-      indoor: storedFlag(activity.indoor),
+      indoor: activity.indoor === undefined ? null : Number(activity.indoor),
       updatedAt: new Date().toISOString(),
     })
     .onConflict((conflict) =>
@@ -293,24 +296,16 @@ export async function updateActivity(
   fields: unknown,
 ): Promise<void> {
   const id = parse(text, activityId, "activityId");
-  const update = parse(activityUpdate, fields, "fields");
+  const columns = parse(activityUpdate, fields, "fields");
   // The feed's cache validator is the latest `updatedAt`, so the update moves
   // it along with the columns it sets.
   await store.batch([
     store.db
       .updateTable("activityFeed")
-      .set({
-        indoor: storedFlag(update.indoor),
-        updatedAt: new Date().toISOString(),
-      })
+      .set({ ...columns, updatedAt: new Date().toISOString() })
       .where("activityId", "=", id)
       .compile(),
   ]);
-}
-
-// SQLite has no boolean, and D1 and better-sqlite3 disagree on binding one.
-function storedFlag(value: boolean | undefined): number | null {
-  return value === undefined ? null : Number(value);
 }
 
 // The power curve and climbs go explicitly rather than through the foreign
