@@ -11,7 +11,9 @@
 //
 // Every name Overpass returns is kept in `tmp/climb-names.json`, so a run that
 // stops partway resumes where it left off, and the write after a dry run
-// stores the names the dry run printed without asking again.
+// stores the names the dry run printed without asking again. The file holds
+// the naming rule's answers at the time, so move it aside before the first run
+// after that rule changes.
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -40,7 +42,6 @@ import {
   nameStoredClimbs,
   summitKey,
   type NamedClimb,
-  type StoredClimb,
 } from "../src/activity/publish";
 import { decodePolyline } from "../src/activity/track";
 import { executeD1, formatSql, queryD1, type D1Target } from "./d1";
@@ -72,13 +73,6 @@ const storedRide = z.object({
   started_at: z.string(),
   polyline: z.string().nullable(),
   elevation_profile: z.string().nullable(),
-});
-
-const storedClimb = z.object({
-  activity_id: z.string(),
-  summit_lat: z.number(),
-  summit_lng: z.number(),
-  name: z.string().nullable(),
 });
 
 const storedProfile = z.array(z.number());
@@ -113,14 +107,6 @@ async function main(): Promise<void> {
     "select activity_id, name, started_at, polyline, elevation_profile from activity_feed where sport = 'ride' order by started_at",
     target,
   );
-  const stored = Map.groupBy(
-    queryD1(
-      storedClimb,
-      "select activity_id, summit_lat, summit_lng, name from activity_climb",
-      target,
-    ),
-    (climb) => climb.activity_id,
-  );
 
   const nameClimbs = cachedNamer(strictNamer());
   const backfilled: Backfilled[] = [];
@@ -134,15 +120,9 @@ async function main(): Promise<void> {
           );
     backfilled.push({
       ride,
-      climbs: await nameStoredClimbs(
-        climbs,
-        (stored.get(ride.activity_id) ?? []).map((climb): StoredClimb => ({
-          summitLat: climb.summit_lat,
-          summitLng: climb.summit_lng,
-          name: climb.name,
-        })),
-        nameClimbs,
-      ),
+      // Publish reuses a stored name for an unchanged summit. A backfill runs
+      // because the rule changed, so every summit is named afresh.
+      climbs: await nameStoredClimbs(climbs, [], nameClimbs),
     });
   }
 

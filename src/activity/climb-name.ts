@@ -20,6 +20,8 @@ const PEAK_RADIUS_M = 1000;
 
 const ROAD_RADIUS_M = 60;
 
+const FEET_TO_METRES = 0.3048;
+
 /**
  * Classes a car could drive. A fire trail or a path crossing the summit is
  * usually not the way the ride came up, and naming the climb after it reads
@@ -189,10 +191,17 @@ function highest(
   return best?.name ?? null;
 }
 
-/** A peak's `ele` in metres, or negative infinity when OSM has none to parse. */
-function elevationOf(ele: string | undefined): number {
-  const metres = Number.parseFloat(ele ?? "");
-  return Number.isFinite(metres) ? metres : Number.NEGATIVE_INFINITY;
+/**
+ * A peak's `ele` in metres, or negative infinity when OSM has none to parse.
+ * The tag is metres by convention, but some mappers write feet with a unit.
+ */
+export function elevationOf(ele: string | undefined): number {
+  const match = /^\s*(-?\d+(?:\.\d+)?)\s*(m|ft|feet|')?\s*$/i.exec(ele ?? "");
+  if (match === null) return Number.NEGATIVE_INFINITY;
+  const value = Number(match[1]);
+  return match[2] === undefined || match[2].toLowerCase() === "m"
+    ? value
+    : value * FEET_TO_METRES;
 }
 
 function nearest(

@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, test } from "vitest";
 import {
+  elevationOf,
   lookupClimbNames,
   overpassQuery,
   pickClimbName,
@@ -151,6 +152,19 @@ describe("lookupClimbNames", () => {
 
   it("skips the request when there is nothing to name", async () => {
     expect(await lookupClimbNames([], unreachable)).toEqual([]);
+  });
+});
+
+describe("elevationOf", () => {
+  test.each<{ name: string; ele: string | undefined; metres: number }>([
+    { name: "bare metres", ele: "2024.79", metres: 2024.79 },
+    { name: "metres with a unit", ele: "1173 m", metres: 1173 },
+    { name: "feet", ele: "2000 ft", metres: 609.6 },
+    { name: "feet with a prime", ele: "2000'", metres: 609.6 },
+    { name: "missing", ele: undefined, metres: Number.NEGATIVE_INFINITY },
+    { name: "unparsable", ele: "about 900", metres: Number.NEGATIVE_INFINITY },
+  ])("$name", ({ ele, metres }) => {
+    expect(elevationOf(ele)).toBeCloseTo(metres);
   });
 });
 
