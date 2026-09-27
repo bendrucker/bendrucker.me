@@ -73,7 +73,7 @@ export type OverpassElement = z.infer<typeof element>;
 export type ClimbNamer = (summits: Coordinate[]) => Promise<(string | null)[]>;
 
 /**
- * The nearest named peak or pass within `PEAK_RADIUS_M`, else the nearest
+ * The highest named peak or pass within `PEAK_RADIUS_M`, else the nearest
  * named road within `ROAD_RADIUS_M` less its "Road", else null. `elements`
  * may hold features gathered for other summits too, so every distance is
  * checked here.
@@ -87,7 +87,7 @@ export function pickClimbName(
   const ruler = new CheapRuler(summit[0], "meters");
   const at = lngLat(summit);
 
-  const peak = nearest(
+  const peak = highest(
     elements.flatMap((item) =>
       item.type === "node" &&
       item.tags?.name !== undefined &&
@@ -96,6 +96,7 @@ export function pickClimbName(
             {
               name: item.tags.name,
               distance: ruler.distance(at, [item.lon, item.lat]),
+              elevation: elevationOf(item.tags.ele),
             },
           ]
         : [],
@@ -159,6 +160,39 @@ export function overpassQuery(summits: Coordinate[]): string {
     `way(around:${ROAD_RADIUS_M},${lat},${lng})["highway"]["name"];`,
   ]);
   return `[out:json][timeout:${TIMEOUT_MS / 1000}][maxsize:${MAX_SIZE_BYTES}];(${clauses.join("")});out geom;`;
+}
+
+/**
+ * The tallest candidate within `radius`, nearest first among equals. A ride
+ * often tops out at a parking lot or a turnaround below the summit its climb
+ * is known by, and a lesser knoll can stand closer to that point than the
+ * summit does. Kuwohi is one example: its access road ends 170 m from Mount
+ * Love and 580 m from Kuwohi. A peak OSM gives no elevation ranks below every
+ * peak it does.
+ */
+function highest(
+  candidates: { name: string; distance: number; elevation: number }[],
+  radius: number,
+): string | null {
+  let best: (typeof candidates)[number] | null = null;
+  for (const candidate of candidates) {
+    if (candidate.distance > radius) continue;
+    if (
+      best === null ||
+      candidate.elevation > best.elevation ||
+      (candidate.elevation === best.elevation &&
+        candidate.distance < best.distance)
+    ) {
+      best = candidate;
+    }
+  }
+  return best?.name ?? null;
+}
+
+/** A peak's `ele` in metres, or negative infinity when OSM has none to parse. */
+function elevationOf(ele: string | undefined): number {
+  const metres = Number.parseFloat(ele ?? "");
+  return Number.isFinite(metres) ? metres : Number.NEGATIVE_INFINITY;
 }
 
 function nearest(

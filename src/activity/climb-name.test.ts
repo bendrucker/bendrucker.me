@@ -17,12 +17,12 @@ function offset(origin: Coordinate, north: number, east: number): Coordinate {
   ];
 }
 
-function peak(name: string, at: Coordinate): OverpassElement {
+function peak(name: string, at: Coordinate, ele?: string): OverpassElement {
   return {
     type: "node",
     lat: at[0],
     lon: at[1],
-    tags: { natural: "peak", name },
+    tags: { natural: "peak", name, ...(ele === undefined ? {} : { ele }) },
   };
 }
 
@@ -57,6 +57,25 @@ describe("pickClimbName", () => {
     ];
 
     expect(pickClimbName(elements, summit)).toBe("Mount Tamalpais");
+  });
+
+  it("names a climb after the tallest peak in reach, not a nearer knoll", () => {
+    const elements = [
+      peak("Mount Love", offset(summit, 0, 172), "1955.79"),
+      peak("Kuwohi", offset(summit, 0, -582), "2024.79"),
+      roadPast(summit, "Kuwohi Access Road", "residential", 5),
+    ];
+
+    expect(pickClimbName(elements, summit)).toBe("Kuwohi");
+  });
+
+  it("ranks a peak without an elevation below one with it", () => {
+    const elements = [
+      peak("Unsurveyed Knob", offset(summit, 0, 50)),
+      peak("Mount Diablo", offset(summit, 0, 400), "1173"),
+    ];
+
+    expect(pickClimbName(elements, summit)).toBe("Mount Diablo");
   });
 
   it("takes the road when the only peak stands too far away", () => {
