@@ -51,7 +51,15 @@ const publishedActivity = z.object({
     .array(text)
     .nullish()
     .transform((value) => value ?? []),
+  // Optional so a hub that predates the flag still publishes. A publish
+  // without it keeps whatever the row already holds.
+  indoor: z.boolean().optional(),
 });
+
+// The scalar columns a patch may set without the rest of the payload. Strict,
+// so a hub sending a field this site does not store yet fails rather than
+// having it dropped.
+const activityPatch = z.strictObject({ indoor: z.boolean() });
 
 const powerBests = z
   .array(z.object({ durationS: z.int().positive(), watts: z.number() }))
@@ -64,6 +72,7 @@ const powerBests = z
 export type PowerSource = z.infer<typeof powerSource>;
 export type PublishedActivity = z.infer<typeof publishedActivity>;
 export type PowerBest = z.infer<typeof powerBests>[number];
+export type ActivityPatch = z.infer<typeof activityPatch>;
 
 export async function publishActivity(
   store: ActivityStore,
@@ -109,6 +118,7 @@ export async function publishActivity(
       polyline: track?.route ?? null,
       elevationProfile: profile === null ? null : JSON.stringify(profile),
       photoKeys: JSON.stringify(activity.photoKeys),
+      indoor: storedFlag(activity.indoor),
       updatedAt: new Date().toISOString(),
     })
     .onConflict((conflict) =>
@@ -126,6 +136,7 @@ export async function publishActivity(
         polyline: eb.ref("excluded.polyline"),
         elevationProfile: eb.ref("excluded.elevationProfile"),
         photoKeys: eb.ref("excluded.photoKeys"),
+        indoor: eb.fn.coalesce("excluded.indoor", "activityFeed.indoor"),
         updatedAt: eb.ref("excluded.updatedAt"),
       })),
     )
@@ -270,6 +281,37 @@ export async function publishPowerCurve(
     );
   }
   await store.batch(statements);
+}
+
+/**
+ * Sets the whitelisted scalar columns on a row that already exists, so a field
+ * added after the hub's first publish can be backfilled without replaying the
+ * whole payload. An activity that was never published is left unwritten.
+ */
+export async function patchActivity(
+  store: ActivityStore,
+  activityId: unknown,
+  fields: unknown,
+): Promise<void> {
+  const id = parse(text, activityId, "activityId");
+  const patch = parse(activityPatch, fields, "fields");
+  // The feed's cache validator is the latest `updatedAt`, so the patch moves
+  // it along with the columns it sets.
+  await store.batch([
+    store.db
+      .updateTable("activityFeed")
+      .set({
+        indoor: storedFlag(patch.indoor),
+        updatedAt: new Date().toISOString(),
+      })
+      .where("activityId", "=", id)
+      .compile(),
+  ]);
+}
+
+// SQLite has no boolean, and D1 and better-sqlite3 disagree on binding one.
+function storedFlag(value: boolean | undefined): number | null {
+  return value === undefined ? null : Number(value);
 }
 
 // The power curve and climbs go explicitly rather than through the foreign

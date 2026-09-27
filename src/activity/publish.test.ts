@@ -4,6 +4,7 @@ import type { Database } from "@/db";
 import { createTestDb, noClimbNames, testStore, tick } from "@/test/db";
 import {
   deleteActivity,
+  patchActivity,
   publishActivity,
   publishPowerCurve,
   ValidationError,
@@ -81,6 +82,31 @@ describe("publishActivity", () => {
     expect(JSON.parse(row.photoKeys)).toEqual([
       "raw/strava/activities/9911/photos/abc.jpg",
     ]);
+  });
+
+  it("stores the indoor flag, and null when the hub leaves it out", async () => {
+    await publishActivity(store, activity({ indoor: true }), noClimbNames);
+    expect((await feedRow()).indoor).toBe(1);
+
+    await publishActivity(
+      store,
+      activity({ activityId: "a2", indoor: false }),
+      noClimbNames,
+    );
+    await publishActivity(store, activity({ activityId: "a3" }), noClimbNames);
+    const flags = await db
+      .selectFrom("activityFeed")
+      .select(["activityId", "indoor"])
+      .orderBy("activityId")
+      .execute();
+    expect(flags.map((row) => row.indoor)).toEqual([1, 0, null]);
+  });
+
+  it("keeps a stored indoor flag through a publish that omits it", async () => {
+    await publishActivity(store, activity({ indoor: true }), noClimbNames);
+    await publishActivity(store, activity(), noClimbNames);
+
+    expect((await feedRow()).indoor).toBe(1);
   });
 
   it("replaces an activity that was already published", async () => {
@@ -302,6 +328,51 @@ describe("publishPowerCurve", () => {
   ])("rejects %s", async (_label, bests) => {
     await expect(publishPowerCurve(store, "a1", bests)).rejects.toThrow(
       ValidationError,
+    );
+  });
+});
+
+describe("patchActivity", () => {
+  it("sets only the patched column and moves updatedAt", async () => {
+    await publishActivity(store, activity(), noClimbNames);
+    const before = await feedRow();
+    await tick();
+
+    await patchActivity(store, "a1", { indoor: true });
+
+    const after = await feedRow();
+    expect(after.updatedAt > before.updatedAt).toBe(true);
+    expect(after).toEqual({
+      ...before,
+      indoor: 1,
+      updatedAt: after.updatedAt,
+    });
+  });
+
+  it("rejects a field it does not know rather than dropping it", async () => {
+    await publishActivity(store, activity(), noClimbNames);
+
+    await expect(
+      patchActivity(store, "a1", { indoor: true, name: "Renamed" }),
+    ).rejects.toThrow(ValidationError);
+    expect((await feedRow()).indoor).toBeNull();
+  });
+
+  it.each([
+    ["a non-boolean flag", { indoor: 1 }],
+    ["no fields", {}],
+    ["something that is not an object", true],
+  ])("rejects %s", async (_label, fields) => {
+    await expect(patchActivity(store, "a1", fields)).rejects.toThrow(
+      ValidationError,
+    );
+  });
+
+  it("is a no-op for an activity that was never published", async () => {
+    await patchActivity(store, "gone", { indoor: true });
+
+    expect(await db.selectFrom("activityFeed").selectAll().execute()).toEqual(
+      [],
     );
   });
 });
