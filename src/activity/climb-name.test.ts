@@ -156,7 +156,7 @@ describe("lookupClimbNames", () => {
 
 describe("overpassQuery", () => {
   // Without a declared maxsize Overpass reserves 512 MiB per query, and a
-  // busy server turned a four-summit ride away with 504s for minutes on end.
+  // busy server answers 504 rather than find that much.
   it("declares a memory budget a busy server can admit", () => {
     expect(overpassQuery([[37.88, -121.91]])).toMatch(
       /^\[out:json\]\[timeout:8\]\[maxsize:33554432\];/,
