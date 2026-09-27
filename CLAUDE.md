@@ -331,6 +331,23 @@ again for a changed route or a summit that came back unnamed. After a change to
 the climb or naming rule, `npm run backfill:climbs` recomputes every ride's
 climbs from production D1. `-- --dry-run` prints them first.
 
+## Indoor Rides
+
+activity-hub flags trainer and Zwift rides as `indoor`. They stay in the log,
+its monthly highlights, and the year totals, and are left out of every record
+on the PRs tab: `records` in `src/activity/feed.ts` drops them before any list
+or power ladder is ranked. A null flag reads as outdoor.
+
+## Partial Updates
+
+`Publish.updateActivity` sets whitelisted scalar columns on an existing row
+without rewriting the rest of it, and does nothing for an activity that was
+never published. A new scalar field goes in `activityUpdate` in
+`src/activity/publish.ts`, whose strict schema rejects any field it does not
+list. activity-hub backfills the field through `updateActivity` once this site
+deploys. A change that needs the whole payload rebuilt still goes through a
+version bump of activity-hub's publish schema, which replays every activity.
+
 ## Theme
 
 CSS vars in `global.css` → Tailwind: `bg-background`, `text-foreground`, `bg-accent`, `text-accent`, `bg-muted`, `text-muted`, `border-border`. Dark mode via `data-theme="dark"` / `dark:` prefix. No `skin-*` classes.

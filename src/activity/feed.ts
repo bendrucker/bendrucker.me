@@ -96,6 +96,7 @@ const RIDE_COLUMNS = [
   "elevationM",
   "averageWatts",
   "powerSource",
+  "indoor",
   "updatedAt",
 ] as const;
 
@@ -353,6 +354,7 @@ interface Entry {
   distanceM: number;
   elevationM: number;
   measuredWatts: number | null;
+  indoor: boolean;
 }
 
 export function buildCyclingActivity(
@@ -480,6 +482,7 @@ function toEntry(row: RideRow): Entry {
     distanceM: row.distanceM ?? 0,
     elevationM: row.elevationM ?? 0,
     measuredWatts,
+    indoor: row.indoor === 1,
   };
 }
 
@@ -664,11 +667,16 @@ function yearTotals(entries: readonly Entry[], now: Date): YearTotals {
   };
 }
 
+/**
+ * Records rank outdoor rides only. Climbs and power points key on these
+ * entries, so dropping a ride here drops them too.
+ */
 function records(
-  entries: readonly Entry[],
+  all: readonly Entry[],
   curve: readonly PowerCurvePoint[],
   climbs: readonly ClimbRow[],
 ): RecordPeriod[] {
+  const entries = all.filter((entry) => !entry.indoor);
   if (entries.length === 0) return [];
   const years = [...new Set(entries.map((entry) => entry.year))];
   const period = (name: string, within: readonly Entry[]): RecordPeriod => ({

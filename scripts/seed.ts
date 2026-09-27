@@ -158,6 +158,8 @@ const remoteActivity = z.object({
   polyline: z.string().nullable(),
   elevation_profile: z.string().nullable(),
   photo_keys: z.string(),
+  // Absent until the migration that adds it reaches production.
+  indoor: z.number().nullish(),
 });
 
 const remoteBest = z.object({
@@ -212,6 +214,7 @@ function exportProduction(): SeededRide[] {
           ? null
           : storedProfile.parse(JSON.parse(row.elevation_profile)),
       photoKeys: storedPhotoKeys.parse(JSON.parse(row.photo_keys)),
+      indoor: row.indoor == null ? undefined : row.indoor === 1,
     };
     return { activity, bests: ladders.get(row.activity_id) ?? [] };
   });

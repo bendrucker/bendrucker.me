@@ -12,6 +12,7 @@ import {
 import { decodePolyline, decodeProfile } from "./track";
 import {
   deleteActivity,
+  updateActivity,
   publishActivity,
   publishPowerCurve,
   type PublishedActivity,
@@ -569,6 +570,64 @@ describe("queryCyclingActivity", () => {
     expect(climbRows(records, "all").map(([id]) => id)).toEqual(["older:0"]);
     expect(climbRows(records, "2026").map(([id]) => id)).toEqual(["newer:0"]);
     expect(climbRows(records, "2025").map(([id]) => id)).toEqual(["older:0"]);
+  });
+
+  it("keeps indoor rides out of every record but in the log", async () => {
+    await seed(
+      ride("road", { distanceM: 60_000, elevationM: 900, movingS: 9_000 }),
+      ride("zwift", {
+        startedAt: "2026-07-12T13:00:55Z",
+        distanceM: 90_000,
+        elevationM: 1_600,
+        movingS: 12_000,
+        averageWatts: 260,
+        indoor: true,
+      }),
+    );
+    await publishPowerCurve(store, "road", [{ durationS: 60, watts: 400 }]);
+    await publishPowerCurve(store, "zwift", [{ durationS: 60, watts: 500 }]);
+    await storeClimbs(
+      climb("road", { gainM: 800, name: "Mount Diablo" }),
+      climb("zwift", { gainM: 1_530, name: "Ventoux" }),
+    );
+
+    const { records, months } = await queryCyclingActivity(db, NOW);
+
+    expect(months[0]!.rides.map((r) => r.id)).toEqual(["zwift", "road"]);
+    expect(records.map((period) => period.period)).toEqual(["all", "2026"]);
+    for (const period of records) {
+      for (const list of period.lists) {
+        expect(
+          list.rows.map((row) => row.id),
+          list.id,
+        ).toEqual([list.id === "climb" ? "road:0" : "road"]);
+      }
+      expect(period.powerBests).toMatchObject([
+        { id: "1m", watts: 400 },
+        {},
+        {},
+        {},
+        { id: "ride", watts: 200 },
+      ]);
+    }
+  });
+
+  it("leaves the records empty when every ride is indoor", async () => {
+    await seed(ride("zwift", { indoor: true }));
+
+    const { records } = await queryCyclingActivity(db, NOW);
+
+    expect(records).toEqual([]);
+  });
+
+  it("reads a ride updated to indoor out of the records", async () => {
+    await seed(ride("road"), ride("trainer", { distanceM: 90_000 }));
+    await updateActivity(store, "trainer", { indoor: true });
+
+    const { records } = await queryCyclingActivity(db, NOW);
+    const distance = records[0]!.lists.find((list) => list.id === "distance")!;
+
+    expect(distance.rows.map((row) => row.id)).toEqual(["road"]);
   });
 
   it("ignores other sports", async () => {
