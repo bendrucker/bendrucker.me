@@ -3,7 +3,7 @@
 import * as languages from "linguist-languages";
 import type { Language } from "linguist-languages";
 import { logger } from "@workspace/logger";
-import { connectD1, formatSql, executeRemote } from "./d1";
+import { connectD1, formatSql, executeD1 } from "./d1";
 import { upsertLanguageExtension } from "../src/activity/upsert";
 
 // The package re-exports one module per language from its index. A language
@@ -27,7 +27,7 @@ async function main() {
       const statements = entries.map(([name, ext]) =>
         formatSql(upsertLanguageExtension(store.db, name, ext).compile()),
       );
-      executeRemote(statements);
+      executeD1(statements);
     } else {
       for (const [name, ext] of entries) {
         await upsertLanguageExtension(store.db, name, ext).execute();

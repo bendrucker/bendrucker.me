@@ -375,6 +375,42 @@ export const rankedLists: RankedList[] = [
     ],
   },
   {
+    id: "climb",
+    icon: "mountain",
+    title: "biggest climbs",
+    metric: "elevation",
+    rows: [
+      {
+        id: `${travelRide.id}:1`,
+        name: "Atlas Peak",
+        detail: "'26",
+        value: 3204,
+        href: travelRide.stravaUrl,
+      },
+      {
+        id: `${epicRide.id}:0`,
+        name: "Mount Tamalpais",
+        detail: "'26",
+        value: 2571,
+        href: epicRide.stravaUrl,
+      },
+      {
+        id: `${epicRide.id}:2`,
+        name: "Mount Vision",
+        detail: "'26",
+        value: 1890,
+        href: epicRide.stravaUrl,
+      },
+      {
+        id: "19002606448:0",
+        name: "Tunitas Creek",
+        detail: "'26",
+        value: 1814,
+        href: strava("19002606448"),
+      },
+    ],
+  },
+  {
     id: "duration",
     icon: "clock",
     title: "longest days",
@@ -393,17 +429,6 @@ export const rankedLists: RankedList[] = [
         value: 39991,
       },
       { id: "19002606448", name: "Pescadero", detail: "'26", value: 21197 },
-    ],
-  },
-  {
-    id: "climbs",
-    icon: "mountain",
-    title: "largest climbs",
-    metric: "elevation",
-    rows: [
-      { id: "atlas-peak", name: "Atlas Peak", detail: "6.2%", value: 3204 },
-      { id: "mt-tam", name: "Mount Tamalpais", detail: "5.8%", value: 2571 },
-      { id: "mt-vision", name: "Mount Vision", detail: "6.1%", value: 1890 },
     ],
   },
   {
@@ -450,6 +475,26 @@ const rankedLists2025: RankedList[] = [
         value: 12480,
       },
       { id: "16114872210", name: "Hamilton Loop", detail: "'25", value: 8940 },
+    ],
+  },
+  {
+    id: "climb",
+    icon: "mountain",
+    title: "biggest climbs",
+    metric: "elevation",
+    rows: [
+      {
+        id: "16114872210:0",
+        name: "Mount Hamilton",
+        detail: "'25",
+        value: 4265,
+      },
+      {
+        id: "16820193344:3",
+        name: "Sierra to the Sea",
+        detail: "'25",
+        value: 2310,
+      },
     ],
   },
   {

@@ -120,6 +120,13 @@ export interface PowerCurvePoint {
   watts: number;
 }
 
+export interface ClimbRow {
+  activityId: string;
+  position: number;
+  gainM: number;
+  name: string | null;
+}
+
 /** A ride under this length is a commute: counted in the month, not carded. */
 const COMMUTE_MAX_DISTANCE_M = 10_000;
 
@@ -153,7 +160,7 @@ export async function queryCyclingActivity(
   // Tracks dominate a row's size, so the ranked lists and totals read every
   // ride without them, and only the rides with a card on the page pay for
   // theirs. Which rides those are is settled by laying the page out first.
-  const [rides, curve] = await Promise.all([
+  const [rides, curve, climbs] = await Promise.all([
     db
       .selectFrom("activityFeed")
       .select(RIDE_COLUMNS)
@@ -177,10 +184,29 @@ export async function queryCyclingActivity(
         "activityPowerCurve.watts",
       ])
       .execute(),
+    db
+      .selectFrom("activityClimb")
+      .innerJoin(
+        "activityFeed",
+        "activityFeed.activityId",
+        "activityClimb.activityId",
+      )
+      .where("activityFeed.sport", "=", "ride")
+      .select([
+        "activityClimb.activityId",
+        "activityClimb.position",
+        "activityClimb.gainM",
+        "activityClimb.name",
+      ])
+      // A named climb keeps its first effort on a tie, so the earliest ride
+      // wins the same way on every render.
+      .orderBy("activityFeed.startedAt")
+      .orderBy("activityClimb.position")
+      .execute(),
   ]);
   const layout = layoutFeed(toEntries(rides));
   attachTracks(layout.entries, await queryTracks(db, layout));
-  return assembleFeed(layout, curve, now);
+  return assembleFeed(layout, curve, climbs, now);
 }
 
 /**
@@ -332,11 +358,12 @@ interface Entry {
 export function buildCyclingActivity(
   rows: FeedRows,
   curve: readonly PowerCurvePoint[],
+  climbs: readonly ClimbRow[],
   now: Date,
 ): CyclingActivityData {
   const layout = layoutFeed(toEntries(rows.rides));
   attachTracks(layout.entries, rows.tracks);
-  return assembleFeed(layout, curve, now);
+  return assembleFeed(layout, curve, climbs, now);
 }
 
 interface Layout {
@@ -367,6 +394,7 @@ function layoutFeed(entries: Entry[]): Layout {
 function assembleFeed(
   { entries, firstKey, months }: Layout,
   curve: readonly PowerCurvePoint[],
+  climbs: readonly ClimbRow[],
   now: Date,
 ): CyclingActivityData {
   const logged =
@@ -377,7 +405,7 @@ function assembleFeed(
     totals: yearTotals(entries, now),
     months: logged.map((month) => month.group),
     highlightMonths: months.flatMap((month) => month.highlights),
-    records: records(entries, curve),
+    records: records(entries, curve, climbs),
     logCursor: initialCursor(entries, firstKey),
   };
 }
@@ -639,12 +667,13 @@ function yearTotals(entries: readonly Entry[], now: Date): YearTotals {
 function records(
   entries: readonly Entry[],
   curve: readonly PowerCurvePoint[],
+  climbs: readonly ClimbRow[],
 ): RecordPeriod[] {
   if (entries.length === 0) return [];
   const years = [...new Set(entries.map((entry) => entry.year))];
   const period = (name: string, within: readonly Entry[]): RecordPeriod => ({
     period: name,
-    lists: rankedLists(within),
+    lists: rankedLists(within, climbs),
     powerBests: powerBests(within, curve),
   });
   return [
@@ -658,7 +687,10 @@ function records(
   ];
 }
 
-function rankedLists(entries: readonly Entry[]): RankedList[] {
+function rankedLists(
+  entries: readonly Entry[],
+  climbs: readonly ClimbRow[],
+): RankedList[] {
   const lists: RankedList[] = [
     {
       id: "distance",
@@ -673,6 +705,13 @@ function rankedLists(entries: readonly Entry[]): RankedList[] {
       title: "most climbing",
       metric: "elevation",
       rows: ranked(entries, (entry) => entry.ride.elevationFt),
+    },
+    {
+      id: "climb",
+      icon: "mountain",
+      title: "biggest climbs",
+      metric: "elevation",
+      rows: rankedClimbs(entries, climbs),
     },
     {
       id: "duration",
@@ -711,6 +750,46 @@ function ranked(
       };
       if (entry.ride.stravaUrl) row.href = entry.ride.stravaUrl;
       return row;
+    });
+}
+
+/**
+ * A climb ridden many times places once, by its biggest effort. A climb OSM
+ * named nothing near is labeled with its ride, and two of those are rarely
+ * the same hill, so they are never merged.
+ */
+function rankedClimbs(
+  entries: readonly Entry[],
+  climbs: readonly ClimbRow[],
+): RankedRow[] {
+  const rides = new Map(entries.map((entry) => [entry.ride.id, entry]));
+  const byName = new Map<string, ClimbRow>();
+  const unnamed: ClimbRow[] = [];
+  for (const climb of climbs) {
+    if (!rides.has(climb.activityId)) continue;
+    if (climb.name === null) {
+      unnamed.push(climb);
+      continue;
+    }
+    const standing = byName.get(climb.name);
+    if (standing === undefined || climb.gainM > standing.gainM) {
+      byName.set(climb.name, climb);
+    }
+  }
+  return [...byName.values(), ...unnamed]
+    .toSorted((a, b) => b.gainM - a.gainM)
+    .slice(0, RANKED_ROWS)
+    .flatMap((climb) => {
+      const entry = rides.get(climb.activityId);
+      if (entry === undefined) return [];
+      const row: RankedRow = {
+        id: `${climb.activityId}:${climb.position}`,
+        name: climb.name ?? entry.ride.name,
+        detail: `'${String(entry.year).slice(2)}`,
+        value: feet(climb.gainM),
+      };
+      if (entry.ride.stravaUrl) row.href = entry.ride.stravaUrl;
+      return [row];
     });
 }
 

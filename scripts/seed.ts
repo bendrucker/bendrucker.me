@@ -21,7 +21,7 @@ import { execFileSync } from "node:child_process";
 import { Resvg } from "@cf-wasm/resvg/node";
 import { logger } from "@workspace/logger";
 import { z } from "zod";
-import { connectD1 } from "./d1";
+import { connectD1, queryD1 } from "./d1";
 import {
   publishActivity,
   publishPowerCurve,
@@ -171,20 +171,17 @@ const remoteBest = z.object({
 const storedProfile = z.array(z.number());
 const storedPhotoKeys = z.array(z.string());
 
-/** What `wrangler d1 execute --json` prints: one entry per statement. */
-const queryResult = z.array(z.object({ results: z.array(z.unknown()) })).min(1);
-
 /**
  * The real feed, read out of production D1 and written into the local one.
  * Photo bytes stay in the production bucket, so the placeholders below stand
  * in for them and the strips have something to draw.
  */
 function exportProduction(): SeededRide[] {
-  const activities = query(
+  const activities = queryD1(
     remoteActivity,
     "select * from activity_feed order by started_at",
   );
-  const bests = query(
+  const bests = queryD1(
     remoteBest,
     "select activity_id, duration_s, watts from activity_power_curve",
   );
@@ -222,16 +219,6 @@ function exportProduction(): SeededRide[] {
 
 function powerSource(value: string): PublishedActivity["powerSource"] {
   return z.enum(["measured", "estimated", "none"]).parse(value);
-}
-
-function query<T>(schema: z.ZodType<T>, sql: string): T[] {
-  const stdout = execFileSync(
-    "wrangler",
-    ["d1", "execute", DATABASE, "--remote", "--json", "--command", sql],
-    { encoding: "utf-8" },
-  );
-  const [first] = queryResult.parse(JSON.parse(stdout));
-  return first!.results.map((row) => schema.parse(row));
 }
 
 /**

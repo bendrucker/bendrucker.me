@@ -18,7 +18,7 @@ const lists: Record<string, RankedList> = {
   distance,
   elevation: fixtureList("elevation"),
   duration: fixtureList("duration"),
-  climbs: fixtureList("climbs"),
+  climb: fixtureList("climb"),
   efforts,
   mixedLinks: {
     ...distance,
@@ -47,7 +47,7 @@ const controls: StoryControlSet = {
       distance: "longest rides",
       elevation: "most climbing",
       duration: "longest time",
-      climbs: "largest climbs",
+      climb: "biggest climbs",
       efforts: "best efforts",
       mixedLinks: "some rows linked",
       longNames: "long names",
@@ -89,12 +89,12 @@ function initState() {
 <docs lang="md">
 # Ranked list panel
 
-A numbered top-five: longest rides, most climbing, best efforts.
+A numbered top-five: longest rides, most climbing, biggest climbs, best efforts.
 
 Each list carries its own metric, which decides whether a row reads as a
 distance, a height, a duration, or a clock time. Rows link back to Strava only
 when the row came from a ride: longest rides links every row, longest time links
-none, largest climbs ranks segments rather than rides, and the mixed list is the
-one to check. Long names truncate to one line, linked or not, and keep the
+none, biggest climbs links each climb to the ride it was ridden on, and the mixed
+list is the one to check. Long names truncate to one line, linked or not, and keep the
 full name in a hover title.
 </docs>

@@ -26,6 +26,7 @@
     "test": "vitest run",
     "dev:worker": "tsx scripts/dev-worker.ts",
     "seed": "tsx scripts/seed.ts",
+    "backfill:climbs": "tsx scripts/backfill-climbs.ts",
     "fetch-activity": "tsx scripts/fetch-github-activity.ts",
     "generate:favicons": "tsx scripts/generate-favicons.ts"
   },
