@@ -33,6 +33,16 @@ import {
   type CodeRow,
   type LanguageOption,
 } from "@/code/view";
+import {
+  CODE_PARAM,
+  codeKey,
+  codePageHref,
+  fetchCodeDetail,
+  type CodeDetail as Detail,
+} from "@/code/detailWire";
+import DetailModal from "@/components/parts/DetailModal.vue";
+import { useDetailModal, type OpenDetail } from "@/detail/useDetailModal";
+import CodeDetail from "./CodeDetail.vue";
 
 const props = defineProps<{
   /** The owner\'s note on the page. */
@@ -43,7 +53,26 @@ const props = defineProps<{
   initial: CodeFilters;
   /** The year section labels leave unsaid, fixed by the server. */
   thisYear: string;
+  /** The item a shared link opened over the list, when it named one. */
+  open?: OpenDetail<Detail> | null;
 }>();
+
+// A repository or a project opens over the list rather than replacing it,
+// and its row still links to its page. The filters' own URL writes keep the
+// item's parameter, since they only swap the parameters they own.
+const {
+  key: openKey,
+  data: openItem,
+  failed: openFailed,
+  close: closeItem,
+  restoreFocus,
+} = useDetailModal(
+  { param: CODE_PARAM, keyOf: codeKey, load: fetchCodeDetail },
+  props.open ?? null,
+);
+
+/** The list in its current filters, which closing leaves without script. */
+const closeHref = computed(() => `/code${withFilters("", filters)}`);
 
 const filters = reactive<CodeFilters>({ ...props.initial });
 
@@ -335,5 +364,20 @@ async function reset() {
         </ul>
       </section>
     </div>
+
+    <DetailModal
+      :open="openKey !== null"
+      :label="openItem?.title ?? 'Repository'"
+      noun="item"
+      :full-href="openKey === null ? undefined : codePageHref(openKey)"
+      :close-href="closeHref"
+      :loading="openItem === null"
+      :failed="openFailed"
+      :hero="false"
+      @close="closeItem"
+      @closed="restoreFocus"
+    >
+      <CodeDetail v-if="openItem" :detail="openItem" :level="2" />
+    </DetailModal>
   </RouteFrame>
 </template>

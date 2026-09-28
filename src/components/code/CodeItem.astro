@@ -1,111 +1,35 @@
 ---
 // A repository's or a project's page: its header, its stats, then whatever
 // the page lists beneath them. It sits on the plain page ground rather than
-// the list's tint, as every item page does.
+// the list's tint, as every item page does. The same detail opens in a modal
+// over the Code list, which renders `CodeDetail` too.
 import Layout from "@/layouts/Layout.astro";
-import ItemHeader from "@/components/parts/ItemHeader.vue";
-import StatTile from "@/components/parts/StatTile.vue";
-import type { StatTileData } from "@/code/page";
+import CodeDetail from "@/components/code/CodeDetail.vue";
+import type { CodeDetail as Detail } from "@/code/detailWire";
+import { transitionName } from "@/code/view";
 import { SITE } from "@/config";
 
 export interface Props {
-  title: string;
-  /** The owner above the title, when it isn't the site's own. */
-  org?: string;
-  dek?: string;
+  detail: Detail;
   backLabel: string;
   backHref: string;
-  /** A repository leads with its language's diamond, a project with it in a ring. */
-  mark: "dot" | "ring";
-  dot: string;
-  /** The page on GitHub, where there is one to open. */
-  githubUrl?: string;
-  tiles: readonly StatTileData[];
-  /** Matches the row this page grows out of. */
-  transitionName: string;
-  description: string;
   sourcePath: string;
 }
 
-const {
-  title,
-  org,
-  dek,
-  backLabel,
-  backHref,
-  mark,
-  dot,
-  githubUrl,
-  tiles,
-  transitionName,
-  description,
-  sourcePath,
-} = Astro.props;
+const { detail, backLabel, backHref, sourcePath } = Astro.props;
 ---
 
 <Layout
-  title={`${title} | Code | ${SITE.title}`}
-  description={description}
+  title={`${detail.title} | Code | ${SITE.title}`}
+  description={detail.description}
   sourcePath={sourcePath}
 >
   <main id="main-content" class="flex-1 bg-background pb-16 cat-code">
     <article
-      class="mx-auto flex max-w-[632px] flex-col gap-5 bg-background px-4 pt-4 md:pt-10"
-      style={{ viewTransitionName: transitionName }}
+      class="mx-auto max-w-[632px] bg-background px-4 pt-4 md:pt-10"
+      style={{ viewTransitionName: transitionName(detail.key) }}
     >
-      <ItemHeader
-        title={title}
-        backLabel={backLabel}
-        backHref={backHref}
-        org={org}
-        dek={dek}
-      >
-        <Fragment slot="mark">
-          {
-            mark === "ring" ? (
-              <span
-                role="img"
-                aria-label="Project"
-                class="inline-flex size-[17px] flex-none rotate-45 items-center justify-center rounded-[3.5px] border-2 border-current/55"
-                style={{ color: dot }}
-              >
-                <i class="size-2 rounded-[1.5px] bg-current" />
-              </span>
-            ) : (
-              <span
-                aria-hidden="true"
-                class="size-3 flex-none rotate-45 rounded-[2px]"
-                style={{ background: dot }}
-              />
-            )
-          }
-        </Fragment>
-        {
-          githubUrl && (
-            <a
-              slot="title-end"
-              href={githubUrl}
-              target="_blank"
-              rel="noopener"
-              aria-label="Open on GitHub"
-              title="Open on GitHub"
-              class="inline-flex size-9 flex-none items-center justify-center rounded-md text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat"
-            >
-              <span aria-hidden="true" class="icon-[lucide--github] size-4" />
-            </a>
-          )
-        }
-      </ItemHeader>
-
-      <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-1.5">
-        {
-          tiles.map((tile) => (
-            <StatTile value={tile.value} label={tile.label} icon={tile.icon} />
-          ))
-        }
-      </div>
-
-      <slot />
+      <CodeDetail detail={detail} backLabel={backLabel} backHref={backHref} />
     </article>
   </main>
 </Layout>

@@ -14,6 +14,9 @@ import {
 } from "@/code/rows";
 import { parseFilters, type CodeRow, type LanguageOption } from "@/code/view";
 import { rethrowLocally } from "@/fallback";
+import { loadCodeDetail } from "@/code/detail";
+import { CODE_PARAM, type CodeDetail } from "@/code/detailWire";
+import type { OpenDetail } from "@/detail/useDetailModal";
 
 if (!isEnabled("code")) return Astro.rewrite("/404");
 
@@ -30,6 +33,20 @@ try {
 }
 
 const cat = category("code");
+
+// A shared link to an item open over the list renders it open, so the link
+// reads the same without script. A key that finds nothing leaves the list
+// alone, and the island takes the parameter back out of the URL.
+const openKey = Astro.url.searchParams.get(CODE_PARAM);
+let open: OpenDetail<CodeDetail> | null = null;
+if (openKey !== null) {
+  try {
+    const detail = await loadCodeDetail(await getDb(), openKey);
+    if (detail !== null) open = { key: openKey, data: detail };
+  } catch (error) {
+    rethrowLocally(error, "Failed to load code detail", { key: openKey });
+  }
+}
 ---
 
 <Layout
@@ -45,5 +62,6 @@ const cat = category("code");
     languages={languages}
     initial={parseFilters(Astro.url.searchParams, languages)}
     thisYear={localDay(now.toISOString()).slice(0, 4)}
+    open={open}
   />
 </Layout>

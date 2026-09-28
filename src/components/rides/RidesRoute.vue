@@ -43,6 +43,15 @@ import {
   type RideTuple,
 } from "@/rides/rows";
 import RideRecords from "./RideRecords.vue";
+import DetailModal from "@/components/parts/DetailModal.vue";
+import { useDetailModal, type OpenDetail } from "@/detail/useDetailModal";
+import {
+  fetchRideDetail,
+  RIDE_PARAM,
+  rideKey,
+  type RideDetailWire,
+} from "@/rides/detail";
+import RideDetail from "./RideDetail.vue";
 import RideSections from "./RideSections.vue";
 import { useRideSearch } from "./useRideSearch";
 
@@ -69,6 +78,8 @@ const props = defineProps<{
   /** The first rides `q` matches, when there is one. */
   matches: RideTuple[] | null;
   partial: boolean;
+  /** The ride a shared link opened over the list, when it named one. */
+  open?: OpenDetail<RideDetailWire> | null;
 }>();
 
 const view = ref<RideView>(props.view);
@@ -102,9 +113,23 @@ const listHref = computed(() =>
   }),
 );
 
+// A ride opens over the list rather than replacing it, so the log keeps its
+// months and its place underneath. Its row still links to its page.
+const {
+  key: openId,
+  data: openRide,
+  failed: openFailed,
+  close: closeRide,
+  restoreFocus,
+  withOpen,
+} = useDetailModal(
+  { param: RIDE_PARAM, keyOf: rideKey, load: fetchRideDetail },
+  props.open ?? null,
+);
+
 function writeUrl() {
   if (leaving || !onList()) return;
-  history.replaceState(history.state, "", listHref.value);
+  history.replaceState(history.state, "", withOpen(listHref.value));
 }
 
 // Safari throttles `replaceState` to a hundred calls in ten seconds and throws
@@ -461,5 +486,26 @@ async function clear() {
       :rendered-query="q"
       @clear="clear"
     />
+
+    <DetailModal
+      :open="openId !== null"
+      :label="openRide?.name ?? 'Ride'"
+      noun="ride"
+      :full-href="openId === null ? undefined : rideHref(openId, units)"
+      :close-href="listHref"
+      :loading="openRide === null"
+      :failed="openFailed"
+      hero
+      @close="closeRide"
+      @closed="restoreFocus"
+    >
+      <RideDetail
+        v-if="openRide"
+        :ride="openRide"
+        :units="units"
+        :this-year="thisYear"
+        :level="2"
+      />
+    </DetailModal>
   </RouteFrame>
 </template>
