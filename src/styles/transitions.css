@@ -1,0 +1,115 @@
+/*
+ * One thing morphs: the tapped row grows into its item's page as a solid shape
+ * over the list, which holds still beneath it. Going back, the page shrinks
+ * into its row. Filters and view switches crossfade. `data-vt` on the root
+ * names which of those a navigation is.
+ */
+::view-transition-group(*) {
+  overflow: clip;
+  animation-duration: 0.25s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-old(*),
+::view-transition-new(*) {
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+  object-position: left top;
+}
+
+::view-transition-old(*) {
+  animation: vt-out 0.2s ease both;
+}
+
+::view-transition-new(*) {
+  animation: vt-in 0.25s ease both;
+}
+
+/*
+ * The page underneath never shows: the old page holds solid while the new one
+ * fades in over it. Fading both at once dips their sum below one, and the
+ * document's own background flashes through mid-transition.
+ */
+::view-transition-old(root) {
+  animation: none;
+}
+
+/* The header is the same on every page, so it never flickers. */
+html::view-transition-old(site-head),
+html::view-transition-new(site-head),
+html[data-vt]::view-transition-old(site-head),
+html[data-vt]::view-transition-new(site-head) {
+  animation: none;
+}
+
+html[data-vt="page"]::view-transition-new(*) {
+  animation: none;
+}
+
+html[data-vt="page"]::view-transition-old(*) {
+  animation: vt-out 0.12s ease both;
+}
+
+html[data-vt="page"]::view-transition-old(root) {
+  animation: none;
+}
+
+html[data-vt="page"]::view-transition-new(root) {
+  animation: vt-in 0.05s linear 0.2s both;
+}
+
+html[data-vt="back"]::view-transition-old(root),
+html[data-vt="back"]::view-transition-new(root) {
+  animation: none;
+}
+
+html[data-vt="back"]::view-transition-new(*) {
+  animation: vt-in 0.12s ease 0.1s both;
+}
+
+html[data-vt="back"]::view-transition-old(*) {
+  animation: vt-out 0.12s ease 0.1s both;
+}
+
+html[data-vt="back"]::view-transition-old(*):only-child {
+  animation: vt-out 0.2s ease both;
+}
+
+/*
+ * Reduced motion keeps a crossfade and drops everything that moves. Unnaming
+ * every element folds the morph, the shrink, and the slide into the root, and
+ * the root crossfades in 150ms. `!important` and the `html` prefix outrank the
+ * router's own reduced-motion rule, which removes the animation outright.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html *,
+  html *::before,
+  html *::after {
+    view-transition-name: none !important;
+  }
+
+  html::view-transition-group(*) {
+    animation: none !important;
+  }
+
+  html::view-transition-old(root) {
+    animation: vt-out 150ms ease both !important;
+  }
+
+  html::view-transition-new(root) {
+    animation: vt-in 150ms ease both !important;
+  }
+}
+
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-in {
+  from {
+    opacity: 0;
+  }
+}
