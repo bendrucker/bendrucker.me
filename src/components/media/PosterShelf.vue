@@ -18,7 +18,17 @@ export interface ShelfPoster {
   desktopOnly?: boolean;
 }
 
-defineProps<{ items: readonly ShelfPoster[] }>();
+withDefaults(
+  defineProps<{
+    items: readonly ShelfPoster[];
+    /**
+     * `home` puts the words above a smaller poster, so a card cut short at its
+     * peek still names what's on it and the art stands back from the work.
+     */
+    layout?: "route" | "home";
+  }>(),
+  { layout: "route" },
+);
 
 const { playing, open } = useOutbound();
 </script>
@@ -42,6 +52,9 @@ const { playing, open } = useOutbound();
       >
         <span
           class="relative block aspect-[2/3] w-full overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"
+          :class="
+            layout === 'home' ? 'order-last mt-1 max-w-14 md:max-w-18' : ''
+          "
         >
           <img
             v-if="item.art"
@@ -60,7 +73,7 @@ const { playing, open } = useOutbound();
             aria-label="Movie"
             class="absolute top-1 right-1 z-1 flex size-[18px] items-center justify-center rounded-[4px] bg-black/42 text-white"
           >
-            <span aria-hidden="true" class="icon-[lucide--film] size-[11px]" />
+            <span aria-hidden="true" class="size-[11px] icon-[lucide--film]" />
           </span>
         </span>
         <span class="line-clamp-1 text-xs leading-[1.35]">{{

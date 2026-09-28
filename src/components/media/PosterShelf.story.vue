@@ -8,10 +8,12 @@ import PosterShelf from "./PosterShelf.vue";
 const controls: StoryControlSet = {
   count: { type: "slider", title: "posters", min: 1, max: 5 },
   width: { type: "slider", title: "width", min: 240, max: 680, step: 10 },
+  layout: { type: "select", title: "layout", options: ["route", "home"] },
 };
 
 async function initState() {
-  return { feed: await storyFeed("watching"), count: 3, width: 358 };
+  const layout: "route" | "home" = "route";
+  return { feed: await storyFeed("watching"), count: 3, width: 358, layout };
 }
 </script>
 
@@ -29,7 +31,10 @@ async function initState() {
           class="rounded-2xl bg-background p-2 cat-watching"
           :style="{ width: `${state.width}px`, maxWidth: '100%' }"
         >
-          <PosterShelf :items="storyHighlights(state.feed, state.count)" />
+          <PosterShelf
+            :items="storyHighlights(state.feed, state.count)"
+            :layout="state.layout"
+          />
         </div>
       </template>
 
@@ -47,6 +52,11 @@ Watching's highlights: three posters on a phone, five from the desktop
 breakpoint up, sharing the row evenly. A show carries its season and a bar of
 episode ticks beneath it. Past twelve episodes one tick stands for several and
 fills by the share of them watched. A movie wears a film badge instead.
+
+The `home` layout is the home card's: the title, season, and ticks come first
+and the poster sits beneath them at 56px wide on a phone and 72px on desktop,
+so a card cut short at its peek still names each show. The Watching route
+keeps the default `route` layout.
 
 Hover lifts and tilts a poster with a sheen across it. A tap plays a bigger
 lift, then opens the poster's link in a new tab. Under reduced motion the

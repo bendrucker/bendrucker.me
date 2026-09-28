@@ -6,8 +6,17 @@ import PreviewControls from "@/stories/PreviewControls.vue";
 import { CATEGORIES, type CategoryId } from "@/categories";
 import { installDrawers } from "@/home/drawer";
 import { storyCategory } from "./fixtures";
+import { epicRide } from "@/components/cycling/fixtures";
+import CodeFeature from "./CodeFeature.vue";
 import HomeCard from "./HomeCard.vue";
 import ItemRow from "./ItemRow.vue";
+import RideFeature from "./RideFeature.vue";
+
+const [firstPhoto] = epicRide.media;
+const featuredPhoto = firstPhoto && {
+  url: firstPhoto.thumbnailUrl,
+  alt: firstPhoto.alt,
+};
 
 const controls: StoryControlSet = {
   count: { type: "slider", title: "cards", min: 1, max: 6 },
@@ -159,6 +168,57 @@ const Drawers = defineComponent({
         </div>
       </Drawers>
     </Variant>
+
+    <Variant title="Featured pair">
+      <Drawers>
+        <div class="grid items-start gap-2 md:grid-cols-2 md:gap-4">
+          <HomeCard id="rides" tall="always">
+            <RideFeature
+              href="#"
+              :id="epicRide.id"
+              :name="epicRide.name"
+              :figures="['139 mi', '18,100 ft']"
+              hilly
+              :route="epicRide.route"
+              :photo="featuredPhoto"
+            />
+            <ul class="flex flex-col gap-0.5 md:gap-1">
+              <li v-for="row in ROWS.rides?.slice(1)" :key="row.title">
+                <ItemRow
+                  href="#"
+                  :title="row.title"
+                  :figure="row.text"
+                  compact
+                />
+              </li>
+            </ul>
+          </HomeCard>
+          <HomeCard id="code" tall="always">
+            <CodeFeature
+              href="#"
+              title="extensions"
+              org="raycast"
+              text="Everything you need to extend Raycast."
+              lead="dot"
+              dot="#3178c6"
+              latest="Refresh the menu bar in the background"
+            />
+            <ul class="flex flex-col gap-0.5 md:gap-1">
+              <li v-for="row in ROWS.code?.slice(1)" :key="row.title">
+                <ItemRow
+                  href="#"
+                  :title="row.title"
+                  :org="row.org"
+                  lead="dot"
+                  dot="#3178c6"
+                  compact
+                />
+              </li>
+            </ul>
+          </HomeCard>
+        </div>
+      </Drawers>
+    </Variant>
   </Story>
 </template>
 
@@ -178,4 +238,10 @@ The grid is two columns from the desktop breakpoint up, and an odd card out
 spans both. An open card grows down past its row while its neighbour keeps its
 resting height. Set three cards at full width to see the span, and one row to
 see a card that fits.
+
+Rides and Code lead with a feature and rest taller: 280px on a phone and 288px
+on desktop. They share the home page's first row, so both stand at that height
+and the row stays level. The featured pair shows them together. On the page, a
+featured card that lands beside a card without one rests at the taller peek
+only on a phone.
 </docs>

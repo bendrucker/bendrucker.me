@@ -1,3 +1,4 @@
+import { queryRideById, type RideDetail } from "@/activity/feed";
 import { queryCodeRows } from "@/code/query";
 import { buildCodeRows, codeWindow } from "@/code/rows";
 import { rankHighlights } from "@/code/view";
@@ -10,6 +11,12 @@ import { queryRideHighlights } from "@/rides/query";
 import { loadWriting } from "@/writing/load";
 import { highlightRows } from "@/writing/rows";
 import { homeCards, type HomeCard, type HomeSources } from "./cards";
+import {
+  codeFeature,
+  rideFeature,
+  withoutFeatured,
+  type HomeFeatures,
+} from "./features";
 
 async function mediaHighlights(id: MediaCategory): Promise<MediaRow[]> {
   const { rows, highlightKeys } = await loadMediaFeed(id);
@@ -34,21 +41,39 @@ async function read<T>(
   }
 }
 
-/** Every enabled category's highlights, each read the way its route reads them. */
-export async function loadHome(now = new Date()): Promise<HomeCard[]> {
-  const [rides, code, reading, writing, watching, listening] =
+/**
+ * The featured ride's track and photos. A failure leaves the feature its name
+ * and figures, which the highlights already carry.
+ */
+async function rideDetail(id: string): Promise<RideDetail | null> {
+  try {
+    return await queryRideById(await getDb(), id);
+  } catch (error) {
+    rethrowLocally(error, "Failed to load the featured ride", { id });
+    return null;
+  }
+}
+
+export interface HomePage {
+  cards: HomeCard[];
+  features: HomeFeatures;
+}
+
+/**
+ * Every enabled category's highlights, each read the way its route reads them,
+ * and the Rides and Code cards' features.
+ */
+export async function loadHome(now = new Date()): Promise<HomePage> {
+  const [rides, repos, reading, writing, watching, listening] =
     await Promise.all([
       read("rides", async () => queryRideHighlights(await getDb())),
-      read("code", async () =>
-        rankHighlights(
-          buildCodeRows(await queryCodeRows(await getDb(), codeWindow(now))),
-        ),
-      ),
+      read("code", async () => queryCodeRows(await getDb(), codeWindow(now))),
       read("reading", async () => mediaHighlights("reading")),
       read("writing", async () => highlightRows((await loadWriting(now)).rows)),
       read("watching", async () => mediaHighlights("watching")),
       read("listening", async () => mediaHighlights("listening")),
     ]);
+  const code = rankHighlights(buildCodeRows(repos));
 
   const sources: HomeSources = {
     rides,
@@ -58,5 +83,14 @@ export async function loadHome(now = new Date()): Promise<HomeCard[]> {
     watching,
     listening,
   };
-  return homeCards(sources, now);
+  const [topRide] = rides;
+  const [topCode] = code;
+  const features: HomeFeatures = {
+    rides: topRide && rideFeature(topRide, await rideDetail(topRide.id)),
+    code: topCode && codeFeature(topCode, repos),
+  };
+  return {
+    cards: withoutFeatured(homeCards(sources, now), features),
+    features,
+  };
 }
