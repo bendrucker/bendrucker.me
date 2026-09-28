@@ -67,7 +67,7 @@ function select(value: unknown) {
       :value="option.value"
       :aria-label="iconOnly ? option.label : undefined"
       :title="iconOnly ? option.label : undefined"
-      class="inline-flex items-center gap-1.5 rounded-[7px] text-dim transition-[color,background-color,box-shadow] duration-200 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cat data-[state=checked]:bg-background data-[state=checked]:text-cat data-[state=checked]:shadow-[0_1px_2px_var(--shadow)]"
+      class="inline-flex items-center gap-1.5 rounded-[7px] text-foreground/70 transition-[color,background-color,box-shadow] duration-200 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cat data-[state=checked]:bg-background data-[state=checked]:text-cat data-[state=checked]:shadow-[0_1px_2px_var(--shadow)]"
       :class="[
         list
           ? 'min-h-9 justify-start px-2.5 text-sm'

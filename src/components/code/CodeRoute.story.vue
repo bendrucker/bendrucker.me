@@ -27,7 +27,12 @@ const controls: StoryControlSet = {
   lang: {
     type: "select",
     title: "from URL: lang",
-    options: { "": "any", Go: "Go", TypeScript: "TypeScript" },
+    options: {
+      "": "any",
+      Go: "Go",
+      TypeScript: "TypeScript",
+      JavaScript: "JavaScript",
+    },
   },
   sort: {
     type: "select",

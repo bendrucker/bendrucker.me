@@ -91,13 +91,23 @@ const contributionsCollection = z.object({
       }),
     }),
   ),
-  pullRequestContributionsByRepository: contributionsByRepository(
+  // The total counts every pull request in the window, where the nodes stop
+  // at the first page.
+  pullRequestContributionsByRepository: z.array(
     z.object({
-      occurredAt: z.string(),
-      pullRequest: z.object({
-        id: z.string(),
-        merged: z.boolean(),
-        mergedAt: z.string().nullable(),
+      repository,
+      contributions: z.object({
+        totalCount: z.number(),
+        nodes: nodes(
+          z.object({
+            occurredAt: z.string(),
+            pullRequest: z.object({
+              id: z.string(),
+              merged: z.boolean(),
+              mergedAt: z.string().nullable(),
+            }),
+          }),
+        ),
       }),
     }),
   ),

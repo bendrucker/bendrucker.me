@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  useTemplateRef,
+  watch,
+} from "vue";
 import { monthShort } from "@/activity/sections";
 import EmptyState from "@/components/parts/EmptyState.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
@@ -18,6 +26,7 @@ import {
   gutterCopies,
   highlightMarks,
   ownerFrom,
+  parseFilters,
   sortFrom,
   transitionName,
   withFilters,
@@ -55,15 +64,41 @@ const months = computed(() =>
   view.value.sections.filter((section) => !section.phoneOnly),
 );
 
+const results = useTemplateRef<HTMLElement>("results");
+const empty = useTemplateRef<InstanceType<typeof EmptyState>>("empty");
+
 // The URL keeps up with the filters, so a reload or a shared link lands on
 // the same list. Replacing rather than pushing keeps typing out of history,
-// and the router's own state rides along untouched.
-watch(filters, () => {
+// and the router's own state rides along untouched. Writing once on mount
+// swaps a language the server matched in another case for the one it chose.
+function writeUrl() {
+  const search = withFilters(location.search, filters);
+  if (search === location.search) return;
   history.replaceState(
     history.state,
     "",
-    `${location.pathname}${withFilters(location.search, filters)}${location.hash}`,
+    `${location.pathname}${search}${location.hash}`,
   );
+}
+
+// A Back within the page, like one past a month link, doesn't remount the
+// island, so the filters follow whatever query the entry carries.
+function readUrl() {
+  Object.assign(
+    filters,
+    parseFilters(new URLSearchParams(location.search), props.languages),
+  );
+}
+
+watch(filters, writeUrl);
+
+onMounted(() => {
+  writeUrl();
+  window.addEventListener("popstate", readUrl);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("popstate", readUrl);
 });
 
 function setOwner(value: string) {
@@ -74,8 +109,15 @@ function setSort(value: string) {
   filters.sort = sortFrom(value);
 }
 
-function reset() {
+/**
+ * Clearing from the empty state removes the button that had focus, so focus
+ * moves to the list it brought back, or to the empty state if nothing did.
+ */
+async function reset() {
   Object.assign(filters, DEFAULT_FILTERS);
+  await nextTick();
+  if (view.value.count === 0) empty.value?.focus();
+  else results.value?.focus();
 }
 
 function dayOfMonth(day: string): string {
@@ -133,7 +175,14 @@ function dayOfMonth(day: string): string {
     </template>
 
     <template #sidebar>
-      <SearchControl v-model="filters.q" noun="repositories" :status="status" />
+      <div class="flex min-h-10 justify-end">
+        <SearchControl
+          v-model="filters.q"
+          noun="repositories"
+          collapsible
+          :status="status"
+        />
+      </div>
       <SegmentGroup
         :model-value="filters.owner"
         :options="OWNER_OPTIONS"
@@ -213,84 +262,93 @@ function dayOfMonth(day: string): string {
       </ul>
     </template>
 
-    <EmptyState
-      v-if="view.count === 0"
-      noun="repositories"
-      :query="filters.q"
-      @clear="reset"
-    />
+    <div
+      ref="results"
+      role="region"
+      aria-label="Repositories"
+      tabindex="-1"
+      class="outline-none"
+    >
+      <EmptyState
+        v-if="view.count === 0"
+        ref="empty"
+        noun="repositories"
+        :query="filters.q"
+        @clear="reset"
+      />
 
-    <template v-else-if="filters.sort === 'recent'">
-      <section
-        v-for="section in view.sections"
-        :id="`month-${section.key}`"
-        :key="section.key"
-        :aria-label="section.label"
-        class="scroll-mt-16 md:scroll-mt-6"
-        :class="section.phoneOnly ? 'md:hidden' : ''"
-      >
-        <SectionHead :label="section.label" />
-        <div class="flex flex-col gap-1.5">
-          <ul
-            v-for="week in section.weeks"
-            :key="week.key"
-            class="flex flex-col gap-1.5"
-          >
-            <li
-              v-for="{ item, dayNum } in week.rows"
-              :key="item.key"
-              :class="item.phoneOnly ? 'md:hidden' : ''"
+      <template v-else-if="filters.sort === 'recent'">
+        <section
+          v-for="section in view.sections"
+          :id="`month-${section.key}`"
+          :key="section.key"
+          :aria-label="section.label"
+          class="scroll-mt-16 md:scroll-mt-6"
+          :class="section.phoneOnly ? 'md:hidden' : ''"
+        >
+          <SectionHead :label="section.label" />
+          <div class="flex flex-col gap-1.5">
+            <ul
+              v-for="week in section.weeks"
+              :key="week.key"
+              class="flex flex-col gap-1.5"
             >
-              <ItemRow
-                :href="item.href"
-                :title="item.title"
-                :org="item.org"
-                :text="item.text"
-                :lead="item.lead"
-                :dot="item.dot"
-                :query="filters.q"
-                :transition-name="transitionName(item.key)"
+              <li
+                v-for="{ item, dayNum } in week.rows"
+                :key="item.key"
+                :class="item.phoneOnly ? 'md:hidden' : ''"
               >
-                <template #gutter>
-                  <TimelineGutter
-                    v-for="copy in gutterCopies(
-                      item.phone,
-                      item.phoneOnly ? item.phone : item.desktop,
-                    )"
-                    :key="copy.key"
-                    :class="copy.class"
-                    :day="dayNum"
-                    :show-day="copy.marks.showDay"
-                    :week-end="copy.marks.weekEnd"
-                  />
-                </template>
-              </ItemRow>
-            </li>
-          </ul>
-        </div>
-      </section>
-    </template>
+                <ItemRow
+                  :href="item.href"
+                  :title="item.title"
+                  :org="item.org"
+                  :text="item.text"
+                  :lead="item.lead"
+                  :dot="item.dot"
+                  :query="filters.q"
+                  :transition-name="transitionName(item.key)"
+                >
+                  <template #gutter>
+                    <TimelineGutter
+                      v-for="copy in gutterCopies(
+                        item.phone,
+                        item.phoneOnly ? item.phone : item.desktop,
+                      )"
+                      :key="copy.key"
+                      :class="copy.class"
+                      :day="dayNum"
+                      :show-day="copy.marks.showDay"
+                      :week-end="copy.marks.weekEnd"
+                    />
+                  </template>
+                </ItemRow>
+              </li>
+            </ul>
+          </div>
+        </section>
+      </template>
 
-    <section v-else :aria-label="sortLabel">
-      <SectionHead :label="sortLabel ?? ''" />
-      <ul class="flex flex-col gap-1.5">
-        <li v-for="{ item, dayNum, sub } in view.sorted" :key="item.key">
-          <ItemRow
-            :href="item.href"
-            :title="item.title"
-            :org="item.org"
-            :text="item.text"
-            :lead="item.lead"
-            :dot="item.dot"
-            :query="filters.q"
-            :transition-name="transitionName(item.key)"
-          >
-            <template #gutter>
-              <TimelineGutter :day="dayNum" :sub="sub" week-end />
-            </template>
-          </ItemRow>
-        </li>
-      </ul>
-    </section>
+      <section v-else :aria-label="sortLabel">
+        <SectionHead :label="sortLabel ?? ''" />
+        <ul class="flex flex-col gap-1.5">
+          <li v-for="{ item, dayNum, sub } in view.sorted" :key="item.key">
+            <ItemRow
+              :href="item.href"
+              :title="item.title"
+              :org="item.org"
+              :text="item.text"
+              :lead="item.lead"
+              :dot="item.dot"
+              :query="filters.q"
+              :transition-name="transitionName(item.key)"
+            >
+              <template #gutter>
+                <TimelineGutter :day="dayNum" :sub="sub" week-end />
+              </template>
+            </ItemRow>
+          </li>
+        </ul>
+      </section>
+    </div>
   </RouteFrame>
 </template>

@@ -6,8 +6,8 @@ import {
   codeWindow,
   languageOptions,
   localDay,
-  memberSummary,
 } from "./rows";
+import { memberSummary } from "./view";
 
 const LA = "America/Los_Angeles";
 

@@ -12,8 +12,13 @@ import {
   rankHighlights,
   transitionName,
   withFilters,
+  type CodeMember,
   type CodeRow,
+  type LanguageOption,
 } from "./view";
+
+const PYTHON = "#3572A5";
+const RUST = "#dea584";
 
 function row(key: string, overrides: Partial<CodeRow> = {}): CodeRow {
   return {
@@ -29,9 +34,36 @@ function row(key: string, overrides: Partial<CodeRow> = {}): CodeRow {
     day: "2026-09-01",
     score: 0,
     activity: 0,
+    members: [],
     ...overrides,
   };
 }
+
+function member(
+  key: string,
+  lang: string,
+  day: string,
+  activity: number,
+  overrides: Partial<CodeMember> = {},
+): CodeMember {
+  return {
+    key,
+    href: `/code/${key}`,
+    title: key.split("/").at(-1) ?? key,
+    text: "",
+    dot: lang === "Rust" ? RUST : PYTHON,
+    lang,
+    day,
+    activity,
+    ...overrides,
+  };
+}
+
+const LANGUAGES: LanguageOption[] = [
+  { value: "Go", label: "Go", color: "#00ADD8" },
+  { value: "C", label: "C", color: "#555555" },
+  { value: "C#", label: "C#", color: "#178600" },
+];
 
 const THIS_YEAR = { thisYear: "2026" };
 
@@ -49,14 +81,27 @@ describe("parseFilters", () => {
     expect(
       parseFilters(
         new URLSearchParams("q=lint&owner=others&lang=Go&sort=active"),
+        LANGUAGES,
       ),
     ).toEqual({ q: "lint", owner: "others", lang: "Go", sort: "active" });
   });
 
   it("falls back to the default for a value it doesn't know", () => {
     expect(
-      parseFilters(new URLSearchParams("owner=everyone&sort=stars")),
+      parseFilters(
+        new URLSearchParams("owner=everyone&sort=stars&lang=Klingon"),
+        LANGUAGES,
+      ),
     ).toEqual(DEFAULT_FILTERS);
+  });
+
+  it("reads a language in any case as the one the select offers", () => {
+    const lang = (value: string) =>
+      parseFilters(new URLSearchParams({ lang: value }), LANGUAGES).lang;
+
+    expect(lang("go")).toBe("Go");
+    expect(lang("c")).toBe("C");
+    expect(lang("c#")).toBe("C#");
   });
 });
 
@@ -75,7 +120,9 @@ describe("filterSearch", () => {
     const search = filterSearch(filters);
 
     expect(search).toBe("?q=tf+lint&owner=mine&lang=C%23&sort=name");
-    expect(parseFilters(new URLSearchParams(search))).toEqual(filters);
+    expect(parseFilters(new URLSearchParams(search), LANGUAGES)).toEqual(
+      filters,
+    );
   });
 
   it("drops a query of only spaces", () => {
@@ -114,8 +161,19 @@ describe("filterRows", () => {
     row("pydantic", {
       lead: "ring",
       mine: false,
-      text: "pydantic-core, logfire",
+      org: "pydantic",
+      text: "pydantic, pydantic-core, logfire",
+      dot: PYTHON,
       langs: ["Python", "Rust"],
+      day: "2026-09-12",
+      activity: 6,
+      members: [
+        member("pydantic/pydantic", "Python", "2026-09-12", 3),
+        member("pydantic/pydantic-core", "Rust", "2026-09-10", 2),
+        member("pydantic/logfire", "Python", "2026-09-05", 1, {
+          text: "Uncomplicated observability",
+        }),
+      ],
     }),
   ];
 
@@ -127,18 +185,70 @@ describe("filterRows", () => {
     expect(keys("others")).toEqual(["terraform-linters/tflint", "pydantic"]);
   });
 
-  it("matches a project by any of its members' languages", () => {
-    expect(
-      filterRows(rows, { ...DEFAULT_FILTERS, lang: "Rust" }).map((r) => r.key),
-    ).toEqual(["pydantic"]);
+  it("shows a project through its members in the language chosen", () => {
+    const [project] = filterRows(rows, { ...DEFAULT_FILTERS, lang: "Python" });
+
+    expect(project).toMatchObject({
+      key: "pydantic",
+      lead: "ring",
+      text: "pydantic, logfire",
+      dot: PYTHON,
+      langs: ["Python"],
+      day: "2026-09-12",
+      activity: 4,
+    });
+    expect(project?.members.map((m) => m.key)).toEqual([
+      "pydantic/pydantic",
+      "pydantic/logfire",
+    ]);
   });
 
-  it("searches the org and a project's members", () => {
+  it("shows a project's lone match in a language as a repository", () => {
+    expect(filterRows(rows, { ...DEFAULT_FILTERS, lang: "Rust" })).toEqual([
+      expect.objectContaining({
+        key: "pydantic/pydantic-core",
+        href: "/code/pydantic/pydantic-core",
+        title: "pydantic-core",
+        org: "pydantic",
+        lead: "dot",
+        dot: RUST,
+        langs: ["Rust"],
+        day: "2026-09-10",
+        members: [],
+      }),
+    ]);
+  });
+
+  it("keeps the most recent first once a project moves to an earlier day", () => {
+    const [, , pydantic] = rows;
+    const rustLast = {
+      ...pydantic,
+      day: "2026-09-20",
+      members: pydantic.members.map((m) =>
+        m.lang === "Rust" ? { ...m, day: "2026-09-20" } : m,
+      ),
+    };
+    const between = row("between", { langs: ["Python"], day: "2026-09-15" });
+
+    expect(
+      filterRows([rustLast, between], {
+        ...DEFAULT_FILTERS,
+        lang: "Python",
+      }).map((r) => [r.key, r.day]),
+    ).toEqual([
+      ["between", "2026-09-15"],
+      ["pydantic", "2026-09-12"],
+    ]);
+  });
+
+  it("searches the org and every member's name and description", () => {
     const hits = (q: string) =>
       filterRows(rows, { ...DEFAULT_FILTERS, q }).map((r) => r.key);
 
     expect(hits("linters")).toEqual(["terraform-linters/tflint"]);
     expect(hits("logfire")).toEqual(["pydantic"]);
+    expect(hits("observability")).toEqual(["pydantic"]);
+    expect(hits("pydantic-core")).toEqual(["pydantic"]);
   });
 });
 

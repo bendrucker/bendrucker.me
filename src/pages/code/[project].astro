@@ -6,8 +6,8 @@ import { isEnabled } from "@/config";
 import { getDb } from "@/db";
 import { queryProject, type ProjectPage } from "@/code/query";
 import { memberHref, moreUrl, projectStatTiles, workList } from "@/code/page";
-import { languageColor, memberSummary } from "@/code/rows";
-import { transitionName } from "@/code/view";
+import { languageColor } from "@/code/rows";
+import { memberSummary, transitionName } from "@/code/view";
 import { rethrowLocally } from "@/fallback";
 
 if (!isEnabled("code")) return Astro.rewrite("/404");

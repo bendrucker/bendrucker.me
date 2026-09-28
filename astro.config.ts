@@ -53,6 +53,11 @@ export default defineConfig({
   cache: {
     provider: cacheCloudflare(),
   },
+  // `/activity/code/[year]` redirects from its own endpoint: a dynamic
+  // redirect to a page route resolves to `/code/index.html`.
+  redirects: {
+    "/activity/code": "/code",
+  },
   // On-demand routes that only change on deploy. `/` and `/activity` are
   // absent because their max-age is aligned to the hourly GitHub sync and
   // computed per request in src/middleware.ts. Prerendered routes are not

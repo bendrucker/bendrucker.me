@@ -35,6 +35,19 @@ describe("matches", () => {
     expect(matches({ title: "Ctools" }, "c.")).toBe(false);
   });
 
+  it("matches a hyphen or a slash like any other character", () => {
+    expect(matches({ title: "tflint-ruleset-aws" }, "tflint-ruleset")).toBe(
+      true,
+    );
+    expect(matches(repo, "tflint-")).toBe(false);
+    expect(matches({ title: "a/b" }, "a/b")).toBe(true);
+    expect(markParts("tflint-ruleset-aws", "ruleset-")).toEqual([
+      { text: "tflint-", hit: false },
+      { text: "ruleset-", hit: true },
+      { text: "aws", hit: false },
+    ]);
+  });
+
   it("trims the query", () => {
     expect(matches(repo, "  tflint ")).toBe(true);
   });

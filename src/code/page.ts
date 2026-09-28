@@ -5,6 +5,7 @@ import type { PartIcon } from "@/components/parts/icons";
 import { ORG_TITLES, PROJECTS } from "./rank";
 import type {
   CodeRepo,
+  CodeStats,
   IssueRow,
   ProjectStats,
   PullRow,
@@ -150,15 +151,19 @@ function issues(n: number): StatTileData[] {
     : [];
 }
 
+function pulls({ prs, prsCapped }: CodeStats): StatTileData {
+  return {
+    icon: "git-pull-request",
+    value: prsCapped ? `${count(prs)}+` : count(prs),
+    label: "pull requests",
+  };
+}
+
 /** Stars, pull requests, issues when there are any, and since. */
 export function repoStatTiles(stats: RepoStats): StatTileData[] {
   return [
     { icon: "star", value: count(stats.stars), label: "stars" },
-    {
-      icon: "git-pull-request",
-      value: count(stats.prs),
-      label: "pull requests",
-    },
+    pulls(stats),
     ...issues(stats.issues),
     ...since(stats.since),
   ];
@@ -167,11 +172,7 @@ export function repoStatTiles(stats: RepoStats): StatTileData[] {
 /** Pull requests, issues when there are any, repositories, and since. Stars summed across repositories mean little. */
 export function projectStatTiles(stats: ProjectStats): StatTileData[] {
   return [
-    {
-      icon: "git-pull-request",
-      value: count(stats.prs),
-      label: "pull requests",
-    },
+    pulls(stats),
     ...issues(stats.issues),
     {
       icon: "folder-git-2",

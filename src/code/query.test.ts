@@ -173,9 +173,20 @@ describe("code queries", () => {
       expect(page?.stats).toEqual({
         stars: 100,
         prs: 5,
+        prsCapped: false,
         issues: 1,
         since: "2020-01-01T00:00:00.000Z",
       });
+    });
+
+    it("counts a year stored at a full page of pull requests as a floor", async () => {
+      await syncActivity(testStore(db), [
+        makeRepo({ name: "busy", activitySummary: activity(100) }),
+      ]);
+
+      const page = await queryRepo(db, "bendrucker", "busy");
+
+      expect(page?.stats).toMatchObject({ prs: 100, prsCapped: true });
     });
 
     it("dates someone else's repository from the first contribution", async () => {
@@ -184,6 +195,7 @@ describe("code queries", () => {
       expect(page?.stats).toEqual({
         stars: 5000,
         prs: 1,
+        prsCapped: false,
         issues: 0,
         since: "2024-03-01T00:00:00.000Z",
       });
@@ -209,6 +221,7 @@ describe("code queries", () => {
       ]);
       expect(page?.stats).toEqual({
         prs: 1,
+        prsCapped: false,
         issues: 1,
         repositories: 2,
         since: "2023-08-01T00:00:00.000Z",

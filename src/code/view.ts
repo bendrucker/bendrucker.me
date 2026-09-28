@@ -31,6 +31,25 @@ export interface CodeRow {
   score: number;
   /** Pull requests and issues opened in the window. */
   activity: number;
+  /** A project's repositories, strongest first. Empty for a repository. */
+  members: CodeMember[];
+}
+
+/**
+ * A project's repository. Search reads its name and description, and a
+ * language filter rebuilds the project's row from the ones that match.
+ */
+export interface CodeMember {
+  /** `owner/name`. */
+  key: string;
+  href: string;
+  title: string;
+  text: string;
+  dot: string;
+  /** Its language, or empty when GitHub doesn't name one. */
+  lang: string;
+  day: string;
+  activity: number;
 }
 
 /** A language the select offers, with the diamond it shows once chosen. */
@@ -92,14 +111,37 @@ export function sortFrom(value: string | null): CodeSort {
   return oneOf(SORTS, value) ?? DEFAULT_FILTERS.sort;
 }
 
+/** The language the select offers under that name in any case, or none. */
+export function languageFrom(
+  value: string | null,
+  languages: readonly LanguageOption[],
+): string {
+  const wanted = value?.toLowerCase();
+  return (
+    languages.find((option) => option.value.toLowerCase() === wanted)?.value ??
+    DEFAULT_FILTERS.lang
+  );
+}
+
 /** The filters a URL names. Anything unrecognized falls back to the default. */
-export function parseFilters(params: URLSearchParams): CodeFilters {
+export function parseFilters(
+  params: URLSearchParams,
+  languages: readonly LanguageOption[],
+): CodeFilters {
   return {
     q: params.get("q") ?? DEFAULT_FILTERS.q,
     owner: ownerFrom(params.get("owner")),
-    lang: params.get("lang") ?? DEFAULT_FILTERS.lang,
+    lang: languageFrom(params.get("lang"), languages),
     sort: sortFrom(params.get("sort")),
   };
+}
+
+/** The members, strongest first, stand in for a project's description. */
+export function memberSummary(names: readonly string[]): string {
+  if (names.length > 3) {
+    return `${names[0]}, ${names[1]}, and ${names.length - 2} more`;
+  }
+  return names.join(", ");
 }
 
 /** What the search's live region announces as the list changes. */
@@ -142,16 +184,91 @@ export function isDefault(filters: CodeFilters): boolean {
   );
 }
 
+/** A project's lone match, as a row of its own. */
+function memberRow(project: CodeRow, member: CodeMember): CodeRow {
+  const [owner = ""] = member.key.split("/");
+  return {
+    key: member.key,
+    href: member.href,
+    title: member.title,
+    org: project.mine ? "" : owner,
+    text: member.text,
+    lead: "dot",
+    dot: member.dot,
+    mine: project.mine,
+    langs: member.lang ? [member.lang] : [],
+    day: member.day,
+    score: 0,
+    activity: member.activity,
+    members: [],
+  };
+}
+
+/**
+ * A row as a language filter shows it, or undefined when it drops out. A
+ * project shows through its members in that language, so its diamond, its
+ * members, and its day all belong to the language chosen.
+ */
+function inLanguage(row: CodeRow, lang: string): CodeRow | undefined {
+  if (!lang) return row;
+  if (row.members.length === 0) {
+    return row.langs.includes(lang) ? row : undefined;
+  }
+
+  const members = row.members.filter((member) => member.lang === lang);
+  const [first] = members;
+  if (!first) return undefined;
+  if (members.length === row.members.length) return row;
+  if (members.length === 1) return memberRow(row, first);
+
+  return {
+    ...row,
+    text: memberSummary(members.map((member) => member.title)),
+    dot: first.dot,
+    langs: [lang],
+    day:
+      members
+        .map((member) => member.day)
+        .toSorted()
+        .at(-1) ?? row.day,
+    activity: members.reduce((sum, member) => sum + member.activity, 0),
+    members,
+  };
+}
+
+/** Whether a row survives the query, reading every member a project holds. */
+function searched(row: CodeRow, q: string): boolean {
+  return matches(
+    {
+      title: row.title,
+      text: row.text,
+      org: row.org,
+      note: row.members
+        .map((member) => `${member.title} ${member.text}`)
+        .join("\n"),
+    },
+    q,
+  );
+}
+
 export function filterRows(
   rows: readonly CodeRow[],
   filters: CodeFilters,
 ): CodeRow[] {
-  return rows.filter(
-    (row) =>
-      (filters.owner === "all" || (filters.owner === "mine") === row.mine) &&
-      (!filters.lang || row.langs.includes(filters.lang)) &&
-      matches(row, filters.q),
-  );
+  const hit = rows.flatMap((row) => {
+    if (filters.owner !== "all" && (filters.owner === "mine") !== row.mine) {
+      return [];
+    }
+    const shown = inLanguage(row, filters.lang);
+    return shown && searched(shown, filters.q) ? [shown] : [];
+  });
+  // A project rebuilt from fewer members can move to an earlier day.
+  return filters.lang ? hit.toSorted(byRecency) : hit;
+}
+
+/** Most recently touched first, the order the server hands rows over in. */
+export function byRecency(a: CodeRow, b: CodeRow): number {
+  return b.day.localeCompare(a.day) || a.title.localeCompare(b.title);
 }
 
 /** Ranked by score, strongest first. A row with nothing to rank never leads. */

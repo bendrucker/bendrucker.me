@@ -1,11 +1,33 @@
 // Rows for the Code route's story, shaped as `buildCodeRows` hands them to
 // the island: a project, other people's repositories, and the site's own.
-import type { CodeRow, LanguageOption } from "@/code/view";
+import type { CodeMember, CodeRow, LanguageOption } from "@/code/view";
 
 const GO = "#00ADD8";
 const TS = "#3178c6";
 const RUBY = "#701516";
 const HCL = "#844FBA";
+const JS = "#f1e05a";
+
+function member(
+  key: string,
+  day: string,
+  dot: string,
+  lang: string,
+  activity: number,
+  overrides: Partial<CodeMember> = {},
+): CodeMember {
+  return {
+    key,
+    href: `/code/${key}`,
+    title: key.split("/").at(-1) ?? key,
+    text: "",
+    dot,
+    lang,
+    day,
+    activity,
+    ...overrides,
+  };
+}
 
 function repo(
   key: string,
@@ -29,6 +51,7 @@ function repo(
     day,
     score: 0,
     activity: 1,
+    members: [],
     ...overrides,
   };
 }
@@ -61,10 +84,46 @@ export const CODE_ROWS: CodeRow[] = [
     lead: "ring",
     dot: GO,
     mine: false,
-    langs: ["Go", "HCL"],
+    langs: ["Go", "JavaScript"],
     day: "2026-09-19",
     score: 12,
     activity: 22,
+    members: [
+      member("terraform-linters/tflint", "2026-09-19", GO, "Go", 12, {
+        text: "A Pluggable Terraform Linter",
+      }),
+      member(
+        "terraform-linters/tflint-ruleset-aws",
+        "2026-09-15",
+        GO,
+        "Go",
+        6,
+        {
+          text: "TFLint ruleset for terraform-provider-aws",
+        },
+      ),
+      member("terraform-linters/tflint-plugin-sdk", "2026-09-02", GO, "Go", 2, {
+        text: "Experimental: Plugin SDK for building custom TFLint rulesets",
+      }),
+      member(
+        "terraform-linters/setup-tflint",
+        "2026-09-04",
+        JS,
+        "JavaScript",
+        1,
+        {
+          text: "GitHub action that sets up TFLint in your workflow",
+        },
+      ),
+      member(
+        "terraform-linters/tflint-load-config-action",
+        "2026-07-28",
+        JS,
+        "JavaScript",
+        1,
+        { text: "GitHub action that loads a TFLint config" },
+      ),
+    ],
   },
   repo("backnotprop/plannotator", "2026-09-07", TS, "TypeScript", {
     text: "Annotate and review coding agent plans and code diffs visually, share with your team, send feedback to agents with one click.",
@@ -99,4 +158,5 @@ export const CODE_LANGUAGES: LanguageOption[] = [
   { value: "Go", label: "Go", color: GO },
   { value: "HCL", label: "HCL", color: HCL },
   { value: "Ruby", label: "Ruby", color: RUBY },
+  { value: "JavaScript", label: "JavaScript", color: JS },
 ];

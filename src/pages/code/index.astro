@@ -41,7 +41,7 @@ const cat = category("code");
     client:load
     rows={rows}
     languages={languages}
-    initial={parseFilters(Astro.url.searchParams)}
+    initial={parseFilters(Astro.url.searchParams, languages)}
     thisYear={localDay(now.toISOString()).slice(0, 4)}
   />
 </Layout>

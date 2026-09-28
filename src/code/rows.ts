@@ -6,7 +6,13 @@ import { SITE } from "@/config";
 import type { ScoredRepo } from "./query";
 import { projects, repoScore, type Project } from "./rank";
 import type { CodeRepo } from "./types";
-import type { CodeRow, LanguageOption } from "./view";
+import {
+  byRecency,
+  memberSummary,
+  type CodeMember,
+  type CodeRow,
+  type LanguageOption,
+} from "./view";
 
 /** How far back the list reaches, by last contribution. It never shows on the page. */
 export const CODE_WINDOW_DAYS = 90;
@@ -34,14 +40,6 @@ export function repoHref(repo: Pick<CodeRepo, "owner" | "name">): string {
   return `/code/${repo.owner}/${repo.name}`;
 }
 
-/** The members, strongest first, stand in for a project's description. */
-export function memberSummary(names: readonly string[]): string {
-  if (names.length > 3) {
-    return `${names[0]}, ${names[1]}, and ${names.length - 2} more`;
-  }
-  return names.join(", ");
-}
-
 /** Pull requests and issues opened in the window, for the "Most active" sort. */
 function workCount(repo: CodeRepo): number {
   return repo.pulls.length + repo.issues.length;
@@ -64,6 +62,20 @@ function repoRow(repo: ScoredRepo, timezone: string): CodeRow {
     langs: repo.language ? [repo.language.name] : [],
     day: localDay(repo.lastActivity, timezone),
     score: repo.score,
+    activity: workCount(repo),
+    members: [],
+  };
+}
+
+function memberOf(repo: ScoredRepo, timezone: string): CodeMember {
+  return {
+    key: repo.repo,
+    href: repoHref(repo),
+    title: repo.name,
+    text: repo.description,
+    dot: languageColor(repo),
+    lang: repo.language?.name ?? "",
+    day: localDay(repo.lastActivity, timezone),
     activity: workCount(repo),
   };
 }
@@ -95,6 +107,7 @@ function projectRow(project: Project<ScoredRepo>, timezone: string): CodeRow {
       (sum, member) => sum + workCount(member),
       0,
     ),
+    members: project.members.map((member) => memberOf(member, timezone)),
   };
 }
 
@@ -114,9 +127,7 @@ export function buildCodeRows(
     ...scored
       .filter((repo) => !inProject.has(repo.repo))
       .map((repo) => repoRow(repo, timezone)),
-  ].toSorted(
-    (a, b) => b.day.localeCompare(a.day) || a.title.localeCompare(b.title),
-  );
+  ].toSorted(byRecency);
 }
 
 /** The languages in the window, the most common first, for the language select. */

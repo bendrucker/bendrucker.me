@@ -23,6 +23,12 @@ import type {
 
 export type ScoredRepo = CodeRepo & { score: number };
 
+/**
+ * The pull requests a year's sync reads per repository. A year stored at
+ * exactly this many was cut off there, before the sync read GitHub's total.
+ */
+const PULL_PAGE = 100;
+
 function repoRows(db: Kysely<Database>) {
   return db
     .selectFrom("repos")
@@ -246,6 +252,12 @@ async function queryStatRows(db: Kysely<Database>, ids: readonly number[]) {
         )
         .as("pullsCounted"),
       eb
+        .selectFrom("repoActivity")
+        .whereRef("repoActivity.repoId", "=", "repos.id")
+        .where("repoActivity.prCount", "=", PULL_PAGE)
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .as("pullYearsCapped"),
+      eb
         .selectFrom("issues")
         .whereRef("issues.repoId", "=", "repos.id")
         .select(({ fn }) => fn.countAll<number>().as("count"))
@@ -301,6 +313,7 @@ function totals(rows: readonly StatRow[]): CodeStats {
       (sum, row) => sum + Math.max(row.pullRows ?? 0, row.pullsCounted ?? 0),
       0,
     ),
+    prsCapped: rows.some((row) => (row.pullYearsCapped ?? 0) > 0),
     issues: rows.reduce((sum, row) => sum + (row.issueRows ?? 0), 0),
     since: since ?? null,
   };
