@@ -8,7 +8,7 @@ export interface SegmentOption {
   icon?: PartIcon;
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     modelValue: string;
     options: readonly SegmentOption[];
@@ -29,8 +29,20 @@ withDefaults(
 
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
+/*
+ * An option takes focus from an arrow key, a click, or a Tab onto the checked
+ * one, so checking it on focus is the radio group's selection-follows-focus.
+ * Reka does this itself only while the arrow key is still held when focus
+ * lands, which a key sent as a single press can miss.
+ */
+function followFocus(value: string) {
+  select(value);
+}
+
 function select(value: unknown) {
-  if (typeof value === "string") emit("update:modelValue", value);
+  if (typeof value === "string" && value !== props.modelValue) {
+    emit("update:modelValue", value);
+  }
 }
 </script>
 
@@ -65,6 +77,7 @@ function select(value: unknown) {
         fill ? 'min-w-0 flex-1 basis-0' : '',
         mono ? 'font-mono' : '',
       ]"
+      @focus="followFocus(option.value)"
     >
       <span
         v-if="option.icon"

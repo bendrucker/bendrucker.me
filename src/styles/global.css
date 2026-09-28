@@ -188,13 +188,15 @@ html[data-theme="dark"] {
 /*
  * A bar that fills as the page scrolls, driven by the scroll position itself so
  * a post ships without a script for it. A browser lacking scroll timelines leaves the bar empty.
+ * It tracks the nearest scroller, which on a post is the root and in the story book is a box
+ * the story scrolls itself.
  */
 @utility progress-scroll {
   transform: scaleX(0);
   transform-origin: left;
   @supports (animation-timeline: scroll()) {
     animation: progress-fill linear both;
-    animation-timeline: scroll(root);
+    animation-timeline: scroll();
   }
 }
 

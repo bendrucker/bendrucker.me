@@ -24,14 +24,17 @@ function initState() {
     <Variant title="Reading progress" :init-state="initState">
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
-        <div :class="storyCategory(state.category).scope">
+        <div
+          class="h-[60vh] overflow-y-auto"
+          :class="storyCategory(state.category).scope"
+        >
           <ReadingProgress />
           <div
             class="flex max-w-[680px] flex-col gap-4 pt-4 text-[17px] leading-[1.7]"
           >
             <p v-for="n in 12" :key="n">
-              Paragraph {{ n }}. Scroll the story and the bar under the top edge
-              fills with the page, driven by the scroll position alone. Prose
+              Paragraph {{ n }}. Scroll this box and the bar under its top edge
+              fills as it scrolls, driven by the scroll position alone. Prose
               runs at seventeen pixels on a line height of 1.7, at a measure of
               680.
             </p>
@@ -53,6 +56,7 @@ A 2px bar under the header on a post, filling as the page scrolls. It is a CSS
 scroll-driven animation, so a post ships without a script for it. A browser
 lacking scroll timelines leaves it empty.
 
-The bar follows the root scroller, which in the story book is the preview's own
-document.
+The bar follows its nearest scroller. On a post that is the page itself. The
+story book's own panes never scroll that element, so the story wraps the prose in
+a box of its own that does.
 </docs>
