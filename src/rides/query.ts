@@ -338,9 +338,6 @@ const RECORD_COLUMNS = [
   "timezone",
   "distanceM",
   "elevationM",
-  "movingS",
-  "averageWatts",
-  "powerSource",
 ] as const;
 
 // A record counts toward the ride's local year, which SQLite can't work out
@@ -352,7 +349,7 @@ const RECORD_COLUMNS = [
 const UTC_YEAR = sql`substr(started_at, 1, 4)`;
 const YEAR_EDGE = sql<number>`substr(started_at, 6, 5) in ('12-31', '01-01')`;
 
-function rankInYear(column: "distanceM" | "elevationM" | "movingS") {
+function rankInYear(column: "distanceM" | "elevationM") {
   return sql<number>`row_number() over (partition by ${UTC_YEAR}, ${YEAR_EDGE} order by ${sql.ref(column)} desc, started_at desc)`;
 }
 
@@ -374,7 +371,6 @@ export async function queryRideRecords(
             YEAR_EDGE.as("edge"),
             rankInYear("distanceM").as("byDistance"),
             rankInYear("elevationM").as("byClimb"),
-            rankInYear("movingS").as("byMoving"),
           ])
           .where("sport", "=", "ride")
           .where("distanceM", ">", 0)
@@ -389,7 +385,6 @@ export async function queryRideRecords(
           eb("edge", "=", 1),
           eb("byDistance", "<=", RECORD_ROWS),
           eb("byClimb", "<=", RECORD_ROWS),
-          eb("byMoving", "<=", RECORD_ROWS),
         ]),
       )
       .execute(),
@@ -438,11 +433,6 @@ export async function queryRideRecords(
       day: wallClock(row.startedAt, row.timezone).slice(0, 10),
       distanceM: Math.round(row.distanceM ?? 0),
       climbM: row.elevationM === null ? null : Math.round(row.elevationM),
-      movingS: row.movingS === null ? null : Math.round(row.movingS),
-      watts:
-        row.powerSource === "measured" && row.averageWatts !== null
-          ? Math.round(row.averageWatts)
-          : null,
     })),
     points.map((point) => ({
       id: point.activityId,

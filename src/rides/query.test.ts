@@ -276,11 +276,9 @@ describe("queryRideRecords", () => {
       ride("latest"),
       ride("old", { startedAt: "2019-05-01T15:00:00Z", distanceM: 200_000 }),
       ride("hill", { startedAt: "2020-05-01T15:00:00Z", elevationM: 3_000 }),
-      ride("long-day", {
+      ride("short", {
         startedAt: "2020-06-01T15:00:00Z",
         distanceM: 30_000,
-        movingS: 30_000,
-        averageWatts: 181.6,
       }),
     );
 
@@ -293,26 +291,15 @@ describe("queryRideRecords", () => {
       "2019",
     ]);
     const all = period(periods, "all");
-    expect(ids(all.longest)).toEqual(["old", "latest", "hill", "long-day"]);
+    expect(ids(all.longest)).toEqual(["old", "latest", "hill", "short"]);
     expect(all.climbing[0]).toEqual([
       "hill",
       "Ride hill",
       "2020-05-01",
       40_000,
       3_000,
-      5_400,
-      200,
     ]);
-    expect(all.days[0]).toEqual([
-      "long-day",
-      "Ride long-day",
-      "2020-06-01",
-      30_000,
-      600,
-      30_000,
-      182,
-    ]);
-    expect(ids(period(periods, "2020").longest)).toEqual(["hill", "long-day"]);
+    expect(ids(period(periods, "2020").longest)).toEqual(["hill", "short"]);
     expect(ids(period(periods, "2019").longest)).toEqual(["old"]);
   });
 
@@ -362,7 +349,6 @@ describe("queryRideRecords", () => {
       ids(
         period(periods, "2025").longest.concat(
           period(periods, "2025").climbing,
-          period(periods, "2025").days,
         ),
       ),
     ).toContain("eve");
@@ -391,7 +377,6 @@ describe("queryRideRecords", () => {
     for (const records of await queryRideRecords(db)) {
       expect(ids(records.longest)).toEqual(["road"]);
       expect(ids(records.climbing)).toEqual(["road"]);
-      expect(ids(records.days)).toEqual(["road"]);
       expect(records.power).toEqual([
         [60, 400, "road", "Ride road", "2026-09-20"],
       ]);
@@ -430,8 +415,6 @@ describe("queryRideRecords", () => {
       [60, 450],
       [1200, 280],
     ]);
-    const days = period(periods, "all").days;
-    expect(days.find(([id]) => id === "guess")?.[6]).toBeNull();
   });
 
   it("answers a period with the list of every period", async () => {
@@ -451,7 +434,6 @@ describe("queryRideRecords", () => {
         power: [],
         longest: [],
         climbing: [],
-        days: [],
       },
     });
   });

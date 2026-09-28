@@ -301,8 +301,8 @@ month, and a section mounts as soon as it is scrolled to.
 ## Ride Records
 
 The Records view on `/rides` ranks all time and each year: best power over five
-durations, and the five longest rides, rides with the most climbing, and longest
-days moving. `queryRideRecords` in `src/rides/query.ts` reads only each year's
+durations, and the five longest rides and rides with the most climbing.
+`queryRideRecords` in `src/rides/query.ts` reads only each year's
 leaders, and `rankPeriods` in `src/rides/records.ts` ranks them.
 
 A year is the ride's local year, which differs from its UTC year only for a ride

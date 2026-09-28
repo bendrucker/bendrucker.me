@@ -98,7 +98,12 @@ function metered(day: string): boolean {
   return day >= "2025";
 }
 
-const recordRows: RecordRow[] = [...allRows, ...earlierRecordRows]
+interface MeteredRow extends RecordRow {
+  movingS: number;
+  watts: number | null;
+}
+
+const recordRows: MeteredRow[] = [...allRows, ...earlierRecordRows]
   .filter((ride) => ride.distanceM !== null && ride.distanceM > 0)
   .map((ride, index) => ({
     id: ride.id,
@@ -125,7 +130,7 @@ const powerPoints: PowerPoint[] = recordRows.flatMap((ride, index) =>
     ? []
     : LADDER_DURATIONS.filter(
         // A short ride never holds an hour, so it has no point there.
-        (durationS) => (ride.movingS ?? 0) >= durationS,
+        (durationS) => ride.movingS >= durationS,
       ).map((durationS) => ({
         id: ride.id,
         name: ride.name,

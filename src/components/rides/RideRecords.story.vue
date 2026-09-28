@@ -90,8 +90,8 @@ function matches(q: string) {
 # Ride records
 
 The Records view on `/rides`: for all time and for each year, the best power
-over five durations and the five longest rides, rides with the most climbing,
-and longest days moving. Every row opens its ride.
+over five durations, the five longest rides, and the rides with the most
+climbing. Every row opens its ride.
 
 The page renders the period it opened on, and the picker fetches the others.
 Here a stand-in answers from the fixtures, and "other periods: fail" shows the

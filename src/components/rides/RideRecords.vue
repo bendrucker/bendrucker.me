@@ -6,7 +6,6 @@ import ItemRow from "@/components/parts/ItemRow.vue";
 import SectionHead from "@/components/parts/SectionHead.vue";
 import SelectControl from "@/components/parts/SelectControl.vue";
 import TimelineGutter from "@/components/parts/TimelineGutter.vue";
-import { formatDuration } from "@/rides/stats";
 import { climbFigure, distanceFigure, gutterSub } from "@/rides/format";
 import { rideHref } from "@/rides/links";
 import { isHilly, rankRecords, type Records } from "@/rides/rank";
@@ -137,27 +136,24 @@ const LADDER_LABELS = new Map<number, string>(
   POWER_LADDER.map(({ durationS, label }) => [durationS, label]),
 );
 
-function recordLists(records: PeriodRecords): ShownList[] {
-  const rows = (
-    tuples: RecordTuple[],
-    figure: (row: RecordRow) => string | undefined,
-    text?: (row: RecordRow) => string | undefined,
-  ): ShownRow[] =>
-    tuples.map((tuple) => {
-      const row = fromRecordTuple(tuple);
-      const shownRow: ShownRow = {
-        key: row.id,
-        id: row.id,
-        title: row.name,
-        day: row.day,
-        figure: figure(row),
-        hilly: isHilly(row),
-      };
-      const detail = text?.(row);
-      if (detail !== undefined) shownRow.text = detail;
-      return shownRow;
-    });
+function rows(
+  tuples: RecordTuple[],
+  figure: (row: RecordRow) => string | undefined,
+): ShownRow[] {
+  return tuples.map((tuple) => {
+    const row = fromRecordTuple(tuple);
+    return {
+      key: row.id,
+      id: row.id,
+      title: row.name,
+      day: row.day,
+      figure: figure(row),
+      hilly: isHilly(row),
+    };
+  });
+}
 
+function recordLists(records: PeriodRecords): ShownList[] {
   return [
     {
       key: "power",
@@ -187,17 +183,6 @@ function recordLists(records: PeriodRecords): ShownList[] {
       none: "No climbing.",
       rows: rows(records.climbing, (row) =>
         climbFigure(row.climbM, props.units),
-      ),
-    },
-    {
-      key: "days",
-      label: "Longest days",
-      none: "No moving time.",
-      rows: rows(
-        records.days,
-        (row) =>
-          row.movingS === null ? undefined : formatDuration(row.movingS),
-        (row) => (row.watts === null ? undefined : `${row.watts} W average`),
       ),
     },
   ];

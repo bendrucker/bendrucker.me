@@ -15,8 +15,6 @@ function row(id: string, day: string, overrides: Partial<RecordRow> = {}) {
     day,
     distanceM: 40_000,
     climbM: 600,
-    movingS: 5_400,
-    watts: null,
     ...overrides,
   } satisfies RecordRow;
 }

@@ -28,19 +28,10 @@ export const LADDER_DURATIONS: number[] = POWER_LADDER.map(
 export const RECORD_ROWS = 5;
 
 /**
- * A ranked ride: `[id, name, day, distanceM, climbM, movingS, watts]`. Every
- * one went somewhere, so the distance is never null. Watts are a power
- * meter's average, and null for a ride without one.
+ * A ranked ride: `[id, name, day, distanceM, climbM]`. Every one went
+ * somewhere, so the distance is never null.
  */
-export type RecordTuple = [
-  string,
-  string,
-  string,
-  number,
-  number | null,
-  number | null,
-  number | null,
-];
+export type RecordTuple = [string, string, string, number, number | null];
 
 /** A power best: `[durationS, watts, id, name, day]`. */
 export type PowerTuple = [number, number, string, string, string];
@@ -52,8 +43,6 @@ export interface PeriodRecords {
   power: PowerTuple[];
   longest: RecordTuple[];
   climbing: RecordTuple[];
-  /** The longest time moving. */
-  days: RecordTuple[];
 }
 
 /** What the view renders from: one period, and every period it can pick. */
@@ -68,8 +57,6 @@ const recordTuple = z.tuple([
   z.string(),
   z.string(),
   z.number(),
-  z.nullable(z.number()),
-  z.nullable(z.number()),
   z.nullable(z.number()),
 ]) satisfies z.ZodMiniType<RecordTuple>;
 
@@ -88,7 +75,6 @@ export const recordsPage = z.object({
     power: z.array(powerTuple),
     longest: z.array(recordTuple),
     climbing: z.array(recordTuple),
-    days: z.array(recordTuple),
   }),
 }) satisfies z.ZodMiniType<RecordsPage>;
 
@@ -118,8 +104,6 @@ export interface RecordRow {
   day: string;
   distanceM: number;
   climbM: number | null;
-  movingS: number | null;
-  watts: number | null;
 }
 
 /** A ride's best power over one duration. */
@@ -132,8 +116,8 @@ export interface PowerPoint {
 }
 
 export function toRecordTuple(row: RecordRow): RecordTuple {
-  const { id, name, day, distanceM, climbM, movingS, watts } = row;
-  return [id, name, day, distanceM, climbM, movingS, watts];
+  const { id, name, day, distanceM, climbM } = row;
+  return [id, name, day, distanceM, climbM];
 }
 
 export function fromRecordTuple([
@@ -142,10 +126,8 @@ export function fromRecordTuple([
   day,
   distanceM,
   climbM,
-  movingS,
-  watts,
 ]: RecordTuple): RecordRow {
-  return { id, name, day, distanceM, climbM, movingS, watts };
+  return { id, name, day, distanceM, climbM };
 }
 
 /**
@@ -188,7 +170,7 @@ export function pickRecords(
   if (period !== ALL_TIME) return null;
   return {
     periods: [ALL_TIME],
-    records: { period, power: [], longest: [], climbing: [], days: [] },
+    records: { period, power: [], longest: [], climbing: [] },
   };
 }
 
@@ -230,6 +212,5 @@ function rankPeriod(
     power,
     longest: top((row) => row.distanceM),
     climbing: top((row) => row.climbM),
-    days: top((row) => row.movingS),
   };
 }
