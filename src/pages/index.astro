@@ -1,20 +1,39 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import CodeFeature from "@/components/parts/CodeFeature.vue";
 import HomeCard from "@/components/parts/HomeCard.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
+import RideFeature from "@/components/parts/RideFeature.vue";
 import { KIND_ICONS } from "@/components/parts/icons";
 import PosterShelf from "@/components/media/PosterShelf.vue";
 import RecordShelf from "@/components/media/RecordShelf.vue";
-import { homeCredits } from "@/categories";
+import { homeCredits, type CategoryId } from "@/categories";
 import { SITE } from "@/config";
 import { desktopOnly } from "@/home/cards";
 import { loadHome } from "@/home/load";
-import { distanceFigure } from "@/rides/format";
+import { climbFigure, distanceFigure } from "@/rides/format";
 import { rideHref } from "@/rides/links";
 import { isHilly } from "@/rides/rank";
 
-const cards = await loadHome();
+const { cards, features } = await loadHome();
 const credits = homeCredits(cards.map((card) => card.id));
+if (features.rides?.route) credits.push("maps");
+
+// Rides and Code lead with a feature and rest taller. Desktop raises them
+// only when they share the first row, so every row's cards stand level.
+const pairedFeatures = cards[0]?.id === "rides" && cards[1]?.id === "code";
+function tallness(id: CategoryId) {
+  if (id !== "rides" && id !== "code") return undefined;
+  return pairedFeatures ? "always" : "phone";
+}
+
+const ride = features.rides;
+const rideFigures = ride
+  ? [
+      distanceFigure(ride.ride.distanceM, "imperial"),
+      climbFigure(ride.ride.climbM, "imperial"),
+    ].filter((figure) => figure !== undefined)
+  : [];
 ---
 
 <Layout
@@ -37,13 +56,37 @@ const credits = homeCredits(cards.map((card) => card.id));
       class="flex flex-col gap-2 px-4 pt-3 pb-6 md:gap-4 md:px-12 md:pt-7 md:pb-10"
     >
       <h2 class="label-caps text-dim md:sr-only">Lately</h2>
-      <!-- Every card rests at the same height, so the rows line up and the
-           grid ends on one flat edge. An open card grows down past its row
-           and its neighbour keeps its resting height at the row's top. -->
+      <!-- Every card in a row rests at the same height, so the rows line up
+           and the grid ends on one flat edge. Rides and Code, which lead with
+           a feature, share the first row at a taller peek. An open card grows
+           down past its row and its neighbour keeps its resting height at the
+           row's top. -->
       <div class="grid grid-cols-1 items-start gap-2 md:grid-cols-2 md:gap-4">
         {
           cards.map((card) => (
-            <HomeCard id={card.id}>
+            <HomeCard id={card.id} tall={tallness(card.id)}>
+              {card.id === "rides" && ride && (
+                <RideFeature
+                  href={rideHref(ride.ride.id, "imperial")}
+                  name={ride.ride.name}
+                  figures={rideFigures}
+                  hilly={isHilly(ride.ride)}
+                  id={ride.ride.id}
+                  route={ride.route}
+                  photo={ride.photo}
+                />
+              )}
+              {card.id === "code" && features.code && (
+                <CodeFeature
+                  href={features.code.row.href}
+                  title={features.code.row.title}
+                  org={features.code.row.org || undefined}
+                  text={features.code.row.text || undefined}
+                  lead={features.code.row.lead}
+                  dot={features.code.row.dot}
+                  latest={features.code.latest}
+                />
+              )}
               {card.id === "rides" && (
                 <ul class="flex flex-col gap-0.5 md:gap-1">
                   {card.items.map((ride) => (
@@ -106,6 +149,7 @@ const credits = homeCredits(cards.map((card) => card.id));
               {card.id === "watching" && (
                 <PosterShelf
                   client:visible
+                  layout="home"
                   items={card.items.map((row, i) => ({
                     ...row,
                     desktopOnly: desktopOnly(i),
@@ -115,6 +159,7 @@ const credits = homeCredits(cards.map((card) => card.id));
               {card.id === "listening" && (
                 <RecordShelf
                   client:visible
+                  layout="home"
                   items={card.items.map((row, i) => ({
                     ...row,
                     desktopOnly: desktopOnly(i),

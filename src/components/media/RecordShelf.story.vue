@@ -8,10 +8,12 @@ import RecordShelf from "./RecordShelf.vue";
 const controls: StoryControlSet = {
   count: { type: "slider", title: "records", min: 1, max: 5 },
   width: { type: "slider", title: "width", min: 240, max: 680, step: 10 },
+  layout: { type: "select", title: "layout", options: ["route", "home"] },
 };
 
 async function initState() {
-  return { feed: await storyFeed("listening"), count: 3, width: 358 };
+  const layout: "route" | "home" = "route";
+  return { feed: await storyFeed("listening"), count: 3, width: 358, layout };
 }
 </script>
 
@@ -29,7 +31,10 @@ async function initState() {
           class="rounded-2xl bg-background p-2 cat-listening"
           :style="{ width: `${state.width}px`, maxWidth: '100%' }"
         >
-          <RecordShelf :items="storyHighlights(state.feed, state.count)" />
+          <RecordShelf
+            :items="storyHighlights(state.feed, state.count)"
+            :layout="state.layout"
+          />
         </div>
       </template>
 
@@ -47,6 +52,11 @@ Listening's highlights, ranked by plays: three on a phone, five from the
 desktop breakpoint up. An album sits in its sleeve with the disc peeking out
 behind it, labelled in the color the fixture gives it. A podcast is a square
 cover with a podcast badge and no disc.
+
+The `home` layout is the home card's: the title and artist come first and the
+sleeve sits beneath them, capped at 56px on a phone and 72px on desktop, so a
+card cut short at its peek still names each record. The Listening route keeps
+the default `route` layout.
 
 Hover slides the disc further out over 0.55s. A tap slides it out over 0.45s,
 spins it once clear of the sleeve, then opens the link in a new tab. It slides

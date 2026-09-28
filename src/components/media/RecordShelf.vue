@@ -18,9 +18,32 @@ export interface ShelfRecord {
   desktopOnly?: boolean;
 }
 
-defineProps<{ items: readonly ShelfRecord[] }>();
+const props = withDefaults(
+  defineProps<{
+    items: readonly ShelfRecord[];
+    /**
+     * `home` puts the words above a smaller sleeve, so a card cut short at its
+     * peek still names what's on it and the art stands back from the work.
+     */
+    layout?: "route" | "home";
+  }>(),
+  { layout: "route" },
+);
 
 const { playing, open } = useOutbound();
+
+/** The item's share of the row and its sleeve's side, capped on home. */
+function itemSize(type: string): string {
+  const home = props.layout === "home";
+  if (type === "Album") {
+    return home
+      ? "grow-[1.45] [--s:min(calc(100cqi/1.45),56px)] md:[--s:min(calc(100cqi/1.45),72px)]"
+      : "grow-[1.45] [--s:calc(100cqi/1.45)]";
+  }
+  return home
+    ? "grow [--s:min(100cqi,56px)] md:[--s:min(100cqi,72px)]"
+    : "grow [--s:100cqi]";
+}
 
 /**
  * Vinyl: the label at the center in the album's color, a pair of highlights
@@ -38,19 +61,16 @@ const VINYL = [
     Each item sizes itself from its own width, a container: `--s` is the
     sleeve's side and `--o` the room either side of it, which the record slides
     right into as the sleeve slides left. An album is 1.45 sleeves wide to hold
-    its record, and a podcast is a sleeve alone.
+    its record, and a podcast is a sleeve alone. On home the sleeve stops at
+    56px on a phone and 72px on desktop, matching the posters' width, and the
+    item's leftover width goes to its words.
   -->
   <ul class="flex gap-3 md:gap-4">
     <li
       v-for="item in items"
       :key="item.key"
       class="@container flex min-w-0 basis-0"
-      :class="[
-        item.type === 'Album'
-          ? 'grow-[1.45] [--s:calc(100cqi/1.45)]'
-          : 'grow [--s:100cqi]',
-        item.desktopOnly ? 'max-md:hidden' : '',
-      ]"
+      :class="[itemSize(item.type), item.desktopOnly ? 'max-md:hidden' : '']"
     >
       <a
         :href="item.url"
@@ -62,11 +82,12 @@ const VINYL = [
       >
         <span
           class="relative block h-(--s)"
-          :class="
+          :class="[
             item.type === 'Album'
               ? 'w-[calc(var(--s)*1.45)] [--o:calc(var(--s)*.225)]'
-              : 'w-(--s) [--o:0px]'
-          "
+              : 'w-(--s) [--o:0px]',
+            layout === 'home' ? 'order-last mt-0.5' : '',
+          ]"
         >
           <!-- Pulling a record: it catches on the sleeve, glides once free,
                and settles with a hair of overshoot. Going back is quicker. -->
@@ -116,12 +137,19 @@ const VINYL = [
             </span>
           </span>
         </span>
-        <span class="line-clamp-2 w-full text-sm leading-snug text-balance">{{
-          item.title
-        }}</span>
+        <span
+          class="w-full leading-snug"
+          :class="
+            layout === 'home'
+              ? 'line-clamp-1 text-xs'
+              : 'line-clamp-2 text-sm text-balance'
+          "
+          >{{ item.title }}</span
+        >
         <span
           v-if="item.text"
-          class="-mt-1 line-clamp-1 w-full text-xs text-dim"
+          class="line-clamp-1 w-full text-dim"
+          :class="layout === 'home' ? '-mt-1.5 text-[11px]' : '-mt-1 text-xs'"
           >{{ item.text }}</span
         >
         <span class="sr-only">Opens {{ item.via }}</span>

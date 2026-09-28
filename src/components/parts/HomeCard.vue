@@ -2,7 +2,16 @@
 import { computed } from "vue";
 import { category, type CategoryId } from "@/categories";
 
-const props = defineProps<{ id: CategoryId }>();
+const props = defineProps<{
+  id: CategoryId;
+  /**
+   * Rests the drawer taller, for a card that leads with a feature. `phone`
+   * raises it only where the cards stack, since on desktop its row partner
+   * would stand shorter. `always` raises it at both widths, for a pair of
+   * featured cards that share a row.
+   */
+  tall?: "phone" | "always";
+}>();
 
 const cat = computed(() => category(props.id));
 const drawerId = computed(() => `${props.id}-drawer`);
@@ -41,8 +50,19 @@ const drawerId = computed(() => `${props.id}-drawer`);
         />
       </a>
     </h2>
-    <div :id="drawerId" data-drawer class="drawer">
-      <div data-drawer-body>
+    <div
+      :id="drawerId"
+      data-drawer
+      class="drawer"
+      :class="
+        tall === 'always'
+          ? 'drawer-tall'
+          : tall === 'phone'
+            ? 'drawer-tall-phone'
+            : ''
+      "
+    >
+      <div data-drawer-body class="flex flex-col gap-3">
         <slot />
       </div>
     </div>
@@ -99,10 +119,21 @@ const drawerId = computed(() => `${props.id}-drawer`);
     --drawer-fade 0.4s;
 }
 
+/* A featured card rests tall enough to show its feature whole with a row
+   beneath it, so the work Ben does stands taller than what he consumes. */
+.drawer-tall,
+.drawer-tall-phone {
+  --drawer-peek: 280px;
+}
+
 @media (width >= 48rem) {
   .drawer {
     --drawer-peek: 208px;
     --drawer-room: 20px;
+  }
+
+  .drawer-tall {
+    --drawer-peek: 288px;
   }
 }
 
