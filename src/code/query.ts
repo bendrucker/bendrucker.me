@@ -59,6 +59,30 @@ function repoRows(db: Kysely<Database>) {
     .orderBy("repos.id", "desc");
 }
 
+/**
+ * The repositories with a pull request or issue on record. One without either
+ * is left off every list and page, since it would have nothing to show.
+ */
+function workedRepoRows(db: Kysely<Database>) {
+  return repoRows(db).having((eb) =>
+    eb.or([
+      eb(sql<number>`sum(${sql.ref("repoActivity.prCount")})`, ">", 0),
+      eb.exists(
+        eb
+          .selectFrom("pullRequests")
+          .whereRef("pullRequests.repoId", "=", "repos.id")
+          .select("pullRequests.id"),
+      ),
+      eb.exists(
+        eb
+          .selectFrom("issues")
+          .whereRef("issues.repoId", "=", "repos.id")
+          .select("issues.id"),
+      ),
+    ]),
+  );
+}
+
 function pullRows(db: Kysely<Database>) {
   return db
     .selectFrom("pullRequests")
@@ -187,9 +211,7 @@ function scored(repo: CodeRepo): ScoredRepo {
 
 /**
  * The repositories touched inside the window, most recent first, each with
- * the pull requests and issues opened in it since the window began. One with
- * no pull request or issue on record is left out, since its page would have
- * nothing to show.
+ * the pull requests and issues opened in it since the window began.
  */
 export async function queryCodeRows(
   db: Kysely<Database>,
@@ -199,28 +221,11 @@ export async function queryCodeRows(
   const fromIso = window.from.toISOString();
 
   const [repos, pulls, issues] = await Promise.all([
-    repoRows(db)
+    workedRepoRows(db)
       .having(
         sql<number>`max(${sql.ref("repoActivity.lastActivity")})`,
         ">=",
         fromSeconds,
-      )
-      .having((eb) =>
-        eb.or([
-          eb(sql<number>`sum(${sql.ref("repoActivity.prCount")})`, ">", 0),
-          eb.exists(
-            eb
-              .selectFrom("pullRequests")
-              .whereRef("pullRequests.repoId", "=", "repos.id")
-              .select("pullRequests.id"),
-          ),
-          eb.exists(
-            eb
-              .selectFrom("issues")
-              .whereRef("issues.repoId", "=", "repos.id")
-              .select("issues.id"),
-          ),
-        ]),
       )
       .execute(),
     pullRows(db).where("pullRequests.createdAt", ">=", fromIso).execute(),
@@ -361,13 +366,13 @@ export interface RepoPage {
   stats: RepoStats;
 }
 
-/** One repository with everything stored for it, or null when there is none. */
+/** One repository with everything stored for it, or null when it has no work. */
 export async function queryRepo(
   db: Kysely<Database>,
   owner: string,
   name: string,
 ): Promise<RepoPage | null> {
-  const row = await repoRows(db)
+  const row = await workedRepoRows(db)
     .where("repos.owner", "=", owner)
     .where("repos.name", "=", name)
     .executeTakeFirst();
@@ -392,7 +397,8 @@ export interface ProjectPage {
 
 /**
  * A configured family by its id, or someone else's organization by its login,
- * over every repository stored for it. Null when that leaves fewer than two.
+ * over every repository with work stored for it. Null when that leaves fewer
+ * than two.
  * Passing an empty `configured` reads the id as an organization only.
  */
 export async function queryProject(
@@ -403,7 +409,7 @@ export async function queryProject(
   const configured = families.find((project) => project.id === id);
   if (!configured && id === SITE.githubUsername) return null;
 
-  const rows = await repoRows(db)
+  const rows = await workedRepoRows(db)
     .where((eb) =>
       configured
         ? eb.or(

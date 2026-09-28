@@ -252,8 +252,11 @@ describe("code queries", () => {
       });
     });
 
-    it("is null for a repository with nothing stored", async () => {
-      expect(await queryRepo(db, "bendrucker", "missing")).toBeNull();
+    it.each([
+      { name: "nothing stored", repo: "missing" },
+      { name: "no pull request or issue on record", repo: "homebrew-tap" },
+    ])("is null for a repository with $name", async ({ repo }) => {
+      expect(await queryRepo(db, "bendrucker", repo)).toBeNull();
     });
   });
 
@@ -278,6 +281,29 @@ describe("code queries", () => {
         repositories: 2,
         since: "2023-08-01T00:00:00.000Z",
       });
+    });
+
+    it("leaves out a member with no pull request or issue on record", async () => {
+      await syncActivity(testStore(db), [
+        org("tflint-ruleset-opa", { activitySummary: activity(0) }),
+      ]);
+
+      const page = await queryProject(db, "terraform-linters");
+
+      expect(page?.project.members.map((member) => member.name)).toEqual([
+        "tflint",
+        "tflint-ruleset-aws",
+      ]);
+      expect(page?.stats.repositories).toBe(2);
+    });
+
+    it("is null when leaving out members with no work leaves fewer than two", async () => {
+      await syncActivity(testStore(db), [
+        makeRepo({ name: "creditcards" }),
+        makeRepo({ name: "creditcards-types", activitySummary: activity(0) }),
+      ]);
+
+      expect(await queryProject(db, "creditcards")).toBeNull();
     });
 
     it("finds a configured family of the owner's repositories", async () => {
