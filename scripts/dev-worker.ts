@@ -162,6 +162,12 @@ function stop(): void {
   try {
     process.kill(-running.pid, "SIGTERM");
   } catch (error) {
+    // Exited since readState saw it alive.
+    if (isErrno(error, "ESRCH")) {
+      writeFileSync(PID_FILE, "");
+      logger.info(running, "Dev worker already stopped");
+      return;
+    }
     if (!isErrno(error, "EPERM")) throw error;
     logger.error(
       running,
@@ -182,7 +188,14 @@ function readState(): State | null {
   if (!existsSync(PID_FILE)) return null;
   const contents = readFileSync(PID_FILE, "utf-8");
   if (contents === "") return null;
-  const parsed = state.safeParse(JSON.parse(contents));
+  let json: unknown;
+  try {
+    json = JSON.parse(contents);
+  } catch {
+    // A write cut short leaves a torn file, read the same as an empty one.
+    return null;
+  }
+  const parsed = state.safeParse(json);
   if (!parsed.success) return null;
   try {
     process.kill(parsed.data.pid, 0);
