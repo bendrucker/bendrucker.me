@@ -174,10 +174,20 @@ from saving a file to the browser showing it under `astro dev`:
   `.astro` save went from about 490ms to 290ms.
 - Astro writes its content store 50ms after a change rather than 500ms, and
   the reload waits on that write. A `.md` save went from about 780ms to 520ms.
+- Astro tells workerd which module holds the content store when it changes.
+  Unpatched, it only reaches a server environment Vite runs in-process, and
+  workerd picked up content only because Tailwind's scan of the posts sent a
+  reload that re-ran every module. `global.css` now keeps posts out of that
+  scan, and a `.md` save went from about 610ms to 310ms.
 
 A bump that moves the patched code fails the install. Regenerate the patch
 with `npx patch-package <package>` (the plugin's is
 `@astrojs/cloudflare/@cloudflare/vite-plugin`) or drop it.
+
+patch-package cannot apply an edited patch over the previous version of it,
+and a new worktree starts from its base's patched `node_modules`. After a patch
+changes, reinstall that package (`rm -rf node_modules/<package> && npm install`)
+wherever the old one was applied.
 
 ### New Worktrees
 
