@@ -15,10 +15,15 @@ export interface CachePolicy {
 /**
  * The pages that render from the activity database, whose freshness tracks
  * the hourly sync rather than the deploy. The homepage lists the same rows
- * the activity pages do.
+ * the activity pages do, and the Code route lists them by repository.
  */
 export function isActivityPath(pathname: string): boolean {
-  return pathname === "/" || pathname.startsWith("/activity");
+  return (
+    pathname === "/" ||
+    pathname.startsWith("/activity") ||
+    pathname === "/code" ||
+    pathname.startsWith("/code/")
+  );
 }
 
 export function activityCachePolicy(now: Date): CachePolicy {

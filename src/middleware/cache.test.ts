@@ -38,9 +38,13 @@ describe("isActivityPath", () => {
     expect(isActivityPath("/activity/code")).toBe(true);
     expect(isActivityPath("/activity/code/2024")).toBe(true);
     expect(isActivityPath("/")).toBe(true);
+    expect(isActivityPath("/code")).toBe(true);
+    expect(isActivityPath("/code/terraform-linters")).toBe(true);
+    expect(isActivityPath("/code/bendrucker/bendrucker.me")).toBe(true);
   });
 
   it("leaves everything else to routeRules", () => {
+    expect(isActivityPath("/codex")).toBe(false);
     expect(isActivityPath("/about")).toBe(false);
     expect(isActivityPath("/posts/some-post")).toBe(false);
     expect(isActivityPath("/llms.txt")).toBe(false);

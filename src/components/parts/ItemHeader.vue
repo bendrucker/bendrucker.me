@@ -36,19 +36,34 @@ withDefaults(
       <div class="flex min-w-0 flex-1 flex-col gap-1">
         <p v-if="date" class="label-caps">{{ date }}</p>
         <p v-if="org" class="text-[13px] text-dim">{{ org }}</p>
-        <h1
-          class="font-bold tracking-[-0.01em] wrap-anywhere text-foreground"
+        <!-- A mark before the title or an action after it shares its line.
+             Without either the wrapper is `contents`, and lays out as if
+             absent. -->
+        <div
           :class="
-            size === 'post'
-              ? 'text-[26px] leading-[1.15] md:text-[34px]'
-              : 'text-2xl leading-[1.2] md:text-3xl'
-          "
-          :style="
-            transitionName ? { viewTransitionName: transitionName } : undefined
+            $slots.mark || $slots['title-end']
+              ? 'flex items-center gap-2.5'
+              : 'contents'
           "
         >
-          {{ title }}
-        </h1>
+          <slot name="mark" />
+          <h1
+            class="min-w-0 font-bold tracking-[-0.01em] wrap-anywhere text-foreground"
+            :class="
+              size === 'post'
+                ? 'text-[26px] leading-[1.15] md:text-[34px]'
+                : 'text-2xl leading-[1.2] md:text-3xl'
+            "
+            :style="
+              transitionName
+                ? { viewTransitionName: transitionName }
+                : undefined
+            "
+          >
+            {{ title }}
+          </h1>
+          <slot name="title-end" />
+        </div>
         <p
           v-if="dek"
           class="text-dim"

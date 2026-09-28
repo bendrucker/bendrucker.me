@@ -227,6 +227,21 @@ describe("code queries", () => {
       expect(page?.stats.repositories).toBe(2);
     });
 
+    it("reads an id as an organization alone when told there are no families", async () => {
+      await syncActivity(testStore(db), [
+        makeRepo({ name: "creditcards" }),
+        makeRepo({ name: "creditcards-types" }),
+      ]);
+
+      expect(
+        await queryProject(db, "creditcards", { configured: [] }),
+      ).toBeNull();
+      expect(
+        (await queryProject(db, "terraform-linters", { configured: [] }))
+          ?.project.title,
+      ).toBe("TFLint");
+    });
+
     it.each(["someone", "bendrucker", "nobody"])(
       "is null for %s, which is not a project",
       async (id) => {

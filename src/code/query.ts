@@ -3,7 +3,14 @@
 import { sql, type InferResult, type Kysely } from "kysely";
 import { SITE } from "@/config";
 import type { Database } from "@/db";
-import { PROJECTS, isMine, projects, repoScore, type Project } from "./rank";
+import {
+  PROJECTS,
+  isMine,
+  projects,
+  repoScore,
+  type Project,
+  type ProjectOptions,
+} from "./rank";
 import type {
   CodeRepo,
   CodeStats,
@@ -336,12 +343,14 @@ export interface ProjectPage {
 /**
  * A configured family by its id, or someone else's organization by its login,
  * over every repository stored for it. Null when that leaves fewer than two.
+ * Passing an empty `configured` reads the id as an organization only.
  */
 export async function queryProject(
   db: Kysely<Database>,
   id: string,
+  { configured: families = PROJECTS }: ProjectOptions = {},
 ): Promise<ProjectPage | null> {
-  const configured = PROJECTS.find((project) => project.id === id);
+  const configured = families.find((project) => project.id === id);
   if (!configured && id === SITE.githubUsername) return null;
 
   const rows = await repoRows(db)
