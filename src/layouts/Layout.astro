@@ -4,6 +4,7 @@ import { PUBLIC_GOOGLE_SITE_VERIFICATION } from "astro:env/client";
 import { SITE } from "@/config";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
+import Morph from "@/components/Morph.astro";
 import { representationFor } from "@/representations";
 import type { Credit } from "@/categories";
 import "@/styles/global.css";
@@ -23,6 +24,12 @@ export interface Props {
   credits?: readonly Credit[];
   /** Keeps the page out of search indexes, for pages of other people's work. */
   noindex?: boolean;
+  /**
+   * Ships the script that morphs a row into its item's page and back. A page
+   * the morph only lands on can leave it out: the navigation into it runs the
+   * list's copy, which stays loaded for the trip back.
+   */
+  morph?: boolean;
 }
 
 const {
@@ -38,6 +45,7 @@ const {
   sourcePath,
   credits = [],
   noindex = false,
+  morph = true,
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.url);
@@ -171,6 +179,7 @@ const structuredData = pubDatetime
     }
 
     <ClientRouter />
+    {morph && <Morph />}
 
     <script is:inline src="/toggle-theme.js"></script>
     <script is:inline src="/favicon-theme.js"></script>
@@ -181,7 +190,3 @@ const structuredData = pubDatetime
     <Footer sourcePath={sourcePath} credits={credits} />
   </body>
 </html>
-
-<script>
-  import "@/transitions/morph";
-</script>

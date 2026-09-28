@@ -9,8 +9,11 @@
 // two elements sharing a name abort the whole transition. Naming every row
 // would also lift each one out of the list's snapshot to fade on its own.
 //
-// This script ships on every page. The Rides list's saved place is loaded only
-// by a navigation to or from that list, so a post carries none of its code.
+// This script ships on every page but a post, which keeps post pages to the
+// router and the theme toggle. The navigation into a post runs the list's copy,
+// which stays loaded for the trip back, so only a reader who lands on a post
+// directly gets a crossfade instead of the shrink on the way out. The Rides
+// list's saved place is loaded only by a navigation to or from that list.
 import {
   TransitionBeforePreparationEvent,
   TransitionBeforeSwapEvent,
