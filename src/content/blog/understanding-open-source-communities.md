@@ -3,6 +3,7 @@ author: Ben Drucker
 pubDatetime: 2014-05-23T12:00:00Z
 title: Understanding Open Source Communities
 draft: false
+featured: true
 tags:
   - Software
   - Open Source
@@ -11,7 +12,7 @@ description: There is no "open source community"
 
 It's pretty humbling to think about just how much value is freely available to us as developers in 2014. Even a relatively small project stands on the shoulders of giants. Open source code powers big and small components alike: everything from server infrastructure to the most minute stylistic details of our programs.
 
-I've emphasized before that, monolithic as this ecosystem may be, it's [built entirely by regular, air-breathing human beings just like you and me](http://www.bendrucker.me/posts/how-to-start-contributing-to-open-source/). I've found "soft skills" to be just as essential as hard technical knowledge. Contributing to open source projects demands an ability to cooperate: setting goals, dividing work, clearly communicating ideas, and resolving conflicts. Coordination is made all the more difficult by the fact that most open source teams never meet in person, span multiple time zones, and contribute in their leisure time, rather than during the workday.
+I've emphasized before that, monolithic as this ecosystem may be, it's [built entirely by regular, air-breathing human beings just like you and me](/writing/how-to-start-contributing-to-open-source). I've found "soft skills" to be just as essential as hard technical knowledge. Contributing to open source projects demands an ability to cooperate: setting goals, dividing work, clearly communicating ideas, and resolving conflicts. Coordination is made all the more difficult by the fact that most open source teams never meet in person, span multiple time zones, and contribute in their leisure time, rather than during the workday.
 
 ## Open Source Microcosms
 

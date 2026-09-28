@@ -16,8 +16,21 @@ export interface MarkPart {
   hit: boolean;
 }
 
+/**
+ * The class a match's `<mark>` takes, shared by `MarkedText` and Writing's
+ * script so a match looks the same typed as loaded. The text takes the
+ * foreground rather than inheriting, since a description's dim text falls
+ * under 4.5:1 against the tint.
+ */
+export const MARK_CLASS =
+  "-mx-px rounded-[3px] bg-cat/24 px-px text-foreground";
+
+/**
+ * Escapes what a pattern reads as syntax outside a character class. Under the
+ * `u` flag, escaping anything else, like `-`, is itself a syntax error.
+ */
 function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\/-]/g, String.raw`\$&`);
+  return text.replace(/[.*+?^${}()|[\]\\/]/g, String.raw`\$&`);
 }
 
 /**

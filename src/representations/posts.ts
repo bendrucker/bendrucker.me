@@ -1,28 +1,31 @@
 import { getCollection } from "astro:content";
-import { getPath } from "@/blog/path";
+import { writingPath } from "@/blog/path";
 import { getSortedPosts, postFilter } from "@/blog/posts";
+import { isEnabled } from "@/config";
 import type { Representation } from "./types";
 
-export const posts: Representation = {
-  route: "/posts/[...slug]",
-  section: "Posts",
+/** Each post as markdown at `/writing/<slug>`, listed once in `/llms.txt`. */
+export const writing: Representation = {
+  route: "/writing/[...slug]",
+  section: "Writing",
 
   async render({ params }) {
     const slug = params.slug?.replace(/\/$/, "");
-    if (!slug) return null;
+    if (!slug || !isEnabled("writing")) return null;
 
     const entries = await getCollection("blog", postFilter);
     const entry = entries.find(
-      (post) => getPath(post.id, post.filePath) === `/posts/${slug}`,
+      (post) => writingPath(post.id, post.filePath) === `/writing/${slug}`,
     );
     if (entry?.body == null) return null;
     return `# ${entry.data.title}\n\n${entry.body}`;
   },
 
   async list() {
+    if (!isEnabled("writing")) return [];
     const entries = await getCollection("blog");
     return getSortedPosts(entries).map((post) => ({
-      path: getPath(post.id, post.filePath),
+      path: writingPath(post.id, post.filePath),
       title: post.data.title,
       description: post.data.description,
     }));

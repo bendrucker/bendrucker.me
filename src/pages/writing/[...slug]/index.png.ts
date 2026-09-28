@@ -1,13 +1,13 @@
 import type { APIRoute } from "astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { getPath } from "@/blog/path";
+import { isEnabled, SITE } from "@/config";
 import { generateOgImageForPost } from "@/og/generate";
-import { SITE } from "@/config";
 
 export const prerender = true;
 
 export async function getStaticPaths() {
-  if (!SITE.dynamicOgImage) {
+  if (!SITE.dynamicOgImage || !isEnabled("writing")) {
     return [];
   }
 
@@ -20,15 +20,7 @@ export async function getStaticPaths() {
   }));
 }
 
-export const GET: APIRoute<CollectionEntry<"blog">> = async ({ props }) => {
-  if (!SITE.dynamicOgImage) {
-    return new Response(null, {
-      status: 404,
-      statusText: "Not found",
-    });
-  }
-
-  return new Response(await generateOgImageForPost(props), {
+export const GET: APIRoute<CollectionEntry<"blog">> = async ({ props }) =>
+  new Response(await generateOgImageForPost(props), {
     headers: { "Content-Type": "image/png" },
   });
-};

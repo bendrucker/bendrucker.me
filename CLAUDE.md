@@ -6,7 +6,7 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 
 - `src/config.ts` — `SITE` constant (metadata, feature flags)
 - `src/content/blog/*.md` — posts (frontmatter: `title`, `publishDate` required; `subtitle`, `categories`, `series` optional)
-- `src/pages/` — routes: `posts/`, `activity/code.astro`, `activity/cycling.astro`, `tags/`, `archives/`, `about.md`, `rss.xml.ts`, `og.png.ts`, `map/`
+- `src/pages/` — routes: `writing/`, `activity/code.astro`, `activity/cycling.astro`, `about.md`, `rss.xml.ts`, `og.png.ts`, `map/`
 - `src/map/` — vector basemap rendering for the route cards
 - `src/layouts/` — `Layout`, `PostDetails`, `AboutLayout`, `Main`
 - `src/styles/global.css` — theme variables + Tailwind `@theme inline`

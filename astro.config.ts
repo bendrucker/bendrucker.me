@@ -14,7 +14,8 @@ import {
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/shiki/fileName";
-import { SITE } from "./src/config";
+import { isEnabled, SITE } from "./src/config";
+import { writingSitemapPages } from "./src/writing/sitemap";
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -60,14 +61,28 @@ export default defineConfig({
   routeRules: {
     "/about": DEPLOY_SCOPED_CACHE,
     "/about.md": DEPLOY_SCOPED_CACHE,
-    "/posts/[...slug]": DEPLOY_SCOPED_CACHE,
-    "/posts/[...slug].md": DEPLOY_SCOPED_CACHE,
+    "/writing": DEPLOY_SCOPED_CACHE,
+    "/writing/[...slug]": DEPLOY_SCOPED_CACHE,
+    "/writing/[...slug].md": DEPLOY_SCOPED_CACHE,
     "/og.png": DEPLOY_SCOPED_CACHE,
     "/llms.txt": DEPLOY_SCOPED_CACHE,
   },
+  // Writing's old addresses. The adapter writes a dynamic redirect into
+  // `_redirects` with a literal `*` in its destination, which Cloudflare
+  // discards, so `/posts/*` lives in static/_redirects with `:splat`.
+  // `/tags/<tag>` carries its tag into a query string, which neither can
+  // write, so src/middleware/redirects.ts answers it.
+  redirects: {
+    "/posts": "/writing",
+    "/archives": "/writing",
+  },
   integrations: [
     sitemap({
-      filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
+      customPages: isEnabled("writing", {
+        PUBLIC_ALL_CATEGORIES: process.env.PUBLIC_ALL_CATEGORIES,
+      })
+        ? writingSitemapPages(SITE.website)
+        : [],
     }),
     vue(),
     ...(isDev
