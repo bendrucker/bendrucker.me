@@ -1,0 +1,60 @@
+diff --git a/node_modules/@astrojs/cloudflare/node_modules/@cloudflare/vite-plugin/dist/workers/runner-worker/module-runner-legacy.js b/node_modules/@astrojs/cloudflare/node_modules/@cloudflare/vite-plugin/dist/workers/runner-worker/module-runner-legacy.js
+index c66cfdb..5d11e6d 100644
+--- a/node_modules/@astrojs/cloudflare/node_modules/@cloudflare/vite-plugin/dist/workers/runner-worker/module-runner-legacy.js
++++ b/node_modules/@astrojs/cloudflare/node_modules/@cloudflare/vite-plugin/dist/workers/runner-worker/module-runner-legacy.js
+@@ -670,7 +670,7 @@ function createHMRHandlerForRunner(runner) {
+ 			case "full-reload": {
+ 				let { triggeredBy } = payload, clearEntrypointUrls = triggeredBy ? getModulesEntrypoints(runner, getModulesByFile(runner, slash(triggeredBy))) : findAllEntrypoints(runner);
+ 				if (!clearEntrypointUrls.size) break;
+-				hmrClient.logger.debug("program reload"), await hmrClient.notifyListeners("vite:beforeFullReload", payload), runner.evaluatedModules.clear();
++				hmrClient.logger.debug("program reload"), await hmrClient.notifyListeners("vite:beforeFullReload", payload), invalidateForReload(runner, triggeredBy);
+ 				for (let url of clearEntrypointUrls) try {
+ 					await runner.import(url);
+ 				} catch (err) {
+@@ -692,6 +692,16 @@ function createHMRHandlerForRunner(runner) {
+ 		}
+ 	});
+ }
++function invalidateForReload(runner, triggeredBy) {
++	if (!triggeredBy) return runner.evaluatedModules.clear();
++	let seen = new Set(), stack = getModulesByFile(runner, slash(triggeredBy)).map((id) => runner.evaluatedModules.getModuleById(id));
++	while (stack.length) {
++		let node = stack.pop();
++		if (!node || seen.has(node)) continue;
++		seen.add(node), runner.evaluatedModules.invalidateModule(node);
++		for (let id of node.importers) stack.push(runner.evaluatedModules.getModuleById(id));
++	}
++}
+ function getModulesByFile(runner, file) {
+ 	let nodes = runner.evaluatedModules.getModulesByFile(file);
+ 	return nodes ? [...nodes].map((node) => node.id) : [];
+diff --git a/node_modules/@astrojs/cloudflare/node_modules/@cloudflare/vite-plugin/dist/workers/runner-worker/module-runner.js b/node_modules/@astrojs/cloudflare/node_modules/@cloudflare/vite-plugin/dist/workers/runner-worker/module-runner.js
+index eebd4cc..6535b00 100644
+--- a/node_modules/@astrojs/cloudflare/node_modules/@cloudflare/vite-plugin/dist/workers/runner-worker/module-runner.js
++++ b/node_modules/@astrojs/cloudflare/node_modules/@cloudflare/vite-plugin/dist/workers/runner-worker/module-runner.js
+@@ -738,7 +738,7 @@ function createHMRHandlerForRunner(runner) {
+ 			case "full-reload": {
+ 				let { triggeredBy } = payload, clearEntrypointUrls = triggeredBy ? getModulesEntrypoints(runner, getModulesByFile(runner, slash(triggeredBy))) : findAllEntrypoints(runner);
+ 				if (!clearEntrypointUrls.size) break;
+-				hmrClient.logger.debug("program reload"), await hmrClient.notifyListeners("vite:beforeFullReload", payload), runner.evaluatedModules.clear();
++				hmrClient.logger.debug("program reload"), await hmrClient.notifyListeners("vite:beforeFullReload", payload), invalidateForReload(runner, triggeredBy);
+ 				for (let url of clearEntrypointUrls) {
+ 					if (runner.isClosed()) break;
+ 					try {
+@@ -764,6 +764,16 @@ function createHMRHandlerForRunner(runner) {
+ 		}
+ 	});
+ }
++function invalidateForReload(runner, triggeredBy) {
++	if (!triggeredBy) return runner.evaluatedModules.clear();
++	let seen = new Set(), stack = getModulesByFile(runner, slash(triggeredBy)).map((id) => runner.evaluatedModules.getModuleById(id));
++	while (stack.length) {
++		let node = stack.pop();
++		if (!node || seen.has(node)) continue;
++		seen.add(node), runner.evaluatedModules.invalidateModule(node);
++		for (let id of node.importers) stack.push(runner.evaluatedModules.getModuleById(id));
++	}
++}
+ function getModulesByFile(runner, file) {
+ 	let nodes = runner.evaluatedModules.getModulesByFile(file);
+ 	return nodes ? [...nodes].map((node) => node.id) : [];

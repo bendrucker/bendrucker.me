@@ -11,10 +11,12 @@
       }
     ]
   },
-  "sandbox": {
-    "filesystem": {
-      "allowWrite": ["~/.config/.wrangler/logs", "~/.config/.wrangler/registry"]
-    }
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "playground@claude-plugins-official": true,
+    "cloudflare@cloudflare": true,
+    "performance@bendrucker": true
   },
   "extraKnownMarketplaces": {
     "cloudflare": {
@@ -25,10 +27,14 @@
       "autoUpdate": true
     }
   },
-  "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "playground@claude-plugins-official": true,
-    "cloudflare@cloudflare": true
+  "sandbox": {
+    "network": {
+      "allowLocalBinding": true,
+      "allowMachLookup": ["com.apple.FSEvents"],
+      "allowedDomains": ["*.bvdrucker.workers.dev"]
+    },
+    "filesystem": {
+      "allowWrite": ["~/.config/.wrangler/logs", "~/.config/.wrangler/registry"]
+    }
   }
 }

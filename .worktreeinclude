@@ -1,0 +1,6 @@
+# Gitignored paths `wt step copy-ignored` seeds a new worktree with. Anything
+# else stays behind, like a checkout's local settings and scratch files.
+node_modules/
+packages/*/dist/
+packages/*/tsconfig.tsbuildinfo
+.astro/

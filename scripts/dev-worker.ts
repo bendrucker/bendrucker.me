@@ -180,7 +180,23 @@ function stop(): void {
   }
   // The negative pid is the process group. wrangler spawns workerd as a child,
   // and signalling the leader alone leaves workerd holding the port.
-  process.kill(-running.pid, "SIGTERM");
+  try {
+    process.kill(-running.pid, "SIGTERM");
+  } catch (error) {
+    // Exited since readState saw it alive.
+    if (isErrno(error, "ESRCH")) {
+      writeFileSync(PID_FILE, "");
+      logger.info(running, "Dev worker already stopped");
+      return;
+    }
+    if (!isErrno(error, "EPERM")) throw error;
+    logger.error(
+      running,
+      "Cannot signal the dev worker from this sandbox. Stop it from outside one.",
+    );
+    process.exitCode = 1;
+    return;
+  }
   writeFileSync(PID_FILE, "");
   logger.info(running, "Stopped dev worker");
 }
@@ -193,12 +209,21 @@ function readState(): State | null {
   if (!existsSync(PID_FILE)) return null;
   const contents = readFileSync(PID_FILE, "utf-8");
   if (contents === "") return null;
-  const parsed = state.safeParse(JSON.parse(contents));
+  let json: unknown;
+  try {
+    json = JSON.parse(contents);
+  } catch {
+    // A write cut short leaves a torn file, read the same as an empty one.
+    return null;
+  }
+  const parsed = state.safeParse(json);
   if (!parsed.success) return null;
   try {
     process.kill(parsed.data.pid, 0);
-  } catch {
-    return null;
+  } catch (error) {
+    // A sandbox denies signals to processes it did not start, so EPERM means
+    // the worker is alive, just out of reach.
+    if (!isErrno(error, "EPERM")) return null;
   }
   return parsed.data;
 }
@@ -260,3 +285,7 @@ function run(command: string, args: string[]): void {
 }
 
 await main();
+
+function isErrno(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
+}

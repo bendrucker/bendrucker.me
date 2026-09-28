@@ -1,7 +1,6 @@
 import { defineConfig, envField, logHandlers } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
-import sentry from "@sentry/astro";
 import vue from "@astrojs/vue";
 import cloudflare from "@astrojs/cloudflare";
 import { cacheCloudflare } from "@astrojs/cloudflare/cache";
@@ -19,8 +18,6 @@ import { writingSitemapPages } from "./src/writing/sitemap";
 import { STATIC_REDIRECTS } from "./src/redirects";
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-
-const isDev = process.env.NODE_ENV === "development";
 
 const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
 
@@ -64,6 +61,9 @@ export default defineConfig({
   ...(process.env.ASTRO_LOG_JSON ? { logger: logHandlers.json() } : {}),
   adapter: cloudflare({
     imageService: "compile",
+    // Each dev server claims a debugger port by checking 9229 and binding it
+    // later, so two worktrees starting at once both pick it and one crashes.
+    inspectorPort: false,
   }),
   cache: {
     provider: cacheCloudflare(),
@@ -96,14 +96,6 @@ export default defineConfig({
       },
     }),
     vue(),
-    ...(isDev
-      ? [
-          sentry({
-            sourceMapsUploadOptions: { enabled: false },
-            autoInstrumentation: { requestHandler: false },
-          }),
-        ]
-      : []),
   ],
   markdown: {
     processor: unified({

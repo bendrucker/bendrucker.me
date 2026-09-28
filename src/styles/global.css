@@ -18,6 +18,10 @@
   override-only: true;
 }
 
+/* Posts don't use utility classes. Scanning them made every post save send the
+   dev server a reload that re-ran every server module. */
+@source not "../content";
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /* A list route's desktop sidebar, collapsed or not, set by `/sidebar.js`. */
