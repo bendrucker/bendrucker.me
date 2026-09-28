@@ -39,6 +39,7 @@ export default defineConfig({
       { id: "cycling-views", title: "Cycling views" },
       { id: "ride", title: "Ride" },
       { id: "records", title: "Records" },
+      { id: "parts", title: "Parts" },
       { id: "primitives", title: "Primitives" },
       { id: "code", title: "Code activity" },
     ],
@@ -58,6 +59,11 @@ export default defineConfig({
   },
   vite: {
     plugins: [vue(), tailwindcss()],
+    // The story book shows every category, including those production builds
+    // leave off, so parts can be reviewed in each category's color.
+    define: {
+      "import.meta.env.PUBLIC_ALL_CATEGORIES": JSON.stringify("1"),
+    },
     resolve: {
       alias: {
         "@": path.resolve(root, "src"),
