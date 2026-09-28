@@ -64,10 +64,12 @@ function step(delta: number) {
       <div class="flex h-full">
         <!-- The horizontal padding is the arrows' gutter. Below `sm` there is
              no room to spend on one, and the drag Embla gives us is the
-             gesture a phone already expects. -->
+             gesture a phone already expects. Every slide but the one shown
+             is inert, so Tab can't land on a video off screen. -->
         <div
           v-for="(item, slide) in media"
           :key="item.id"
+          :inert="slide !== index"
           class="flex h-full min-w-0 flex-[0_0_100%] items-center justify-center px-2 py-4 sm:px-20"
         >
           <!-- `preload="none"` is what keeps opening the lightbox on a photo

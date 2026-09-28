@@ -31,6 +31,11 @@ export function ridesHref({ view, q, units }: RidesState): string {
   return `/rides${search(params)}`;
 }
 
+/** The view transition name a ride's row and its page's title share. */
+export function rideTransitionName(id: string): string {
+  return `ride-${id}`;
+}
+
 /** A ride's page, in the units the list was showing. */
 export function rideHref(id: string, units: Units): string {
   return `/rides/${encodeURIComponent(id)}${search(units === "metric" ? { units } : {})}`;

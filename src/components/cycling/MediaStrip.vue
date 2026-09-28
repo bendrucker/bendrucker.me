@@ -43,12 +43,17 @@ function onShotLoad(item: RideMedia, event: Event) {
 
 const shots = useTemplateRef<HTMLElement>("shots");
 
-// A server-rendered shot can finish loading before the component hydrates,
-// and its `load` event is gone by then. Those are measured where they stand.
+// A server-rendered image can finish loading, or fail to, before the
+// component hydrates, and its `load` or `error` event is gone by then. Those
+// are measured, or marked failed, where they stand. A completed image with no
+// width is one that failed.
 onMounted(() => {
-  for (const image of shots.value?.querySelectorAll("img") ?? []) {
+  const list = shots.value ?? strip.value;
+  for (const image of list?.querySelectorAll("img") ?? []) {
     const item = props.media.find((entry) => entry.id === image.dataset.id);
-    if (item && image.complete) measureShot(item, image);
+    if (!item || !image.complete) continue;
+    if (image.naturalWidth === 0) onPosterError(item);
+    else measureShot(item, image);
   }
 });
 
@@ -161,6 +166,7 @@ watch(() => props.media.length, measure, { flush: "post" });
         <img
           v-if="!posterFailed.has(item.id)"
           :src="item.thumbnailUrl"
+          :data-id="item.id"
           alt=""
           aria-hidden="true"
           loading="lazy"

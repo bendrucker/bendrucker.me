@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { watchDebounced } from "@vueuse/core";
-import { computed, ref, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { matches as nameMatches } from "@/activity/search";
 import { sectionLabel } from "@/activity/sections";
 import { useMonthPages } from "@/components/cycling/useMonthPages";
@@ -21,6 +28,11 @@ import TimelineGutter from "@/components/parts/TimelineGutter.vue";
 import UnitsToggle from "@/components/parts/UnitsToggle.vue";
 import { climbFigure, distanceFigure, gutterSub } from "@/rides/format";
 import { parseView, rideHref, ridesHref, type RideView } from "@/rides/links";
+import {
+  currentListEntry,
+  historyIndex,
+  saveListEntry,
+} from "@/rides/listEntry";
 import { isHilly, rankRecords, type Records } from "@/rides/rank";
 import {
   fromRouteTuple,
@@ -69,20 +81,24 @@ function pickView(value: string) {
   view.value = parseView(value);
 }
 
+/** Set once the reader navigates away, after which the list owns no history entry. */
+let leaving = false;
+
+function writeUrl() {
+  if (leaving || location.pathname !== "/rides") return;
+  const href = ridesHref({
+    view: view.value,
+    q: query.value,
+    units: units.value,
+  });
+  history.replaceState(history.state, "", href);
+}
+
 // Safari throttles `replaceState` to a hundred calls in ten seconds and throws
-// past that, which a fast typist reaches.
-watchDebounced(
-  [view, query, units],
-  () => {
-    const href = ridesHref({
-      view: view.value,
-      q: query.value,
-      units: units.value,
-    });
-    history.replaceState(history.state, "", href);
-  },
-  { debounce: 250 },
-);
+// past that, which a fast typist reaches. A write still pending when the
+// reader opens a ride would land on the ride's entry, so leaving writes it at
+// once and drops the pending one.
+watchDebounced([view, query, units], writeUrl, { debounce: 250 });
 
 async function fetchRows(before: string) {
   const response = await fetch(`/activity/cycling/${before}.json?format=rows`);
@@ -91,6 +107,39 @@ async function fetchRows(before: string) {
 }
 
 const log = useMonthPages(props.months, props.logCursor, fetchRows);
+
+// Leaving saves the months paged in and the scroll offset, and returning to
+// the same history entry puts them back. The server renders two months, and a
+// reader who paged a year back would otherwise come back to a page too short
+// to hold their place.
+function onLeave() {
+  writeUrl();
+  leaving = true;
+  const index = historyIndex();
+  if (index === null) return;
+  saveListEntry({
+    index,
+    href: location.pathname + location.search,
+    scrollY: window.scrollY,
+    log: { months: log.months.value, logCursor: log.cursor.value },
+  });
+}
+
+onMounted(async () => {
+  document.addEventListener("astro:before-preparation", onLeave);
+  const saved = currentListEntry();
+  if (saved === null || saved.log.months.length <= log.months.value.length) {
+    return;
+  }
+  log.restore(saved.log);
+  await nextTick();
+  window.scrollTo({ top: saved.scrollY, behavior: "instant" });
+});
+
+onBeforeUnmount(() => {
+  leaving = true;
+  document.removeEventListener("astro:before-preparation", onLeave);
+});
 
 const logRows = computed(() =>
   log.months.value.flatMap((month) => month.rides.map((row) => fromTuple(row))),
@@ -194,8 +243,19 @@ const showRail = computed(
   () => view.value === "log" && !searching.value && rail.value.length > 1,
 );
 
-function clear() {
+/**
+ * Empties the search from the empty state. The button that did it leaves with
+ * the empty state, so focus moves to the search field the reader can start
+ * over in rather than falling back to the top of the document. Both layouts
+ * render a field and CSS shows one, so the visible one is the one with a box.
+ */
+async function clear() {
   query.value = "";
+  await nextTick();
+  const fields = document.querySelectorAll<HTMLInputElement>(
+    '#main-content input[type="search"]',
+  );
+  [...fields].find((field) => field.getClientRects().length > 0)?.focus();
 }
 
 function figure(row: RideRow, kind: "distance" | "climb"): string {
@@ -351,6 +411,7 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
             :href="rideHref(tile.id, units)"
             :figure="distanceFigure(tile.distanceM, units)"
             :hilly="isHilly(tile)"
+            :query="query.trim()"
           />
         </li>
       </ul>

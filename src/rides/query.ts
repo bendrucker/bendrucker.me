@@ -70,26 +70,36 @@ interface RowSource {
   elevationM: number | null;
 }
 
+/** What a row calls a ride nobody named, which search matches like any name. */
+export const UNNAMED = "Ride";
+
 export function toRideRow(row: RowSource): RideRow {
   return {
     id: row.activityId,
-    name: row.name ?? "Ride",
+    name: row.name ?? UNNAMED,
     day: wallClock(row.startedAt, row.timezone).slice(0, 10),
-    distanceM: Math.round(row.distanceM ?? 0),
-    climbM: Math.round(row.elevationM ?? 0),
+    distanceM: row.distanceM === null ? null : Math.round(row.distanceM),
+    climbM: row.elevationM === null ? null : Math.round(row.elevationM),
   };
 }
 
 /**
- * The query as a `LIKE` pattern. SQLite's `LIKE` folds ASCII case, which is
- * the same match `matches` makes in the browser for every name in the feed.
+ * Whether SQLite folds the query's case the way the browser does. Its
+ * `lower()` folds ASCII only, so a query with any other letter can miss a name
+ * that differs from it in case, and the browser has to finish the search.
  */
-export function likePattern(query: string): string {
-  return `%${query.trim().replaceAll(/[\\%_]/g, String.raw`\$&`)}%`;
+export function foldsLikeBrowser(query: string): boolean {
+  return /^[ -~]*$/.test(query.trim());
 }
 
-function nameLike(query: string): Expression<SqlBool> {
-  return sql<SqlBool>`name like ${likePattern(query)} escape '\\'`;
+/**
+ * Whether the name a row shows holds the query, in any case. `instr` rather
+ * than `LIKE`, which D1 caps at fifty bytes of pattern, shorter than some
+ * ride names a reader can search for in full.
+ */
+function nameHolds(query: string): Expression<SqlBool> {
+  const needle = query.trim().toLowerCase();
+  return sql<SqlBool>`instr(lower(coalesce(name, ${UNNAMED})), ${needle}) > 0`;
 }
 
 export interface RidesPage {
@@ -160,7 +170,10 @@ export async function queryRidesPage(
     matchRecords: matchRecords === null ? null : recordTuples(matchRecords),
     routes,
     matches: found?.rows.map((row) => toTuple(row)) ?? null,
-    partial: found?.partial ?? false,
+    // A query SQLite can't fold the way the browser does may have missed
+    // names, so the browser confirms it against every ride.
+    partial:
+      (found?.partial ?? false) || (searching && !foldsLikeBrowser(query)),
   };
 }
 
@@ -250,8 +263,11 @@ async function queryRecords(
       .selectFrom("activityFeed")
       .select(ROW_COLUMNS)
       .where("sport", "=", "ride")
-      .where(column, ">", 0);
-    if (query !== "") select = select.where(nameLike(query));
+      .where(column, ">", 0)
+      // A manual entry logs a figure with no distance, like a year of commutes
+      // as one climb, and isn't a ride to hold a record.
+      .where("distanceM", ">", 0);
+    if (query !== "") select = select.where(nameHolds(query));
     const rows = await select
       .orderBy(column, "desc")
       .orderBy("startedAt", "desc")
@@ -312,7 +328,7 @@ async function queryMatches(
     .selectFrom("activityFeed")
     .select(ROW_COLUMNS)
     .where("sport", "=", "ride")
-    .where(nameLike(query))
+    .where(nameHolds(query))
     .orderBy("startedAt", "desc")
     .limit(MATCH_COUNT + 1)
     .execute();

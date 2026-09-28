@@ -18,7 +18,7 @@ import {
   fullDate,
   parseUnits,
 } from "@/rides/format";
-import { ridesHref } from "@/rides/links";
+import { rideTransitionName, ridesHref } from "@/rides/links";
 import { isHilly } from "@/rides/rank";
 
 if (!isEnabled("rides")) return Astro.rewrite("/404");
@@ -56,6 +56,7 @@ const mapLabel = `Route of ${ride.name}`;
 >
   <main id="main-content" class="flex-1 bg-background cat-rides">
     <div
+      data-ride-page
       class="mx-auto flex w-full max-w-[680px] flex-col gap-4 px-4 pt-1.5 pb-10 md:gap-5 md:px-10 md:pt-6 md:pb-14"
     >
       <ItemHeader
@@ -63,6 +64,7 @@ const mapLabel = `Route of ${ride.name}`;
         backLabel="Rides"
         backHref={ridesHref({ view: "log", q: "", units })}
         date={fullDate(ride.startedAt.slice(0, 10), thisYear)}
+        transitionName={rideTransitionName(ride.id)}
       >
         {
           ride.route && (
@@ -109,19 +111,27 @@ const mapLabel = `Route of ${ride.name}`;
         }
       </ItemHeader>
 
-      <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-1.5">
-        <StatTile
-          value={formatDistance(distanceM, units)}
-          unit={distanceUnit(units)}
-          label="distance"
-        />
-        <StatTile
-          value={formatClimb(elevationM, units)}
-          unit={climbUnit(units)}
-          label="climbing"
-          icon={hilly ? "mountain" : undefined}
-        />
-      </div>
+      {
+        (distanceM !== null || elevationM !== null) && (
+          <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-1.5">
+            {distanceM !== null && (
+              <StatTile
+                value={formatDistance(distanceM, units)}
+                unit={distanceUnit(units)}
+                label="distance"
+              />
+            )}
+            {elevationM !== null && (
+              <StatTile
+                value={formatClimb(elevationM, units)}
+                unit={climbUnit(units)}
+                label="climbing"
+                icon={hilly ? "mountain" : undefined}
+              />
+            )}
+          </div>
+        )
+      }
 
       {
         media.length > 0 && (
@@ -149,3 +159,15 @@ const mapLabel = `Route of ${ride.name}`;
     </div>
   </main>
 </Layout>
+
+<script>
+  import { linkBackToList } from "@/rides/listEntry";
+  import "@/rides/morph";
+
+  // Runs on every arrival, since the router swaps one ride page for another
+  // without loading this script again.
+  document.addEventListener("astro:page-load", () => {
+    const back = document.querySelector("[data-ride-page] header > a");
+    if (back instanceof HTMLAnchorElement) linkBackToList(back);
+  });
+</script>

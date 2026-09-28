@@ -5,7 +5,7 @@ import { publishActivity, type PublishedActivity } from "@/activity/publish";
 import type { Database } from "@/db";
 import { createTestDb, testStore } from "@/test/db";
 import {
-  likePattern,
+  foldsLikeBrowser,
   MATCH_COUNT,
   queryRideIndex,
   queryRideRowsPage,
@@ -219,20 +219,83 @@ describe("queryRidesPage", () => {
   });
 });
 
-describe("likePattern", () => {
-  it("escapes the wildcards a name can hold", () => {
-    expect(likePattern(" 100% _fun_ ")).toBe(String.raw`%100\% \_fun\_%`);
-  });
-
+describe("search", () => {
   it("matches a literal percent and nothing else", async () => {
     await seed(
       ride("pct", { name: "100% effort" }),
       ride("other", { name: "100 effort" }),
+      ride("under", { name: "100_effort" }),
     );
 
     const page = await queryRidesPage(db, "100%");
 
     expect(page.matches?.map(([id]) => id)).toEqual(["pct"]);
+  });
+
+  it("finds a ride by its whole name, however long", async () => {
+    const name =
+      "Ask your doctor if you experience fresh legs as it may be a sign";
+    await seed(ride("long", { name }), ride("other"));
+
+    const page = await queryRidesPage(db, name.toUpperCase());
+
+    expect(page.matches?.map(([id]) => id)).toEqual(["long"]);
+    expect(page.matchRecords?.longest.map(([id]) => id)).toEqual(["long"]);
+  });
+
+  it("matches an unnamed ride by the name its row shows", async () => {
+    await seed(ride("unnamed", { name: null }), ride("named"));
+
+    const page = await queryRidesPage(db, "ride");
+
+    expect(page.matches?.map(([id]) => id)).toEqual(
+      expect.arrayContaining(["unnamed", "named"]),
+    );
+  });
+
+  it("leaves a query SQLite can't fold for the browser to finish", async () => {
+    await seed(ride("cafe", { name: "Café" }));
+
+    const ascii = await queryRidesPage(db, "CAF");
+    const accented = await queryRidesPage(db, "CAFÉ");
+
+    expect(ascii.partial).toBe(false);
+    expect(accented.partial).toBe(true);
+  });
+});
+
+describe("foldsLikeBrowser", () => {
+  it("holds for printable ASCII only", () => {
+    expect(foldsLikeBrowser(" Mt. Tam 100% ")).toBe(true);
+    expect(foldsLikeBrowser("café")).toBe(false);
+  });
+});
+
+describe("figures", () => {
+  it("leaves a figure the ride never recorded as null", async () => {
+    await seed(ride("bare", { distanceM: null, elevationM: null }));
+
+    const page = await queryRidesPage(db);
+
+    expect(page.months[0]?.rides[0]).toEqual([
+      "bare",
+      "Ride bare",
+      "2026-09-20",
+      null,
+      null,
+    ]);
+  });
+
+  it("keeps a manual entry with no distance out of the records", async () => {
+    await seed(
+      ride("tally", { distanceM: 0, movingS: 0, elevationM: 30_000 }),
+      ride("real", { elevationM: 2_000 }),
+    );
+
+    const { records } = await queryRidesPage(db);
+
+    expect(records.climbing.map(([id]) => id)).toEqual(["real"]);
+    expect(records.longest.map(([id]) => id)).toEqual(["real"]);
   });
 });
 
@@ -280,6 +343,15 @@ describe("queryRideById", () => {
     expect(found?.ride.route).toBe(GOOGLE_EXAMPLE);
     expect(found?.distanceM).toBe(40_000);
     expect(found?.elevationM).toBe(600);
+  });
+
+  it("keeps a figure the ride never recorded as null", async () => {
+    await seed(ride("bare", { distanceM: null, elevationM: null }));
+
+    const found = await queryRideById(db, "bare");
+
+    expect(found?.distanceM).toBeNull();
+    expect(found?.elevationM).toBeNull();
   });
 
   it("returns null for an id no ride carries", async () => {

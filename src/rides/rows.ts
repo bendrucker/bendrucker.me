@@ -6,21 +6,31 @@
 // use where the full build would add twenty kilobytes to the island.
 import * as z from "zod/mini";
 
-/** One ride as a list shows it. Distances are whole metres. */
+/**
+ * One ride as a list shows it. Distances are whole metres, and null where the
+ * ride never recorded one, which a row leaves out rather than calling zero.
+ */
 export interface RideRow {
   id: string;
   name: string;
   /** The local calendar day the ride started on, `YYYY-MM-DD`. */
   day: string;
-  distanceM: number;
-  climbM: number;
+  distanceM: number | null;
+  climbM: number | null;
 }
 
 /** A row on the wire: `[id, name, day, distanceM, climbM]`. */
-export type RideTuple = [string, string, string, number, number];
+export type RideTuple = [string, string, string, number | null, number | null];
 
 /** A tile on the Routes view: a row plus its track drawn as an SVG path. */
-export type RouteTuple = [string, string, string, number, number, string];
+export type RouteTuple = [
+  string,
+  string,
+  string,
+  number | null,
+  number | null,
+  string,
+];
 
 export interface RouteTile extends RideRow {
   /** The simplified track in a `TILE_SIZE` square, as SVG path data. */
@@ -44,8 +54,8 @@ export const rideTuple = z.tuple([
   z.string(),
   z.string(),
   z.string(),
-  z.number(),
-  z.number(),
+  z.nullable(z.number()),
+  z.nullable(z.number()),
 ]) satisfies z.ZodMiniType<RideTuple>;
 
 export const rideRowsPage = z.object({

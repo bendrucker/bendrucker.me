@@ -1,14 +1,20 @@
 <script setup lang="ts">
+import MarkedText from "@/components/parts/MarkedText.vue";
 import type { RouteTile } from "@/rides/rows";
 import { TILE_SIZE } from "@/rides/tile";
 
-defineProps<{
-  tile: RouteTile;
-  href: string;
-  /** The distance, already formatted: `67 mi`. */
-  figure: string;
-  hilly?: boolean;
-}>();
+withDefaults(
+  defineProps<{
+    tile: RouteTile;
+    href: string;
+    /** The distance, already formatted: `67 mi`. Unset when it is unknown. */
+    figure?: string;
+    hilly?: boolean;
+    /** The search to mark in the name. */
+    query?: string;
+  }>(),
+  { query: "" },
+);
 </script>
 
 <template>
@@ -33,8 +39,11 @@ defineProps<{
         stroke-linejoin="round"
       />
     </svg>
-    <span class="line-clamp-1 text-sm wrap-anywhere">{{ tile.name }}</span>
+    <span class="line-clamp-1 text-sm wrap-anywhere">
+      <MarkedText :text="tile.name" :query="query" />
+    </span>
     <span
+      v-if="figure || hilly"
       class="inline-flex items-center gap-1.5 font-mono text-xs text-dim tabular-nums"
     >
       {{ figure }}

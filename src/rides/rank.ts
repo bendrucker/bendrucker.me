@@ -16,16 +16,30 @@ export const RECORD_COUNT = 3;
 
 type Measured = Pick<RideRow, "distanceM" | "climbM">;
 
-export function isBig({ distanceM, climbM }: Measured): boolean {
-  return distanceM >= BIG.distanceM || climbM >= BIG.climbM;
+/**
+ * Whether the entry went anywhere. A manual entry, like a year's commuting
+ * climb logged as one activity, carries a figure but no distance, and is not a
+ * ride to rank.
+ */
+export function isRide({ distanceM }: Pick<Measured, "distanceM">): boolean {
+  return distanceM !== null && distanceM > 0;
+}
+
+export function isBig(ride: Measured): boolean {
+  const { distanceM, climbM } = ride;
+  return (
+    isRide(ride) &&
+    ((distanceM ?? 0) >= BIG.distanceM || (climbM ?? 0) >= BIG.climbM)
+  );
 }
 
 export function bigScore({ distanceM, climbM }: Measured): number {
-  return Math.max(distanceM / BIG.distanceM, climbM / BIG.climbM);
+  return Math.max((distanceM ?? 0) / BIG.distanceM, (climbM ?? 0) / BIG.climbM);
 }
 
 export function isHilly({ distanceM, climbM }: Measured): boolean {
-  return distanceM > 0 && climbM / (distanceM / 1000) >= HILLY_M_PER_KM;
+  if (distanceM === null || climbM === null || distanceM <= 0) return false;
+  return climbM / (distanceM / 1000) >= HILLY_M_PER_KM;
 }
 
 /** The big rides, biggest first. Ties keep the newer ride first. */
@@ -44,15 +58,18 @@ export interface Records<T> {
   climbing: T[];
 }
 
-/** The longest rides and the ones that climbed most. Ties keep the newer ride. */
+/**
+ * The longest rides and the ones that climbed most, of those that went
+ * somewhere. Ties keep the newer ride.
+ */
 export function rankRecords<T extends Measured>(
   rides: readonly T[],
   count = RECORD_COUNT,
 ): Records<T> {
-  const top = (measure: (ride: T) => number) =>
+  const top = (measure: (ride: T) => number | null) =>
     rides
-      .filter((ride) => measure(ride) > 0)
-      .toSorted((a, b) => measure(b) - measure(a))
+      .filter((ride) => isRide(ride) && (measure(ride) ?? 0) > 0)
+      .toSorted((a, b) => (measure(b) ?? 0) - (measure(a) ?? 0))
       .slice(0, count);
   return {
     longest: top((ride) => ride.distanceM),

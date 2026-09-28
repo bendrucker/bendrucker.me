@@ -81,6 +81,20 @@ function onOpenChange(value: boolean) {
 }
 
 /**
+ * Opens on the close button. reka's default is the first tabbable element,
+ * and with every slide in the DOM that can be a video several slides off
+ * screen, which then takes the arrow keys for its own controls.
+ */
+function onOpenAutoFocus(event: Event) {
+  const content = event.target;
+  if (!(content instanceof HTMLElement)) return;
+  const close = content.querySelector("[data-lightbox-close]");
+  if (!(close instanceof HTMLElement)) return;
+  event.preventDefault();
+  close.focus();
+}
+
+/**
  * One listener rather than two `@keydown.arrow-*` bindings. reka merges `$attrs`
  * onto the content element twice, and two array-literal handlers are never
  * reference-equal, so each arrow press would fire the handler twice.
@@ -112,6 +126,7 @@ function onKeydown(event: KeyboardEvent) {
         class="fixed inset-0 z-50 flex flex-col outline-none"
         :class="tone === 'black' ? 'text-white' : ''"
         @keydown="onKeydown"
+        @open-auto-focus="onOpenAutoFocus"
       >
         <DialogTitle class="sr-only">{{ rideName }}</DialogTitle>
         <DialogDescription class="sr-only">
@@ -136,6 +151,7 @@ function onKeydown(event: KeyboardEvent) {
             </span>
           </p>
           <DialogClose
+            data-lightbox-close
             class="inline-flex size-10 items-center justify-center rounded-[10px] bg-white/8 text-white transition-colors hover:bg-white/16 focus-visible:outline-2 focus-visible:outline-white"
           >
             <span class="icon-[lucide--x] size-[18px]" aria-hidden="true" />
@@ -160,7 +176,10 @@ function onKeydown(event: KeyboardEvent) {
           </p>
           <div class="ml-auto flex items-center gap-3">
             <StravaLink v-if="rideUrl" :href="rideUrl" :name="rideName" />
-            <DialogClose class="text-foreground/70 hover:text-accent">
+            <DialogClose
+              data-lightbox-close
+              class="text-foreground/70 hover:text-accent"
+            >
               <span class="icon-[lucide--x] size-4" aria-hidden="true" />
               <span class="sr-only">Close media viewer</span>
             </DialogClose>

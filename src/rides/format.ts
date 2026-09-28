@@ -45,9 +45,13 @@ export function climbUnit(units: Units): "ft" | "m" {
   return units === "metric" ? "m" : "ft";
 }
 
-/** A whole number of miles or kilometres, grouped: `1,204`. */
+/**
+ * Miles or kilometres, grouped: `1,204`. Whole numbers, except under one,
+ * which takes a tenth so a short spin doesn't read as `0`.
+ */
 export function formatDistance(meters: number, units: Units): string {
   const value = units === "metric" ? meters / 1000 : meters / METERS_PER_MILE;
+  if (value > 0 && value < 0.95) return value.toFixed(1);
   return Math.round(value).toLocaleString("en-US");
 }
 
@@ -57,13 +61,21 @@ export function formatClimb(meters: number, units: Units): string {
   return Math.round(value).toLocaleString("en-US");
 }
 
-/** A row's figure: `139 mi`. */
-export function distanceFigure(meters: number, units: Units): string {
+/** A row's figure, `139 mi`, or undefined when the ride's distance is unknown. */
+export function distanceFigure(
+  meters: number | null,
+  units: Units,
+): string | undefined {
+  if (meters === null) return undefined;
   return `${formatDistance(meters, units)} ${distanceUnit(units)}`;
 }
 
-/** A climbing record's figure: `18,100 ft`. */
-export function climbFigure(meters: number, units: Units): string {
+/** A climbing record's figure, `18,100 ft`, or undefined when the climb is unknown. */
+export function climbFigure(
+  meters: number | null,
+  units: Units,
+): string | undefined {
+  if (meters === null) return undefined;
   return `${formatClimb(meters, units)} ${climbUnit(units)}`;
 }
 

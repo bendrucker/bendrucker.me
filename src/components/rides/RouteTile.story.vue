@@ -21,10 +21,16 @@ const controls: StoryControlSet = {
   },
   long: { type: "checkbox", title: "long name" },
   units: { type: "select", title: "units", options: ["imperial", "metric"] },
+  query: { type: "text", title: "search" },
 };
 
 function initState() {
-  return { tile: "0", long: false, units: "imperial" as "imperial" | "metric" };
+  return {
+    tile: "0",
+    long: false,
+    units: "imperial" as "imperial" | "metric",
+    query: "",
+  };
 }
 
 function pick(state: { tile: string; long: boolean }): Tile {
@@ -50,6 +56,7 @@ function pick(state: { tile: string; long: boolean }): Tile {
               href="#"
               :figure="distanceFigure(pick(state).distanceM, state.units)"
               :hilly="isHilly(pick(state))"
+              :query="state.query"
             />
           </div>
         </div>
@@ -80,7 +87,8 @@ function pick(state: { tile: string; long: boolean }): Tile {
 
 One named route on the Rides route's Routes view: the ride's track drawn into a
 132 square, its name, and its distance, with the mountain mark on a ride that
-climbs 18 m or more per kilometre.
+climbs 18 m or more per kilometre. A search marks every occurrence of the query
+in the name.
 
 The line is simplified server-side to what the square can show and carried as
 SVG path data, so there is no basemap to wait on or credit. The grid is two

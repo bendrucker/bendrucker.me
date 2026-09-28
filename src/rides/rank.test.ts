@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bigScore, isBig, isHilly, rankHighlights, rankRecords } from "./rank";
 
-const ride = (id: string, distanceM: number, climbM: number) => ({
+const ride = (id: string, distanceM: number | null, climbM: number | null) => ({
   id,
   distanceM,
   climbM,
@@ -12,6 +12,11 @@ describe("isBig", () => {
     expect(isBig(ride("far", 80_000, 0))).toBe(true);
     expect(isBig(ride("high", 10_000, 1_200))).toBe(true);
     expect(isBig(ride("neither", 79_999, 1_199))).toBe(false);
+  });
+
+  it("passes over an entry that went nowhere", () => {
+    expect(isBig(ride("tally", 0, 30_000))).toBe(false);
+    expect(isBig(ride("unknown", null, 2_000))).toBe(false);
   });
 });
 
@@ -27,6 +32,7 @@ describe("isHilly", () => {
     expect(isHilly(ride("steep", 10_000, 180))).toBe(true);
     expect(isHilly(ride("flat", 10_000, 179))).toBe(false);
     expect(isHilly(ride("still", 0, 50))).toBe(false);
+    expect(isHilly(ride("unknown", 10_000, null))).toBe(false);
   });
 });
 
@@ -58,5 +64,16 @@ describe("rankRecords", () => {
     const { longest, climbing } = rankRecords(rides, 2);
     expect(longest.map((r) => r.id)).toEqual(["far", "mid"]);
     expect(climbing.map((r) => r.id)).toEqual(["high", "mid"]);
+  });
+
+  it("skips a manual entry and an unknown figure", () => {
+    const rides = [
+      ride("tally", 0, 30_000),
+      ride("bare", null, null),
+      ride("real", 40_000, 500),
+    ];
+    const { longest, climbing } = rankRecords(rides);
+    expect(longest.map((r) => r.id)).toEqual(["real"]);
+    expect(climbing.map((r) => r.id)).toEqual(["real"]);
   });
 });

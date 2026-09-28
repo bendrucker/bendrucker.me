@@ -5,10 +5,14 @@ import { computed, ref, shallowRef, type Ref } from "vue";
 
 export interface MonthPages<M> {
   months: Ref<M[]>;
+  /** The month the next page loads before, or null past the first ride. */
+  cursor: Ref<string | null>;
   hasMore: Ref<boolean>;
   loading: Ref<boolean>;
   failed: Ref<boolean>;
   loadMore: () => Promise<void>;
+  /** Puts back months paged in before, as a reader returning to the list left them. */
+  restore: (page: MonthPage<M>) => void;
 }
 
 /** One page of months, and the month the page after it loads before. */
@@ -43,29 +47,43 @@ export function useMonthPages<M>(
   const cursor = ref<string | null>(initialCursor);
   const loading = ref(false);
   const failed = ref(false);
+  // Moves on every restore, so a page requested before one lands nowhere
+  // rather than on the end of months it was never the next page of.
+  let generation = 0;
 
   async function loadMore(): Promise<void> {
     const before = cursor.value;
     if (loading.value || before === null) return;
 
+    const started = generation;
     loading.value = true;
     failed.value = false;
     try {
       const page = await fetchPage(before);
+      if (started !== generation) return;
       months.value = [...months.value, ...page.months];
       cursor.value = page.logCursor;
     } catch {
-      failed.value = true;
+      if (started === generation) failed.value = true;
     } finally {
       loading.value = false;
     }
   }
 
+  function restore(page: MonthPage<M>) {
+    generation += 1;
+    months.value = [...page.months];
+    cursor.value = page.logCursor;
+    failed.value = false;
+  }
+
   return {
     months,
+    cursor,
     hasMore: computed(() => cursor.value !== null),
     loading,
     failed,
     loadMore,
+    restore,
   };
 }

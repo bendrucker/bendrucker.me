@@ -233,11 +233,14 @@ export async function queryLatestRides(
     .map((entry) => entry.ride);
 }
 
-/** A ride for its own page, with the metres its figures format from. */
+/**
+ * A ride for its own page, with the metres its figures format from. A figure
+ * the ride never recorded is null, and the page leaves its tile out.
+ */
 export interface RideDetail {
   ride: Ride;
-  distanceM: number;
-  elevationM: number;
+  distanceM: number | null;
+  elevationM: number | null;
 }
 
 /**
@@ -255,9 +258,9 @@ export async function queryRideById(
     .where("sport", "=", "ride")
     .executeTakeFirst();
   if (row === undefined) return null;
-  const { ride, distanceM, elevationM } = toEntry(row);
+  const { ride } = toEntry(row);
   attachTrack(ride, row);
-  return { ride, distanceM, elevationM };
+  return { ride, distanceM: row.distanceM, elevationM: row.elevationM };
 }
 
 /**
