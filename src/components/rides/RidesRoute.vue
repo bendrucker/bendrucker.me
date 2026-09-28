@@ -85,12 +85,17 @@ function pickView(value: string) {
 /** Set once the reader navigates away, after which the list owns no history entry. */
 let leaving = false;
 
+/** The list answers at `/rides/` too, which the sitemap names. */
+function onList() {
+  return location.pathname.replace(/\/$/, "") === "/rides";
+}
+
 const listHref = computed(() =>
   ridesHref({ view: view.value, q: query.value, units: units.value }),
 );
 
 function writeUrl() {
-  if (leaving || location.pathname !== "/rides") return;
+  if (leaving || !onList()) return;
   history.replaceState(history.state, "", listHref.value);
 }
 
@@ -121,7 +126,7 @@ const log = useMonthPages(props.months, props.logCursor, fetchRows);
 let entryId: string | null = null;
 
 function claimEntryId() {
-  if (leaving || location.pathname !== "/rides") return;
+  if (leaving || !onList()) return;
   entryId = ensureListEntryId();
 }
 

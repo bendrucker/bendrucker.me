@@ -8,7 +8,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from "reka-ui";
-import { computed, watch } from "vue";
+import { computed, onBeforeUnmount, watch } from "vue";
 import MediaCarousel from "./MediaCarousel.vue";
 import StravaLink from "./StravaLink.vue";
 import type { RideMedia } from "@/activity/types";
@@ -81,6 +81,38 @@ function onOpenChange(value: boolean) {
 }
 
 /**
+ * reka marks the rest of the page `aria-hidden`, which leaves its links and
+ * buttons focusable to anything but its own Tab trap. `inert` takes them out
+ * of reach entirely. It is lifted before reka hands focus back to the
+ * control that opened the viewer, which an inert page would refuse.
+ *
+ * `aria-hidden`'s own `inertOthers` shares one reference count with the
+ * `hideOthers` reka calls, so undoing either leaves the other's attribute
+ * behind.
+ */
+function inertPage(content: HTMLElement): () => void {
+  const others = [...document.body.children].filter(
+    (element): element is HTMLElement =>
+      element instanceof HTMLElement &&
+      !element.contains(content) &&
+      !element.inert,
+  );
+  for (const element of others) element.inert = true;
+  return () => {
+    for (const element of others) element.inert = false;
+  };
+}
+
+let releasePage = () => {};
+
+function onCloseAutoFocus() {
+  releasePage();
+  releasePage = () => {};
+}
+
+onBeforeUnmount(onCloseAutoFocus);
+
+/**
  * Opens on the close button. reka's default is the first tabbable element,
  * and with every slide in the DOM that can be a video several slides off
  * screen, which then takes the arrow keys for its own controls.
@@ -88,6 +120,8 @@ function onOpenChange(value: boolean) {
 function onOpenAutoFocus(event: Event) {
   const content = event.target;
   if (!(content instanceof HTMLElement)) return;
+  releasePage();
+  releasePage = inertPage(content);
   const close = content.querySelector("[data-lightbox-close]");
   if (!(close instanceof HTMLElement)) return;
   event.preventDefault();
@@ -127,6 +161,7 @@ function onKeydown(event: KeyboardEvent) {
         :class="tone === 'black' ? 'text-white' : ''"
         @keydown="onKeydown"
         @open-auto-focus="onOpenAutoFocus"
+        @close-auto-focus="onCloseAutoFocus"
       >
         <DialogTitle class="sr-only">{{ rideName }}</DialogTitle>
         <DialogDescription class="sr-only">

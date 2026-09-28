@@ -187,7 +187,9 @@ function scored(repo: CodeRepo): ScoredRepo {
 
 /**
  * The repositories touched inside the window, most recent first, each with
- * the pull requests and issues opened in it since the window began.
+ * the pull requests and issues opened in it since the window began. One with
+ * no pull request or issue on record is left out, since its page would have
+ * nothing to show.
  */
 export async function queryCodeRows(
   db: Kysely<Database>,
@@ -202,6 +204,23 @@ export async function queryCodeRows(
         sql<number>`max(${sql.ref("repoActivity.lastActivity")})`,
         ">=",
         fromSeconds,
+      )
+      .having((eb) =>
+        eb.or([
+          eb(sql<number>`sum(${sql.ref("repoActivity.prCount")})`, ">", 0),
+          eb.exists(
+            eb
+              .selectFrom("pullRequests")
+              .whereRef("pullRequests.repoId", "=", "repos.id")
+              .select("pullRequests.id"),
+          ),
+          eb.exists(
+            eb
+              .selectFrom("issues")
+              .whereRef("issues.repoId", "=", "repos.id")
+              .select("issues.id"),
+          ),
+        ]),
       )
       .execute(),
     pullRows(db).where("pullRequests.createdAt", ">=", fromIso).execute(),

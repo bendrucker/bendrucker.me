@@ -155,28 +155,36 @@ function issues({ issues: n, issuesCapped }: CodeStats): StatTileData[] {
     : [];
 }
 
-function pulls({ prs, prsCapped }: CodeStats): StatTileData {
-  return {
-    icon: "git-pull-request",
-    value: atLeast(prs, prsCapped),
-    label: "pull requests",
-  };
+function pulls({ prs, prsCapped }: CodeStats): StatTileData[] {
+  return prs > 0
+    ? [
+        {
+          icon: "git-pull-request",
+          value: atLeast(prs, prsCapped),
+          label: "pull requests",
+        },
+      ]
+    : [];
 }
 
-/** Stars, pull requests, issues when there are any, and since. */
+function stars({ stars: n }: RepoStats): StatTileData[] {
+  return n > 0 ? [{ icon: "star", value: count(n), label: "stars" }] : [];
+}
+
+/** Stars, pull requests, and issues when there are any, and since. A zero reads as a gap. */
 export function repoStatTiles(stats: RepoStats): StatTileData[] {
   return [
-    { icon: "star", value: count(stats.stars), label: "stars" },
-    pulls(stats),
+    ...stars(stats),
+    ...pulls(stats),
     ...issues(stats),
     ...since(stats.since),
   ];
 }
 
-/** Pull requests, issues when there are any, repositories, and since. Stars summed across repositories mean little. */
+/** Pull requests and issues when there are any, repositories, and since. Stars summed across repositories mean little. */
 export function projectStatTiles(stats: ProjectStats): StatTileData[] {
   return [
-    pulls(stats),
+    ...pulls(stats),
     ...issues(stats),
     {
       icon: "folder-git-2",

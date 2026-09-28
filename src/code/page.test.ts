@@ -108,6 +108,19 @@ describe("stat tiles", () => {
     ]);
   });
 
+  it("leaves out a count that is zero", () => {
+    expect(
+      repoStatTiles({
+        stars: 0,
+        prs: 0,
+        prsCapped: false,
+        issues: 0,
+        issuesCapped: false,
+        since: "2020-01-01T00:00:00.000Z",
+      }).map((tile) => tile.label),
+    ).toEqual(["since"]);
+  });
+
   it("marks a pull request count that is only a floor", () => {
     const [prs] = projectStatTiles({
       prs: 1100,

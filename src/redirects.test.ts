@@ -5,11 +5,11 @@ import { STATIC_REDIRECTS } from "./redirects";
 
 const PAGES = join(import.meta.dirname, "pages");
 
-/** Whether a path renders from a page file rather than falling through to 404. */
+/** Whether a path renders from a page or an endpoint rather than falling through to 404. */
 function hasPage(path: string): boolean {
   const base = join(PAGES, path);
-  return [`${base}.astro`, join(base, "index.astro")].some((file) =>
-    existsSync(file),
+  return [`${base}.astro`, `${base}.ts`, join(base, "index.astro")].some(
+    (file) => existsSync(file),
   );
 }
 
@@ -30,6 +30,7 @@ describe("STATIC_REDIRECTS", () => {
     expect(STATIC_REDIRECTS).toEqual({
       "/activity/cycling": "/rides",
       "/activity/code": "/code",
+      "/activity/code.md": "/code.md",
       "/posts": "/writing",
       "/archives": "/writing",
     });
@@ -58,16 +59,22 @@ describe("static/_redirects", () => {
   it("moves a post and its OG image to Writing, and a post page to the list", () => {
     expect(cloudflareRules()).toEqual(
       expect.arrayContaining([
+        ["/posts/page", "/writing", "301"],
         ["/posts/page/*", "/writing", "301"],
         ["/posts/*", "/writing/:splat", "301"],
       ]),
     );
   });
 
-  it("matches a post page before the catch-all that would keep its path", () => {
-    const froms = cloudflareRules().map(([from]) => from);
-    expect(froms.indexOf("/posts/page/*")).toBeLessThan(
-      froms.indexOf("/posts/*"),
-    );
-  });
+  it.each(["/posts", "/blog"])(
+    "matches %s pages before the catch-all that would keep their path",
+    (prefix) => {
+      const froms = cloudflareRules().map(([from]) => from);
+      const catchAll = froms.indexOf(`${prefix}/*`);
+      for (const page of [`${prefix}/page`, `${prefix}/page/*`]) {
+        expect(froms.indexOf(page), page).toBeGreaterThanOrEqual(0);
+        expect(froms.indexOf(page), page).toBeLessThan(catchAll);
+      }
+    },
+  );
 });

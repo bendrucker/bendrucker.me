@@ -39,6 +39,12 @@ const REPOS = [
     name: "solo",
     lastActivity: new Date("2025-05-16T00:00:00Z"),
   }),
+  makeRepo({
+    name: "homebrew-tap",
+    url: "https://github.com/bendrucker/homebrew-tap",
+    lastActivity: new Date("2025-05-18T00:00:00Z"),
+    activitySummary: activity(0),
+  }),
 ];
 
 const TFLINT = { owner: "terraform-linters", name: "tflint" };
@@ -106,6 +112,14 @@ describe("code queries", () => {
         "terraform-linters/tflint",
         "someone/solo",
       ]);
+    });
+
+    it("leaves out a repository with no pull request or issue on record", async () => {
+      const rows = await queryCodeRows(db, window);
+
+      expect(rows.map((row) => row.repo)).not.toContain(
+        "bendrucker/homebrew-tap",
+      );
     });
 
     it("carries only the work opened inside the window", async () => {
