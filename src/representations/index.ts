@@ -1,16 +1,15 @@
 import { about } from "./about";
 import { activity, activityYear } from "./activity";
-import { posts, writing } from "./posts";
+import { writing } from "./posts";
 import type { Representation, RepresentationEntry } from "./types";
 
 export type { Representation, RepresentationEntry } from "./types";
 export { markdownEndpoint, MARKDOWN_CONTENT_TYPE } from "./endpoint";
-export { about, activity, activityYear, posts, writing };
+export { about, activity, activityYear, writing };
 
 const REPRESENTATIONS: readonly Representation[] = [
   about,
   writing,
-  posts,
   activity,
   activityYear,
 ];

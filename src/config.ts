@@ -6,9 +6,7 @@ export const SITE = {
   title: "Ben Drucker",
   ogImage: "ben-drucker-sq.png",
   lightAndDarkMode: true,
-  postPerPage: 10,
   scheduledPostMargin: 15 * 60 * 1000, // 15 minutes
-  showArchives: true,
   showBackButton: true, // show back button in post detail
   viewSource: {
     text: "View source",

@@ -15,7 +15,7 @@ vi.mock("astro:content", () => ({
   ) => [entry].filter((e) => (filter ? filter(e) : true)),
 }));
 
-const { posts, writing } = await import("./posts");
+const { writing } = await import("./posts");
 
 function context(slug: string): APIContext {
   return { params: { slug } } as unknown as APIContext;
@@ -44,16 +44,5 @@ describe("writing", () => {
         description: undefined,
       },
     ]);
-  });
-});
-
-describe("posts", () => {
-  it("still renders a post at its old path", async () => {
-    const md = await posts.render(context("hello-world"));
-    expect(md).toBe("# Hello, World\n\nThe body of the post.");
-  });
-
-  it("leaves the old paths out of the listing", async () => {
-    expect(await posts.list()).toEqual([]);
   });
 });

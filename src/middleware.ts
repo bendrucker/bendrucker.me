@@ -15,6 +15,7 @@ import {
   type Validators,
 } from "./middleware/cache";
 import { prefersMarkdown } from "./middleware/negotiate";
+import { redirects } from "./middleware/redirects";
 import { MARKDOWN_CONTENT_TYPE, representationFor } from "./representations";
 
 const cache: MiddlewareHandler = async (context, next) => {
@@ -115,7 +116,7 @@ const markdown: MiddlewareHandler = async (context, next) => {
   return response;
 };
 
-export const onRequest = sequence(cache, markdown);
+export const onRequest = sequence(redirects, cache, markdown);
 
 function addVary(headers: Headers, value: string): void {
   const existing = headers.get("Vary");
