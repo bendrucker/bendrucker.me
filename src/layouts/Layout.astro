@@ -5,6 +5,7 @@ import { SITE } from "@/config";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import { representationFor } from "@/representations";
+import type { Credit } from "@/categories";
 import "@/styles/global.css";
 
 export interface Props {
@@ -18,7 +19,10 @@ export interface Props {
   modDatetime?: Date | null;
   scrollSmooth?: boolean;
   sourcePath?: string;
-  headerVariant?: "default" | "home";
+  /** What the page's art needs credited in the footer. */
+  credits?: readonly Credit[];
+  /** Keeps the page out of search indexes, for pages of other people's work. */
+  noindex?: boolean;
 }
 
 const {
@@ -32,7 +36,8 @@ const {
   modDatetime,
   scrollSmooth = false,
   sourcePath,
-  headerVariant = "default",
+  credits = [],
+  noindex = false,
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.url);
@@ -64,7 +69,7 @@ const structuredData = pubDatetime
 <html
   dir={SITE.dir}
   lang=`${SITE.lang ?? "en"}`
-  class={`${scrollSmooth && "scroll-smooth"}`}
+  class:list={[{ "scroll-smooth": scrollSmooth }]}
 >
   <head>
     <meta charset="UTF-8" />
@@ -80,6 +85,7 @@ const structuredData = pubDatetime
     <meta name="title" content={title} />
     <meta name="description" content={description} />
     <meta name="author" content={author} />
+    {noindex && <meta name="robots" content="noindex" />}
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     <!-- Open Graph / Facebook -->
@@ -171,8 +177,8 @@ const structuredData = pubDatetime
     <script is:inline src="/relative-time.js"></script>
   </head>
   <body>
-    <Header variant={headerVariant} />
+    <Header />
     <slot />
-    <Footer sourcePath={sourcePath} />
+    <Footer sourcePath={sourcePath} credits={credits} />
   </body>
 </html>

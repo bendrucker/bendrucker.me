@@ -1,28 +1,34 @@
 ---
 import Socials from "./Socials.astro";
 import { SITE } from "@/config";
+import { creditLine, type Credit } from "@/categories";
 
 const currentYear = new Date().getFullYear();
 
 export interface Props {
   noMarginTop?: boolean;
   sourcePath?: string;
+  /** What the page's own art needs credited. Each page names what it renders. */
+  credits?: readonly Credit[];
 }
 
-const { noMarginTop = false, sourcePath } = Astro.props;
+const { noMarginTop = false, sourcePath, credits = [] } = Astro.props;
 const sourceUrl = sourcePath
   ? `${SITE.viewSource.url}${sourcePath}`
   : undefined;
+const credited = creditLine(credits);
 ---
 
 <footer
-  class:list={["w-full border-t border-border", { "mt-auto": !noMarginTop }]}
+  class:list={[
+    "flex w-full flex-col gap-2.5 border-t border-line px-4 pt-3.5 pb-4.5 text-xs text-dim md:px-12 md:pt-4.5 md:pb-5.5",
+    { "mt-auto": !noMarginTop },
+  ]}
 >
-  <div
-    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3.5 text-xs text-foreground/50 sm:px-10 sm:py-4 sm:text-sm"
-  >
-    <div class="flex items-center gap-1.5 sm:gap-2">
-      <span>&#169; {currentYear} Ben Drucker</span>
+  {credited && <p class="text-[11px] leading-relaxed">{credited}</p>}
+  <div class="flex items-center justify-between gap-3">
+    <span>
+      &#169; {currentYear} Ben Drucker
       {
         sourceUrl && (
           <>
@@ -31,14 +37,14 @@ const sourceUrl = sourcePath
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              class="underline decoration-dashed underline-offset-2 hover:text-accent"
+              class="text-dim hover:text-foreground"
             >
               {SITE.viewSource.text}
             </a>
           </>
         )
       }
-    </div>
+    </span>
     <Socials />
   </div>
 </footer>

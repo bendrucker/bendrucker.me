@@ -1,20 +1,35 @@
 ---
 import { SOCIALS } from "@/constants";
-import LinkButton from "./LinkButton.astro";
+
+/** The footer's profiles, each with its Lucide mark written out for Tailwind. */
+const ICONS: Record<string, string> = {
+  GitHub: "icon-[lucide--github]",
+  LinkedIn: "icon-[lucide--linkedin]",
+  Mail: "icon-[lucide--mail]",
+  RSS: "icon-[lucide--rss]",
+};
+
+const links = SOCIALS.flatMap((social) => {
+  const icon = ICONS[social.name];
+  return icon ? [{ ...social, icon }] : [];
+});
 ---
 
-<div class="flex items-center gap-3 sm:gap-4.5">
+<div class="-mr-2 flex items-center gap-0.5">
   {
-    SOCIALS.map((social) => (
-      <LinkButton
+    links.map((social) => (
+      <a
         href={social.href}
-        class="-mx-1.5 -my-3.5 px-1.5 py-3.5 text-foreground/50"
+        class="inline-flex size-8 items-center justify-center rounded-lg text-dim hover:bg-hover hover:text-foreground"
         title={social.linkTitle}
-        newTab={social.href.startsWith("http")}
+        aria-label={social.linkTitle}
+        {...(social.href.startsWith("http") && {
+          target: "_blank",
+          rel: "noopener noreferrer",
+        })}
       >
-        <social.icon class="inline-block size-4 fill-transparent stroke-current stroke-2 group-hover:fill-transparent" />
-        <span class="sr-only">{social.linkTitle}</span>
-      </LinkButton>
+        <span aria-hidden="true" class:list={[social.icon, "size-[15px]"]} />
+      </a>
     ))
   }
 </div>
