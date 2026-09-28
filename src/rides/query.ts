@@ -102,6 +102,8 @@ export interface RidesPage {
   matches: RideTuple[] | null;
   /** Whether more rides match than `matches` carries. */
   partial: boolean;
+  /** Every month with a ride, newest first, for the rail to reach past the loaded log. */
+  monthKeys: string[];
 }
 
 /** Everything `/rides` renders on first load, for the query it was asked with. */
@@ -127,17 +129,20 @@ export async function queryRidesPage(
       matchRecords: searching ? { longest: [], climbing: [] } : null,
       matches: searching ? [] : null,
       partial: false,
+      monthKeys: [],
     };
   }
 
   const latestDay = wallClock(latest.startedAt, latest.timezone).slice(0, 10);
-  const [highlights, log, records, matchRecords, found] = await Promise.all([
-    queryHighlights(db, latest.startedAt, latestDay),
-    queryRideRowsPage(db, monthAfter(monthKeyOf(latestDay)), FIRST_MONTHS),
-    queryRecords(db, ""),
-    searching ? queryRecords(db, query) : null,
-    searching ? queryMatches(db, query) : null,
-  ]);
+  const [highlights, log, records, matchRecords, found, monthKeys] =
+    await Promise.all([
+      queryHighlights(db, latest.startedAt, latestDay),
+      queryRideRowsPage(db, monthAfter(monthKeyOf(latestDay)), FIRST_MONTHS),
+      queryRecords(db, ""),
+      searching ? queryRecords(db, query) : null,
+      searching ? queryMatches(db, query) : null,
+      queryMonthKeys(db),
+    ]);
 
   return {
     latestDay,
@@ -151,7 +156,27 @@ export async function queryRidesPage(
     // names, so the browser confirms it against every ride.
     partial:
       (found?.partial ?? false) || (searching && !foldsLikeBrowser(query)),
+    monthKeys,
   };
+}
+
+/**
+ * The local months that hold a ride, newest first. The zone decides which
+ * month a ride near midnight on the 1st lands in, and SQL can't see it, so
+ * the months come from the same wall clock the log keys its sections by.
+ */
+async function queryMonthKeys(db: Kysely<Database>): Promise<string[]> {
+  const rows = await db
+    .selectFrom("activityFeed")
+    .select(["startedAt", "timezone"])
+    .where("sport", "=", "ride")
+    .orderBy("startedAt", "desc")
+    .execute();
+  const keys = new Set<string>();
+  for (const row of rows) {
+    keys.add(wallClock(row.startedAt, row.timezone).slice(0, 7));
+  }
+  return [...keys];
 }
 
 /** The Rides route's highlights on their own, for the home card. */

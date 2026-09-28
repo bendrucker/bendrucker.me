@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  monthsByYear,
   groupRows,
   monthShort,
   seasonOf,
@@ -178,5 +179,20 @@ describe("groupRows", () => {
 
   it("returns nothing for no rows", () => {
     expect(groupRows([], "month", opts)).toEqual([]);
+  });
+});
+
+describe("monthsByYear", () => {
+  it("groups newest-first months under their years", () => {
+    expect(monthsByYear(["2026-02", "2026-01", "2025-12"])).toEqual([
+      {
+        year: "2026",
+        months: [
+          { key: "2026-02", label: "February" },
+          { key: "2026-01", label: "January" },
+        ],
+      },
+      { year: "2025", months: [{ key: "2025-12", label: "December" }] },
+    ]);
   });
 });

@@ -31,6 +31,7 @@ try {
     matchRecords: null,
     matches: null,
     partial: false,
+    monthKeys: [],
   };
 }
 
@@ -58,6 +59,7 @@ const thisYear = String(new Date().getUTCFullYear());
     highlights={page.highlights}
     months={page.months}
     logCursor={page.logCursor}
+    allMonths={page.monthKeys}
     records={page.records}
     matchRecords={page.matchRecords}
     matches={page.matches}

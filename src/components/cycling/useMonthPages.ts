@@ -50,11 +50,22 @@ export function useMonthPages<M>(
   // Moves on every restore, so a page requested before one lands nowhere
   // rather than on the end of months it was never the next page of.
   let generation = 0;
+  // A second caller waits on the page already on its way rather than
+  // returning at once, so a loop paging toward a month can't spin.
+  let pending: Promise<void> | null = null;
 
   async function loadMore(): Promise<void> {
-    const before = cursor.value;
-    if (loading.value || before === null) return;
+    if (pending !== null) return pending;
+    if (cursor.value === null) return;
+    pending = loadPage(cursor.value);
+    try {
+      await pending;
+    } finally {
+      pending = null;
+    }
+  }
 
+  async function loadPage(before: string): Promise<void> {
     const started = generation;
     loading.value = true;
     failed.value = false;

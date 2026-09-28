@@ -8,6 +8,7 @@ import {
   useTemplateRef,
   watch,
 } from "vue";
+import { monthsByYear } from "@/activity/sections";
 import EmptyState from "@/components/parts/EmptyState.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
 import RouteFrame from "@/components/parts/RouteFrame.vue";
@@ -59,6 +60,10 @@ const sortLabel = computed(
 
 const months = computed(() =>
   view.value.sections.filter((section) => !section.phoneOnly),
+);
+
+const rail = computed(() =>
+  monthsByYear(months.value.map((section) => section.key)),
 );
 
 const results = useTemplateRef<HTMLElement>("results");
@@ -200,15 +205,20 @@ async function reset() {
         aria-labelledby="code-months"
         class="flex flex-col gap-1"
       >
-        <p id="code-months" class="px-1 label-caps">Months</p>
-        <ul class="flex flex-col">
-          <li v-for="section in months" :key="section.key">
-            <a
-              :href="`#month-${section.key}`"
-              class="block rounded-md px-2.5 py-1.5 font-mono text-[13px] text-foreground/80 no-underline transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat"
-            >
-              {{ section.label }}
-            </a>
+        <h2 id="code-months" class="sr-only">Months</h2>
+        <ul class="flex flex-col gap-3">
+          <li v-for="group in rail" :key="group.year">
+            <p class="px-1 pb-1 label-caps">{{ group.year }}</p>
+            <ul class="flex flex-col">
+              <li v-for="section in group.months" :key="section.key">
+                <a
+                  :href="`#month-${section.key}`"
+                  class="block rounded-md px-2.5 py-1.5 font-mono text-[13px] text-foreground/80 no-underline transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat"
+                >
+                  {{ section.label }}
+                </a>
+              </li>
+            </ul>
           </li>
         </ul>
       </nav>

@@ -48,6 +48,7 @@ function key(state: ReturnType<typeof initState>): string {
           :highlights="highlights"
           :months="months"
           :log-cursor="null"
+          :all-months="months.map((month) => month.key)"
           :records="records"
           :match-records="null"
           :matches="null"

@@ -107,6 +107,27 @@ export function sectionLabel(
   return year === thisYear ? name : `${name} ${year}`;
 }
 
+export interface RailYear {
+  year: string;
+  months: { key: string; label: string }[];
+}
+
+/**
+ * Month keys, `YYYY-MM` and newest first, grouped under their year for a
+ * sidebar rail. The year heads the group, so a month is named alone.
+ */
+export function monthsByYear(keys: readonly string[]): RailYear[] {
+  const years: RailYear[] = [];
+  for (const key of keys) {
+    const year = key.slice(0, 4);
+    const label = MONTHS[Number(key.slice(5, 7)) - 1] ?? "";
+    const last = years.at(-1);
+    if (last?.year === year) last.months.push({ key, label });
+    else years.push({ year, months: [{ key, label }] });
+  }
+  return years;
+}
+
 /**
  * Groups rows, newest first, into sections by month, season, or year, and each
  * section into weeks. A season has no days to break on, so it is one week.

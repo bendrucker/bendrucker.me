@@ -63,6 +63,7 @@ describe("queryRidesPage", () => {
       matchRecords: null,
       matches: null,
       partial: false,
+      monthKeys: [],
     });
   });
 

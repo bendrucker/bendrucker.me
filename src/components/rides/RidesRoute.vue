@@ -8,7 +8,7 @@ import {
   ref,
   watch,
 } from "vue";
-import { sectionLabel } from "@/activity/sections";
+import { monthsByYear, type RailYear } from "@/activity/sections";
 import { useMonthPages } from "@/components/cycling/useMonthPages";
 import {
   scrollToSection,
@@ -54,6 +54,8 @@ const props = defineProps<{
   /** The log's first months, newest first. */
   months: RideMonth[];
   logCursor: string | null;
+  /** Every month with a ride, newest first, so the rail reaches unloaded ones. */
+  allMonths: string[];
   /** All-time records. */
   records: Records<RideTuple>;
   /** Records among the rides `q` matches, when there is one. */
@@ -266,14 +268,40 @@ const logRoot = ref<HTMLElement | null>(null);
 const monthKeys = computed(() => log.months.value.map((month) => month.key));
 const activeMonth = useScrollSpy(monthKeys, { root: logRoot });
 const rail = computed(() =>
-  monthKeys.value.map((key) => ({
-    key,
-    label: sectionLabel(key, "month", { thisYear: props.thisYear }),
-  })),
+  monthsByYear(props.allMonths.length > 0 ? props.allMonths : monthKeys.value),
+);
+const activeYear = computed(() =>
+  (activeMonth.value ?? monthKeys.value[0])?.slice(0, 4),
 );
 const showRail = computed(
-  () => view.value === "log" && !searching.value && rail.value.length > 1,
+  () =>
+    view.value === "log" &&
+    !searching.value &&
+    rail.value.flatMap((group) => group.months).length > 1,
 );
+
+const jumping = ref(false);
+
+/** A collapsed year jumps to its newest month. */
+function jumpToYear(group: RailYear) {
+  const newest = group.months[0];
+  if (newest !== undefined) void jumpTo(newest.key);
+}
+
+/** Pages the log back until `key` is loaded, then jumps to it. */
+async function jumpTo(key: string) {
+  jumping.value = true;
+  try {
+    while (!monthKeys.value.includes(key) && log.hasMore.value) {
+      await log.loadMore();
+      if (log.failed.value) return;
+    }
+    await nextTick();
+    scrollToSection(logRoot.value, key);
+  } finally {
+    jumping.value = false;
+  }
+}
 
 /**
  * Empties the search from the empty state. The button that did it leaves with
@@ -352,19 +380,40 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
       <nav
         v-if="showRail"
         aria-label="Months"
+        :aria-busy="jumping"
         class="flex min-h-0 flex-col gap-1.5"
       >
-        <p class="px-1 label-caps">Months</p>
-        <ul class="flex max-h-[40vh] flex-col gap-0.5 overflow-y-auto">
-          <li v-for="month in rail" :key="month.key">
+        <ul class="flex max-h-[50vh] flex-col gap-0.5 overflow-y-auto">
+          <li
+            v-for="group in rail"
+            :key="group.year"
+            :class="group.year === activeYear ? 'py-2 first:pt-0' : ''"
+          >
             <button
+              v-if="group.year !== activeYear"
               type="button"
-              :aria-current="activeMonth === month.key ? 'true' : undefined"
-              class="flex min-h-9 w-full items-center rounded-[7px] px-2.5 font-mono text-[13px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat aria-[current=true]:bg-background aria-[current=true]:text-cat aria-[current=true]:shadow-[0_1px_2px_var(--shadow)]"
-              @click="scrollToSection(logRoot, month.key)"
+              class="flex min-h-9 w-full items-center rounded-[7px] px-2.5 font-mono text-[13px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat"
+              @click="jumpToYear(group)"
             >
-              {{ month.label }}
+              {{ group.year }}
             </button>
+            <template v-else>
+              <p class="px-1 pb-1 label-caps">{{ group.year }}</p>
+              <ul class="flex flex-col gap-0.5">
+                <li v-for="month in group.months" :key="month.key">
+                  <button
+                    type="button"
+                    :aria-current="
+                      activeMonth === month.key ? 'true' : undefined
+                    "
+                    class="flex min-h-9 w-full items-center rounded-[7px] px-2.5 font-mono text-[13px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat aria-[current=true]:bg-background aria-[current=true]:text-cat aria-[current=true]:shadow-[0_1px_2px_var(--shadow)]"
+                    @click="jumpTo(month.key)"
+                  >
+                    {{ month.label }}
+                  </button>
+                </li>
+              </ul>
+            </template>
           </li>
         </ul>
       </nav>
