@@ -182,6 +182,22 @@ export async function queryRidesPage(
   };
 }
 
+/** The Rides route's highlights on their own, for the home card. */
+export async function queryRideHighlights(
+  db: Kysely<Database>,
+): Promise<RideRow[]> {
+  const latest = await db
+    .selectFrom("activityFeed")
+    .select(["startedAt", "timezone"])
+    .where("sport", "=", "ride")
+    .orderBy("startedAt", "desc")
+    .limit(1)
+    .executeTakeFirst();
+  if (latest === undefined) return [];
+  const latestDay = wallClock(latest.startedAt, latest.timezone).slice(0, 10);
+  return queryHighlights(db, latest.startedAt, latestDay);
+}
+
 function recordTuples(records: Records<RideRow>): Records<RideTuple> {
   return {
     longest: records.longest.map((row) => toTuple(row)),

@@ -56,3 +56,16 @@ export function isEnabled(
     env.PUBLIC_ALL_CATEGORIES === "1"
   );
 }
+
+function isCategoryId(segment: string): segment is CategoryId {
+  return Object.hasOwn(SITE.categories, segment);
+}
+
+/** Whether a path falls under the route of a category that is off in this build. */
+export function isSwitchedOff(
+  pathname: string,
+  env: CategoryEnv = import.meta.env,
+): boolean {
+  const section = pathname.split("/").find(Boolean) ?? "";
+  return isCategoryId(section) && !isEnabled(section, env);
+}

@@ -129,11 +129,14 @@ export function enabledCategories(
   return CATEGORIES.filter((c) => enabled(c.id));
 }
 
-/** Home shows art only for the categories whose cards carry it. */
-export function homeCredits(
-  enabled: (id: CategoryId) => boolean = isEnabled,
-): Credit[] {
-  return enabledCategories(enabled).flatMap((c) => (c.art ? c.credits : []));
+/**
+ * What the home cards shown need credited. Only a card that draws art carries
+ * a credit, and a card that hid for having nothing to show carries none.
+ */
+export function homeCredits(shown: readonly CategoryId[]): Credit[] {
+  return CATEGORIES.filter((c) => shown.includes(c.id)).flatMap((c) =>
+    c.art ? c.credits : [],
+  );
 }
 
 /**

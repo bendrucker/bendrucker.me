@@ -2,18 +2,8 @@ import kebabcase from "lodash.kebabcase";
 
 const BLOG_PATH = "src/content/blog";
 
-/**
- * Get full path of a blog post
- * @param id - id of the blog post (aka slug)
- * @param filePath - the blog post full file location
- * @param includeBase - whether to include `/posts` in return value
- * @returns blog post path
- */
-export function getPath(
-  id: string,
-  filePath: string | undefined,
-  includeBase = true,
-) {
+/** A post's path below its section: `/<dirs>/<slug>`, with `_` directories left out. */
+export function getPath(id: string, filePath: string | undefined) {
   const pathSegments = filePath
     ?.replace(BLOG_PATH, "")
     .split("/")
@@ -22,21 +12,19 @@ export function getPath(
     .slice(0, -1) // remove the last segment_ file name_ since it's unnecessary
     .map((segment) => kebabcase(segment)); // slugify each segment path
 
-  const basePath = includeBase ? "/posts" : "";
-
   // Making sure `id` does not contain the directory
   const blogId = id.split("/");
   const slug = blogId.length > 0 ? blogId.slice(-1) : blogId;
 
   // If not inside the sub-dir, simply return the file path
   if (!pathSegments || pathSegments.length < 1) {
-    return [basePath, slug].join("/");
+    return ["", slug].join("/");
   }
 
-  return [basePath, ...pathSegments, slug].join("/");
+  return ["", ...pathSegments, slug].join("/");
 }
 
 /** A post's page under Writing: `/writing/<slug>`. */
 export function writingPath(id: string, filePath: string | undefined) {
-  return `/writing${getPath(id, filePath, false)}`;
+  return `/writing${getPath(id, filePath)}`;
 }

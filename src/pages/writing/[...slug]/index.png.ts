@@ -15,7 +15,7 @@ export async function getStaticPaths() {
   const posts = entries.filter(({ data }) => !data.draft && !data.ogImage);
 
   return posts.map((post) => ({
-    params: { slug: getPath(post.id, post.filePath, false) },
+    params: { slug: getPath(post.id, post.filePath) },
     props: post,
   }));
 }

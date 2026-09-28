@@ -5,6 +5,8 @@
 // Everything else changes only on deploy and is covered by `routeRules` in
 // astro.config.ts, and the Workers Cache key includes the Worker version, so
 // deploys invalidate it regardless of TTL.
+import { secondsUntilUtcMidnight } from "@/activity/shuffle";
+
 const ACTIVITY_SYNC_BUFFER_SECONDS = 300;
 
 export interface CachePolicy {
@@ -29,8 +31,21 @@ export function isActivityPath(pathname: string): boolean {
   );
 }
 
-export function activityCachePolicy(now: Date): CachePolicy {
-  return { maxAge: activityMaxAge(now), swr: 3600 };
+/**
+ * Home's Listening shelf takes a new order at UTC midnight, so on `/` neither
+ * the max-age nor the stale window may reach past it.
+ */
+export function activityCachePolicy(now: Date, pathname = ""): CachePolicy {
+  const maxAge = activityMaxAge(now);
+  if (!isDayOrdered(pathname)) return { maxAge, swr: 3600 };
+  const left = secondsUntilUtcMidnight(now);
+  const capped = Math.min(maxAge, left);
+  return { maxAge: capped, swr: Math.min(3600, left - capped) };
+}
+
+/** A page whose order changes with the UTC day, as home's Listening shelf does. */
+export function isDayOrdered(pathname: string): boolean {
+  return pathname === "/";
 }
 
 export interface ActivityVersions {
@@ -43,13 +58,15 @@ export interface ActivityVersions {
    * serves, so a browser revalidating across a deploy needs a miss.
    */
   deploy: string;
+  /** The UTC day, on a page whose order changes with it. */
+  day?: string;
 }
 
 /**
  * Both datasets go into every activity page's tag, which costs a re-render
  * of the other page when either changes and saves the middleware knowing
  * which page is which. The variant is part of the tag because
- * `/activity/code` serves HTML or markdown at one URL, by `Accept`.
+ * `/code` serves HTML or markdown at one URL, by `Accept`.
  *
  * The tag is weak: it names a version, and the bytes differ by encoding.
  * Cloudflare drops it from HTML on the way out, so a browser holding a page
@@ -57,10 +74,13 @@ export interface ActivityVersions {
  * tag.
  */
 export function activityETag(
-  { github, feed, deploy }: ActivityVersions,
+  { github, feed, deploy, day }: ActivityVersions,
   variant: "html" | "md",
 ): string {
-  return `W/"${github}-${feed}-${deploy}-${variant}"`;
+  const version = [github, feed, deploy, day, variant].filter(
+    (part) => part !== undefined,
+  );
+  return `W/"${version.join("-")}"`;
 }
 
 export interface ActivityTimes {
@@ -70,6 +90,8 @@ export interface ActivityTimes {
   feed: Date | null;
   /** When the Worker version was uploaded. */
   deploy: Date | null;
+  /** The start of the UTC day, on a page whose order changes with it. */
+  day?: Date | null;
 }
 
 /**
@@ -77,7 +99,7 @@ export interface ActivityTimes {
  * page moves whenever any of them does, so the latest is when it last did.
  */
 export function activityLastModified(times: ActivityTimes): Date {
-  const instants = [times.github, times.feed, times.deploy]
+  const instants = [times.github, times.feed, times.deploy, times.day ?? null]
     .filter((time) => time !== null)
     .map((time) => time.getTime())
     .filter((instant) => !Number.isNaN(instant));

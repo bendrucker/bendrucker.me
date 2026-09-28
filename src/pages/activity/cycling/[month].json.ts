@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import { queryCyclingLogPage } from "@/activity/feed";
 import { getDb } from "@/db";
 import { queryRideRowsPage } from "@/rides/query";
 import { logger } from "@workspace/logger";
@@ -13,23 +12,18 @@ import { logger } from "@workspace/logger";
 /** `YYYY-MM`. The route is public, so the month is validated. */
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-export const GET: APIRoute = async ({ params, url }) => {
+/**
+ * A page of the Rides route's log: the rides of the months before `month`, as
+ * compact rows. The route's `?format=rows` is accepted as a no-op.
+ */
+export const GET: APIRoute = async ({ params }) => {
   const month = params.month;
   if (month === undefined || !MONTH.test(month)) {
     return new Response("Not Found", { status: 404 });
   }
 
-  // `?format=rows` is the Rides route's log: every ride as a compact row, with
-  // no tracks, media, or badges to carry.
-  const rows = url.searchParams.get("format") === "rows";
-
   try {
-    const db = await getDb();
-    return Response.json(
-      rows
-        ? await queryRideRowsPage(db, month)
-        : await queryCyclingLogPage(db, month),
-    );
+    return Response.json(await queryRideRowsPage(await getDb(), month));
   } catch (error) {
     logger.error({ error, month }, "Failed to load cycling log page");
     return new Response("Internal Server Error", { status: 500 });

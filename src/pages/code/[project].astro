@@ -57,7 +57,6 @@ const work = workList(project.members, { withRepo: true });
             text={member.description || undefined}
             lead="dot"
             dot={languageColor(member)}
-            transitionName={transitionName(member.repo)}
             tinted
           />
         </li>

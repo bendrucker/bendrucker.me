@@ -14,8 +14,9 @@ import {
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/shiki/fileName";
-import { isEnabled, SITE } from "./src/config";
+import { isEnabled, isSwitchedOff, SITE } from "./src/config";
 import { writingSitemapPages } from "./src/writing/sitemap";
+import { STATIC_REDIRECTS } from "./src/redirects";
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -26,6 +27,10 @@ const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
 // Routes that render `noindex` while their data is still fixtures, so the
 // sitemap leaves them out too.
 const UNLISTED_ROUTES = new Set(["/reading", "/watching", "/listening"]);
+
+const categoryEnv = {
+  PUBLIC_ALL_CATEGORIES: process.env.PUBLIC_ALL_CATEGORIES,
+};
 
 function copyStaticFiles(src: string, dest: string) {
   try {
@@ -58,20 +63,8 @@ export default defineConfig({
   cache: {
     provider: cacheCloudflare(),
   },
-  // `/activity/code/[year]` redirects from its own endpoint: a dynamic
-  // redirect to a page route resolves to `/code/index.html`.
-  //
-  // Writing's old addresses redirect the same way. The adapter writes a
-  // dynamic redirect into `_redirects` with a literal `*` in its destination,
-  // which Cloudflare discards, so `/posts/*` lives in static/_redirects with
-  // `:splat`. `/tags/<tag>` carries its tag into a query string, which
-  // neither can write, so src/middleware/redirects.ts answers it.
-  redirects: {
-    "/activity/code": "/code",
-    "/posts": "/writing",
-    "/archives": "/writing",
-  },
-  // On-demand routes that only change on deploy. `/` and `/activity` are
+  redirects: STATIC_REDIRECTS,
+  // On-demand routes that only change on deploy. `/`, `/rides`, and `/code` are
   // absent because their max-age is aligned to the hourly GitHub sync and
   // computed per request in src/middleware.ts. Prerendered routes are not
   // cached at runtime.
@@ -86,13 +79,16 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
-      customPages: isEnabled("writing", {
-        PUBLIC_ALL_CATEGORIES: process.env.PUBLIC_ALL_CATEGORIES,
-      })
+      customPages: isEnabled("writing", categoryEnv)
         ? writingSitemapPages(SITE.website)
         : [],
-      filter: (page) =>
-        !UNLISTED_ROUTES.has(new URL(page).pathname.replace(/\/$/, "")),
+      filter: (page) => {
+        const { pathname } = new URL(page);
+        return (
+          !isSwitchedOff(pathname, categoryEnv) &&
+          !UNLISTED_ROUTES.has(pathname.replace(/\/$/, ""))
+        );
+      },
     }),
     vue(),
     ...(isDev

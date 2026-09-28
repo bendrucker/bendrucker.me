@@ -7,6 +7,7 @@ import { createTestDb, testStore } from "@/test/db";
 import {
   foldsLikeBrowser,
   MATCH_COUNT,
+  queryRideHighlights,
   queryRideIndex,
   queryRideRowsPage,
   queryRidesPage,
@@ -390,5 +391,28 @@ describe("queryRideById", () => {
     await seed(ride("one"));
 
     expect(await queryRideById(db, "two")).toBeNull();
+  });
+});
+
+describe("queryRideHighlights", () => {
+  it("is empty for an empty feed", async () => {
+    expect(await queryRideHighlights(db)).toEqual([]);
+  });
+
+  it("picks the same rides as the route's highlights", async () => {
+    await seed(
+      ride("long", { startedAt: "2026-09-10T15:00:00Z", distanceM: 120_000 }),
+      ride("steep", { startedAt: "2026-08-10T15:00:00Z", elevationM: 2_400 }),
+      ride("short", { startedAt: "2026-09-12T15:00:00Z" }),
+      ride("old", { startedAt: "2026-05-01T15:00:00Z", distanceM: 200_000 }),
+    );
+
+    const rows = await queryRideHighlights(db);
+    const page = await queryRidesPage(db);
+
+    expect(rows.map((row) => row.id)).toEqual(["steep", "long"]);
+    expect(rows.map((row) => row.id)).toEqual(
+      page.highlights.map(([id]) => id),
+    );
   });
 });

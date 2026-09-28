@@ -28,7 +28,6 @@ import {
   ownerFrom,
   parseFilters,
   sortFrom,
-  transitionName,
   withFilters,
   type CodeFilters,
   type CodeRow,
@@ -242,7 +241,6 @@ function dayOfMonth(day: string): string {
             :text="row.text"
             :lead="row.lead"
             :dot="row.dot"
-            :transition-name="transitionName(row.key)"
           >
             <template #gutter>
               <TimelineGutter
@@ -306,7 +304,6 @@ function dayOfMonth(day: string): string {
                   :lead="item.lead"
                   :dot="item.dot"
                   :query="filters.q"
-                  :transition-name="transitionName(item.key)"
                 >
                   <template #gutter>
                     <TimelineGutter
@@ -340,7 +337,6 @@ function dayOfMonth(day: string): string {
               :lead="item.lead"
               :dot="item.dot"
               :query="filters.q"
-              :transition-name="transitionName(item.key)"
             >
               <template #gutter>
                 <TimelineGutter :day="dayNum" :sub="sub" week-end />

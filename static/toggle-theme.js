@@ -73,6 +73,10 @@ window.addEventListener("load", () => {
 // Set theme-color value before page transition
 // to avoid navigation bar color flickering in Android dark mode
 document.addEventListener("astro:before-swap", (event) => {
+  // The swap replaces the root's attributes with the fetched page's, which
+  // leaves the theme unset, so a dark page would otherwise be captured light.
+  event.newDocument.documentElement.setAttribute("data-theme", themeValue);
+
   const bgColor = document
     .querySelector("meta[name='theme-color']")
     ?.getAttribute("content");

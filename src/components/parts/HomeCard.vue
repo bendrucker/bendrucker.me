@@ -8,9 +8,11 @@ const cat = computed(() => category(props.id));
 </script>
 
 <template>
-  <!-- An odd card out spans both columns, so the grid never ends on a gap. -->
+  <!-- An odd card out spans both columns, so the grid never ends on a gap. It
+       counts cards by type because Astro puts the islands' hydration style and
+       scripts among them. -->
   <article
-    class="relative isolate flex min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-cat/15 tint-5 px-4 pt-3.5 pb-4 md:px-[18px] md:pt-4 md:pb-[18px] md:odd:last:col-span-2"
+    class="relative isolate flex min-w-0 flex-col gap-3 overflow-hidden rounded-xl border border-cat/15 tint-5 px-4 pt-3.5 pb-4 md:px-[18px] md:pt-4 md:pb-[18px] md:[&:nth-of-type(odd):last-of-type]:col-span-2"
     :class="cat.scope"
   >
     <span

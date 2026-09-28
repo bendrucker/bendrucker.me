@@ -6,9 +6,9 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 
 - `src/config.ts` — `SITE` constant (metadata, feature flags)
 - `src/content/blog/*.md` — posts (frontmatter: `title`, `publishDate` required; `subtitle`, `categories`, `series` optional)
-- `src/pages/` — routes: `writing/`, `activity/code.astro`, `activity/cycling.astro`, `about.md`, `rss.xml.ts`, `og.png.ts`, `map/`
+- `src/pages/` — routes: `index.astro` (home cards), `rides/`, `code/`, `writing/`, `reading.astro`, `watching.astro`, `listening.astro`, `about.md`, `rss.xml.ts`, `og.png.ts`, `map/`; `activity/cycling/*.json.ts` is the Rides route's pagination and search API
 - `src/map/` — vector basemap rendering for the route cards
-- `src/layouts/` — `Layout`, `PostDetails`, `AboutLayout`, `Main`
+- `src/layouts/` — `Layout`, `RouteLayout`, `AboutLayout`
 - `src/styles/global.css` — theme variables + Tailwind `@theme inline`
 - `static/` — images, fonts (copied to `public/` at build)
 - `packages/logger` — shared pino logger; `packages/github` — GitHub API client
@@ -110,8 +110,8 @@ is styling or client-side behavior, where HMR pays for itself. Use
 `npm run dev:worker` for anything server-rendered, D1-backed, cached,
 hydration-sensitive, or wrapped in reka: the comment at `astro.config.ts:120-124`
 is the reason, and it comes down to islands wrapping reka server-rendering
-empty under `astro dev`. `SegmentedControl.vue` is the cycling page's view
-switcher, so that page in particular is a different page under each server.
+empty under `astro dev`, so a route whose controls use reka is a different
+page under each server.
 
 `npm run dev` wraps `spotlight run astro dev`, which holds the terminal. To
 drive the server without blocking, call the Astro CLI directly:
@@ -202,7 +202,7 @@ secret that gets appended once CARTO extends the requirement to vector. Set it
 with `wrangler secret put`, which keeps it out of the client bundle.
 
 The free tier is granted in exchange for keeping CARTO's and OpenStreetMap's
-credits visible, which `CyclingActivity.vue` renders once beneath the views. A
+credits visible, which the footer carries on any page that draws a basemap. A
 card at 150px cannot carry them itself.
 
 Three constraints shape the design:
@@ -270,7 +270,7 @@ the window. Starting the other way round would leave a new page reserving no
 height, and the collapsed page would keep the loading sentinel on screen and
 pull every remaining page at once.
 
-`useLogPages` holds the months in a `shallowRef`. A ride never changes once it
+`useMonthPages` holds the months in a `shallowRef`. A ride never changes once it
 has been read, and a deep ref wraps every ride, badge, fact and photo in a
 proxy that costs more than the data. Pages are appended by replacing the array.
 
@@ -280,8 +280,8 @@ incrementally. Rebuilding them on every load would cost one `observe` per
 month already mounted, quadratic across the twenty-odd pages a full scroll
 fetches.
 
-The fetched pages live in `CyclingActivity`, so the log is hidden rather than
-unmounted when the reader switches to highlights or records. Unmounting it
+The fetched pages live in `RidesRoute`, so the log is hidden rather than
+unmounted when the reader switches to routes or records. Unmounting it
 would drop the window's record of which months are collapsed while keeping the
 months themselves, and coming back would mount every month fetched so far at
 once. A hidden section measures zero, so a month keeps the last height it
@@ -309,13 +309,13 @@ class like `icon-[lucide--flame]`. Never an emoji, and never a Unicode glyph
 standing in for an icon: both inherit the reader's font and land at whatever
 weight and baseline that font gives them.
 
-Lucide is the collection for the cycling components, Phosphor (`ph`) for the
+Lucide is the collection for the activity components, Phosphor (`ph`) for the
 about page. Stay within the collection already in use on a page.
 
 Tailwind extracts class candidates from source text, so an interpolated class
 name generates no CSS. Data carries a semantic name and a component maps it to a
-class written out in full. `src/components/cycling/LucideIcon.vue` is the
-pattern, and `IconName` in `types.ts` is the list of names it accepts.
+class written out in full. `PART_ICONS` in `src/components/parts/icons.ts` is
+the pattern, and its keys are the names the parts accept.
 
 ## Workers
 

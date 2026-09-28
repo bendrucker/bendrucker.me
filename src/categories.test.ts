@@ -64,11 +64,26 @@ describe("categories", () => {
 
 describe("homeCredits", () => {
   it("credits posters and covers when their cards show", () => {
-    expect(homeCredits(() => true)).toEqual(["posters", "covers"]);
+    expect(
+      homeCredits([
+        "rides",
+        "code",
+        "reading",
+        "writing",
+        "watching",
+        "listening",
+      ]),
+    ).toEqual(["posters", "covers"]);
   });
 
-  it("credits nothing once those categories are off", () => {
-    expect(homeCredits(production)).toEqual([]);
+  it("credits nothing once those cards are gone", () => {
+    expect(homeCredits(enabledCategories(production).map((c) => c.id))).toEqual(
+      [],
+    );
+  });
+
+  it("credits only the art of the cards that show", () => {
+    expect(homeCredits(["rides", "listening"])).toEqual(["covers"]);
   });
 });
 

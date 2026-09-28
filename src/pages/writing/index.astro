@@ -8,7 +8,7 @@ import SelectControl from "@/components/parts/SelectControl.vue";
 import TimelineGutter from "@/components/parts/TimelineGutter.vue";
 import { isEnabled, SITE } from "@/config";
 import { loadWriting } from "@/writing/load";
-import { findTag, postTags, transitionName, writingView } from "@/writing/rows";
+import { findTag, postTags, writingView } from "@/writing/rows";
 import { searchStatus } from "@/writing/status";
 
 if (!isEnabled("writing")) return Astro.rewrite("/404");
@@ -160,7 +160,6 @@ const PHONE_HIGHLIGHTS = 3;
                     title={row.item.title}
                     text={row.item.text}
                     query={query}
-                    transitionName={transitionName(row.item.href)}
                   >
                     <TimelineGutter
                       slot="gutter"
