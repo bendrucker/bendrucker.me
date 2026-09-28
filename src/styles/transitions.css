@@ -77,6 +77,37 @@ html[data-vt="back"]::view-transition-old(*):only-child {
 }
 
 /*
+ * A home card's heading opens its route: the card spreads into the route's
+ * ground and its title flies to the page's heading, both over a page that
+ * holds still. The ground's two snapshots crossfade quickly, so the route shows
+ * through the card as it grows. The titles scale rather than clip, since the
+ * heading is the same words at a larger size.
+ */
+html[data-vt="card"]::view-transition-group(route-ground),
+html[data-vt="card"]::view-transition-group(route-title) {
+  animation-duration: 0.4s;
+}
+
+html[data-vt="card"]::view-transition-old(route-ground) {
+  animation: vt-out 0.15s ease both;
+}
+
+html[data-vt="card"]::view-transition-new(route-ground) {
+  animation: vt-in 0.15s ease both;
+}
+
+html[data-vt="card"]::view-transition-old(route-title),
+html[data-vt="card"]::view-transition-new(route-title) {
+  object-fit: contain;
+  object-position: left center;
+  animation-duration: 0.4s;
+}
+
+html[data-vt="card"]::view-transition-new(root) {
+  animation: vt-in 0.2s ease 0.1s both;
+}
+
+/*
  * Reduced motion keeps a crossfade and drops everything that moves. Unnaming
  * every element folds the morph, the shrink, and the slide into the root, and
  * the root crossfades in 150ms. `!important` and the `html` prefix outrank the

@@ -1,4 +1,5 @@
-// The morph between a row and its item's page. The tapped row grows into the
+// The morph between a row and its item's page, and between a home card and
+// its route. The tapped row grows into the
 // page's title as a solid shape over a list that holds still, and going back
 // the title shrinks into the row when the row is on screen and fades when it
 // isn't. Every other navigation crossfades. `transitions.css` draws each,
@@ -30,8 +31,8 @@ const RIDES_PATH = "/rides";
  */
 const SETTLE_LIMIT_MS = 1500;
 
-/** The element named for the navigation under way, to unname once it ends. */
-let named: HTMLElement | null = null;
+/** The elements named for the navigation under way, to unname once it ends. */
+let named: HTMLElement[] = [];
 /** The name of the item a return is leaving, to find its row once the list is in. */
 let returning: string | null = null;
 /** Settles once the Rides list returned to has put back its saved months and place. */
@@ -39,7 +40,78 @@ let settling: Promise<void> | null = null;
 
 function name(element: HTMLElement, transitionName: string) {
   element.style.viewTransitionName = transitionName;
-  named = element;
+  named.push(element);
+}
+
+/** A route's ground and heading, which a home card and its title spread into. */
+const GROUND = "route-ground";
+const TITLE = "route-title";
+
+/** Set while a card's route loads, to name the route's ground once it's in. */
+let arrivingAtRoute = false;
+/** The route a return to the home page is leaving, to find its card once home is in. */
+let returningCard: string | null = null;
+
+function nameGround(ground: Element | null, title: Element | null): boolean {
+  if (!(ground instanceof HTMLElement) || !(title instanceof HTMLElement)) {
+    return false;
+  }
+  name(ground, GROUND);
+  name(title, TITLE);
+  return true;
+}
+
+/**
+ * A home card's heading opens its route by spreading the card into the
+ * route's ground, its title flying to the page's heading. The way back
+ * shrinks the ground into the card when the card is on screen.
+ */
+function prepareCard(event: TransitionBeforePreparationEvent): boolean {
+  const root = document.documentElement;
+  const from = event.from.pathname;
+  const to = event.to.pathname;
+  if (from === "/" && event.direction === "forward") {
+    const card = event.sourceElement
+      ?.closest("h2 a")
+      ?.closest("[data-drawer-card]");
+    if (!(card instanceof HTMLElement) || card.dataset.route !== to) {
+      return false;
+    }
+    if (!nameGround(card, card.querySelector("[data-card-title]")))
+      return false;
+    arrivingAtRoute = true;
+    root.dataset.vt = "card";
+    return true;
+  }
+  if (to === "/") {
+    const ground = document.querySelector("[data-route-ground]");
+    if (!nameGround(ground, document.querySelector("[data-route-title]"))) {
+      return false;
+    }
+    returningCard = from;
+    root.dataset.vt = "card";
+    return true;
+  }
+  return false;
+}
+
+function nameArrivingCard() {
+  if (arrivingAtRoute) {
+    arrivingAtRoute = false;
+    nameGround(
+      document.querySelector("[data-route-ground]"),
+      document.querySelector("[data-route-title]"),
+    );
+  }
+  const route = returningCard;
+  returningCard = null;
+  if (route === null) return;
+  const card = [
+    ...document.querySelectorAll<HTMLElement>("[data-drawer-card]"),
+  ].find((element) => element.dataset.route === route);
+  if (card !== undefined && onScreen(card)) {
+    nameGround(card, card.querySelector("[data-card-title]"));
+  }
 }
 
 async function listSettled(settledEvent: string): Promise<void> {
@@ -77,6 +149,9 @@ function onBeforePreparation(event: Event) {
   const leaving = itemTransitionName(event.from.pathname);
   settling = null;
   returning = null;
+  arrivingAtRoute = false;
+  returningCard = null;
+  if (prepareCard(event)) return;
 
   if (
     event.direction === "forward" &&
@@ -139,6 +214,7 @@ function nameReturningRow() {
 
 /** The router restores the scroll offset before this, so a row's place is final. */
 function onAfterSwap() {
+  nameArrivingCard();
   // A list with months to put back names its row once it has them.
   if (settling === null) nameReturningRow();
 }
@@ -150,8 +226,10 @@ async function settle(transition: ViewTransition) {
     // A skipped transition rejects, and there is still a name to clear.
   }
   delete document.documentElement.dataset.vt;
-  named?.style.removeProperty("view-transition-name");
-  named = null;
+  for (const element of named) {
+    element.style.removeProperty("view-transition-name");
+  }
+  named = [];
 }
 
 // The swap replaces every attribute on the root with the new document's, so

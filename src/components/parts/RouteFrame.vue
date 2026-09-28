@@ -29,10 +29,16 @@ function shows(region: RouteRegion): boolean {
        CSS: the phone's sticky tool row and the desktop's sidebar differ in more
        than layout, and a width check in script would flash the wrong one on
        first paint. -->
-  <main id="main-content" class="flex-1 tint-5 pb-12" :class="cat.scope">
+  <main
+    id="main-content"
+    data-route-ground
+    class="flex-1 tint-5 pb-12"
+    :class="cat.scope"
+  >
     <div class="mx-auto max-w-[1060px] px-4 pt-4 md:px-12 md:pt-10">
       <div class="flex min-h-11 items-center justify-between gap-3">
         <h1
+          data-route-title
           class="inline-flex items-center gap-2 font-mono text-[22px] leading-none font-bold text-cat md:text-[28px]"
         >
           <span
