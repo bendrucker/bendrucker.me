@@ -1,5 +1,6 @@
 // Rows for the Code route's story, shaped as `buildCodeRows` hands them to
 // the island: a project, other people's repositories, and the site's own.
+import type { CodeDetail } from "@/code/detailWire";
 import type { CodeMember, CodeRow, LanguageOption } from "@/code/view";
 
 const GO = "#00ADD8";
@@ -152,6 +153,90 @@ export const CODE_ROWS: CodeRow[] = [
     text: "Terraform module for a Cloudflare zone",
   }),
 ];
+
+/** A repository's detail, as its page and the list's modal show it. */
+export const REPO_DETAIL: CodeDetail = {
+  key: "terraform-linters/tflint",
+  title: "tflint",
+  org: "terraform-linters",
+  dek: "A pluggable Terraform linter",
+  mark: "dot",
+  dot: GO,
+  githubUrl: "https://github.com/terraform-linters/tflint",
+  tiles: [
+    { icon: "star", value: "5,212", label: "stars" },
+    { icon: "git-pull-request", value: "142", label: "pull requests" },
+    { icon: "circle-dot", value: "18", label: "issues" },
+    { value: "Mar 2019", label: "since" },
+  ],
+  members: [],
+  work: [
+    {
+      id: "pr1",
+      title: "Pin the plugin SDK to the release that fixed provider schemas",
+      url: "https://github.com/terraform-linters/tflint/pull/2100",
+      state: "MERGED",
+    },
+    {
+      id: "pr2",
+      title: "Read module sources from the lockfile",
+      url: "https://github.com/terraform-linters/tflint/pull/2101",
+      state: "OPEN",
+    },
+    {
+      id: "i1",
+      title: "Crash on an empty module block",
+      url: "https://github.com/terraform-linters/tflint/issues/2099",
+      state: "ISSUE_DONE",
+    },
+    {
+      id: "pr3",
+      title: "Draft: parallel rule evaluation",
+      url: "https://github.com/terraform-linters/tflint/pull/2090",
+      state: "DRAFT",
+    },
+  ],
+  moreHref:
+    "https://github.com/search?type=issues&q=repo%3Aterraform-linters%2Ftflint+author%3Abendrucker",
+  description: "A pluggable Terraform linter",
+};
+
+/** A project's detail, which lists its repositories above the work. */
+export const PROJECT_DETAIL: CodeDetail = {
+  key: "terraform-linters",
+  title: "TFLint",
+  org: "terraform-linters",
+  mark: "ring",
+  dot: GO,
+  githubUrl: "https://github.com/terraform-linters",
+  tiles: [
+    { icon: "git-pull-request", value: "163", label: "pull requests" },
+    { icon: "circle-dot", value: "21", label: "issues" },
+    { icon: "folder-git-2", value: "3", label: "repositories" },
+    { value: "Mar 2019", label: "since" },
+  ],
+  members: [
+    {
+      href: "/code/terraform-linters/tflint?from=terraform-linters",
+      title: "tflint",
+      text: "A pluggable Terraform linter",
+      dot: GO,
+    },
+    {
+      href: "/code/terraform-linters/tflint-ruleset-aws?from=terraform-linters",
+      title: "tflint-ruleset-aws",
+      text: "TFLint ruleset for terraform-provider-aws",
+      dot: GO,
+    },
+    {
+      href: "/code/terraform-linters/setup-tflint?from=terraform-linters",
+      title: "setup-tflint",
+      dot: TS,
+    },
+  ],
+  work: REPO_DETAIL.work.map((item) => ({ ...item, repo: "tflint" })),
+  description: "TFLint: tflint, tflint-ruleset-aws, setup-tflint",
+};
 
 export const CODE_LANGUAGES: LanguageOption[] = [
   { value: "TypeScript", label: "TypeScript", color: TS },

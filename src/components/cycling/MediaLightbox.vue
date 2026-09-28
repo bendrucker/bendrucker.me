@@ -13,6 +13,12 @@ import MediaCarousel from "./MediaCarousel.vue";
 import StravaLink from "./StravaLink.vue";
 import type { RideMedia } from "@/activity/types";
 import { withinVideo } from "./mediaTarget";
+import { usePortalTarget } from "@/detail/portal";
+
+// Resolved here rather than in the template, which unwraps a top-level ref, so
+// `.value` there would read the dialog element's own property.
+const portalTarget = usePortalTarget();
+const portalTo = computed(() => portalTarget?.value ?? "body");
 
 const props = withDefaults(
   defineProps<{
@@ -149,7 +155,7 @@ function onKeydown(event: KeyboardEvent) {
 
 <template>
   <DialogRoot :open="open && count > 0" @update:open="onOpenChange">
-    <DialogPortal>
+    <DialogPortal :to="portalTo">
       <DialogOverlay
         class="fixed inset-0 z-50"
         :class="tone === 'black' ? 'bg-[#0b0b0c]' : 'bg-background/95'"

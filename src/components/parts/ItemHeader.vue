@@ -15,8 +15,10 @@ withDefaults(
     size?: "page" | "post";
     /** Names the title for a view transition from its row. */
     transitionName?: string;
+    /** A page's title is its `h1`. In a modal over a list, whose `h1` is the list's, it is an `h2`. */
+    level?: 1 | 2;
   }>(),
-  { size: "page" },
+  { size: "page", level: 1 },
 );
 </script>
 
@@ -47,7 +49,8 @@ withDefaults(
           "
         >
           <slot name="mark" />
-          <h1
+          <component
+            :is="level === 2 ? 'h2' : 'h1'"
             class="min-w-0 font-bold tracking-[-0.01em] wrap-anywhere text-foreground"
             :class="
               size === 'post'
@@ -61,7 +64,7 @@ withDefaults(
             "
           >
             {{ title }}
-          </h1>
+          </component>
           <slot name="title-end" />
         </div>
         <p

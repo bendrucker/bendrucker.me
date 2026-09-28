@@ -1,5 +1,12 @@
 // The Rides route's story data, in the tuple shapes its props carry. The names,
 // figures, and descriptions follow the boards.
+import type { Ride } from "@/activity/types";
+import {
+  epicRide,
+  everydayRide,
+  travelRide,
+} from "@/components/cycling/fixtures";
+import type { RideDetailWire } from "@/rides/detail";
 import { rankHighlights, rankRecords, type Records } from "@/rides/rank";
 import {
   byMonth,
@@ -73,3 +80,59 @@ export const records: Records<RideTuple> = {
   longest: ranked.longest.map((ride) => toTuple(ride)),
   climbing: ranked.climbing.map((ride) => toTuple(ride)),
 };
+
+function metres(miles?: number): number | null {
+  return miles === undefined ? null : Math.round(miles * 1609.344);
+}
+
+/**
+ * A card fixture as a ride's page and modal take it. The cards carry imperial
+ * figures and the detail metric ones, so they're converted back.
+ */
+function detailOf(
+  ride: Ride,
+  extra: Partial<RideDetailWire> = {},
+): RideDetailWire {
+  return {
+    id: ride.id,
+    name: ride.name,
+    startedAt: ride.startedAt,
+    ...(ride.stravaUrl === undefined ? {} : { stravaUrl: ride.stravaUrl }),
+    ...(ride.route === undefined ? {} : { route: ride.route }),
+    description: null,
+    distanceM: metres(ride.distanceMi),
+    elevationM:
+      ride.elevationFt === undefined
+        ? null
+        : Math.round(ride.elevationFt * 0.3048),
+    movingS: ride.movingSeconds ?? null,
+    averageWatts: ride.averageWatts ?? null,
+    normalizedWatts: null,
+    averageHeartRate: null,
+    temperatureLowC: null,
+    temperatureHighC: null,
+    media: ride.media,
+    ...extra,
+  };
+}
+
+/** A big day with everything: a map, every figure, and shots. */
+export const epicDetail = detailOf(epicRide, {
+  description: "MV FF BF SB RRG",
+  normalizedWatts: 211,
+  averageHeartRate: 142,
+  temperatureLowC: 12,
+  temperatureHighC: 29,
+});
+
+/** A ride with a map and figures, and no shots. */
+export const everydayDetail = detailOf(everydayRide, { media: [] });
+
+/** A ride with a video first. */
+export const travelDetail = detailOf(travelRide);
+
+/** A head unit's summary alone: no map, no power, no shots. */
+export const bareDetail: RideDetailWire = detailOf(
+  { ...everydayRide, route: undefined, stravaUrl: undefined, media: [] },
+  { id: "bare", name: "Trainer", averageWatts: null, elevationM: null },
+);
