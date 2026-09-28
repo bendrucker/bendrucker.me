@@ -10,16 +10,10 @@ import { isEnabled, SITE } from "@/config";
 import { getDb } from "@/db";
 import { rethrowLocally } from "@/fallback";
 import { previewUrl } from "@/photos";
-import {
-  climbUnit,
-  distanceUnit,
-  formatClimb,
-  formatDistance,
-  fullDate,
-  parseUnits,
-} from "@/rides/format";
+import { fullDate, parseUnits } from "@/rides/format";
 import { rideTransitionName, ridesHref } from "@/rides/links";
 import { isHilly } from "@/rides/rank";
+import { rideStats } from "@/rides/stats";
 
 if (!isEnabled("rides")) return Astro.rewrite("/404");
 
@@ -41,6 +35,7 @@ const { ride, distanceM, elevationM, description } = detail;
 const units = parseUnits(Astro.url.searchParams.get("units"));
 const thisYear = String(new Date().getUTCFullYear());
 const hilly = isHilly({ distanceM, climbM: elevationM });
+const stats = rideStats(detail, units, hilly);
 const media = ride.media.map((item) => ({
   ...item,
   previewUrl: previewUrl(item.id),
@@ -104,7 +99,7 @@ const mapLabel = `Route of ${ride.name}`;
                 >
                   <span
                     aria-hidden="true"
-                    class="icon-[lucide--arrow-up-right] size-3.5"
+                    class="size-3.5 icon-[lucide--arrow-up-right]"
                   />
                 </a>
               )}
@@ -114,23 +109,16 @@ const mapLabel = `Route of ${ride.name}`;
       </ItemHeader>
 
       {
-        (distanceM !== null || elevationM !== null) && (
-          <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-1.5">
-            {distanceM !== null && (
+        stats.length > 0 && (
+          <div class="grid grid-cols-2 gap-1.5 md:grid-cols-3">
+            {stats.map((stat) => (
               <StatTile
-                value={formatDistance(distanceM, units)}
-                unit={distanceUnit(units)}
-                label="distance"
+                value={stat.value}
+                unit={stat.unit}
+                label={stat.label}
+                icon={stat.icon}
               />
-            )}
-            {elevationM !== null && (
-              <StatTile
-                value={formatClimb(elevationM, units)}
-                unit={climbUnit(units)}
-                label="climbing"
-                icon={hilly ? "mountain" : undefined}
-              />
-            )}
+            ))}
           </div>
         )
       }
@@ -153,7 +141,7 @@ const mapLabel = `Route of ${ride.name}`;
           >
             <span
               aria-hidden="true"
-              class="icon-[lucide--arrow-up-right] size-3.5"
+              class="size-3.5 icon-[lucide--arrow-up-right]"
             />
           </a>
         )

@@ -45,8 +45,18 @@ import type {
   YearTotals,
 } from "./types";
 
-/** A row as the feed reads it. Only a ride's own page shows its description. */
-export type FeedRow = Omit<Selectable<ActivityFeedTable>, "description">;
+/**
+ * A row as the feed reads it. Only a ride's own page shows its description and
+ * the figures past distance, time, and average power.
+ */
+export type FeedRow = Omit<Selectable<ActivityFeedTable>, DetailColumn>;
+
+type DetailColumn =
+  | "description"
+  | "normalizedWatts"
+  | "averageHeartRate"
+  | "temperatureLowC"
+  | "temperatureHighC";
 
 /** Every column but the track: what the totals and ranked lists read. */
 export type RideRow = Omit<
@@ -242,6 +252,13 @@ export interface RideDetail {
   ride: Ride;
   distanceM: number | null;
   elevationM: number | null;
+  movingS: number | null;
+  /** Power figures from a power meter only. An estimate reads as none. */
+  averageWatts: number | null;
+  normalizedWatts: number | null;
+  averageHeartRate: number | null;
+  temperatureLowC: number | null;
+  temperatureHighC: number | null;
   /** What the rider wrote on the activity, shown as the page's dek. */
   description: string | null;
 }
@@ -256,17 +273,31 @@ export async function queryRideById(
 ): Promise<RideDetail | null> {
   const row = await db
     .selectFrom("activityFeed")
-    .select([...LOG_COLUMNS, "description"])
+    .select([
+      ...LOG_COLUMNS,
+      "description",
+      "normalizedWatts",
+      "averageHeartRate",
+      "temperatureLowC",
+      "temperatureHighC",
+    ])
     .where("activityId", "=", id)
     .where("sport", "=", "ride")
     .executeTakeFirst();
   if (row === undefined) return null;
   const { ride } = toEntry(row);
   attachTrack(ride, row);
+  const measured = row.powerSource === "measured";
   return {
     ride,
     distanceM: row.distanceM,
     elevationM: row.elevationM,
+    movingS: row.movingS,
+    averageWatts: measured ? row.averageWatts : null,
+    normalizedWatts: measured ? row.normalizedWatts : null,
+    averageHeartRate: row.averageHeartRate,
+    temperatureLowC: row.temperatureLowC,
+    temperatureHighC: row.temperatureHighC,
     description: row.description,
   };
 }

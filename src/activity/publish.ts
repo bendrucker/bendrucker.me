@@ -4,6 +4,7 @@
 import type { CompiledQuery } from "kysely";
 import { z } from "zod";
 import type { ActivityStore } from "./store";
+import { temperatureRange } from "./temperature";
 import { MAX_PROFILE_SAMPLES, thin, thinPolyline } from "./track";
 
 // The hub branches on this name to decide whether a failure is permanent. RPC
@@ -45,6 +46,16 @@ const publishedActivity = z.object({
   movingS: nullable(z.number()),
   elevationM: nullable(z.number()),
   averageWatts: nullable(z.number()),
+  // The three below arrive only from a hub that derives them, so each is
+  // optional and an older payload still validates. Normalized power is
+  // Coggan's: the fourth root of the mean fourth power of a 30-second rolling
+  // average over the zero-filled 1 Hz grid the power bests already use.
+  normalizedWatts: z.number().nullish(),
+  averageHeartRate: z.number().nullish(),
+  // Temperature and speed pairs (°C, m/s) from the record, so the range is cut
+  // here by one rule rather than restated in the hub's SQL. Every tenth
+  // record, like the track, is plenty for a percentile.
+  temperatureSamples: z.array(z.tuple([z.number(), z.number()])).nullish(),
   powerSource,
   polyline: nullable(z.string()),
   // Altitudes in metres, evenly spaced by distance. The site normalizes to
@@ -73,6 +84,9 @@ export async function publishActivity(
   row: unknown,
 ): Promise<void> {
   const activity = parse(publishedActivity, row, "activity");
+  const temperature = activity.temperatureSamples
+    ? temperatureRange(activity.temperatureSamples)
+    : null;
   // The hub sends every point the head unit logged. A card draws a few
   // hundred, and a season of full tracks is more than one request can hold,
   // so the track is thinned once here rather than on every read.
@@ -90,6 +104,10 @@ export async function publishActivity(
       movingS: activity.movingS,
       elevationM: activity.elevationM,
       averageWatts: activity.averageWatts,
+      normalizedWatts: activity.normalizedWatts ?? null,
+      averageHeartRate: activity.averageHeartRate ?? null,
+      temperatureLowC: temperature?.lowC ?? null,
+      temperatureHighC: temperature?.highC ?? null,
       powerSource: activity.powerSource,
       polyline:
         activity.polyline === null ? null : thinPolyline(activity.polyline),
@@ -114,6 +132,10 @@ export async function publishActivity(
         movingS: eb.ref("excluded.movingS"),
         elevationM: eb.ref("excluded.elevationM"),
         averageWatts: eb.ref("excluded.averageWatts"),
+        normalizedWatts: eb.ref("excluded.normalizedWatts"),
+        averageHeartRate: eb.ref("excluded.averageHeartRate"),
+        temperatureLowC: eb.ref("excluded.temperatureLowC"),
+        temperatureHighC: eb.ref("excluded.temperatureHighC"),
         powerSource: eb.ref("excluded.powerSource"),
         polyline: eb.ref("excluded.polyline"),
         elevationProfile: eb.ref("excluded.elevationProfile"),

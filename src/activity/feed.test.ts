@@ -7,6 +7,7 @@ import {
   buildCyclingActivity,
   queryCyclingActivity,
   queryCyclingLogPage,
+  queryRideById,
   readFeedVersion,
 } from "./feed";
 import { decodePolyline, decodeProfile } from "./track";
@@ -647,6 +648,45 @@ describe("readFeedVersion", () => {
     expect(empty).toEqual({ tag: "0.0", updatedAt: null });
     expect(one.tag).toMatch(/^1\.\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
     expect(one.updatedAt?.toISOString()).toBe(one.tag.slice(2));
+  });
+});
+
+describe("queryRideById", () => {
+  it("carries the figures the ride's page shows", async () => {
+    await seed(
+      ride("a", {
+        normalizedWatts: 228,
+        averageHeartRate: 139,
+        temperatureSamples: Array.from(
+          { length: 40 },
+          (_, index): [number, number] => [10 + index / 4, 8],
+        ),
+      }),
+    );
+
+    const detail = await queryRideById(db, "a");
+    expect(detail).toMatchObject({
+      movingS: 5_400,
+      averageWatts: 200,
+      normalizedWatts: 228,
+      averageHeartRate: 139,
+      temperatureLowC: 10.3,
+      temperatureHighC: 19.3,
+    });
+  });
+
+  it("leaves out power a meter did not measure", async () => {
+    await seed(
+      ride("a", {
+        powerSource: "estimated",
+        averageWatts: 150,
+        normalizedWatts: 170,
+      }),
+    );
+
+    const detail = await queryRideById(db, "a");
+    expect(detail?.averageWatts).toBeNull();
+    expect(detail?.normalizedWatts).toBeNull();
   });
 });
 
