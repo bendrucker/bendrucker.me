@@ -11,6 +11,12 @@ import {
 import type { Database } from "@/db";
 import { BIG, RECORD_COUNT, rankHighlights, type Records } from "./rank";
 import {
+  LADDER_DURATIONS,
+  RECORD_ROWS,
+  rankPeriods,
+  type PeriodRecords,
+} from "./records";
+import {
   byMonth,
   toTuple,
   type RideMonth,
@@ -94,8 +100,6 @@ export interface RidesPage {
   highlights: RideTuple[];
   months: RideMonth[];
   logCursor: string | null;
-  /** All-time records, which a cleared search returns to. */
-  records: Records<RideTuple>;
   /** Records among the rides the query matches, or null without one. */
   matchRecords: Records<RideTuple> | null;
   /** The first `MATCH_COUNT` rides the query matches, or null without one. */
@@ -123,7 +127,6 @@ export async function queryRidesPage(
       highlights: [],
       months: [],
       logCursor: null,
-      records: { longest: [], climbing: [] },
       matchRecords: searching ? { longest: [], climbing: [] } : null,
       matches: searching ? [] : null,
       partial: false,
@@ -131,11 +134,10 @@ export async function queryRidesPage(
   }
 
   const latestDay = wallClock(latest.startedAt, latest.timezone).slice(0, 10);
-  const [highlights, log, records, matchRecords, found] = await Promise.all([
+  const [highlights, log, matchRecords, found] = await Promise.all([
     queryHighlights(db, latest.startedAt, latestDay),
     queryRideRowsPage(db, monthAfter(monthKeyOf(latestDay)), FIRST_MONTHS),
-    queryRecords(db, ""),
-    searching ? queryRecords(db, query) : null,
+    searching ? queryMatchRecords(db, query) : null,
     searching ? queryMatches(db, query) : null,
   ]);
 
@@ -144,7 +146,6 @@ export async function queryRidesPage(
     highlights: highlights.map((row) => toTuple(row)),
     months: log.months,
     logCursor: log.logCursor,
-    records: recordTuples(records),
     matchRecords: matchRecords === null ? null : recordTuples(matchRecords),
     matches: found?.rows.map((row) => toTuple(row)) ?? null,
     // A query SQLite can't fold the way the browser does may have missed
@@ -247,21 +248,20 @@ export async function queryRideRowsPage(
 }
 
 /** The longest rides and the ones that climbed most, of those the query matches. */
-async function queryRecords(
+async function queryMatchRecords(
   db: Kysely<Database>,
   query: string,
 ): Promise<Records<RideRow>> {
   const top = async (column: "distanceM" | "elevationM") => {
-    let select = db
+    const rows = await db
       .selectFrom("activityFeed")
       .select(ROW_COLUMNS)
       .where("sport", "=", "ride")
       .where(column, ">", 0)
       // A manual entry logs a figure with no distance, like a year of commutes
       // as one climb, and isn't a ride to hold a record.
-      .where("distanceM", ">", 0);
-    if (query !== "") select = select.where(rowHolds(query));
-    const rows = await select
+      .where("distanceM", ">", 0)
+      .where(rowHolds(query))
       .orderBy(column, "desc")
       .orderBy("startedAt", "desc")
       .limit(RECORD_COUNT)
@@ -305,4 +305,127 @@ export async function queryRideIndex(
     .orderBy("startedAt", "desc")
     .execute();
   return rows.map((row) => toTuple(toRideRow(row)));
+}
+
+const RECORD_COLUMNS = [
+  "activityId",
+  "name",
+  "startedAt",
+  "timezone",
+  "distanceM",
+  "elevationM",
+  "movingS",
+  "averageWatts",
+  "powerSource",
+] as const;
+
+// A record counts toward the ride's local year, which SQLite can't work out
+// from an instant and a zone name. Only a ride whose UTC date is December 31
+// or January 1 can fall in another year locally, so those rides are read
+// whole, and every other ride competes within its UTC year, which is also its
+// local one. Each year's leaders and those edge rides hold every period's
+// records, all time included, and `rankPeriods` settles the rest.
+const UTC_YEAR = sql`substr(started_at, 1, 4)`;
+const YEAR_EDGE = sql<number>`substr(started_at, 6, 5) in ('12-31', '01-01')`;
+
+function rankInYear(column: "distanceM" | "elevationM" | "movingS") {
+  return sql<number>`row_number() over (partition by ${UTC_YEAR}, ${YEAR_EDGE} order by ${sql.ref(column)} desc, started_at desc)`;
+}
+
+/**
+ * Every period's records: all time, then each year newest first. Indoor rides
+ * are left out, and so is a manual entry with no distance, which never went
+ * anywhere.
+ */
+export async function queryRideRecords(
+  db: Kysely<Database>,
+): Promise<PeriodRecords[]> {
+  const [rows, points] = await Promise.all([
+    db
+      .selectFrom((eb) =>
+        eb
+          .selectFrom("activityFeed")
+          .select(RECORD_COLUMNS)
+          .select([
+            YEAR_EDGE.as("edge"),
+            rankInYear("distanceM").as("byDistance"),
+            rankInYear("elevationM").as("byClimb"),
+            rankInYear("movingS").as("byMoving"),
+          ])
+          .where("sport", "=", "ride")
+          .where("distanceM", ">", 0)
+          .where((inner) =>
+            inner.or([inner("indoor", "is", null), inner("indoor", "=", 0)]),
+          )
+          .as("ranked"),
+      )
+      .selectAll()
+      .where((eb) =>
+        eb.or([
+          eb("edge", "=", 1),
+          eb("byDistance", "<=", RECORD_ROWS),
+          eb("byClimb", "<=", RECORD_ROWS),
+          eb("byMoving", "<=", RECORD_ROWS),
+        ]),
+      )
+      .execute(),
+    // An estimated curve is Strava's guess at a rider without a meter, which
+    // is no best at all.
+    db
+      .selectFrom((eb) =>
+        eb
+          .selectFrom("activityPowerCurve")
+          .innerJoin(
+            "activityFeed",
+            "activityFeed.activityId",
+            "activityPowerCurve.activityId",
+          )
+          .select([
+            "activityPowerCurve.activityId",
+            "activityPowerCurve.durationS",
+            "activityPowerCurve.watts",
+            "activityFeed.name",
+            "activityFeed.startedAt",
+            "activityFeed.timezone",
+            YEAR_EDGE.as("edge"),
+            sql<number>`row_number() over (partition by duration_s, ${UTC_YEAR}, ${YEAR_EDGE} order by watts desc, started_at desc)`.as(
+              "rank",
+            ),
+          ])
+          .where("activityFeed.sport", "=", "ride")
+          .where("activityFeed.powerSource", "=", "measured")
+          .where((inner) =>
+            inner.or([
+              inner("activityFeed.indoor", "is", null),
+              inner("activityFeed.indoor", "=", 0),
+            ]),
+          )
+          .where("activityPowerCurve.durationS", "in", LADDER_DURATIONS)
+          .as("points"),
+      )
+      .selectAll()
+      .where((eb) => eb.or([eb("edge", "=", 1), eb("rank", "=", 1)]))
+      .execute(),
+  ]);
+  return rankPeriods(
+    rows.map((row) => ({
+      id: row.activityId,
+      name: row.name ?? UNNAMED,
+      day: wallClock(row.startedAt, row.timezone).slice(0, 10),
+      distanceM: Math.round(row.distanceM ?? 0),
+      climbM: row.elevationM === null ? null : Math.round(row.elevationM),
+      movingS: row.movingS === null ? null : Math.round(row.movingS),
+      watts:
+        row.powerSource === "measured" && row.averageWatts !== null
+          ? Math.round(row.averageWatts)
+          : null,
+    })),
+    points.map((point) => ({
+      id: point.activityId,
+      name: point.name ?? UNNAMED,
+      day: wallClock(point.startedAt, point.timezone).slice(0, 10),
+      durationS: point.durationS,
+      watts: Math.round(point.watts),
+    })),
+  );
 }

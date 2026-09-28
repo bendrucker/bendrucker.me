@@ -1,6 +1,15 @@
 // The Rides route's story data, in the tuple shapes its props carry. The names,
 // figures, and descriptions follow the boards.
-import { rankHighlights, rankRecords, type Records } from "@/rides/rank";
+import { rankHighlights } from "@/rides/rank";
+import {
+  LADDER_DURATIONS,
+  pickRecords,
+  rankPeriods,
+  type PeriodRecords,
+  type PowerPoint,
+  type RecordRow,
+  type RecordsPage,
+} from "@/rides/records";
 import {
   byMonth,
   toTuple,
@@ -67,9 +76,69 @@ export const highlights: RideTuple[] = rankHighlights(allRows).map((ride) =>
   toTuple(ride),
 );
 
-const ranked = rankRecords(allRows);
+/** Rides from before this year, so the records have years to pick between. */
+const earlierRecordRows: RideRow[] = [
+  row("r25a", "Sierra to the Sea", "2025-06-14", 142, 12_480),
+  row("r25b", "Hamilton Loop", "2025-04-26", 89, 8_940),
+  row("r25c", "Point Reyes", "2025-03-08", 74, 4_100),
+  row("r25d", "Old La Honda", "2025-01-18", 41, 3_900),
+  row("r24a", "Death Ride", "2024-07-13", 129, 15_000),
+  row("r24b", "Marin Century", "2024-08-03", 101, 9_200),
+];
 
-export const records: Records<RideTuple> = {
-  longest: ranked.longest.map((ride) => toTuple(ride)),
-  climbing: ranked.climbing.map((ride) => toTuple(ride)),
-};
+/** The power meter arrived in 2025, which leaves 2024's power list empty. */
+function metered(day: string): boolean {
+  return day >= "2025";
+}
+
+const recordRows: RecordRow[] = [...allRows, ...earlierRecordRows]
+  .filter((ride) => ride.distanceM !== null && ride.distanceM > 0)
+  .map((ride, index) => ({
+    id: ride.id,
+    name: ride.name,
+    day: ride.day,
+    distanceM: ride.distanceM ?? 0,
+    climbM: ride.climbM,
+    // About fourteen miles an hour, slower where it climbs.
+    movingS: Math.round((ride.distanceM ?? 0) / 6.2 + (ride.climbM ?? 0) * 1.1),
+    watts: metered(ride.day) ? 165 + ((index * 17) % 60) : null,
+  }));
+
+// A best over a longer duration is always lower, as a real curve is.
+const LADDER_SHARE = new Map([
+  [5, 4.6],
+  [60, 2.3],
+  [300, 1.55],
+  [1200, 1.28],
+  [3600, 1.12],
+]);
+
+const powerPoints: PowerPoint[] = recordRows.flatMap((ride, index) =>
+  ride.watts === null
+    ? []
+    : LADDER_DURATIONS.filter(
+        // A short ride never holds an hour, so it has no point there.
+        (durationS) => (ride.movingS ?? 0) >= durationS,
+      ).map((durationS) => ({
+        id: ride.id,
+        name: ride.name,
+        day: ride.day,
+        durationS,
+        watts: Math.round(
+          (ride.watts ?? 0) * (LADDER_SHARE.get(durationS) ?? 1) +
+            ((index * 11) % 23),
+        ),
+      })),
+);
+
+export const recordPeriods: PeriodRecords[] = rankPeriods(
+  recordRows,
+  powerPoints,
+);
+
+/** What the page renders for a period, as the route would answer for it. */
+export function recordsPageFor(period: string): RecordsPage {
+  const page = pickRecords(recordPeriods, period);
+  if (page === null) throw new Error(`No records for ${period}`);
+  return page;
+}

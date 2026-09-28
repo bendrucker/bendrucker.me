@@ -2,7 +2,8 @@
 import type { StoryControlSet } from "@/stories/controls";
 import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
-import { highlights, months, records, THIS_YEAR } from "./fixtures";
+import { ALL_TIME } from "@/rides/records";
+import { highlights, months, recordsPageFor, THIS_YEAR } from "./fixtures";
 import RidesRoute from "./RidesRoute.vue";
 
 const controls: StoryControlSet = {
@@ -48,7 +49,8 @@ function key(state: ReturnType<typeof initState>): string {
           :highlights="highlights"
           :months="months"
           :log-cursor="null"
-          :records="records"
+          :period="ALL_TIME"
+          :records="recordsPageFor(ALL_TIME)"
           :match-records="null"
           :matches="null"
           :partial="false"
@@ -73,6 +75,10 @@ Search opens from the icon at the right of the tools and filters every view in
 place. The story book has no worker, so a search here filters the fixture rides
 already on the page, which is also what the real page does until its index of
 every ride lands. Units switch every figure between miles and kilometres.
+
+Records open on all time. Picking another period asks the worker for it, which
+the story book doesn't have, so the Ride records story is where the other
+periods render.
 
 The controls remount the route, as a fresh page load with those query
 parameters would. Open the full-width link on a desktop to see the sidebar and

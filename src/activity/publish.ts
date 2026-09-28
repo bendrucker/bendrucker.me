@@ -21,6 +21,9 @@ function nullable<T extends z.ZodType>(schema: T) {
   return schema.nullish().transform((value) => value ?? null);
 }
 
+// SQLite has no boolean, and D1 and better-sqlite3 disagree on binding one.
+const flag = z.boolean().transform(Number);
+
 const powerSource = z.enum(["measured", "estimated", "none"]);
 
 // The schema is the definition: the type below is inferred from it, so a field
@@ -65,7 +68,14 @@ const publishedActivity = z.object({
     .array(text)
     .nullish()
     .transform((value) => value ?? []),
+  // Optional so a hub that predates the flag still publishes. A publish
+  // without it keeps whatever the row already holds.
+  indoor: z.boolean().optional(),
 });
+
+// Parses straight to column values. The schema is strict, so a hub sending a
+// field this site does not store yet fails rather than having it dropped.
+const activityUpdate = z.strictObject({ indoor: flag });
 
 const powerBests = z
   .array(z.object({ durationS: z.int().positive(), watts: z.number() }))
@@ -78,6 +88,7 @@ const powerBests = z
 export type PowerSource = z.infer<typeof powerSource>;
 export type PublishedActivity = z.infer<typeof publishedActivity>;
 export type PowerBest = z.infer<typeof powerBests>[number];
+export type ActivityUpdate = z.input<typeof activityUpdate>;
 
 export async function publishActivity(
   store: ActivityStore,
@@ -118,6 +129,7 @@ export async function publishActivity(
               thin(activity.elevationProfile, MAX_PROFILE_SAMPLES),
             ),
       photoKeys: JSON.stringify(activity.photoKeys),
+      indoor: activity.indoor === undefined ? null : Number(activity.indoor),
       updatedAt: new Date().toISOString(),
     })
     .onConflict((conflict) =>
@@ -140,6 +152,7 @@ export async function publishActivity(
         polyline: eb.ref("excluded.polyline"),
         elevationProfile: eb.ref("excluded.elevationProfile"),
         photoKeys: eb.ref("excluded.photoKeys"),
+        indoor: eb.fn.coalesce("excluded.indoor", "activityFeed.indoor"),
         updatedAt: eb.ref("excluded.updatedAt"),
       })),
     )
@@ -187,6 +200,29 @@ export async function publishPowerCurve(
     );
   }
   await store.batch(statements);
+}
+
+/**
+ * Sets the whitelisted scalar columns on a row that already exists, so a field
+ * added after the hub's first publish can be backfilled without replaying the
+ * whole payload. An activity that was never published is left unwritten.
+ */
+export async function updateActivity(
+  store: ActivityStore,
+  activityId: unknown,
+  fields: unknown,
+): Promise<void> {
+  const id = parse(text, activityId, "activityId");
+  const columns = parse(activityUpdate, fields, "fields");
+  // The feed's cache validator is the latest `updatedAt`, so the update moves
+  // it along with the columns it sets.
+  await store.batch([
+    store.db
+      .updateTable("activityFeed")
+      .set({ ...columns, updatedAt: new Date().toISOString() })
+      .where("activityId", "=", id)
+      .compile(),
+  ]);
 }
 
 // The power curve goes explicitly rather than through the foreign key's

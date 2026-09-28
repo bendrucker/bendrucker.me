@@ -68,7 +68,6 @@ describe("queryCyclingActivity", () => {
       totals: { year: 2026, distanceMi: 0, elevationFt: 0, rideCount: 0 },
       months: [],
       highlightMonths: [],
-      records: [],
       logCursor: null,
     });
   });
@@ -154,7 +153,7 @@ describe("queryCyclingActivity", () => {
     expect(totals.year).toBe(2026);
   });
 
-  it("logs three months, highlights twelve, and ranks every ride", async () => {
+  it("logs three months and highlights twelve", async () => {
     await seed(
       ride("latest", { startedAt: "2026-07-11T13:00:55Z", distanceM: 10_000 }),
       ride("logged", { startedAt: "2026-05-11T13:00:55Z", distanceM: 15_000 }),
@@ -164,21 +163,13 @@ describe("queryCyclingActivity", () => {
       ride("old", { startedAt: "2025-07-31T13:00:55Z", distanceM: 30_000 }),
     );
 
-    const { months, highlightMonths, records, logCursor } =
-      await queryCyclingActivity(db, NOW);
+    const { months, highlightMonths, logCursor } = await queryCyclingActivity(
+      db,
+      NOW,
+    );
     expect(months.map((month) => month.key)).toEqual(["2026-07", "2026-05"]);
     expect(logCursor).toBe("2026-05");
     expect(highlightMonths.map((month) => month.key)).toEqual(["2025-08"]);
-    const distance = records
-      .find((period) => period.period === "all")!
-      .lists.find((list) => list.metric === "distance")!;
-    expect(distance.rows.map((row) => row.id)).toEqual([
-      "old",
-      "edge",
-      "paged",
-      "logged",
-      "also",
-    ]);
   });
 
   it("reads the tracks of the log and of the highlights beyond it", async () => {
@@ -274,7 +265,7 @@ describe("queryCyclingActivity", () => {
       }),
     );
 
-    const { months, records } = await queryCyclingActivity(db, NOW);
+    const { months } = await queryCyclingActivity(db, NOW);
 
     expect(months[0]!.rides[0]).toEqual({
       id: "bare",
@@ -284,13 +275,6 @@ describe("queryCyclingActivity", () => {
       media: [],
       badges: [],
       facts: [],
-    });
-    expect(records[0]!.lists.map((list) => list.id)).toEqual(["duration"]);
-    expect(records[0]!.lists[0]!.rows[0]).toEqual({
-      id: "bare",
-      name: "Ride",
-      detail: "'26",
-      value: 1_800,
     });
   });
 
@@ -405,101 +389,17 @@ describe("queryCyclingActivity", () => {
     expect(months[1]!.rides[0]!.badges).toEqual([]);
   });
 
-  it("ranks rides for every year and for all time", async () => {
-    await seed(
-      ride("a", { startedAt: "2025-05-01T13:00:00Z", distanceM: 90_000 }),
-      ride("b", { startedAt: "2026-05-01T13:00:00Z", distanceM: 80_000 }),
-      ride("c", {
-        startedAt: "2026-06-01T13:00:00Z",
-        distanceM: 70_000,
-        movingS: 20_000,
-        averageWatts: 180,
-      }),
-    );
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(records.map((period) => period.period)).toEqual([
-      "all",
-      "2026",
-      "2025",
-    ]);
-    const all = records[0]!.lists.find((list) => list.id === "distance")!;
-    expect(all.rows.map((row) => [row.id, row.detail, row.value])).toEqual([
-      ["a", "'25", 55.92],
-      ["b", "'26", 49.71],
-      ["c", "'26", 43.5],
-    ]);
-    expect(all.rows[0]!.href).toBe("https://www.strava.com/activities/a");
-
-    const days = records[1]!.lists.find((list) => list.id === "duration")!;
-    expect(days.rows[0]).toMatchObject({ id: "c", detail: "'26 · 180 W" });
-
-    const year2025 = records[2]!.lists.find((list) => list.id === "distance")!;
-    expect(year2025.rows.map((row) => row.id)).toEqual(["a"]);
-  });
-
-  it("joins the power curve from measured rides only", async () => {
+  it("keeps estimated power off a ride", async () => {
     await seed(
       ride("meter", { averageWatts: 210 }),
       ride("guess", { averageWatts: 400, powerSource: "estimated" }),
     );
-    await publishPowerCurve(store, "meter", [
-      { durationS: 5, watts: 900 },
-      { durationS: 60, watts: 450.4 },
-      { durationS: 1200, watts: 280 },
-    ]);
-    await publishPowerCurve(store, "guess", [{ durationS: 60, watts: 999 }]);
 
-    const { records, months } = await queryCyclingActivity(db, NOW);
+    const { months } = await queryCyclingActivity(db, NOW);
 
-    expect(records[0]!.powerBests).toEqual([
-      { id: "1m", label: "1 min", watts: 450 },
-      { id: "5m", label: "5 min", watts: null },
-      { id: "20m", label: "20 min", watts: 280 },
-      { id: "1h", label: "1 hr", watts: null },
-      { id: "ride", label: "ride avg", watts: 210 },
-    ]);
-    const guess = months[0]!.rides.find((r) => r.id === "guess")!;
-    expect(guess).not.toHaveProperty("averageWatts");
-  });
-
-  it("gives each period the power its own rides set", async () => {
-    await seed(
-      ride("older", {
-        startedAt: "2025-07-11T13:00:55Z",
-        averageWatts: 240,
-      }),
-      ride("newer", { averageWatts: 190 }),
-    );
-    await publishPowerCurve(store, "older", [
-      { durationS: 60, watts: 500 },
-      { durationS: 1200, watts: 300 },
-    ]);
-    await publishPowerCurve(store, "newer", [{ durationS: 60, watts: 420 }]);
-
-    const { records } = await queryCyclingActivity(db, NOW);
-    const watts = (period: string) =>
-      Object.fromEntries(
-        records
-          .find((entry) => entry.period === period)!
-          .powerBests.map((best) => [best.id, best.watts]),
-      );
-
-    // The all-time ladder takes each duration from whichever year holds it.
-    expect(watts("all")).toMatchObject({ "1m": 500, "20m": 300, ride: 240 });
-    expect(watts("2026")).toMatchObject({ "1m": 420, "20m": null, ride: 190 });
-    expect(watts("2025")).toMatchObject({ "1m": 500, "20m": 300, ride: 240 });
-  });
-
-  it("leaves the power panel empty with nothing measured", async () => {
-    await seed(ride("guess", { averageWatts: 400, powerSource: "estimated" }));
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(records.every((period) => period.powerBests.length === 0)).toBe(
-      true,
-    );
+    const byId = new Map(months[0]!.rides.map((r) => [r.id, r]));
+    expect(byId.get("meter")?.averageWatts).toBe(210);
+    expect(byId.get("guess")).not.toHaveProperty("averageWatts");
   });
 
   it("ignores other sports", async () => {
@@ -713,16 +613,9 @@ describe("contract", () => {
     expect(keys(feed.highlightMonths[0])).toEqual(
       keys(fixture.highlightMonths[0]),
     );
-    expect(keys(feed.records[0])).toEqual(keys(fixture.records[0]));
-    expect(keys(feed.records[0]!.lists[0])).toEqual(
-      keys(fixture.records[0]!.lists[0]),
+    expect(buildCyclingActivity({ rides: [], tracks: [] }, NOW).months).toEqual(
+      [],
     );
-    expect(keys(feed.records[0]!.powerBests[0])).toEqual(
-      keys(fixture.records[0]!.powerBests[0]),
-    );
-    expect(
-      buildCyclingActivity({ rides: [], tracks: [] }, [], NOW).months,
-    ).toEqual([]);
   });
 });
 

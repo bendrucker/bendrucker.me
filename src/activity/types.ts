@@ -225,32 +225,6 @@ export interface HighlightMonth extends MonthStats {
   highlights: Highlight[];
 }
 
-export type RankedMetric = "distance" | "elevation" | "duration" | "clock";
-
-export interface RankedRow {
-  id: string;
-  name: string;
-  /** Secondary text beside the name, such as a year or an average grade. */
-  detail?: string;
-  value: number;
-  href?: string;
-}
-
-export interface RankedList {
-  id: string;
-  title: string;
-  icon?: IconName;
-  metric: RankedMetric;
-  rows: RankedRow[];
-}
-
-export interface PowerBest {
-  id: string;
-  label: string;
-  /** Null renders an em dash placeholder for a duration with no stream yet. */
-  watts: number | null;
-}
-
 export interface YearTotals {
   year: number;
   distanceMi: number;
@@ -258,21 +232,11 @@ export interface YearTotals {
   rideCount: number;
 }
 
-export interface RecordPeriod {
-  /** The window the lists cover, shown on the period control: "all", "2026". */
-  period: string;
-  lists: RankedList[];
-  /** Best power for the same period the picker selects. */
-  powerBests: PowerBest[];
-}
-
 /** Everything the root view renders, in the shape a page would hand it. */
 export interface CyclingActivityData {
   totals: YearTotals;
   months: MonthGroup[];
   highlightMonths: HighlightMonth[];
-  /** In display order. The first is what an unknown period falls back to. */
-  records: RecordPeriod[];
   /**
    * The month the log's next page loads before, exclusive. Null once the log
    * reaches the first ride.
