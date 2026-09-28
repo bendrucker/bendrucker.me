@@ -42,15 +42,8 @@ const PHONE_HIGHLIGHTS = 3;
     method="get"
     role="search"
     data-writing-tools
-    class="flex min-w-0 flex-1 items-center justify-end gap-2"
+    class="tool-row flex-1 justify-end"
   >
-    <SearchControl
-      modelValue={query}
-      noun="posts"
-      status={status}
-      collapsible
-      class="data-open:order-first"
-    />
     <SelectControl
       modelValue={tagValue}
       options={tagOptions}
@@ -58,6 +51,12 @@ const PHONE_HIGHLIGHTS = 3;
       placeholder="Tag"
       icon="tag"
       name="tag"
+    />
+    <SearchControl
+      modelValue={query}
+      noun="posts"
+      status={status}
+      collapsible
     />
   </form>
 
@@ -67,7 +66,7 @@ const PHONE_HIGHLIGHTS = 3;
     method="get"
     role="search"
     data-writing-tools
-    class="flex flex-wrap items-center gap-2"
+    class="tool-row"
   >
     <SelectControl
       modelValue={tagValue}
@@ -82,7 +81,7 @@ const PHONE_HIGHLIGHTS = 3;
       noun="posts"
       status={status}
       collapsible
-      class="ml-auto data-open:order-first data-open:ml-0 data-open:basis-full"
+      class="ml-auto"
     />
   </form>
   <nav slot="sidebar" aria-label="Years" class="flex flex-col gap-1.5">
@@ -110,22 +109,15 @@ const PHONE_HIGHLIGHTS = 3;
         data-highlights
         hidden={!view.highlights.some((r) => r.shown)}
       >
-        <SectionHead label="Highlights" />
-        <ul class="flex flex-col gap-3">
+        <SectionHead label="Highlights" section />
+        <ul class="flex flex-col gap-1.5">
           {view.highlights.map((row, i) => (
             <li class:list={[{ "max-md:hidden": i >= PHONE_HIGHLIGHTS }]}>
               <ItemRow
                 href={row.item.href}
                 title={row.item.title}
                 text={row.item.text}
-              >
-                <TimelineGutter
-                  slot="gutter"
-                  day={row.dayNum}
-                  sub={row.sub}
-                  weekEnd
-                />
-              </ItemRow>
+              />
             </li>
           ))}
         </ul>
@@ -133,10 +125,7 @@ const PHONE_HIGHLIGHTS = 3;
     )
   }
 
-  {
-    /* `SectionHead` leads each year, so it drops its desktop padding as if it
-      led the list. The section puts back the space between years. */
-  }
+  <SectionHead label="All posts" section />
   {
     view.sections.map((section) => (
       <section
@@ -145,7 +134,7 @@ const PHONE_HIGHLIGHTS = 3;
         hidden={!section.shown}
         class="scroll-mt-16 not-first:pt-2 md:scroll-mt-6 md:not-first:pt-5"
       >
-        <SectionHead label={section.label} />
+        <SectionHead label={section.label} level={3} />
         <div class="flex flex-col gap-3">
           {section.weeks.map((week) => (
             <ul class="flex flex-col gap-1.5" data-week hidden={!week.shown}>

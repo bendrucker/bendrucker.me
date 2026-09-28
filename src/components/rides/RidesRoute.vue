@@ -8,7 +8,6 @@ import {
   ref,
   watch,
 } from "vue";
-import { matches as nameMatches } from "@/activity/search";
 import { sectionLabel } from "@/activity/sections";
 import { useMonthPages } from "@/components/cycling/useMonthPages";
 import {
@@ -36,16 +35,13 @@ import {
 } from "@/rides/listEntry";
 import { isHilly, rankRecords, type Records } from "@/rides/rank";
 import {
-  fromRouteTuple,
   fromTuple,
   rideRowsPage,
   type RideMonth,
   type RideRow,
   type RideTuple,
-  type RouteTuple,
 } from "@/rides/rows";
 import RideSections from "./RideSections.vue";
-import RouteTile from "./RouteTile.vue";
 import { useRideSearch } from "./useRideSearch";
 
 const props = defineProps<{
@@ -62,7 +58,6 @@ const props = defineProps<{
   records: Records<RideTuple>;
   /** Records among the rides `q` matches, when there is one. */
   matchRecords: Records<RideTuple> | null;
-  routes: RouteTuple[];
   /** The first rides `q` matches, when there is one. */
   matches: RideTuple[] | null;
   partial: boolean;
@@ -74,7 +69,6 @@ const units = ref<Units>(props.units);
 
 const VIEWS: SegmentOption[] = [
   { value: "log", label: "Log", icon: "list" },
-  { value: "routes", label: "Routes", icon: "map" },
   { value: "records", label: "Records", icon: "trophy" },
 ];
 
@@ -246,18 +240,11 @@ const recordsEmpty = computed(
     records.value.longest.length === 0 && records.value.climbing.length === 0,
 );
 
-const tiles = computed(() =>
-  props.routes
-    .map((row) => fromRouteTuple(row))
-    .filter((tile) => nameMatches({ title: tile.name }, query.value)),
-);
-
 const status = computed(() => {
   if (!searching.value) return "";
-  const count =
-    view.value === "routes" ? tiles.value.length : search.results.value.length;
+  const count = search.results.value.length;
   const noun = count === 1 ? "ride" : "rides";
-  return search.complete.value || view.value === "routes"
+  return search.complete.value
     ? `${count} ${noun}`
     : `More than ${count} ${noun}`;
 });
@@ -267,7 +254,7 @@ const showHighlights = computed(
 );
 
 // The log mounts the first time it is shown and stays mounted after. A page
-// opened on routes, records, or a search skips rendering two months of rows it
+// opened on records or a search skips rendering two months of rows it
 // hides, which is most of the markup a search page would otherwise carry.
 const logShown = computed(() => view.value === "log" && !searching.value);
 const logMounted = ref(logShown.value);
@@ -342,12 +329,14 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
     </template>
 
     <template #sidebar>
-      <div class="flex min-h-10 justify-end">
+      <div class="tool-row">
+        <UnitsToggle v-model="units" class="px-2.5" />
         <SearchControl
           v-model="query"
           noun="rides"
           collapsible
           :status="status"
+          class="ml-auto"
         />
       </div>
       <div class="flex flex-col gap-1.5">
@@ -359,7 +348,6 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
           list
           @update:model-value="pickView"
         />
-        <UnitsToggle v-model="units" class="mt-3 self-start px-2.5" />
       </div>
       <nav
         v-if="showRail"
@@ -383,7 +371,7 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
     </template>
 
     <template #highlights>
-      <SectionHead label="Highlights" />
+      <SectionHead label="Highlights" section />
       <ul class="flex flex-col gap-1.5">
         <li
           v-for="(ride, index) in highlights"
@@ -396,15 +384,7 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
             :text="ride.description"
             :figure="distanceFigure(ride.distanceM, units)"
             :hilly="isHilly(ride)"
-          >
-            <template #gutter>
-              <TimelineGutter
-                :day="String(Number(ride.day.slice(8, 10)))"
-                :sub="gutterSub(ride.day, thisYear)"
-                :week-end="index === highlights.length - 1"
-              />
-            </template>
-          </ItemRow>
+          />
         </li>
       </ul>
     </template>
@@ -413,8 +393,10 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
          search, so the months it has paged in and the window's record of which
          are collapsed survive a trip away and back. -->
     <div v-if="logMounted" v-show="logShown" ref="logRoot">
+      <SectionHead label="Recent" section />
       <RideSections
         :rows="logRows"
+        :level="3"
         :units="units"
         :this-year="thisYear"
         :has-more="log.hasMore.value"
@@ -444,30 +426,6 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
         @load-more="search.loadMore"
       />
       <EmptyState v-else noun="rides" :query="query.trim()" @clear="clear" />
-    </template>
-
-    <template v-else-if="view === 'routes'">
-      <ul
-        v-if="tiles.length > 0"
-        class="grid grid-cols-2 gap-2 pt-4 md:grid-cols-3 md:gap-3"
-      >
-        <li v-for="tile in tiles" :key="tile.id" class="min-w-0">
-          <RouteTile
-            :tile="tile"
-            :href="rideHref(tile.id, units)"
-            :figure="distanceFigure(tile.distanceM, units)"
-            :hilly="isHilly(tile)"
-            :query="query.trim()"
-          />
-        </li>
-      </ul>
-      <EmptyState
-        v-else-if="searching"
-        noun="routes"
-        :query="query.trim()"
-        :gutter="false"
-        @clear="clear"
-      />
     </template>
 
     <template v-else-if="view === 'records'">

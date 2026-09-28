@@ -1,23 +1,13 @@
 // The Rides route's story data, in the tuple shapes its props carry. The names,
-// figures, and descriptions follow the boards. The tracks are the cycling
-// fixtures' own.
-import {
-  epicRide,
-  everydayRide,
-  raceRide,
-  travelRide,
-} from "@/components/cycling/fixtures";
-import { isBig, rankHighlights, rankRecords, type Records } from "@/rides/rank";
+// figures, and descriptions follow the boards.
+import { rankHighlights, rankRecords, type Records } from "@/rides/rank";
 import {
   byMonth,
-  toRouteTuple,
   toTuple,
   type RideMonth,
   type RideRow,
   type RideTuple,
-  type RouteTuple,
 } from "@/rides/rows";
-import { routeTilePath } from "@/rides/tile";
 
 export const THIS_YEAR = "2026";
 
@@ -83,15 +73,3 @@ export const records: Records<RideTuple> = {
   longest: ranked.longest.map((ride) => toTuple(ride)),
   climbing: ranked.climbing.map((ride) => toTuple(ride)),
 };
-
-const tracks = [epicRide, everydayRide, raceRide, travelRide];
-
-/** Six big rides as tiles, cycling through the fixture tracks. */
-export const routes: RouteTuple[] = allRows
-  .filter((ride) => isBig(ride))
-  .slice(0, 6)
-  .flatMap((ride, index) => {
-    const encoded = tracks[index % tracks.length]?.route;
-    const path = encoded === undefined ? null : routeTilePath(encoded);
-    return path === null ? [] : [toRouteTuple({ ...ride, path })];
-  });

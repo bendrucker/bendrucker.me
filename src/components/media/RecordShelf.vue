@@ -111,15 +111,17 @@ const VINYL = [
             >
               <span
                 aria-hidden="true"
-                class="icon-[lucide--podcast] size-[11px]"
+                class="size-[11px] icon-[lucide--podcast]"
               />
             </span>
           </span>
         </span>
-        <span class="line-clamp-1 w-full text-[13px]">{{ item.title }}</span>
+        <span class="line-clamp-2 w-full text-sm leading-snug text-balance">{{
+          item.title
+        }}</span>
         <span
           v-if="item.text"
-          class="-mt-1 line-clamp-1 w-full text-[11px] text-dim"
+          class="-mt-1 line-clamp-1 w-full text-xs text-dim"
           >{{ item.text }}</span
         >
         <span class="sr-only">Opens {{ item.via }}</span>

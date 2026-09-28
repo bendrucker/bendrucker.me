@@ -29,7 +29,6 @@ try {
     logCursor: null,
     records: { longest: [], climbing: [] },
     matchRecords: null,
-    routes: [],
     matches: null,
     partial: false,
   };
@@ -46,7 +45,7 @@ const thisYear = String(new Date().getUTCFullYear());
 
 <Layout
   title={`${cat.name} | ${SITE.title}`}
-  description="My rides: the log, the routes, and the records."
+  description="My rides: the log and the records."
   credits={[]}
   sourcePath="src/pages/rides/index.astro"
 >
@@ -61,7 +60,6 @@ const thisYear = String(new Date().getUTCFullYear());
     logCursor={page.logCursor}
     records={page.records}
     matchRecords={page.matchRecords}
-    routes={page.routes}
     matches={page.matches}
     partial={page.partial}
   />

@@ -34,21 +34,6 @@ export type RideTuple = [
   string?,
 ];
 
-/** A tile on the Routes view: a row plus its track drawn as an SVG path. */
-export type RouteTuple = [
-  string,
-  string,
-  string,
-  number | null,
-  number | null,
-  string,
-];
-
-export interface RouteTile extends RideRow {
-  /** The simplified track in a `TILE_SIZE` square, as SVG path data. */
-  path: string;
-}
-
 /** A month of the log, newest ride first. */
 export interface RideMonth {
   /** `YYYY-MM`. */
@@ -101,22 +86,6 @@ export function fromTuple([
   const row: RideRow = { id, name, day, distanceM, climbM };
   if (description !== undefined) row.description = description;
   return row;
-}
-
-/** A tile shows only the name, so it leaves the description behind. */
-export function toRouteTuple(tile: RouteTile): RouteTuple {
-  return [tile.id, tile.name, tile.day, tile.distanceM, tile.climbM, tile.path];
-}
-
-export function fromRouteTuple([
-  id,
-  name,
-  day,
-  distanceM,
-  climbM,
-  path,
-]: RouteTuple): RouteTile {
-  return { id, name, day, distanceM, climbM, path };
 }
 
 /** Groups rows that arrive newest first into their months. */

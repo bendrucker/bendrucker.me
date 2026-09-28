@@ -40,30 +40,56 @@ function shows(region: RouteRegion): boolean {
           />
           {{ cat.name }}
         </h1>
-        <div v-if="shows('views')" class="md:hidden">
-          <slot name="views" />
+        <div class="flex items-center gap-2">
+          <div v-if="shows('views')" class="md:sidebar-open:hidden">
+            <slot name="views" />
+          </div>
+          <!-- `/sidebar.js` owns this button's state, so it works the same in
+               an island and on a page that never hydrates. -->
+          <button
+            v-if="shows('sidebar')"
+            type="button"
+            data-sidebar-toggle
+            :aria-controls="`${cat.id}-sidebar`"
+            aria-label="Sidebar"
+            class="group/sidebar inline-flex size-10 flex-none items-center justify-center rounded-[10px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat max-md:hidden"
+          >
+            <span
+              aria-hidden="true"
+              class="size-[18px] icon-[lucide--panel-left-close] sidebar-collapsed:hidden"
+            />
+            <span
+              aria-hidden="true"
+              class="size-[18px] icon-[lucide--panel-left-open] sidebar-open:hidden"
+            />
+          </button>
         </div>
       </div>
 
       <div
         v-if="shows('tools')"
-        class="sticky top-0 z-10 -mx-4 flex items-center gap-2 tint-5 px-4 py-2 md:hidden"
+        class="sticky top-0 z-10 -mx-4 tool-row tint-5 px-4 py-2 md:mx-0 md:max-w-[714px] md:px-0 md:sidebar-open:hidden"
       >
         <slot name="tools" />
       </div>
 
       <div
-        class="md:mt-5 md:grid md:grid-cols-[236px_minmax(0,714px)] md:items-start md:gap-x-2.5"
+        class="md:mt-5 md:grid md:items-start md:gap-x-2.5 md:sidebar-collapsed:grid-cols-[minmax(0,714px)] md:sidebar-open:grid-cols-[236px_minmax(0,714px)]"
       >
         <aside
           v-if="shows('sidebar')"
+          :id="`${cat.id}-sidebar`"
           :aria-label="`${cat.name} controls`"
-          class="sticky top-6 flex flex-col gap-5 max-md:hidden"
+          class="sticky top-6 flex flex-col gap-5 max-md:hidden sidebar-collapsed:hidden"
         >
           <slot name="sidebar" />
         </aside>
-        <div class="min-w-0 md:col-start-2">
-          <section v-if="shows('highlights')" aria-label="Highlights">
+        <div class="min-w-0 md:sidebar-open:col-start-2">
+          <section
+            v-if="shows('highlights')"
+            aria-label="Highlights"
+            class="pb-8"
+          >
             <slot name="highlights" />
           </section>
           <slot />

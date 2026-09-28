@@ -434,18 +434,4 @@ export function gutterCopies(
   ];
 }
 
-/** A highlight's gutter at each width. The line stops under the last one that width shows. */
-export function highlightMarks(
-  index: number,
-  count: number,
-): { phone: GutterMarks; desktop: GutterMarks } {
-  return {
-    phone: {
-      showDay: true,
-      weekEnd: index === Math.min(count, PHONE_HIGHLIGHTS) - 1,
-    },
-    desktop: { showDay: true, weekEnd: index === count - 1 },
-  };
-}
-
 export { codeTransitionName as transitionName } from "@/transitions/names";

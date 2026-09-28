@@ -20,6 +20,10 @@
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
+/* A list route's desktop sidebar, collapsed or not, set by `/sidebar.js`. */
+@custom-variant sidebar-collapsed (&:where([data-sidebar=collapsed] *));
+@custom-variant sidebar-open (&:where(:root:not([data-sidebar=collapsed]) *));
+
 /*
  * The six category colors each have a light and a dark value and nothing else.
  * Every tint on the site is a mix of one of them: a route's ground at 5%, a
@@ -200,6 +204,22 @@ html[data-theme="dark"] {
 }
 
 /* Mono 11, uppercase, tracked, dim: sections, sidebars, and the date over a title. */
+/*
+ * A row of controls that search shares. Closed, search is an icon button at
+ * the row's end. Open, it takes the whole row and the other controls step
+ * aside until it closes.
+ */
+@utility tool-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:has(> [data-search][data-open]) > :not([data-search]) {
+    display: none;
+  }
+}
+
 @utility label-caps {
   font-family: var(--font-mono);
   font-size: 11px;

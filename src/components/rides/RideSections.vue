@@ -26,6 +26,8 @@ const props = withDefaults(
     failed?: boolean;
     /** What the loading line says is on its way: "earlier months". */
     pending?: string;
+    /** The month headings' level, 3 when a section heading sits above them. */
+    level?: 2 | 3;
   }>(),
   {
     query: "",
@@ -33,6 +35,7 @@ const props = withDefaults(
     loading: false,
     failed: false,
     pending: "earlier months",
+    level: 2,
   },
 );
 
@@ -115,7 +118,7 @@ function withinMargin(element: HTMLElement | null): boolean {
           : { minHeight: `${monthWindow.reserved(section.key)}px` }
       "
     >
-      <SectionHead :label="section.label" />
+      <SectionHead :label="section.label" :level="level" />
       <template v-if="monthWindow.holds(section.key)">
         <ul
           v-for="week in section.weeks"

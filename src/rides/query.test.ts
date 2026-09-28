@@ -61,7 +61,6 @@ describe("queryRidesPage", () => {
       logCursor: null,
       records: { longest: [], climbing: [] },
       matchRecords: null,
-      routes: [],
       matches: null,
       partial: false,
     });
@@ -133,51 +132,6 @@ describe("queryRidesPage", () => {
     ]);
   });
 
-  it("draws one tile per named big route, newest ride first", async () => {
-    const big = { distanceM: 100_000, polyline: GOOGLE_EXAMPLE };
-    await seed(
-      ride("a1", {
-        ...big,
-        name: "Paradise Loop",
-        startedAt: "2026-09-01T15:00:00Z",
-      }),
-      ride("a2", {
-        ...big,
-        name: "Paradise Loop",
-        startedAt: "2026-09-10T15:00:00Z",
-      }),
-      ride("a3", {
-        name: "Paradise Loop",
-        startedAt: "2026-09-12T15:00:00Z",
-        polyline: GOOGLE_EXAMPLE,
-      }),
-      ride("b", {
-        name: "Mt. Tam",
-        startedAt: "2026-09-05T15:00:00Z",
-        polyline: GOOGLE_EXAMPLE,
-        elevationM: 1_500,
-      }),
-      ride("coffee", {
-        name: "Coffee ride",
-        startedAt: "2026-09-14T15:00:00Z",
-        polyline: GOOGLE_EXAMPLE,
-      }),
-      ride("morning", {
-        ...big,
-        name: "Morning Ride",
-        startedAt: "2026-09-15T15:00:00Z",
-      }),
-      ride("trackless", { ...big, name: "Trainer", polyline: null }),
-    );
-
-    const { routes } = await queryRidesPage(db);
-
-    // The short lap of Paradise Loop on the 12th is not the tile's ride, and
-    // the coffee ride is not a route at all.
-    expect(routes.map(([id]) => id)).toEqual(["a2", "b"]);
-    expect(routes[0]?.[5]).toMatch(/^M[\d.]+ [\d.]+(L[\d.]+ [\d.]+)+$/);
-  });
-
   it("narrows matches and their records to the query", async () => {
     await seed(
       ride("hit", {
@@ -199,8 +153,6 @@ describe("queryRidesPage", () => {
     expect(page.partial).toBe(false);
     expect(page.matchRecords?.longest.map(([id]) => id)).toEqual(["hit"]);
     expect(page.records.longest.map(([id]) => id)).toEqual(["miss", "hit"]);
-    // The grid stays whole for the browser to filter.
-    expect(page.routes).toHaveLength(2);
   });
 
   it("reports a partial match list past the first screen", async () => {

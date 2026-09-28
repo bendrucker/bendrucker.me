@@ -8,7 +8,6 @@ import {
   useTemplateRef,
   watch,
 } from "vue";
-import { monthShort } from "@/activity/sections";
 import EmptyState from "@/components/parts/EmptyState.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
 import RouteFrame from "@/components/parts/RouteFrame.vue";
@@ -24,7 +23,6 @@ import {
   codeView,
   countLabel,
   gutterCopies,
-  highlightMarks,
   ownerFrom,
   parseFilters,
   sortFrom,
@@ -118,10 +116,6 @@ async function reset() {
   if (view.value.count === 0) empty.value?.focus();
   else results.value?.focus();
 }
-
-function dayOfMonth(day: string): string {
-  return String(Number(day.slice(8, 10)));
-}
 </script>
 
 <template>
@@ -134,47 +128,48 @@ function dayOfMonth(day: string): string {
     }"
   >
     <template #tools>
-      <!-- Search opens into a row of its own above the filters. -->
-      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        <div class="flex min-w-0 grow basis-0 items-center gap-2">
-          <SegmentGroup
-            :model-value="filters.owner"
-            :options="OWNER_OPTIONS"
-            label="Owner"
-            size="sm"
-            @update:model-value="setOwner"
-          />
-          <SelectControl
-            v-model="filters.lang"
-            class="ml-auto min-w-0"
-            :options="languages"
-            label="Language"
-            placeholder="Language"
-            :dot="languageDot"
-          />
-          <SelectControl
-            :model-value="filters.sort"
-            :options="SORT_OPTIONS"
-            label="Sort"
-            icon="arrow-down-up"
-            icon-only
-            :tint="false"
-            @update:model-value="setSort"
-          />
-        </div>
-        <div class="flex has-[input]:order-first has-[input]:basis-full">
-          <SearchControl
-            v-model="filters.q"
-            noun="repositories"
-            collapsible
-            :status="status"
-          />
-        </div>
-      </div>
+      <SegmentGroup
+        :model-value="filters.owner"
+        :options="OWNER_OPTIONS"
+        label="Owner"
+        size="sm"
+        @update:model-value="setOwner"
+      />
+      <SelectControl
+        v-model="filters.lang"
+        class="ml-auto min-w-0"
+        :options="languages"
+        label="Language"
+        placeholder="Language"
+        :dot="languageDot"
+      />
+      <SelectControl
+        :model-value="filters.sort"
+        :options="SORT_OPTIONS"
+        label="Sort"
+        icon="arrow-down-up"
+        icon-only
+        :tint="false"
+        @update:model-value="setSort"
+      />
+      <SearchControl
+        v-model="filters.q"
+        noun="repositories"
+        collapsible
+        :status="status"
+      />
     </template>
 
     <template #sidebar>
-      <div class="flex min-h-10 justify-end">
+      <div class="tool-row">
+        <SegmentGroup
+          :model-value="filters.owner"
+          :options="OWNER_OPTIONS"
+          label="Owner"
+          fill
+          class="min-w-0 flex-1 *:basis-auto"
+          @update:model-value="setOwner"
+        />
         <SearchControl
           v-model="filters.q"
           noun="repositories"
@@ -182,13 +177,6 @@ function dayOfMonth(day: string): string {
           :status="status"
         />
       </div>
-      <SegmentGroup
-        :model-value="filters.owner"
-        :options="OWNER_OPTIONS"
-        label="Owner"
-        fill
-        @update:model-value="setOwner"
-      />
       <div class="flex flex-wrap gap-2">
         <SelectControl
           v-model="filters.lang"
@@ -227,7 +215,7 @@ function dayOfMonth(day: string): string {
     </template>
 
     <template #highlights>
-      <SectionHead label="Highlights" />
+      <SectionHead label="Highlights" section />
       <ul class="flex flex-col gap-1.5">
         <li
           v-for="(row, i) in view.highlights"
@@ -241,21 +229,7 @@ function dayOfMonth(day: string): string {
             :text="row.text"
             :lead="row.lead"
             :dot="row.dot"
-          >
-            <template #gutter>
-              <TimelineGutter
-                v-for="copy in gutterCopies(
-                  highlightMarks(i, view.highlights.length).phone,
-                  highlightMarks(i, view.highlights.length).desktop,
-                )"
-                :key="copy.key"
-                :class="copy.class"
-                :day="dayOfMonth(row.day)"
-                :sub="monthShort(row.day)"
-                :week-end="copy.marks.weekEnd"
-              />
-            </template>
-          </ItemRow>
+          />
         </li>
       </ul>
     </template>
@@ -276,6 +250,7 @@ function dayOfMonth(day: string): string {
       />
 
       <template v-else-if="filters.sort === 'recent'">
+        <SectionHead label="Recent" section />
         <section
           v-for="section in view.sections"
           :id="`month-${section.key}`"
@@ -284,7 +259,7 @@ function dayOfMonth(day: string): string {
           class="scroll-mt-16 md:scroll-mt-6"
           :class="section.phoneOnly ? 'md:hidden' : ''"
         >
-          <SectionHead :label="section.label" />
+          <SectionHead :label="section.label" :level="3" />
           <div class="flex flex-col gap-1.5">
             <ul
               v-for="week in section.weeks"
@@ -326,7 +301,7 @@ function dayOfMonth(day: string): string {
       </template>
 
       <section v-else :aria-label="sortLabel">
-        <SectionHead :label="sortLabel ?? ''" />
+        <SectionHead :label="sortLabel ?? ''" section />
         <ul class="flex flex-col gap-1.5">
           <li v-for="{ item, dayNum, sub } in view.sorted" :key="item.key">
             <ItemRow

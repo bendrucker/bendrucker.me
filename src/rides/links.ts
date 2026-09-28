@@ -3,7 +3,7 @@
 // out rather than spelled.
 import type { Units } from "@/components/cycling/types";
 
-export const RIDE_VIEWS = ["log", "routes", "records"] as const;
+export const RIDE_VIEWS = ["log", "records"] as const;
 
 export type RideView = (typeof RIDE_VIEWS)[number];
 
@@ -22,7 +22,7 @@ function search(params: Record<string, string>): string {
   return query === "" ? "" : `?${query}`;
 }
 
-/** The list in this state: `/rides?view=routes&units=metric`. */
+/** The list in this state: `/rides?view=records&units=metric`. */
 export function ridesHref({ view, q, units }: RidesState): string {
   const params: Record<string, string> = {};
   if (view !== "log") params.view = view;

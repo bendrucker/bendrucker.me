@@ -1,13 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  byMonth,
-  fromRouteTuple,
-  fromTuple,
-  rideIndex,
-  toRouteTuple,
-  toTuple,
-  type RideRow,
-} from "./rows";
+import { byMonth, fromTuple, rideIndex, toTuple, type RideRow } from "./rows";
 
 const row = (id: string, day: string): RideRow => ({
   id,
@@ -18,11 +10,9 @@ const row = (id: string, day: string): RideRow => ({
 });
 
 describe("tuples", () => {
-  it("round-trip a row and a tile", () => {
+  it("round-trip a row", () => {
     const one = row("a", "2026-09-01");
     expect(fromTuple(toTuple(one))).toEqual(one);
-    const tile = { ...one, path: "M0 0L1 1" };
-    expect(fromRouteTuple(toRouteTuple(tile))).toEqual(tile);
   });
 
   it("carry a description only on a row that has one", () => {

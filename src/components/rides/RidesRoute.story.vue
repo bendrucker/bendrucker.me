@@ -2,14 +2,14 @@
 import type { StoryControlSet } from "@/stories/controls";
 import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
-import { highlights, months, records, routes, THIS_YEAR } from "./fixtures";
+import { highlights, months, records, THIS_YEAR } from "./fixtures";
 import RidesRoute from "./RidesRoute.vue";
 
 const controls: StoryControlSet = {
   view: {
     type: "select",
     title: "view",
-    options: ["log", "routes", "records"],
+    options: ["log", "records"],
   },
   q: { type: "text", title: "search" },
   units: { type: "select", title: "units", options: ["imperial", "metric"] },
@@ -17,7 +17,7 @@ const controls: StoryControlSet = {
 
 function initState() {
   return {
-    view: "log" as "log" | "routes" | "records",
+    view: "log" as "log" | "records",
     q: "",
     units: "imperial" as "imperial" | "metric",
   };
@@ -50,7 +50,6 @@ function key(state: ReturnType<typeof initState>): string {
           :log-cursor="null"
           :records="records"
           :match-records="null"
-          :routes="routes"
           :matches="null"
           :partial="false"
         />

@@ -87,9 +87,9 @@ function rowProps(row: MediaRow) {
     <section
       v-if="view.highlights.length"
       aria-labelledby="media-highlights"
-      class="pb-1"
+      class="pb-8"
     >
-      <SectionHead id="media-highlights" label="Highlights" :gutter="false" />
+      <SectionHead id="media-highlights" label="Highlights" section />
       <PosterShelf v-if="id === 'watching'" :items="view.highlights" />
       <RecordShelf v-else-if="id === 'listening'" :items="view.highlights" />
       <ul v-else class="flex flex-col gap-2">
@@ -103,6 +103,8 @@ function rowProps(row: MediaRow) {
       </ul>
     </section>
 
+    <SectionHead v-if="view.sections.length" label="Recent" section />
+
     <section
       v-for="section in view.sections"
       :key="section.key"
@@ -112,6 +114,7 @@ function rowProps(row: MediaRow) {
       <SectionHead
         :id="`media-${section.key}`"
         :label="section.label"
+        :level="3"
         :gutter="false"
       />
       <ul class="flex flex-col gap-2">

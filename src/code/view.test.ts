@@ -4,7 +4,6 @@ import {
   codeView,
   countLabel,
   gutterCopies,
-  highlightMarks,
   filterRows,
   filterSearch,
   isDefault,
@@ -415,17 +414,6 @@ describe("gutterCopies", () => {
       ["md:hidden", plain],
       ["max-md:hidden", desktop],
     ]);
-  });
-});
-
-describe("highlightMarks", () => {
-  it("stops the line under the third highlight on a phone and the fifth on a desktop", () => {
-    expect(highlightMarks(2, 5)).toEqual({
-      phone: { showDay: true, weekEnd: true },
-      desktop: { showDay: true, weekEnd: false },
-    });
-    expect(highlightMarks(4, 5).desktop.weekEnd).toBe(true);
-    expect(highlightMarks(1, 2).phone.weekEnd).toBe(true);
   });
 });
 

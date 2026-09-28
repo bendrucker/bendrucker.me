@@ -1,7 +1,6 @@
 // The Rides route's reads. Every list on the route is a row of a few values, so
 // each query selects only the columns a row needs and leaves the track, the
-// profile, and the photos to the ride's own page. The one exception is the
-// Routes view, which reads the polylines of the two dozen tiles it draws.
+// profile, and the photos to the ride's own page.
 import { sql, type Expression, type Kysely, type SqlBool } from "kysely";
 import { lowerBound, pageCursor, upperBound, wallClock } from "@/activity/feed";
 import {
@@ -13,15 +12,12 @@ import type { Database } from "@/db";
 import { BIG, RECORD_COUNT, rankHighlights, type Records } from "./rank";
 import {
   byMonth,
-  toRouteTuple,
   toTuple,
   type RideMonth,
   type RideRow,
   type RideRowsPage,
   type RideTuple,
-  type RouteTuple,
 } from "./rows";
-import { routeTilePath } from "./tile";
 
 const ROW_COLUMNS = [
   "activityId",
@@ -42,23 +38,8 @@ export const RIDE_PAGE_MONTHS = 6;
 /** Days back from the latest ride the highlights look for big rides in. */
 export const HIGHLIGHT_DAYS = 90;
 
-/** Tiles the Routes view draws, as many as the board does. */
-export const ROUTE_COUNT = 12;
-
 /** Search results the page renders before the reader scrolls for more. */
 export const MATCH_COUNT = 60;
-
-/**
- * The names Strava gives a ride nobody named. A route tile is labelled by its
- * name, so a grid of these would be a grid of times of day.
- */
-export const DEFAULT_NAMES = [
-  "Morning Ride",
-  "Lunch Ride",
-  "Afternoon Ride",
-  "Evening Ride",
-  "Night Ride",
-] as const;
 
 const DAY_MS = 24 * 3600 * 1000;
 
@@ -117,11 +98,6 @@ export interface RidesPage {
   records: Records<RideTuple>;
   /** Records among the rides the query matches, or null without one. */
   matchRecords: Records<RideTuple> | null;
-  /**
-   * The most recently ridden named routes. A search filters these in place
-   * rather than reaching further back, so clearing it restores the same grid.
-   */
-  routes: RouteTuple[];
   /** The first `MATCH_COUNT` rides the query matches, or null without one. */
   matches: RideTuple[] | null;
   /** Whether more rides match than `matches` carries. */
@@ -149,22 +125,19 @@ export async function queryRidesPage(
       logCursor: null,
       records: { longest: [], climbing: [] },
       matchRecords: searching ? { longest: [], climbing: [] } : null,
-      routes: [],
       matches: searching ? [] : null,
       partial: false,
     };
   }
 
   const latestDay = wallClock(latest.startedAt, latest.timezone).slice(0, 10);
-  const [highlights, log, records, matchRecords, routes, found] =
-    await Promise.all([
-      queryHighlights(db, latest.startedAt, latestDay),
-      queryRideRowsPage(db, monthAfter(monthKeyOf(latestDay)), FIRST_MONTHS),
-      queryRecords(db, ""),
-      searching ? queryRecords(db, query) : null,
-      queryRoutes(db),
-      searching ? queryMatches(db, query) : null,
-    ]);
+  const [highlights, log, records, matchRecords, found] = await Promise.all([
+    queryHighlights(db, latest.startedAt, latestDay),
+    queryRideRowsPage(db, monthAfter(monthKeyOf(latestDay)), FIRST_MONTHS),
+    queryRecords(db, ""),
+    searching ? queryRecords(db, query) : null,
+    searching ? queryMatches(db, query) : null,
+  ]);
 
   return {
     latestDay,
@@ -173,7 +146,6 @@ export async function queryRidesPage(
     logCursor: log.logCursor,
     records: recordTuples(records),
     matchRecords: matchRecords === null ? null : recordTuples(matchRecords),
-    routes,
     matches: found?.rows.map((row) => toTuple(row)) ?? null,
     // A query SQLite can't fold the way the browser does may have missed
     // names, so the browser confirms it against every ride.
@@ -301,43 +273,6 @@ async function queryRecords(
     top("elevationM"),
   ]);
   return { longest, climbing };
-}
-
-/**
- * The newest big ride under each of the `ROUTE_COUNT` most recently ridden
- * names, with its track drawn into a tile. A named route ridden a hundred times
- * is one tile, and a ride Strava named for the time of day is none. The big-ride
- * rule the highlights use keeps the everyday loops out, so the grid reads as
- * the routes worth riding rather than the commute.
- */
-async function queryRoutes(db: Kysely<Database>): Promise<RouteTuple[]> {
-  const rows = await db
-    .selectFrom("activityFeed")
-    .select([...ROW_COLUMNS, "polyline"])
-    // SQLite fills the bare columns of an aggregate query from the row that
-    // `max()` picked, which is what makes this the newest ride per name.
-    .select(sql<string>`max(started_at)`.as("latest"))
-    .where("sport", "=", "ride")
-    .where("polyline", "is not", null)
-    .where("name", "is not", null)
-    .where("name", "not in", DEFAULT_NAMES)
-    .where((eb) =>
-      eb.or([
-        eb("distanceM", ">=", BIG.distanceM),
-        eb("elevationM", ">=", BIG.climbM),
-      ]),
-    )
-    .groupBy("name")
-    .orderBy("latest", "desc")
-    .limit(ROUTE_COUNT)
-    .execute();
-
-  const tiles: RouteTuple[] = [];
-  for (const row of rows) {
-    const path = row.polyline === null ? null : routeTilePath(row.polyline);
-    if (path !== null) tiles.push(toRouteTuple({ ...toRideRow(row), path }));
-  }
-  return tiles;
 }
 
 /** The newest rides whose names hold the query, and whether there are more. */
