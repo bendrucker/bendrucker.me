@@ -29,8 +29,10 @@ import UnitsToggle from "@/components/parts/UnitsToggle.vue";
 import { climbFigure, distanceFigure, gutterSub } from "@/rides/format";
 import { parseView, rideHref, ridesHref, type RideView } from "@/rides/links";
 import {
+  announceListSettled,
   currentListEntry,
-  historyIndex,
+  ensureListEntryId,
+  listEntryIdOfState,
   saveListEntry,
 } from "@/rides/listEntry";
 import { isHilly, rankRecords, type Records } from "@/rides/rank";
@@ -84,14 +86,13 @@ function pickView(value: string) {
 /** Set once the reader navigates away, after which the list owns no history entry. */
 let leaving = false;
 
+const listHref = computed(() =>
+  ridesHref({ view: view.value, q: query.value, units: units.value }),
+);
+
 function writeUrl() {
   if (leaving || location.pathname !== "/rides") return;
-  const href = ridesHref({
-    view: view.value,
-    q: query.value,
-    units: units.value,
-  });
-  history.replaceState(history.state, "", href);
+  history.replaceState(history.state, "", listHref.value);
 }
 
 // Safari throttles `replaceState` to a hundred calls in ten seconds and throws
@@ -112,14 +113,22 @@ const log = useMonthPages(props.months, props.logCursor, fetchRows);
 // the same history entry puts them back. The server renders two months, and a
 // reader who paged a year back would otherwise come back to a page too short
 // to hold their place.
-function onLeave() {
-  writeUrl();
+//
+// A traversal has already made the destination the current entry by the time
+// the router announces it, so leaving that way writes nothing to history and
+// saves under the id the list's entry had when it was shown.
+let entryId: string | null = null;
+
+function onLeave(event: Event) {
+  const traversal =
+    "navigationType" in event && event.navigationType === "traverse";
+  if (!traversal) writeUrl();
   leaving = true;
-  const index = historyIndex();
-  if (index === null) return;
+  const id = traversal ? entryId : ensureListEntryId();
+  if (id === null) return;
   saveListEntry({
-    index,
-    href: location.pathname + location.search,
+    id,
+    href: listHref.value,
     scrollY: window.scrollY,
     log: { months: log.months.value, logCursor: log.cursor.value },
   });
@@ -127,13 +136,16 @@ function onLeave() {
 
 onMounted(async () => {
   document.addEventListener("astro:before-preparation", onLeave);
+  entryId = listEntryIdOfState();
   const saved = currentListEntry();
-  if (saved === null || saved.log.months.length <= log.months.value.length) {
-    return;
+  if (saved !== null) {
+    if (saved.log.months.length > log.months.value.length) {
+      log.restore(saved.log);
+      await nextTick();
+    }
+    window.scrollTo({ top: saved.scrollY, behavior: "instant" });
   }
-  log.restore(saved.log);
-  await nextTick();
-  window.scrollTo({ top: saved.scrollY, behavior: "instant" });
+  announceListSettled();
 });
 
 onBeforeUnmount(() => {

@@ -6,6 +6,12 @@
 // the same record to send its back link to that entry rather than to a fresh
 // list.
 //
+// The record is keyed to the history entry itself, by an id kept in that
+// entry's `history.state`. The client router's index can't serve: every full
+// page load starts it at zero, so a new visit to the list would match a record
+// an older visit left behind. A new entry starts without an id and restores
+// nothing.
+//
 // Session storage can be missing or full, so every read and write here
 // fails quietly and leaves the page as the server rendered it.
 import * as z from "zod/mini";
@@ -13,9 +19,12 @@ import { rideRowsPage } from "./rows";
 
 const KEY = "rides:list";
 
+/** Fired once the list has put back what it saved, for the morph to wait on. */
+export const LIST_SETTLED = "rides:list-settled";
+
 const listEntry = z.object({
-  /** The index the client router gave the list's history entry. */
-  index: z.number(),
+  /** The id of the list's history entry. */
+  id: z.string(),
   /** The list's path and query, with the reader's view, search, and units. */
   href: z.string(),
   scrollY: z.number(),
@@ -24,12 +33,56 @@ const listEntry = z.object({
 
 export type ListEntry = z.infer<typeof listEntry>;
 
-const routerState = z.object({ index: z.number() });
+const entryState = z.looseObject({
+  /** On the list's entry, the id its saved record is kept under. */
+  ridesList: z.optional(z.string()),
+  /** On a ride's entry, the id of the list entry it was opened from. */
+  fromList: z.optional(z.string()),
+});
 
-/** The client router's index for the current history entry, when it has one. */
-export function historyIndex(): number | null {
-  const state = routerState.safeParse(history.state);
-  return state.success ? state.data.index : null;
+type EntryState = z.infer<typeof entryState>;
+
+function readState(): EntryState | null {
+  const state = entryState.safeParse(history.state);
+  return state.success ? state.data : null;
+}
+
+/**
+ * Adds fields to the current entry's state. An entry the router has not
+ * given a state yet is left alone, since the router takes any state it finds
+ * as its own and would read no index from this one.
+ */
+function writeState(fields: EntryState): boolean {
+  const state = readState();
+  if (state === null) return false;
+  try {
+    history.replaceState({ ...state, ...fields }, "");
+    return true;
+  } catch {
+    // Safari throws past its replaceState budget.
+    return false;
+  }
+}
+
+/** The id of the list entry being shown, when it was given one. */
+export function listEntryIdOfState(): string | null {
+  return readState()?.ridesList ?? null;
+}
+
+/**
+ * The id of the list entry being shown, giving it one if it has none. Called
+ * as the reader leaves, while the entry is still the current one.
+ */
+export function ensureListEntryId(): string | null {
+  const existing = listEntryIdOfState();
+  if (existing !== null) return existing;
+  const id = crypto.randomUUID();
+  return writeState({ ridesList: id }) ? id : null;
+}
+
+/** Records on a ride's entry which list entry it was opened from. */
+export function markOpenedFromList(id: string): void {
+  writeState({ fromList: id });
 }
 
 export function saveListEntry(entry: ListEntry): void {
@@ -54,9 +107,13 @@ export function readListEntry(): ListEntry | null {
 /** The saved list, if it is the history entry being shown now. */
 export function currentListEntry(): ListEntry | null {
   const saved = readListEntry();
-  const index = historyIndex();
-  if (saved === null || index === null || saved.index !== index) return null;
-  return saved.href === location.pathname + location.search ? saved : null;
+  const id = listEntryIdOfState();
+  return saved !== null && id !== null && saved.id === id ? saved : null;
+}
+
+/** Tells the morph the list is back where the reader left it. */
+export function announceListSettled(): void {
+  document.dispatchEvent(new Event(LIST_SETTLED));
 }
 
 /**
@@ -67,8 +124,8 @@ export function currentListEntry(): ListEntry | null {
  */
 export function linkBackToList(link: HTMLAnchorElement): void {
   const saved = readListEntry();
-  const index = historyIndex();
-  if (saved === null || index === null || saved.index !== index - 1) return;
+  const from = readState()?.fromList;
+  if (saved === null || from === undefined || saved.id !== from) return;
   link.href = saved.href;
   link.addEventListener("click", (event) => {
     const plain =
