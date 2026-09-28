@@ -9,7 +9,12 @@ import {
   watch,
 } from "vue";
 import { monthsByYear } from "@/activity/sections";
+import DateRail from "@/components/parts/DateRail.vue";
 import EmptyState from "@/components/parts/EmptyState.vue";
+import {
+  scrollToSection,
+  useScrollSpy,
+} from "@/components/cycling/useScrollSpy";
 import ItemRow from "@/components/parts/ItemRow.vue";
 import RouteFrame from "@/components/parts/RouteFrame.vue";
 import type { RouteNote } from "@/notes";
@@ -94,11 +99,15 @@ const months = computed(() =>
   view.value.sections.filter((section) => !section.phoneOnly),
 );
 
-const rail = computed(() =>
-  monthsByYear(months.value.map((section) => section.key)),
-);
+const monthKeys = computed(() => months.value.map((section) => section.key));
+const rail = computed(() => monthsByYear(monthKeys.value));
 
 const results = useTemplateRef<HTMLElement>("results");
+const activeMonth = useScrollSpy(monthKeys, { root: results });
+
+function jumpTo(key: string) {
+  scrollToSection(results.value, key);
+}
 const empty = useTemplateRef<InstanceType<typeof EmptyState>>("empty");
 
 // The URL keeps up with the filters, so a reload or a shared link lands on
@@ -233,28 +242,12 @@ async function reset() {
           @update:model-value="setSort"
         />
       </div>
-      <nav
+      <DateRail
         v-if="months.length > 1"
-        aria-labelledby="code-months"
-        class="flex flex-col gap-1"
-      >
-        <h2 id="code-months" class="sr-only">Months</h2>
-        <ul class="flex flex-col gap-3">
-          <li v-for="group in rail" :key="group.year">
-            <p class="px-1 pb-1 label-caps">{{ group.year }}</p>
-            <ul class="flex flex-col">
-              <li v-for="section in group.months" :key="section.key">
-                <a
-                  :href="`#month-${section.key}`"
-                  class="block rounded-md px-2.5 py-1.5 font-mono text-[13px] text-foreground/80 no-underline transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat"
-                >
-                  {{ section.label }}
-                </a>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </nav>
+        :years="rail"
+        :active="activeMonth ?? monthKeys[0] ?? null"
+        @jump="jumpTo"
+      />
     </template>
 
     <template #highlights>
@@ -298,8 +291,10 @@ async function reset() {
           v-for="section in view.sections"
           :id="`month-${section.key}`"
           :key="section.key"
+          :data-month-key="section.key"
           :aria-label="section.label"
-          class="scroll-mt-16 md:scroll-mt-6 md:sidebar-collapsed:scroll-mt-16"
+          tabindex="-1"
+          class="scroll-mt-16 outline-none md:scroll-mt-6 md:sidebar-collapsed:scroll-mt-16"
           :class="section.phoneOnly ? 'md:hidden' : ''"
         >
           <SectionHead :label="section.label" :level="3" />

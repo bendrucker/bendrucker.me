@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  calendarMonths,
   monthsByYear,
   groupRows,
   monthShort,
@@ -194,5 +195,21 @@ describe("monthsByYear", () => {
       },
       { year: "2025", months: [{ key: "2025-12", label: "December" }] },
     ]);
+  });
+});
+
+describe("calendarMonths", () => {
+  it("lays out every month of a year still under way", () => {
+    const months = calendarMonths(monthsByYear(["2026-03", "2026-01"])[0]!);
+    expect(months).toHaveLength(12);
+    expect(months.filter((month) => month.present).map((m) => m.key)).toEqual([
+      "2026-01",
+      "2026-03",
+    ]);
+    expect(months[11]).toEqual({
+      key: "2026-12",
+      label: "December",
+      present: false,
+    });
   });
 });

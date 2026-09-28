@@ -128,6 +128,26 @@ export function monthsByYear(keys: readonly string[]): RailYear[] {
   return years;
 }
 
+export interface RailMonth {
+  key: string;
+  label: string;
+  /** Whether the year has a section for this month to jump to. */
+  present: boolean;
+}
+
+/**
+ * A rail year's twelve months in calendar order, with the ones it has no
+ * section for marked absent. A year still under way lays out like a finished
+ * one, so switching between them moves nothing.
+ */
+export function calendarMonths({ year, months }: RailYear): RailMonth[] {
+  const present = new Set(months.map((month) => month.key));
+  return MONTHS.map((label, index) => {
+    const key = `${year}-${String(index + 1).padStart(2, "0")}`;
+    return { key, label, present: present.has(key) };
+  });
+}
+
 /**
  * Groups rows, newest first, into sections by month, season, or year, and each
  * section into weeks. A season has no days to break on, so it is one week.

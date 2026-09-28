@@ -8,7 +8,7 @@ import {
   ref,
   watch,
 } from "vue";
-import { monthsByYear, type RailYear } from "@/activity/sections";
+import { monthsByYear } from "@/activity/sections";
 import { useMonthPages } from "@/components/cycling/useMonthPages";
 import {
   scrollToSection,
@@ -53,6 +53,7 @@ import {
 } from "@/rides/detail";
 import RideDetail from "./RideDetail.vue";
 import RideSections from "./RideSections.vue";
+import DateRail from "@/components/parts/DateRail.vue";
 import { useRideSearch } from "./useRideSearch";
 
 const props = defineProps<{
@@ -276,13 +277,6 @@ const activeMonth = useScrollSpy(monthKeys, { root: logRoot });
 const rail = computed(() =>
   monthsByYear(props.allMonths.length > 0 ? props.allMonths : monthKeys.value),
 );
-const activeYear = computed(() =>
-  (activeMonth.value ?? monthKeys.value[0])?.slice(0, 4),
-);
-const activeMonths = computed(
-  () =>
-    rail.value.find((group) => group.year === activeYear.value)?.months ?? [],
-);
 const showRail = computed(
   () =>
     view.value === "log" &&
@@ -291,12 +285,6 @@ const showRail = computed(
 );
 
 const jumping = ref(false);
-
-/** A collapsed year jumps to its newest month. */
-function jumpToYear(group: RailYear) {
-  const newest = group.months[0];
-  if (newest !== undefined) void jumpTo(newest.key);
-}
 
 /** Pages the log back until `key` is loaded, then jumps to it. */
 async function jumpTo(key: string) {
@@ -382,37 +370,13 @@ async function clear() {
           @update:model-value="pickView"
         />
       </div>
-      <nav
+      <DateRail
         v-if="showRail"
-        aria-label="Months"
-        :aria-busy="jumping"
-        class="flex flex-col gap-2"
-      >
-        <ul class="grid grid-cols-4 gap-1">
-          <li v-for="group in rail" :key="group.year">
-            <button
-              type="button"
-              :aria-current="group.year === activeYear ? 'true' : undefined"
-              class="flex min-h-8 w-full items-center justify-center rounded-[7px] font-mono text-[13px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat aria-[current=true]:bg-background aria-[current=true]:text-cat aria-[current=true]:shadow-[0_1px_2px_var(--shadow)]"
-              @click="jumpToYear(group)"
-            >
-              {{ group.year }}
-            </button>
-          </li>
-        </ul>
-        <ul v-if="activeMonths.length" class="flex flex-col">
-          <li v-for="month in activeMonths" :key="month.key">
-            <button
-              type="button"
-              :aria-current="activeMonth === month.key ? 'true' : undefined"
-              class="flex min-h-8 w-full items-center rounded-[7px] px-2.5 font-mono text-[13px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat aria-[current=true]:bg-background aria-[current=true]:text-cat aria-[current=true]:shadow-[0_1px_2px_var(--shadow)]"
-              @click="jumpTo(month.key)"
-            >
-              {{ month.label }}
-            </button>
-          </li>
-        </ul>
-      </nav>
+        :years="rail"
+        :active="activeMonth ?? monthKeys[0] ?? null"
+        :busy="jumping"
+        @jump="jumpTo"
+      />
     </template>
 
     <template #highlights>
