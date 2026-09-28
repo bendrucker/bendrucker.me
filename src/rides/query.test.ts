@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Kysely } from "kysely";
 import { queryRideById } from "@/activity/feed";
-import { publishActivity, type PublishedActivity } from "@/activity/publish";
+import {
+  publishActivity,
+  publishPowerCurve,
+  type PublishedActivity,
+} from "@/activity/publish";
 import type { Database } from "@/db";
 import { createTestDb, testStore } from "@/test/db";
 import {
@@ -9,9 +13,11 @@ import {
   MATCH_COUNT,
   queryRideHighlights,
   queryRideIndex,
+  queryRideRecords,
   queryRideRowsPage,
   queryRidesPage,
 } from "./query";
+import { pickRecords, recordsPage, type PeriodRecords } from "./records";
 import { rideRowsPage } from "./rows";
 
 /** Google's documented polyline example. */
@@ -59,7 +65,6 @@ describe("queryRidesPage", () => {
       highlights: [],
       months: [],
       logCursor: null,
-      records: { longest: [], climbing: [] },
       matchRecords: null,
       matches: null,
       partial: false,
@@ -110,29 +115,6 @@ describe("queryRidesPage", () => {
     expect(page.highlights.map(([id]) => id)).toEqual(["steep", "long"]);
   });
 
-  it("keeps all-time records whatever the window", async () => {
-    await seed(
-      ride("latest"),
-      ride("old", { startedAt: "2019-05-01T15:00:00Z", distanceM: 200_000 }),
-      ride("hill", { startedAt: "2020-05-01T15:00:00Z", elevationM: 3_000 }),
-    );
-
-    const { records } = await queryRidesPage(db);
-
-    expect(records.longest.map(([id]) => id)).toEqual([
-      "old",
-      "latest",
-      "hill",
-    ]);
-    expect(records.climbing[0]).toEqual([
-      "hill",
-      "Ride hill",
-      "2020-05-01",
-      40_000,
-      3_000,
-    ]);
-  });
-
   it("narrows matches and their records to the query", async () => {
     await seed(
       ride("hit", {
@@ -153,7 +135,6 @@ describe("queryRidesPage", () => {
     expect(page.matches?.map(([id]) => id)).toEqual(["hit"]);
     expect(page.partial).toBe(false);
     expect(page.matchRecords?.longest.map(([id]) => id)).toEqual(["hit"]);
-    expect(page.records.longest.map(([id]) => id)).toEqual(["miss", "hit"]);
   });
 
   it("reports a partial match list past the first screen", async () => {
@@ -262,17 +243,217 @@ describe("figures", () => {
       null,
     ]);
   });
+});
 
-  it("keeps a manual entry with no distance out of the records", async () => {
+function period(periods: PeriodRecords[], name: string) {
+  const found = periods.find((records) => records.period === name);
+  if (found === undefined) throw new Error(`No period ${name}`);
+  return found;
+}
+
+function ids(tuples: readonly (readonly unknown[])[]) {
+  return tuples.map((tuple) => tuple[0]);
+}
+
+describe("queryRideRecords", () => {
+  async function curve(id: string, watts: Record<number, number>) {
+    await publishPowerCurve(
+      testStore(db),
+      id,
+      Object.entries(watts).map(([durationS, value]) => ({
+        durationS: Number(durationS),
+        watts: value,
+      })),
+    );
+  }
+
+  it("has no periods before the first ride", async () => {
+    expect(await queryRideRecords(db)).toEqual([]);
+  });
+
+  it("ranks all time, then each year newest first", async () => {
     await seed(
-      ride("tally", { distanceM: 0, movingS: 0, elevationM: 30_000 }),
-      ride("real", { elevationM: 2_000 }),
+      ride("latest"),
+      ride("old", { startedAt: "2019-05-01T15:00:00Z", distanceM: 200_000 }),
+      ride("hill", { startedAt: "2020-05-01T15:00:00Z", elevationM: 3_000 }),
+      ride("long-day", {
+        startedAt: "2020-06-01T15:00:00Z",
+        distanceM: 30_000,
+        movingS: 30_000,
+        averageWatts: 181.6,
+      }),
     );
 
-    const { records } = await queryRidesPage(db);
+    const periods = await queryRideRecords(db);
 
-    expect(records.climbing.map(([id]) => id)).toEqual(["real"]);
-    expect(records.longest.map(([id]) => id)).toEqual(["real"]);
+    expect(periods.map((records) => records.period)).toEqual([
+      "all",
+      "2026",
+      "2020",
+      "2019",
+    ]);
+    const all = period(periods, "all");
+    expect(ids(all.longest)).toEqual(["old", "latest", "hill", "long-day"]);
+    expect(all.climbing[0]).toEqual([
+      "hill",
+      "Ride hill",
+      "2020-05-01",
+      40_000,
+      3_000,
+      5_400,
+      200,
+    ]);
+    expect(all.days[0]).toEqual([
+      "long-day",
+      "Ride long-day",
+      "2020-06-01",
+      30_000,
+      600,
+      30_000,
+      182,
+    ]);
+    expect(ids(period(periods, "2020").longest)).toEqual(["hill", "long-day"]);
+    expect(ids(period(periods, "2019").longest)).toEqual(["old"]);
+  });
+
+  it("names the five leaders of each list", async () => {
+    await seed(
+      ...Array.from({ length: 8 }, (_, index) =>
+        ride(`r${index}`, {
+          startedAt: `2026-0${index + 1}-10T15:00:00Z`,
+          distanceM: 10_000 * (index + 1),
+        }),
+      ),
+    );
+
+    const all = period(await queryRideRecords(db), "all");
+
+    expect(ids(all.longest)).toEqual(["r7", "r6", "r5", "r4", "r3"]);
+  });
+
+  it("files a ride under the year it was local, not UTC", async () => {
+    // Late on New Year's Eve in California is already January in UTC.
+    await seed(
+      ride("eve", {
+        startedAt: "2026-01-01T06:00:00Z",
+        distanceM: 150_000,
+      }),
+      ride("summer", { startedAt: "2026-07-01T15:00:00Z" }),
+      ...Array.from({ length: 6 }, (_, index) =>
+        ride(`y${index}`, {
+          startedAt: `2025-0${index + 1}-10T15:00:00Z`,
+          distanceM: 160_000 + index,
+        }),
+      ),
+    );
+
+    const periods = await queryRideRecords(db);
+
+    expect(ids(period(periods, "2026").longest)).toEqual(["summer"]);
+    // The eve ride trails five 2025 rides, and still makes 2025's list.
+    expect(ids(period(periods, "2025").longest)).toEqual([
+      "y5",
+      "y4",
+      "y3",
+      "y2",
+      "y1",
+    ]);
+    expect(
+      ids(
+        period(periods, "2025").longest.concat(
+          period(periods, "2025").climbing,
+          period(periods, "2025").days,
+        ),
+      ),
+    ).toContain("eve");
+  });
+
+  it("keeps indoor rides and manual entries out of every list", async () => {
+    await seed(
+      ride("road", { elevationM: 2_000 }),
+      ride("zwift", {
+        startedAt: "2026-09-19T15:00:00Z",
+        distanceM: 90_000,
+        elevationM: 1_600,
+        movingS: 12_000,
+        indoor: true,
+      }),
+      ride("tally", {
+        startedAt: "2026-09-18T15:00:00Z",
+        distanceM: 0,
+        movingS: 0,
+        elevationM: 30_000,
+      }),
+    );
+    await curve("road", { 60: 400 });
+    await curve("zwift", { 60: 500 });
+
+    for (const records of await queryRideRecords(db)) {
+      expect(ids(records.longest)).toEqual(["road"]);
+      expect(ids(records.climbing)).toEqual(["road"]);
+      expect(ids(records.days)).toEqual(["road"]);
+      expect(records.power).toEqual([
+        [60, 400, "road", "Ride road", "2026-09-20"],
+      ]);
+    }
+  });
+
+  it("takes power from a meter only, the best of each duration", async () => {
+    await seed(
+      ride("meter"),
+      ride("older", { startedAt: "2025-05-01T15:00:00Z" }),
+      ride("guess", {
+        startedAt: "2026-09-19T15:00:00Z",
+        powerSource: "estimated",
+        averageWatts: 400,
+      }),
+    );
+    await curve("meter", { 5: 900, 60: 450.4, 1200: 280, 30: 700 });
+    await curve("older", { 60: 480, 3600: 250 });
+    await curve("guess", { 5: 1_500, 60: 999 });
+
+    const periods = await queryRideRecords(db);
+
+    expect(period(periods, "all").power).toEqual([
+      [5, 900, "meter", "Ride meter", "2026-09-20"],
+      [60, 480, "older", "Ride older", "2025-05-01"],
+      [1200, 280, "meter", "Ride meter", "2026-09-20"],
+      [3600, 250, "older", "Ride older", "2025-05-01"],
+    ]);
+    expect(
+      period(periods, "2026").power.map(([durationS, watts]) => [
+        durationS,
+        watts,
+      ]),
+    ).toEqual([
+      [5, 900],
+      [60, 450],
+      [1200, 280],
+    ]);
+    const days = period(periods, "all").days;
+    expect(days.find(([id]) => id === "guess")?.[6]).toBeNull();
+  });
+
+  it("answers a period with the list of every period", async () => {
+    await seed(ride("a"), ride("b", { startedAt: "2024-05-01T15:00:00Z" }));
+
+    const periods = await queryRideRecords(db);
+
+    const page = pickRecords(periods, "2024");
+    expect(page?.periods).toEqual(["all", "2026", "2024"]);
+    expect(page?.records.period).toBe("2024");
+    expect(recordsPage.parse(structuredClone(page))).toEqual(page);
+    expect(pickRecords(periods, "2025")).toBeNull();
+    expect(pickRecords([], "all")).toEqual({
+      periods: ["all"],
+      records: {
+        period: "all",
+        power: [],
+        longest: [],
+        climbing: [],
+        days: [],
+      },
+    });
   });
 });
 

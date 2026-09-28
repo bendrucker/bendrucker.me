@@ -65,6 +65,8 @@ export interface ActivityFeedTable {
   polyline: string | null;
   elevationProfile: string | null;
   photoKeys: string;
+  /** 1 for a trainer or Zwift ride, 0 outdoors, null when the hub never said. */
+  indoor: number | null;
   updatedAt: Generated<string>;
 }
 

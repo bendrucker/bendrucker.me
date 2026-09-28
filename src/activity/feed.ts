@@ -35,10 +35,6 @@ import type {
   HighlightMonth,
   LogPage,
   MonthGroup,
-  PowerBest,
-  RankedList,
-  RankedRow,
-  RecordPeriod,
   Ride,
   RideBadge,
   RideMedia,
@@ -47,9 +43,13 @@ import type {
 
 /**
  * A row as the feed reads it. Only a ride's own page shows its description and
- * the figures past distance, time, and average power.
+ * the figures past distance, time, and average power, and only the Records
+ * view reads the indoor flag.
  */
-export type FeedRow = Omit<Selectable<ActivityFeedTable>, DetailColumn>;
+export type FeedRow = Omit<
+  Selectable<ActivityFeedTable>,
+  DetailColumn | "indoor"
+>;
 
 type DetailColumn =
   | "description"
@@ -58,7 +58,7 @@ type DetailColumn =
   | "temperatureLowC"
   | "temperatureHighC";
 
-/** Every column but the track: what the totals and ranked lists read. */
+/** Every column but the track: what the totals read. */
 export type RideRow = Omit<
   FeedRow,
   "polyline" | "elevationProfile" | "photoKeys"
@@ -125,25 +125,8 @@ const LOG_COLUMNS = [
   "photoKeys",
 ] as const;
 
-export interface PowerCurvePoint {
-  activityId: string;
-  durationS: number;
-  watts: number;
-}
-
 /** A ride under this length is a commute: counted in the month, not carded. */
 const COMMUTE_MAX_DISTANCE_M = 10_000;
-
-const RANKED_ROWS = 5;
-
-const POWER_LADDER = [
-  { id: "1m", label: "1 min", durationS: 60 },
-  { id: "5m", label: "5 min", durationS: 300 },
-  { id: "20m", label: "20 min", durationS: 1200 },
-  { id: "1h", label: "1 hr", durationS: 3600 },
-] as const;
-
-const LADDER_DURATIONS = POWER_LADDER.map((rung) => rung.durationS);
 
 // Scoped per month where they are awarded, so the badge can say which month it
 // won rather than leaving "longest" to read as all time.
@@ -161,37 +144,17 @@ export async function queryCyclingActivity(
   db: Kysely<Database>,
   now: Date = new Date(),
 ): Promise<CyclingActivityData> {
-  // Tracks dominate a row's size, so the ranked lists and totals read every
-  // ride without them, and only the rides with a card on the page pay for
-  // theirs. Which rides those are is settled by laying the page out first.
-  const [rides, curve] = await Promise.all([
-    db
-      .selectFrom("activityFeed")
-      .select(RIDE_COLUMNS)
-      .where("sport", "=", "ride")
-      .execute(),
-    // Every measured ride's points on the ladder: the year a point counts
-    // toward is the ride's local one, which only the entries know.
-    db
-      .selectFrom("activityPowerCurve")
-      .innerJoin(
-        "activityFeed",
-        "activityFeed.activityId",
-        "activityPowerCurve.activityId",
-      )
-      .where("activityFeed.sport", "=", "ride")
-      .where("activityFeed.powerSource", "=", "measured")
-      .where("activityPowerCurve.durationS", "in", LADDER_DURATIONS)
-      .select([
-        "activityPowerCurve.activityId",
-        "activityPowerCurve.durationS",
-        "activityPowerCurve.watts",
-      ])
-      .execute(),
-  ]);
+  // Tracks dominate a row's size, so the totals read every ride without them,
+  // and only the rides with a card on the page pay for theirs. Which rides
+  // those are is settled by laying the page out first.
+  const rides = await db
+    .selectFrom("activityFeed")
+    .select(RIDE_COLUMNS)
+    .where("sport", "=", "ride")
+    .execute();
   const layout = layoutFeed(toEntries(rides));
   attachTracks(layout.entries, await queryTracks(db, layout));
-  return assembleFeed(layout, curve, now);
+  return assembleFeed(layout, now);
 }
 
 /**
@@ -450,17 +413,15 @@ interface Entry {
   commute: boolean;
   distanceM: number;
   elevationM: number;
-  measuredWatts: number | null;
 }
 
 export function buildCyclingActivity(
   rows: FeedRows,
-  curve: readonly PowerCurvePoint[],
   now: Date,
 ): CyclingActivityData {
   const layout = layoutFeed(toEntries(rows.rides));
   attachTracks(layout.entries, rows.tracks);
-  return assembleFeed(layout, curve, now);
+  return assembleFeed(layout, now);
 }
 
 interface Layout {
@@ -490,7 +451,6 @@ function layoutFeed(entries: Entry[]): Layout {
 
 function assembleFeed(
   { entries, firstKey, months }: Layout,
-  curve: readonly PowerCurvePoint[],
   now: Date,
 ): CyclingActivityData {
   const logged =
@@ -501,7 +461,6 @@ function assembleFeed(
     totals: yearTotals(entries, now),
     months: logged.map((month) => month.group),
     highlightMonths: months.flatMap((month) => month.highlights),
-    records: records(entries, curve),
     logCursor: initialCursor(entries, firstKey),
   };
 }
@@ -575,7 +534,6 @@ function toEntry(row: RideRow): Entry {
     commute: row.distanceM !== null && row.distanceM < COMMUTE_MAX_DISTANCE_M,
     distanceM: row.distanceM ?? 0,
     elevationM: row.elevationM ?? 0,
-    measuredWatts,
   };
 }
 
@@ -758,122 +716,6 @@ function yearTotals(entries: readonly Entry[], now: Date): YearTotals {
     elevationFt: feet(sum(inYear, (entry) => entry.elevationM)),
     rideCount: inYear.length,
   };
-}
-
-function records(
-  entries: readonly Entry[],
-  curve: readonly PowerCurvePoint[],
-): RecordPeriod[] {
-  if (entries.length === 0) return [];
-  const years = [...new Set(entries.map((entry) => entry.year))];
-  const period = (name: string, within: readonly Entry[]): RecordPeriod => ({
-    period: name,
-    lists: rankedLists(within),
-    powerBests: powerBests(within, curve),
-  });
-  return [
-    period("all", entries),
-    ...years.map((year) =>
-      period(
-        String(year),
-        entries.filter((entry) => entry.year === year),
-      ),
-    ),
-  ];
-}
-
-function rankedLists(entries: readonly Entry[]): RankedList[] {
-  const lists: RankedList[] = [
-    {
-      id: "distance",
-      icon: "ruler",
-      title: "longest rides",
-      metric: "distance",
-      rows: ranked(entries, (entry) => entry.ride.distanceMi),
-    },
-    {
-      id: "elevation",
-      icon: "trending-up",
-      title: "most climbing",
-      metric: "elevation",
-      rows: ranked(entries, (entry) => entry.ride.elevationFt),
-    },
-    {
-      id: "duration",
-      icon: "clock",
-      title: "longest days",
-      metric: "duration",
-      rows: ranked(
-        entries,
-        (entry) => entry.ride.movingSeconds,
-        (entry) =>
-          entry.measuredWatts === null ? "" : ` · ${entry.measuredWatts} W`,
-      ),
-    },
-  ];
-  return lists.filter((list) => list.rows.length > 0);
-}
-
-function ranked(
-  entries: readonly Entry[],
-  measure: (entry: Entry) => number | undefined,
-  extra: (entry: Entry) => string = () => "",
-): RankedRow[] {
-  return entries
-    .flatMap((entry) => {
-      const value = measure(entry);
-      return value === undefined ? [] : [{ entry, value }];
-    })
-    .toSorted((a, b) => b.value - a.value)
-    .slice(0, RANKED_ROWS)
-    .map(({ entry, value }) => {
-      const row: RankedRow = {
-        id: entry.ride.id,
-        name: entry.ride.name,
-        detail: `'${String(entry.year).slice(2)}${extra(entry)}`,
-        value,
-      };
-      if (entry.ride.stravaUrl) row.href = entry.ride.stravaUrl;
-      return row;
-    });
-}
-
-/**
- * Measured rides only: an estimated curve is Strava's guess at a rider
- * without a meter, not a best.
- */
-function powerBests(
-  entries: readonly Entry[],
-  curve: readonly PowerCurvePoint[],
-): PowerBest[] {
-  const rides = new Set(entries.map((entry) => entry.ride.id));
-  const byDuration = new Map<number, number>();
-  for (const point of curve) {
-    if (!rides.has(point.activityId)) continue;
-    const watts = Math.round(point.watts);
-    const standing = byDuration.get(point.durationS);
-    if (standing === undefined || watts > standing) {
-      byDuration.set(point.durationS, watts);
-    }
-  }
-  const rideAverage = best(
-    entries,
-    (entry) => entry.measuredWatts ?? undefined,
-  );
-  if (byDuration.size === 0 && rideAverage === undefined) return [];
-
-  return [
-    ...POWER_LADDER.map(({ id, label, durationS }) => ({
-      id,
-      label,
-      watts: byDuration.get(durationS) ?? null,
-    })),
-    {
-      id: "ride",
-      label: "ride avg",
-      watts: rideAverage?.measuredWatts ?? null,
-    },
-  ];
 }
 
 function sum(

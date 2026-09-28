@@ -23,9 +23,8 @@ import SectionHead from "@/components/parts/SectionHead.vue";
 import SegmentGroup, {
   type SegmentOption,
 } from "@/components/parts/SegmentGroup.vue";
-import TimelineGutter from "@/components/parts/TimelineGutter.vue";
 import UnitsToggle from "@/components/parts/UnitsToggle.vue";
-import { climbFigure, distanceFigure, gutterSub } from "@/rides/format";
+import { distanceFigure } from "@/rides/format";
 import { parseView, rideHref, ridesHref, type RideView } from "@/rides/links";
 import {
   announceListSettled,
@@ -33,7 +32,8 @@ import {
   ensureListEntryId,
   saveListEntry,
 } from "@/rides/listEntry";
-import { isHilly, rankRecords, type Records } from "@/rides/rank";
+import { isHilly, type Records } from "@/rides/rank";
+import type { RecordsPage } from "@/rides/records";
 import {
   fromTuple,
   rideRowsPage,
@@ -41,6 +41,7 @@ import {
   type RideRow,
   type RideTuple,
 } from "@/rides/rows";
+import RideRecords from "./RideRecords.vue";
 import RideSections from "./RideSections.vue";
 import { useRideSearch } from "./useRideSearch";
 
@@ -56,8 +57,10 @@ const props = defineProps<{
   logCursor: string | null;
   /** Every month with a ride, newest first, so the rail reaches unloaded ones. */
   allMonths: string[];
-  /** All-time records. */
-  records: Records<RideTuple>;
+  /** The records' period, `all` or a year. */
+  period: string;
+  /** The period's records, when the page opened on them. */
+  records: RecordsPage | null;
   /** Records among the rides `q` matches, when there is one. */
   matchRecords: Records<RideTuple> | null;
   /** The first rides `q` matches, when there is one. */
@@ -68,6 +71,7 @@ const props = defineProps<{
 const view = ref<RideView>(props.view);
 const query = ref(props.q);
 const units = ref<Units>(props.units);
+const period = ref(props.period);
 
 const VIEWS: SegmentOption[] = [
   { value: "log", label: "Log", icon: "list" },
@@ -87,7 +91,12 @@ function onList() {
 }
 
 const listHref = computed(() =>
-  ridesHref({ view: view.value, q: query.value, units: units.value }),
+  ridesHref({
+    view: view.value,
+    q: query.value,
+    units: units.value,
+    period: period.value,
+  }),
 );
 
 function writeUrl() {
@@ -99,7 +108,7 @@ function writeUrl() {
 // past that, which a fast typist reaches. A write still pending when the
 // reader opens a ride would land on the ride's entry, so leaving writes it at
 // once and drops the pending one.
-watchDebounced([view, query, units], writeUrl, { debounce: 250 });
+watchDebounced([view, query, units, period], writeUrl, { debounce: 250 });
 
 async function fetchRows(before: string) {
   const response = await fetch(`/activity/cycling/${before}.json?format=rows`);
@@ -211,37 +220,6 @@ const search = useRideSearch(
 
 const searching = computed(() => query.value.trim() !== "");
 
-function decode(records: Records<RideTuple>): Records<RideRow> {
-  return {
-    longest: records.longest.map((row) => fromTuple(row)),
-    climbing: records.climbing.map((row) => fromTuple(row)),
-  };
-}
-
-const records = computed<Records<RideRow>>(() => {
-  if (!searching.value) return decode(props.records);
-  // The server ranked the query it rendered across every ride, which beats
-  // ranking the first screen of results until the index lands.
-  if (
-    !search.complete.value &&
-    props.matchRecords !== null &&
-    query.value.trim() === props.q.trim()
-  ) {
-    return decode(props.matchRecords);
-  }
-  return rankRecords(search.results.value);
-});
-
-const RECORD_LISTS = [
-  { key: "longest", label: "Longest", figure: "distance" },
-  { key: "climbing", label: "Most climbing", figure: "climb" },
-] as const;
-
-const recordsEmpty = computed(
-  () =>
-    records.value.longest.length === 0 && records.value.climbing.length === 0,
-);
-
 const status = computed(() => {
   if (!searching.value) return "";
   const count = search.results.value.length;
@@ -320,12 +298,6 @@ async function clear() {
     '#main-content input[type="search"]',
   );
   [...fields].find((field) => field.getClientRects().length > 0)?.focus();
-}
-
-function figure(row: RideRow, kind: "distance" | "climb"): string {
-  return kind === "distance"
-    ? distanceFigure(row.distanceM, units.value)
-    : climbFigure(row.climbM, units.value);
 }
 </script>
 
@@ -472,42 +444,18 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
       <EmptyState v-else noun="rides" :query="query.trim()" @clear="clear" />
     </template>
 
-    <template v-else-if="view === 'records'">
-      <EmptyState
-        v-if="searching && recordsEmpty && search.complete.value"
-        noun="rides"
-        :query="query.trim()"
-        @clear="clear"
-      />
-      <template v-else>
-        <section
-          v-for="list in RECORD_LISTS"
-          :key="list.key"
-          :aria-label="list.label"
-        >
-          <SectionHead :label="list.label" />
-          <ul class="flex flex-col gap-1.5">
-            <li v-for="(ride, index) in records[list.key]" :key="ride.id">
-              <ItemRow
-                :href="rideHref(ride.id, units)"
-                :title="ride.name"
-                :text="ride.description"
-                :figure="figure(ride, list.figure)"
-                :hilly="isHilly(ride)"
-                :query="query.trim()"
-              >
-                <template #gutter>
-                  <TimelineGutter
-                    :day="String(Number(ride.day.slice(8, 10)))"
-                    :sub="gutterSub(ride.day, thisYear)"
-                    :week-end="index === records[list.key].length - 1"
-                  />
-                </template>
-              </ItemRow>
-            </li>
-          </ul>
-        </section>
-      </template>
-    </template>
+    <RideRecords
+      v-else-if="view === 'records'"
+      v-model:period="period"
+      :initial="records"
+      :units="units"
+      :this-year="thisYear"
+      :query="query.trim()"
+      :matches="search.results.value"
+      :complete="search.complete.value"
+      :match-records="matchRecords"
+      :rendered-query="q"
+      @clear="clear"
+    />
   </RouteFrame>
 </template>

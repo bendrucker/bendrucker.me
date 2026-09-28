@@ -298,6 +298,39 @@ Windowing trades away in-page search and linear screen-reader access to months
 the reader has scrolled past. The rail and `scrollToSection` still reach every
 month, and a section mounts as soon as it is scrolled to.
 
+## Ride Records
+
+The Records view on `/rides` ranks all time and each year: best power over five
+durations, and the five longest rides, rides with the most climbing, and longest
+days moving. `queryRideRecords` in `src/rides/query.ts` reads only each year's
+leaders, and `rankPeriods` in `src/rides/records.ts` ranks them.
+
+A year is the ride's local year, which differs from its UTC year only for a ride
+starting on 12-31 or 01-01 in UTC. The query ranks by UTC year and keeps every
+ride from those two days beside each year's leaders, so the local ranking in
+JavaScript stays exact without reading every ride.
+
+The page renders only the period it opens on, and only on the records view. The
+island fetches any other period from `/activity/cycling/records/<period>.json`,
+which keeps the log's HTML free of records.
+
+## Indoor Rides
+
+activity-hub flags trainer and Zwift rides as `indoor`. They stay in the log,
+its monthly highlights, and the year totals, and are left out of every record:
+`queryRideRecords` drops them before any list or power ladder is ranked. A null
+flag reads as outdoor.
+
+## Partial Updates
+
+`Publish.updateActivity` sets whitelisted scalar columns on an existing row
+without rewriting the rest of it, and does nothing for an activity that was
+never published. A new scalar field goes in `activityUpdate` in
+`src/activity/publish.ts`, whose strict schema rejects any field it does not
+list. activity-hub backfills the field through `updateActivity` once this site
+deploys. A change that needs the whole payload rebuilt still goes through a
+version bump of activity-hub's publish schema, which replays every activity.
+
 ## Theme
 
 CSS vars in `global.css` → Tailwind: `bg-background`, `text-foreground`, `bg-accent`, `text-accent`, `bg-muted`, `text-muted`, `border-border`. Dark mode via `data-theme="dark"` / `dark:` prefix. No `skin-*` classes.
