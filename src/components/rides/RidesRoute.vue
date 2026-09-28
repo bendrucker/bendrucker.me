@@ -262,8 +262,7 @@ const showHighlights = computed(
   () => view.value === "log" && !searching.value && highlights.value.length > 0,
 );
 
-// The log mounts the first time it is shown and stays mounted after. A page
-// opened on records or a search skips rendering two months of rows it
+// A page opened on records or a search skips rendering two months of rows it
 // hides, which is most of the markup a search page would otherwise carry.
 const logShown = computed(() => view.value === "log" && !searching.value);
 const logMounted = ref(logShown.value);

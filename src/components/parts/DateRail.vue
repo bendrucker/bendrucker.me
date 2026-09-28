@@ -22,7 +22,6 @@ const months = computed(() => {
   return group === undefined ? [] : calendarMonths(group);
 });
 
-/** A year jumps to its newest month. */
 function jumpToYear(group: RailYear) {
   const newest = group.months[0];
   if (newest !== undefined) emit("jump", newest.key);
