@@ -3,6 +3,7 @@ author: Ben Drucker
 pubDatetime: 2014-05-23T12:00:00Z
 title: Understanding Open Source Communities
 draft: false
+featured: true
 tags:
   - Software
   - Open Source

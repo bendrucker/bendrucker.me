@@ -3,6 +3,7 @@ author: Ben Drucker
 pubDatetime: 2013-12-16T12:00:00Z
 title: The Open Default Principle
 draft: false
+featured: true
 tags:
   - Reflections
   - Open

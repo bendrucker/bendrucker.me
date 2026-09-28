@@ -22,6 +22,8 @@ const props = withDefaults(
     iconOnly?: boolean;
     /** Tints the face while a value is set. Sort is always set, so it opts out. */
     tint?: boolean;
+    /** The query parameter the select submits as, inside a form. */
+    name?: string;
   }>(),
   { placeholder: "", iconOnly: false, tint: true },
 );
@@ -75,15 +77,19 @@ function change(event: Event) {
          platform picker and iOS keeps from zooming the page to read it. -->
     <select
       :value="modelValue"
+      :name="name"
       :aria-label="label"
       class="absolute inset-0 cursor-pointer appearance-none text-base opacity-0"
       @change="change"
     >
       <option v-if="placeholder" value="">{{ placeholder }}</option>
+      <!-- `selected` carries the value into server-rendered markup, which
+           drops a select's own `value` binding. -->
       <option
         v-for="option in options"
         :key="option.value"
         :value="option.value"
+        :selected="option.value === modelValue"
       >
         {{ option.label }}
       </option>

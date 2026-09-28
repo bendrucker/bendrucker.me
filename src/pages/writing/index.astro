@@ -1,0 +1,179 @@
+---
+import RouteLayout from "@/layouts/RouteLayout.astro";
+import EmptyState from "@/components/parts/EmptyState.vue";
+import ItemRow from "@/components/parts/ItemRow.vue";
+import SectionHead from "@/components/parts/SectionHead.vue";
+import SelectControl from "@/components/parts/SelectControl.vue";
+import TimelineGutter from "@/components/parts/TimelineGutter.vue";
+import SearchToggle from "@/components/writing/SearchToggle.astro";
+import { isEnabled, SITE } from "@/config";
+import { loadWriting } from "@/writing/load";
+import { findTag, postTags, transitionName, writingView } from "@/writing/rows";
+
+if (!isEnabled("writing")) return Astro.rewrite("/404");
+
+const { rows, thisYear } = await loadWriting();
+const query = Astro.url.searchParams.get("q") ?? "";
+const tags = postTags(rows);
+const tag = findTag(tags, Astro.url.searchParams.get("tag"));
+const view = writingView(rows, { query, tag }, thisYear);
+const tagOptions = tags.map((t) => ({ value: t.slug, label: t.name }));
+const tagValue = tag?.slug ?? "";
+
+// A phone shows three highlights. The server can't know the width, so the
+// rest ship hidden below the desktop breakpoint.
+const PHONE_HIGHLIGHTS = 3;
+---
+
+<RouteLayout
+  category="writing"
+  description={`Posts by ${SITE.author} on open source, startups, and getting work done.`}
+>
+  <form
+    slot="tools"
+    action="/writing"
+    method="get"
+    role="search"
+    data-writing-tools
+    class="flex min-w-0 flex-1 items-center justify-end gap-2"
+  >
+    <SearchToggle query={query} noun="posts" class="data-open:order-first" />
+    <SelectControl
+      modelValue={tagValue}
+      options={tagOptions}
+      label="Tag"
+      placeholder="Tag"
+      icon="tag"
+      name="tag"
+    />
+  </form>
+
+  <form
+    slot="sidebar"
+    action="/writing"
+    method="get"
+    role="search"
+    data-writing-tools
+    class="flex flex-wrap items-center gap-2"
+  >
+    <SelectControl
+      modelValue={tagValue}
+      options={tagOptions}
+      label="Tag"
+      placeholder="Tag"
+      icon="tag"
+      name="tag"
+    />
+    <SearchToggle
+      query={query}
+      noun="posts"
+      class="ml-auto data-open:order-first data-open:ml-0 data-open:basis-full"
+    />
+  </form>
+  <nav slot="sidebar" aria-label="Years" class="flex flex-col gap-1.5">
+    <p class="px-1 label-caps">Years</p>
+    <ul class="flex flex-col gap-0.5">
+      {
+        view.sections.map((section) => (
+          <li data-rail={section.key} hidden={!section.shown}>
+            <a
+              href={`#year-${section.key}`}
+              class="flex h-9 items-center rounded-lg px-2.5 font-mono text-[13px] text-dim no-underline transition-colors hover:bg-hover hover:text-foreground"
+            >
+              {section.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  {
+    view.highlights.length > 0 && (
+      <div
+        slot="highlights"
+        data-highlights
+        hidden={!view.highlights.some((r) => r.shown)}
+      >
+        <SectionHead label="Highlights" />
+        <ul class="flex flex-col gap-3">
+          {view.highlights.map((row, i) => (
+            <li class:list={[{ "max-md:hidden": i >= PHONE_HIGHLIGHTS }]}>
+              <ItemRow
+                href={row.item.href}
+                title={row.item.title}
+                text={row.item.text}
+              >
+                <TimelineGutter
+                  slot="gutter"
+                  day={row.dayNum}
+                  sub={row.sub}
+                  weekEnd
+                />
+              </ItemRow>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    /* `SectionHead` leads each year, so it drops its desktop padding as if it
+      led the list. The section puts back the space between years. */
+  }
+  {
+    view.sections.map((section) => (
+      <section
+        id={`year-${section.key}`}
+        data-section={section.key}
+        hidden={!section.shown}
+        class="scroll-mt-16 not-first:pt-2 md:scroll-mt-6 md:not-first:pt-5"
+      >
+        <SectionHead label={section.label} />
+        <div class="flex flex-col gap-3">
+          {section.weeks.map((week) => (
+            <ul class="flex flex-col gap-1.5" data-week hidden={!week.shown}>
+              {week.rows.map((row, i) => (
+                <li
+                  data-post
+                  data-title={row.item.title}
+                  data-text={row.item.text}
+                  hidden={!row.shown}
+                >
+                  <ItemRow
+                    href={row.item.href}
+                    title={row.item.title}
+                    text={row.item.text}
+                    query={query}
+                    transitionName={transitionName(row.item.href)}
+                  >
+                    <TimelineGutter
+                      slot="gutter"
+                      day={row.dayNum}
+                      sub={row.sub}
+                      showDay={row.showDay}
+                      weekEnd={i === week.rows.length - 1}
+                    />
+                  </ItemRow>
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </section>
+    ))
+  }
+  <!-- Only a search can empty the list, since every tag names a post. The
+       placeholder query picks the search copy, and the page writes the
+       query itself into the heading when it shows this. -->
+  <div data-empty hidden={view.count > 0}>
+    <EmptyState noun="posts" query={query || " "} />
+  </div>
+</RouteLayout>
+
+<script>
+  import { enhanceWriting } from "@/writing/enhance";
+
+  document.addEventListener("astro:page-load", enhanceWriting);
+</script>

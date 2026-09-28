@@ -15,34 +15,45 @@ vi.mock("astro:content", () => ({
   ) => [entry].filter((e) => (filter ? filter(e) : true)),
 }));
 
-const { posts } = await import("./posts");
+const { posts, writing } = await import("./posts");
 
 function context(slug: string): APIContext {
   return { params: { slug } } as unknown as APIContext;
 }
 
-describe("posts", () => {
+describe("writing", () => {
   it("renders the post title as an H1 above the body", async () => {
-    const md = await posts.render(context("hello-world"));
+    const md = await writing.render(context("hello-world"));
     expect(md).toBe("# Hello, World\n\nThe body of the post.");
   });
 
   it("falls through to HTML for an unknown slug", async () => {
-    expect(await posts.render(context("nope"))).toBeNull();
+    expect(await writing.render(context("nope"))).toBeNull();
   });
 
   it("falls through to HTML when no slug is given", async () => {
-    expect(await posts.render(context(""))).toBeNull();
+    expect(await writing.render(context(""))).toBeNull();
   });
 
-  it("lists each published post once", async () => {
-    const entries = await posts.list();
+  it("lists each published post once, at its Writing path", async () => {
+    const entries = await writing.list();
     expect(entries).toEqual([
       {
-        path: "/posts/hello-world",
+        path: "/writing/hello-world",
         title: "Hello, World",
         description: undefined,
       },
     ]);
+  });
+});
+
+describe("posts", () => {
+  it("still renders a post at its old path", async () => {
+    const md = await posts.render(context("hello-world"));
+    expect(md).toBe("# Hello, World\n\nThe body of the post.");
+  });
+
+  it("leaves the old paths out of the listing", async () => {
+    expect(await posts.list()).toEqual([]);
   });
 });

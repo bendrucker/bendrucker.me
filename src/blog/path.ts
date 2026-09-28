@@ -35,3 +35,8 @@ export function getPath(
 
   return [basePath, ...pathSegments, slug].join("/");
 }
+
+/** A post's page under Writing: `/writing/<slug>`. */
+export function writingPath(id: string, filePath: string | undefined) {
+  return `/writing${getPath(id, filePath, false)}`;
+}
