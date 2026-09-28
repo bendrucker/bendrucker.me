@@ -1,0 +1,17 @@
+# A new worktree starts from its base's install and local database, so a dev
+# server, test run, or agent works the moment it opens. Both copies are APFS
+# clones and take seconds. `.worktreeinclude` in the base names what the first
+# one copies. The database goes on its own because the rest of `.wrangler/`
+# (deploy redirects, the dev worker's pid) belongs to the checkout that made it.
+[pre-start]
+deps = "wt step copy-ignored --from '{{ base_worktree_path or primary_worktree_path }}' || true"
+database = "src='{{ base_worktree_path or primary_worktree_path }}/.wrangler/state'; if [ -d \"$src\" ] && [ ! -e .wrangler/state ]; then mkdir -p .wrangler && cp -Rc \"$src\" .wrangler/; fi"
+
+# Reconcile the copy with this branch's lockfile in the background. `npm ci`
+# would delete node_modules first and pull it out from under whatever started.
+[[post-start]]
+install = "npm install --prefer-offline --no-audit --no-fund"
+
+[[post-start]]
+packages = "npm run build:packages"
+migrate = "npx wrangler d1 migrations apply bendrucker-activity --local"

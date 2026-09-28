@@ -4,6 +4,10 @@
 
 @plugin "@iconify/tailwind4";
 
+/* Posts don't use utility classes. Scanning them made every post save send the
+   dev server a reload that re-ran every server module. */
+@source not "../content";
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 :root,
