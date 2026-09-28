@@ -8,12 +8,12 @@ import MediaControls from "./MediaControls.vue";
 
 const controls: StoryControlSet = {
   category: mediaControl,
-  collapsible: { type: "checkbox", title: "phone row" },
+  sidebar: { type: "checkbox", title: "sidebar" },
   width: { type: "slider", title: "width", min: 180, max: 680, step: 10 },
 };
 
 function initState() {
-  return { category: "watching", collapsible: true, width: 358 };
+  return { category: "watching", sidebar: false, width: 358 };
 }
 </script>
 
@@ -33,10 +33,10 @@ function initState() {
           :style="{ width: `${state.width}px`, maxWidth: '100%' }"
         >
           <MediaControls
-            :key="`${state.category}-${state.collapsible}`"
+            :key="`${state.category}-${state.sidebar}`"
             :id="mediaCategory(state.category)"
             :initial="{ q: '', type: '', count: 0 }"
-            :collapsible="state.collapsible"
+            :sidebar="state.sidebar"
           />
         </div>
       </template>
@@ -52,10 +52,10 @@ function initState() {
 # Media controls
 
 The type segment and search for Reading, Watching, and Listening. The page
-renders two copies: one in the phone's tool row, where the search starts as a
-button beside the segment, and one in the desktop sidebar, where the field is
-always open above it. Opening the search on a phone gives the field its own
-row above the segment.
+renders two copies. In the phone's tool row the search starts as a button
+beside the segment. In the desktop sidebar (236px wide, the `sidebar` control)
+the button sits alone at the top right, above the segment. Opening the search
+gives the field its own row above the segment in both.
 
 Both copies and the list share one state per route, and it is written to the
 URL as `q` and `type` so a filtered view can be shared. Without a script the

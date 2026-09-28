@@ -35,6 +35,27 @@ describe("matches", () => {
     expect(matches({ title: "Ctools" }, "c.")).toBe(false);
   });
 
+  it("matches a query with a hyphen", () => {
+    expect(matches({ title: "Local-first software" }, "local-first")).toBe(
+      true,
+    );
+    expect(matches({ title: "Local-first software" }, "-")).toBe(true);
+    expect(matches({ title: "Piranesi" }, "-")).toBe(false);
+    expect(markParts("Local-first software", "-")).toEqual([
+      { text: "Local", hit: false },
+      { text: "-", hit: true },
+      { text: "first software", hit: false },
+    ]);
+  });
+
+  it("matches every character a pattern would treat specially", () => {
+    const title = "a.*+?^$ {}()|[]/-z";
+    expect(matches({ title }, title)).toBe(true);
+    expect(matches({ title: String.raw`C:\tools` }, String.raw`:\t`)).toBe(
+      true,
+    );
+  });
+
   it("trims the query", () => {
     expect(matches(repo, "  tflint ")).toBe(true);
   });

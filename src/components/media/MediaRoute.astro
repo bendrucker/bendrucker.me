@@ -32,6 +32,12 @@ const { count } = buildMediaView(rows, highlightKeys, {
   ...filters,
   thisYear,
 });
+
+/*
+ * Both copies of the controls hydrate at load, the hidden one included. They
+ * share one store, so a copy hydrating later, after a resize, would find it
+ * moved on from the HTML the server rendered and mismatch.
+ */
 const initial = { ...filters, count };
 ---
 
@@ -41,19 +47,8 @@ const initial = { ...filters, count };
   noindex
   sourcePath={sourcePath}
 >
-  <MediaControls
-    slot="tools"
-    id={id}
-    initial={initial}
-    client:media="(max-width: 47.999rem)"
-  />
-  <MediaControls
-    slot="sidebar"
-    id={id}
-    initial={initial}
-    collapsible={false}
-    client:media="(min-width: 48rem)"
-  />
+  <MediaControls slot="tools" id={id} initial={initial} client:load />
+  <MediaControls slot="sidebar" id={id} initial={initial} sidebar client:load />
   <MediaList
     id={id}
     rows={rows}

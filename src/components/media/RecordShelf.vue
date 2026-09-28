@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { vArtFallback } from "@/components/parts/artFallback";
 import { useOutbound } from "./outbound";
 
 export interface ShelfRecord {
@@ -89,10 +90,11 @@ const VINYL = [
           <!-- The sleeve is the hand holding still: it gives way a beat after
                the pull starts. -->
           <span
-            class="absolute top-0 left-(--o) block size-(--s) overflow-hidden rounded-[3px] bg-foreground/10 shadow-[0_1px_0_rgb(255_255_255/.25)_inset,0_8px_18px_-10px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.45,0,.2,1)] group-hover/album:translate-x-[calc(var(--o)*-.85)] group-hover/album:-rotate-[1.5deg] group-hover/album:delay-40 group-hover/album:duration-500 group-hover/album:ease-[cubic-bezier(.3,.6,.2,1)] group-data-[state=out]/album:translate-x-[calc(var(--o)*-1)] group-data-[state=out]/album:-rotate-3 motion-reduce:transition-none motion-reduce:group-hover/album:translate-x-0 motion-reduce:group-hover/album:rotate-0 motion-reduce:group-data-[state=out]/album:translate-x-0 motion-reduce:group-data-[state=out]/album:rotate-0"
+            class="absolute top-0 left-(--o) block size-(--s) overflow-hidden rounded-[3px] bg-tile shadow-[0_1px_0_rgb(255_255_255/.25)_inset,0_8px_18px_-10px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.45,0,.2,1)] group-hover/album:translate-x-[calc(var(--o)*-.85)] group-hover/album:-rotate-[1.5deg] group-hover/album:delay-40 group-hover/album:duration-500 group-hover/album:ease-[cubic-bezier(.3,.6,.2,1)] group-data-[state=out]/album:translate-x-[calc(var(--o)*-1)] group-data-[state=out]/album:-rotate-3 motion-reduce:transition-none motion-reduce:group-hover/album:translate-x-0 motion-reduce:group-hover/album:rotate-0 motion-reduce:group-data-[state=out]/album:translate-x-0 motion-reduce:group-data-[state=out]/album:rotate-0"
           >
             <img
               v-if="item.art"
+              v-art-fallback
               :src="item.art"
               alt=""
               width="120"

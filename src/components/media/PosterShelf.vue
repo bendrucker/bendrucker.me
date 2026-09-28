@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { tickBackground } from "@/media/ticks";
+import { vArtFallback } from "@/components/parts/artFallback";
 import { useOutbound } from "./outbound";
 
 export interface ShelfPoster {
@@ -44,6 +45,7 @@ const { playing, open } = useOutbound();
         >
           <img
             v-if="item.art"
+            v-art-fallback
             :src="item.art"
             alt=""
             width="120"
