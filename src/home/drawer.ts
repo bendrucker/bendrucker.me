@@ -108,7 +108,6 @@ function setOpen(parts: Card, open: boolean): void {
   drawer.style.height = open ? `${full + room}px` : "";
   drawer.style.removeProperty("--drawer-fade");
   toggle.setAttribute("aria-expanded", String(open));
-  toggle.setAttribute("aria-label", open ? "Show less" : "Show more");
 }
 
 /** Marks the card tall or fitting, and keeps an open drawer at its body's height. */

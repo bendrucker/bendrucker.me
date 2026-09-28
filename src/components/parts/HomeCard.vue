@@ -54,7 +54,7 @@ const drawerId = computed(() => `${props.id}-drawer`);
       data-drawer-toggle
       :aria-controls="drawerId"
       aria-expanded="false"
-      aria-label="Show more"
+      :aria-label="`Expand ${cat.name}`"
       class="group/toggle absolute inset-x-0 bottom-0 z-1 hidden h-[22px] cursor-grab touch-none items-center justify-center text-cat group-data-[size=tall]/card:flex group-data-[state=drag]/card:cursor-grabbing focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cat md:inset-x-auto md:left-1/2 md:h-8 md:w-16 md:-translate-x-1/2 md:cursor-pointer md:touch-auto md:items-end md:rounded-md md:pb-1.5"
     >
       <span
