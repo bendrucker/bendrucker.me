@@ -138,9 +138,11 @@ html[data-theme="dark"] {
     scrollbar-width: auto;
     scrollbar-color: var(--color-muted) transparent;
   }
-  /* Painted so a view transition into the other theme never shows the old one. */
+  /* Painted so a view transition into the other theme never shows the old one.
+     The padding keeps an anchor or a jump from landing under the sticky header,
+     so a section's own scroll margin only has to clear what sticks below it. */
   html {
-    @apply overflow-y-scroll scroll-smooth bg-background;
+    @apply scroll-pt-12 overflow-y-scroll scroll-smooth bg-background md:scroll-pt-18;
   }
   body {
     @apply flex min-h-svh flex-col bg-background font-body text-foreground selection:bg-accent/75 selection:text-background;

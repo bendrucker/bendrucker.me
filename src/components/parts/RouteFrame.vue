@@ -40,36 +40,31 @@ function shows(region: RouteRegion): boolean {
           />
           {{ cat.name }}
         </h1>
-        <div class="flex items-center gap-2">
-          <div v-if="shows('views')" class="md:sidebar-open:hidden">
-            <slot name="views" />
-          </div>
-          <!-- `/sidebar.js` owns this button's state, so it works the same in
-               an island and on a page that never hydrates. -->
-          <button
-            v-if="shows('sidebar')"
-            type="button"
-            data-sidebar-toggle
-            :aria-controls="`${cat.id}-sidebar`"
-            aria-label="Sidebar"
-            class="group/sidebar inline-flex size-10 flex-none items-center justify-center rounded-[10px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat max-md:hidden"
-          >
-            <span
-              aria-hidden="true"
-              class="size-[18px] icon-[lucide--panel-left-close] sidebar-collapsed:hidden"
-            />
-            <span
-              aria-hidden="true"
-              class="size-[18px] icon-[lucide--panel-left-open] sidebar-open:hidden"
-            />
-          </button>
+        <div v-if="shows('views')" class="md:sidebar-open:hidden">
+          <slot name="views" />
         </div>
       </div>
 
       <div
         v-if="shows('tools')"
-        class="sticky top-0 z-10 -mx-4 tool-row tint-5 px-4 py-2 md:mx-0 md:max-w-[714px] md:px-0 md:sidebar-open:hidden"
+        class="sticky top-12 z-10 -mx-4 tool-row tint-5 px-4 py-2 md:top-18 md:mx-0 md:max-w-[714px] md:px-0 md:sidebar-open:hidden"
       >
+        <!-- `/sidebar.js` owns both sidebar buttons, so they work the same in
+             an island and on a page that never hydrates. This one brings a
+             collapsed sidebar back, from the row that stands in for it. -->
+        <button
+          v-if="shows('sidebar')"
+          type="button"
+          data-sidebar-toggle
+          :aria-controls="`${cat.id}-sidebar`"
+          aria-label="Sidebar"
+          class="hidden size-8 flex-none items-center justify-center rounded-[8px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat md:sidebar-collapsed:inline-flex"
+        >
+          <span
+            aria-hidden="true"
+            class="size-4 icon-[lucide--panel-left-open]"
+          />
+        </button>
         <slot name="tools" />
       </div>
 
@@ -80,9 +75,21 @@ function shows(region: RouteRegion): boolean {
           v-if="shows('sidebar')"
           :id="`${cat.id}-sidebar`"
           :aria-label="`${cat.name} controls`"
-          class="sticky top-6 flex flex-col gap-5 max-md:hidden sidebar-collapsed:hidden"
+          class="sticky top-24 flex flex-col gap-5 max-md:hidden sidebar-collapsed:hidden"
         >
           <slot name="sidebar" />
+          <button
+            type="button"
+            data-sidebar-toggle
+            :aria-controls="`${cat.id}-sidebar`"
+            aria-label="Sidebar"
+            class="-mt-2 inline-flex size-7 items-center justify-center self-end rounded-[7px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat"
+          >
+            <span
+              aria-hidden="true"
+              class="size-4 icon-[lucide--panel-left-close]"
+            />
+          </button>
         </aside>
         <div class="min-w-0 md:sidebar-open:col-start-2">
           <section

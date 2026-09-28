@@ -3,7 +3,7 @@ import { SITE } from "@/config";
 ---
 
 <header
-  class="flex h-12 flex-none items-center justify-between border-b border-line bg-background px-4 [view-transition-name:site-head] md:h-18 md:px-12"
+  class="sticky top-0 z-30 flex h-12 flex-none items-center justify-between border-b border-line bg-background px-4 [view-transition-name:site-head] md:h-18 md:px-12"
 >
   <a
     id="skip-to-content"
@@ -40,11 +40,11 @@ import { SITE } from "@/config";
         >
           <span
             aria-hidden="true"
-            class="icon-[lucide--moon] size-4 transition-transform duration-500 ease-spring group-hover:-rotate-25 motion-reduce:transition-none dark:hidden"
+            class="size-4 transition-transform duration-500 ease-spring icon-[lucide--moon] group-hover:-rotate-25 motion-reduce:transition-none dark:hidden"
           />
           <span
             aria-hidden="true"
-            class="icon-[lucide--sun] hidden size-4 transition-transform duration-500 ease-spring group-hover:-rotate-25 motion-reduce:transition-none dark:inline-block"
+            class="hidden size-4 transition-transform duration-500 ease-spring icon-[lucide--sun] group-hover:-rotate-25 motion-reduce:transition-none dark:inline-block"
           />
         </button>
       )

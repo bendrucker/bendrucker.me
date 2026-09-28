@@ -111,7 +111,7 @@ function withinMargin(element: HTMLElement | null): boolean {
       :data-month-key="section.key"
       :aria-label="section.label"
       tabindex="-1"
-      class="scroll-mt-16 outline-none md:scroll-mt-6"
+      class="scroll-mt-16 outline-none md:scroll-mt-6 md:sidebar-collapsed:scroll-mt-16"
       :style="
         monthWindow.holds(section.key)
           ? undefined

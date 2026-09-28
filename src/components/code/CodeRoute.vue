@@ -266,7 +266,7 @@ async function reset() {
           :id="`month-${section.key}`"
           :key="section.key"
           :aria-label="section.label"
-          class="scroll-mt-16 md:scroll-mt-6"
+          class="scroll-mt-16 md:scroll-mt-6 md:sidebar-collapsed:scroll-mt-16"
           :class="section.phoneOnly ? 'md:hidden' : ''"
         >
           <SectionHead :label="section.label" :level="3" />
