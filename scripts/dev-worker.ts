@@ -159,7 +159,17 @@ function stop(): void {
   }
   // The negative pid is the process group. wrangler spawns workerd as a child,
   // and signalling the leader alone leaves workerd holding the port.
-  process.kill(-running.pid, "SIGTERM");
+  try {
+    process.kill(-running.pid, "SIGTERM");
+  } catch (error) {
+    if (!isErrno(error, "EPERM")) throw error;
+    logger.error(
+      running,
+      "Cannot signal the dev worker from this sandbox. Stop it from outside one.",
+    );
+    process.exitCode = 1;
+    return;
+  }
   writeFileSync(PID_FILE, "");
   logger.info(running, "Stopped dev worker");
 }
@@ -176,8 +186,10 @@ function readState(): State | null {
   if (!parsed.success) return null;
   try {
     process.kill(parsed.data.pid, 0);
-  } catch {
-    return null;
+  } catch (error) {
+    // A sandbox denies signals to processes it did not start, so EPERM means
+    // the worker is alive, just out of reach.
+    if (!isErrno(error, "EPERM")) return null;
   }
   return parsed.data;
 }
@@ -239,3 +251,7 @@ function run(command: string, args: string[]): void {
 }
 
 await main();
+
+function isErrno(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
+}

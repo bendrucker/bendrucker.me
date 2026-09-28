@@ -1,7 +1,6 @@
 import { defineConfig, envField, logHandlers } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
-import sentry from "@sentry/astro";
 import vue from "@astrojs/vue";
 import cloudflare from "@astrojs/cloudflare";
 import { cacheCloudflare } from "@astrojs/cloudflare/cache";
@@ -17,8 +16,6 @@ import { transformerFileName } from "./src/shiki/fileName";
 import { SITE } from "./src/config";
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-
-const isDev = process.env.NODE_ENV === "development";
 
 const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
 
@@ -77,14 +74,6 @@ export default defineConfig({
         new URL(page).pathname.replace(/\/$/, "") !== "/archives",
     }),
     vue(),
-    ...(isDev
-      ? [
-          sentry({
-            sourceMapsUploadOptions: { enabled: false },
-            autoInstrumentation: { requestHandler: false },
-          }),
-        ]
-      : []),
   ],
   markdown: {
     processor: unified({

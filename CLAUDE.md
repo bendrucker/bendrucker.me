@@ -18,8 +18,8 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 ## Commands
 
 ```bash
-npm run dev                # Spotlight + Astro dev server
-npm run dev:json           # Astro dev server with JSON logs (no Spotlight)
+npm run dev                # Astro dev server
+npm run dev:json           # Astro dev server with JSON logs
 npm run build              # packages → wrangler types → astro check → astro build
 npm test                   # vitest, whole suite
 npm run lint               # oxlint + ESLint
@@ -101,9 +101,11 @@ Three gotchas:
 - Those anchored patterns cover directories only. `.git` is a file in a worktree,
   and globby throws `ENOTDIR` statting a path beneath it, which fails the build
   rather than the dev server.
-- The Claude Code sandbox blocks the macOS FSEvents recursive watch that Vite
-  relies on, which surfaces as the same `EMFILE`. Story and Astro dev servers
-  have to run outside it.
+- Vite's recursive watch needs the macOS FSEvents service, which the Claude
+  Code sandbox blocks unless `.claude/settings.json` lists `com.apple.FSEvents`
+  under `sandbox.network.allowMachLookup`. Without it the watch fails with the
+  same `EMFILE`, chokidar swallows the error, and the server keeps serving the
+  page it started with.
 
 ### Background Dev Server
 
@@ -115,8 +117,8 @@ is the reason, and it comes down to islands wrapping reka server-rendering
 empty under `astro dev`. `SegmentedControl.vue` is the cycling page's view
 switcher, so that page in particular is a different page under each server.
 
-`npm run dev` wraps `spotlight run astro dev`, which holds the terminal. To
-drive the server without blocking, call the Astro CLI directly:
+`npm run dev` holds the terminal. To drive the server without blocking, call
+the Astro CLI directly:
 
 ```bash
 astro dev --background    # start detached
@@ -150,9 +152,30 @@ running worker holds the bundle it started with and has to be restarted. It
 also passes `--var LOCAL_ERRORS:true`, which is what makes `src/fallback.ts`
 re-throw a failed query instead of rendering the empty page a reader would get.
 
+Each sandboxed Bash call is its own sandbox, and one cannot signal a process
+another started. `status` still reports a server started in an earlier call,
+but `astro dev stop` claims nothing is running and `dev:worker -- stop` exits
+with an error. Stop those from outside the sandbox.
+
+The scripts run through `node --import tsx` rather than the `tsx` CLI, which
+listens on a Unix socket the sandbox refuses.
+
 `.claude/skills/local-loop/SKILL.md` covers the rest of getting a change on
 screen: seeding, the URLs worth requesting, and screenshotting both themes at
 both widths.
+
+### New Worktrees
+
+`.config/wt.toml` seeds a worktree from its base branch's checkout when
+`wt switch --create` makes it. Before the worktree opens, it clones the base's
+`node_modules`, built packages, and local database. Those are the paths
+`.worktreeinclude` lists, plus `.wrangler/state`. Then, in the background, it
+runs `npm install` against this branch's lockfile, rebuilds the packages, and
+applies migrations. `npm ci` would delete the cloned `node_modules` while an
+agent is using it.
+
+Worktrunk reads `.worktreeinclude` from the base checkout, so an edit to it
+takes effect once it reaches `main`.
 
 ## Ride Media
 
