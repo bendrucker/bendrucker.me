@@ -3,6 +3,7 @@ import Layout from "@/layouts/Layout.astro";
 import RouteFrame from "@/components/parts/RouteFrame.vue";
 import { category, type CategoryId, type Credit } from "@/categories";
 import { SITE } from "@/config";
+import { routeNote } from "@/notes";
 
 export interface Props {
   category: CategoryId;
@@ -16,6 +17,7 @@ export interface Props {
 
 const { description, credits, noindex = false, sourcePath } = Astro.props;
 const cat = category(Astro.props.category);
+const note = await routeNote(cat.id);
 ---
 
 <Layout
@@ -27,6 +29,7 @@ const cat = category(Astro.props.category);
 >
   <RouteFrame
     id={cat.id}
+    note={note}
     regions={{
       views: Astro.slots.has("views"),
       tools: Astro.slots.has("tools"),

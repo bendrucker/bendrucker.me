@@ -4,6 +4,7 @@ import CodeRoute from "@/components/code/CodeRoute.vue";
 import { category } from "@/categories";
 import { SITE, isEnabled } from "@/config";
 import { getDb } from "@/db";
+import { routeNote } from "@/notes";
 import { queryCodeRows } from "@/code/query";
 import {
   buildCodeRows,
@@ -39,6 +40,7 @@ const cat = category("code");
 >
   <CodeRoute
     client:load
+    note={await routeNote("code")}
     rows={rows}
     languages={languages}
     initial={parseFilters(Astro.url.searchParams, languages)}

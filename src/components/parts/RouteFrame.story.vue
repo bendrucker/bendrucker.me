@@ -48,7 +48,13 @@ function initState() {
     <Variant title="Route layout" :init-state="initState">
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
-        <RouteFrame :id="storyCategory(state.category).id">
+        <RouteFrame
+          :id="storyCategory(state.category).id"
+          :note="{
+            lede: 'TK: one line on what this page holds.',
+            html: '<p>TK: the rest of the note, shown when it opens.</p>',
+          }"
+        >
           <template #views>
             <SegmentGroup
               v-model="state.view"

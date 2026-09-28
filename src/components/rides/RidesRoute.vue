@@ -18,6 +18,7 @@ import type { Units } from "@/components/cycling/types";
 import EmptyState from "@/components/parts/EmptyState.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
 import RouteFrame from "@/components/parts/RouteFrame.vue";
+import type { RouteNote } from "@/notes";
 import SearchControl from "@/components/parts/SearchControl.vue";
 import SectionHead from "@/components/parts/SectionHead.vue";
 import SegmentGroup, {
@@ -46,6 +47,8 @@ import RideSections from "./RideSections.vue";
 import { useRideSearch } from "./useRideSearch";
 
 const props = defineProps<{
+  /** The owner\'s note on the page. */
+  note?: RouteNote;
   view: RideView;
   q: string;
   units: Units;
@@ -304,6 +307,7 @@ async function clear() {
 <template>
   <RouteFrame
     id="rides"
+    :note="note"
     :regions="{
       views: true,
       tools: true,

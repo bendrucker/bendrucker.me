@@ -23,4 +23,10 @@ const blog = defineCollection({
     }),
 });
 
-export const collections = { blog };
+// A route's note in the owner's words, one per category and named for it.
+const notes = defineCollection({
+  loader: glob({ pattern: "*.md", base: "./src/content/notes" }),
+  schema: z.object({ lede: z.string() }),
+});
+
+export const collections = { blog, notes };

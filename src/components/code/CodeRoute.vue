@@ -12,6 +12,7 @@ import { monthsByYear } from "@/activity/sections";
 import EmptyState from "@/components/parts/EmptyState.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
 import RouteFrame from "@/components/parts/RouteFrame.vue";
+import type { RouteNote } from "@/notes";
 import SearchControl from "@/components/parts/SearchControl.vue";
 import SectionHead from "@/components/parts/SectionHead.vue";
 import SegmentGroup from "@/components/parts/SegmentGroup.vue";
@@ -34,6 +35,8 @@ import {
 } from "@/code/view";
 
 const props = defineProps<{
+  /** The owner\'s note on the page. */
+  note?: RouteNote;
   rows: readonly CodeRow[];
   languages: readonly LanguageOption[];
   /** The filters the URL named, so the server and the island render alike. */
@@ -126,6 +129,7 @@ async function reset() {
 <template>
   <RouteFrame
     id="code"
+    :note="note"
     :regions="{
       tools: true,
       sidebar: true,

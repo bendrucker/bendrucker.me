@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, useSlots } from "vue";
 import { category, type CategoryId } from "@/categories";
+import type { RouteNote } from "@/notes";
 
 export type RouteRegion = "views" | "tools" | "sidebar" | "highlights";
 
@@ -11,6 +12,7 @@ const props = defineProps<{
    * its template mentions, filled or not, so `RouteLayout` says which it filled.
    */
   regions?: Partial<Record<RouteRegion, boolean>>;
+  note?: RouteNote;
 }>();
 
 const slots = useSlots();
@@ -44,6 +46,33 @@ function shows(region: RouteRegion): boolean {
           <slot name="views" />
         </div>
       </div>
+
+      <!-- The owner's note on the page, set like the notes on a book: dim,
+           italic, and ruled in the category's color, so it reads as an aside
+           rather than a headline. Only its first line shows until a reader
+           opens it. The body is first-party Markdown from `src/content/notes`. -->
+      <details
+        v-if="note?.html"
+        class="group/note mt-2 max-w-[62ch] border-l-2 border-cat/40 pl-3 text-[13px] leading-normal text-dim italic md:mt-3 md:text-sm"
+      >
+        <summary
+          class="cursor-pointer list-none rounded-sm focus-visible:outline-2 focus-visible:outline-cat [&::-webkit-details-marker]:hidden"
+        >
+          {{ note.lede }}
+          <span
+            class="ml-1 whitespace-nowrap text-cat not-italic group-open/note:hidden"
+            >More</span
+          >
+        </summary>
+        <!-- eslint-disable-next-line vue/no-v-html -- first-party Markdown -->
+        <div class="mt-2 flex flex-col gap-2" v-html="note.html" />
+      </details>
+      <p
+        v-else-if="note"
+        class="mt-2 max-w-[62ch] border-l-2 border-cat/40 pl-3 text-[13px] leading-normal text-dim italic md:mt-3 md:text-sm"
+      >
+        {{ note.lede }}
+      </p>
 
       <div
         v-if="shows('tools')"
