@@ -11,7 +11,7 @@ defineProps<{
 
 <template>
   <span
-    class="group/stat flex min-w-0 flex-col gap-0.5 rounded-xl tint-7 px-3 py-2.5"
+    class="group/stat flex min-w-0 flex-col gap-0.5 rounded-xl tint-7 px-3 py-2.5 font-mono"
   >
     <span
       class="inline-flex items-baseline gap-1 text-[17px] leading-tight font-bold tabular-nums"

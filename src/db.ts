@@ -55,6 +55,12 @@ export interface ActivityFeedTable {
   movingS: number | null;
   elevationM: number | null;
   averageWatts: number | null;
+  /** Coggan normalized power in watts, computed by the hub from the 1 Hz record. */
+  normalizedWatts: number | null;
+  averageHeartRate: number | null;
+  /** The moving temperature range in Celsius, trimmed by `temperatureRange`. */
+  temperatureLowC: number | null;
+  temperatureHighC: number | null;
   powerSource: string;
   polyline: string | null;
   elevationProfile: string | null;
