@@ -15,10 +15,6 @@ import { isHilly } from "@/rides/rank";
 
 const cards = await loadHome();
 const credits = homeCredits(cards.map((card) => card.id));
-
-// Five rows ship in every card and the last two hide below the desktop
-// breakpoint, since the server can't know the width it renders for.
-const rowClass = (i: number) => (desktopOnly(i) ? "max-md:hidden" : undefined);
 ---
 
 <Layout
@@ -41,14 +37,17 @@ const rowClass = (i: number) => (desktopOnly(i) ? "max-md:hidden" : undefined);
       class="flex flex-col gap-2 px-4 pt-3 pb-6 md:gap-4 md:px-12 md:pt-7 md:pb-10"
     >
       <h2 class="label-caps text-dim md:sr-only">Lately</h2>
-      <div class="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
+      <!-- Every card rests at the same height, so the rows line up and the
+           grid ends on one flat edge. An open card grows down past its row
+           and its neighbour keeps its resting height at the row's top. -->
+      <div class="grid grid-cols-1 items-start gap-2 md:grid-cols-2 md:gap-4">
         {
           cards.map((card) => (
             <HomeCard id={card.id}>
               {card.id === "rides" && (
                 <ul class="flex flex-col gap-0.5 md:gap-1">
-                  {card.items.map((ride, i) => (
-                    <li class={rowClass(i)}>
+                  {card.items.map((ride) => (
+                    <li>
                       <ItemRow
                         href={rideHref(ride.id, "imperial")}
                         title={ride.name}
@@ -62,8 +61,8 @@ const rowClass = (i: number) => (desktopOnly(i) ? "max-md:hidden" : undefined);
               )}
               {card.id === "code" && (
                 <ul class="flex flex-col gap-0.5 md:gap-1">
-                  {card.items.map((row, i) => (
-                    <li class={rowClass(i)}>
+                  {card.items.map((row) => (
+                    <li>
                       <ItemRow
                         href={row.href}
                         title={row.title}
@@ -78,8 +77,8 @@ const rowClass = (i: number) => (desktopOnly(i) ? "max-md:hidden" : undefined);
               )}
               {card.id === "reading" && (
                 <ul class="flex flex-col gap-0.5 md:gap-1">
-                  {card.items.map((row, i) => (
-                    <li class={rowClass(i)}>
+                  {card.items.map((row) => (
+                    <li>
                       <ItemRow
                         href={row.url}
                         via={row.via}
@@ -97,8 +96,8 @@ const rowClass = (i: number) => (desktopOnly(i) ? "max-md:hidden" : undefined);
               )}
               {card.id === "writing" && (
                 <ul class="flex flex-col gap-0.5 md:gap-1">
-                  {card.items.map((post, i) => (
-                    <li class={rowClass(i)}>
+                  {card.items.map((post) => (
+                    <li>
                       <ItemRow href={post.href} title={post.title} compact />
                     </li>
                   ))}
@@ -129,3 +128,9 @@ const rowClass = (i: number) => (desktopOnly(i) ? "max-md:hidden" : undefined);
     </div>
   </main>
 </Layout>
+
+<script>
+  import { installDrawers } from "@/home/drawer";
+
+  installDrawers();
+</script>
