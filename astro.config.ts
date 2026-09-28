@@ -51,6 +51,9 @@ export default defineConfig({
   ...(process.env.ASTRO_LOG_JSON ? { logger: logHandlers.json() } : {}),
   adapter: cloudflare({
     imageService: "compile",
+    // Each dev server claims a debugger port by checking 9229 and binding it
+    // later, so two worktrees starting at once both pick it and one crashes.
+    inspectorPort: false,
   }),
   cache: {
     provider: cacheCloudflare(),
