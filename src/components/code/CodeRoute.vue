@@ -72,7 +72,7 @@ const {
 );
 
 /** The list in its current filters, which closing leaves without script. */
-const closeHref = computed(() => `/code${withFilters("", filters)}`);
+const closeHref = computed(() => `/code/${withFilters("", filters)}`);
 
 const filters = reactive<CodeFilters>({ ...props.initial });
 

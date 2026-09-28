@@ -191,6 +191,6 @@ describe("memberHref", () => {
   it("carries the project the link came from", () => {
     expect(
       memberHref(codeRepo("terraform-linters/tflint"), "terraform-linters"),
-    ).toBe("/code/terraform-linters/tflint?from=terraform-linters");
+    ).toBe("/code/terraform-linters/tflint/?from=terraform-linters");
   });
 });

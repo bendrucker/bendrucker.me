@@ -43,10 +43,10 @@ describe("code", () => {
 
     expect(md).toContain("# Code");
     expect(md).toContain(
-      "(https://www.bendrucker.me/code/bendrucker/cool-lib)",
+      "(https://www.bendrucker.me/code/bendrucker/cool-lib/)",
     );
     expect(md).toContain(
-      "- [solo](https://www.bendrucker.me/code/someone/solo) (someone): Someone else's library",
+      "- [solo](https://www.bendrucker.me/code/someone/solo/) (someone): Someone else's library",
     );
     expect(md).not.toContain("stale");
   });

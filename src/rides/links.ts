@@ -25,7 +25,7 @@ function search(params: Record<string, string>): string {
   return query === "" ? "" : `?${query}`;
 }
 
-/** The list in this state: `/rides?view=records&period=2025&units=metric`. */
+/** The list in this state: `/rides/?view=records&period=2025&units=metric`. */
 export function ridesHref({ view, q, units, period }: RidesState): string {
   const params: Record<string, string> = {};
   if (view !== "log") params.view = view;
@@ -34,12 +34,12 @@ export function ridesHref({ view, q, units, period }: RidesState): string {
   }
   if (q.trim() !== "") params.q = q.trim();
   if (units !== "imperial") params.units = units;
-  return `/rides${search(params)}`;
+  return `/rides/${search(params)}`;
 }
 
 export { rideTransitionName } from "@/transitions/names";
 
 /** A ride's page, in the units the list was showing. */
 export function rideHref(id: string, units: Units): string {
-  return `/rides/${encodeURIComponent(id)}${search(units === "metric" ? { units } : {})}`;
+  return `/rides/${encodeURIComponent(id)}/${search(units === "metric" ? { units } : {})}`;
 }

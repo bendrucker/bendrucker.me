@@ -5,4 +5,4 @@ import type { APIRoute } from "astro";
  * `.md` suffix from the year's Markdown, which moves to `/code.md`.
  */
 export const ALL: APIRoute = ({ params, redirect }) =>
-  redirect(params.year?.endsWith(".md") ? "/code.md" : "/code", 301);
+  redirect(params.year?.endsWith(".md") ? "/code.md" : "/code/", 301);

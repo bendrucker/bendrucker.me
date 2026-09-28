@@ -11,9 +11,9 @@
  * `src/middleware/redirects.ts` answers it.
  */
 export const STATIC_REDIRECTS = {
-  "/activity/cycling": "/rides",
-  "/activity/code": "/code",
+  "/activity/cycling": "/rides/",
+  "/activity/code": "/code/",
   "/activity/code.md": "/code.md",
-  "/posts": "/writing",
-  "/archives": "/writing",
+  "/posts": "/writing/",
+  "/archives": "/writing/",
 } as const satisfies Record<string, string>;

@@ -13,7 +13,7 @@ function writingUrl(query: string, tag: string): string {
   if (tag) params.set("tag", tag);
   if (query.trim()) params.set("q", query);
   const search = params.toString();
-  return search ? `/writing?${search}` : "/writing";
+  return search ? `/writing/?${search}` : "/writing/";
 }
 
 /**
@@ -201,7 +201,7 @@ export function enhanceWriting(): void {
   );
   reset?.addEventListener("click", () => {
     if (tag) {
-      void navigate("/writing");
+      void navigate("/writing/");
       return;
     }
     search("");

@@ -21,8 +21,8 @@ export function tagRedirect(pathname: string): string | undefined {
   if (!match) return undefined;
 
   const [, tag] = match;
-  if (!tag) return "/writing";
-  return `/writing?${new URLSearchParams({ tag: decode(tag) }).toString()}`;
+  if (!tag) return "/writing/";
+  return `/writing/?${new URLSearchParams({ tag: decode(tag) }).toString()}`;
 }
 
 export const redirects: MiddlewareHandler = async (context, next) => {

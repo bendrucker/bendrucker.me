@@ -132,11 +132,11 @@ describe("ridesHref", () => {
 
   it("carries a year on the records view only", () => {
     expect(ridesHref({ ...base, view: "records", period: "2025" })).toBe(
-      "/rides?view=records&period=2025",
+      "/rides/?view=records&period=2025",
     );
     expect(ridesHref({ ...base, view: "records", period: ALL_TIME })).toBe(
-      "/rides?view=records",
+      "/rides/?view=records",
     );
-    expect(ridesHref({ ...base, view: "log", period: "2025" })).toBe("/rides");
+    expect(ridesHref({ ...base, view: "log", period: "2025" })).toBe("/rides/");
   });
 });

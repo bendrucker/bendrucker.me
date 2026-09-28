@@ -9,7 +9,9 @@ describe("homeKey", () => {
   });
 
   it("names a repository's page by its owner and name", () => {
-    expect(homeKey("/code/raycast/extensions")).toBe("code/raycast/extensions");
+    expect(homeKey("/code/raycast/extensions/")).toBe(
+      "code/raycast/extensions",
+    );
   });
 
   it("leaves other pages alone", () => {
@@ -32,7 +34,7 @@ describe("parseHomeKey", () => {
 describe("homeFullHref", () => {
   it("points at the item's own page", () => {
     expect(homeFullHref("code/raycast/extensions")).toBe(
-      "/code/raycast/extensions",
+      "/code/raycast/extensions/",
     );
     expect(homeFullHref("ride/abc")).toMatch(/^\/rides\/abc/);
   });

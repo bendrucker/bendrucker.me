@@ -58,7 +58,7 @@ const ogPath =
     >
       <ItemHeader
         title={title}
-        backHref="/writing"
+        backHref="/writing/"
         date={fullDate(row.day, thisYear)}
         dek={row.text}
         size="post"
@@ -72,7 +72,7 @@ const ogPath =
       <TagChips
         tags={row.tags.map((tag) => ({
           name: tag.name,
-          href: `/writing?tag=${tag.slug}`,
+          href: `/writing/?tag=${tag.slug}`,
         }))}
       />
       <AdjacentNav newer={link(newer)} older={link(older)} />

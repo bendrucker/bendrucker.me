@@ -37,7 +37,7 @@ export function localDay(
 }
 
 export function repoHref(repo: Pick<CodeRepo, "owner" | "name">): string {
-  return `/code/${repo.owner}/${repo.name}`;
+  return `/code/${repo.owner}/${repo.name}/`;
 }
 
 /** Pull requests and issues opened in the window, for the "Most active" sort. */
@@ -84,7 +84,7 @@ function projectRow(project: Project<ScoredRepo>, timezone: string): CodeRow {
   const [best] = project.members;
   return {
     key: project.id,
-    href: `/code/${project.id}`,
+    href: `/code/${project.id}/`,
     title: project.title,
     org: project.org,
     text: memberSummary(project.members.map((member) => member.name)),

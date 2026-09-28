@@ -47,7 +47,7 @@ export const CATEGORIES: readonly Category[] = [
     icon: "icon-[lucide--bike]",
     scope: "cat-rides",
     text: "text-cat-rides",
-    route: "/rides",
+    route: "/rides/",
     credits: ["maps"],
   },
   {
@@ -57,7 +57,7 @@ export const CATEGORIES: readonly Category[] = [
     icon: "icon-[lucide--code]",
     scope: "cat-code",
     text: "text-cat-code",
-    route: "/code",
+    route: "/code/",
     credits: [],
   },
   {
@@ -67,7 +67,7 @@ export const CATEGORIES: readonly Category[] = [
     icon: "icon-[lucide--book]",
     scope: "cat-reading",
     text: "text-cat-reading",
-    route: "/reading",
+    route: "/reading/",
     credits: [],
     types: [
       { value: "Book", label: "Books" },
@@ -81,7 +81,7 @@ export const CATEGORIES: readonly Category[] = [
     icon: "icon-[lucide--pen-line]",
     scope: "cat-writing",
     text: "text-cat-writing",
-    route: "/writing",
+    route: "/writing/",
     credits: [],
   },
   {
@@ -91,7 +91,7 @@ export const CATEGORIES: readonly Category[] = [
     icon: "icon-[lucide--tv]",
     scope: "cat-watching",
     text: "text-cat-watching",
-    route: "/watching",
+    route: "/watching/",
     art: "posters",
     credits: ["posters"],
     types: [
@@ -106,7 +106,7 @@ export const CATEGORIES: readonly Category[] = [
     icon: "icon-[lucide--headphones]",
     scope: "cat-listening",
     text: "text-cat-listening",
-    route: "/listening",
+    route: "/listening/",
     art: "shelf",
     credits: ["covers"],
     types: [

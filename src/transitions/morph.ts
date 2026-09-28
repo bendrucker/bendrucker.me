@@ -22,7 +22,7 @@ import {
 import { isList, itemTransitionName } from "./names";
 
 /** The list that saves its place for the trip back from a ride. */
-const RIDES_PATH = "/rides";
+const RIDES_PATH = "/rides/";
 
 /**
  * How long a return holds the ride page on screen for the list to put its

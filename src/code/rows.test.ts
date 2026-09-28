@@ -74,7 +74,7 @@ describe("buildCodeRows", () => {
     const tflint = rows.find((row) => row.key === "terraform-linters");
 
     expect(tflint).toMatchObject({
-      href: "/code/terraform-linters",
+      href: "/code/terraform-linters/",
       title: "TFLint",
       org: "terraform-linters",
       text: "tflint, tflint-ruleset-aws",
@@ -92,7 +92,7 @@ describe("buildCodeRows", () => {
     const solo = rows.at(-1);
 
     expect(coolLib).toMatchObject({
-      href: "/code/bendrucker/cool-lib",
+      href: "/code/bendrucker/cool-lib/",
       title: "cool-lib",
       org: "",
       lead: "dot",

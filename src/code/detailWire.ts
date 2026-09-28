@@ -17,8 +17,8 @@ export const CODE_PARAM = "item";
  */
 const SEGMENT = /^[A-Za-z0-9._-]{1,100}$/;
 
-const PROJECT_PATH = /^\/code\/([^/]+)$/;
-const REPO_PATH = /^\/code\/([^/]+)\/([^/]+)$/;
+const PROJECT_PATH = /^\/code\/([^/]+)\/?$/;
+const REPO_PATH = /^\/code\/([^/]+)\/([^/]+)\/?$/;
 
 export type CodeKey =
   | { kind: "repo"; owner: string; name: string }
@@ -55,13 +55,17 @@ export function codeKey(pathname: string): string | null {
 
 /** An item's own page. */
 export function codePageHref(key: string): string {
-  const segments = key.split("/").map((segment) => encodeURIComponent(segment));
-  return `/code/${segments.join("/")}`;
+  return `${codePath(key)}/`;
 }
 
 /** Where the modal fetches an item from. */
 export function codeDetailUrl(key: string): string {
-  return `${codePageHref(key)}.json`;
+  return `${codePath(key)}.json`;
+}
+
+function codePath(key: string): string {
+  const segments = key.split("/").map((segment) => encodeURIComponent(segment));
+  return `/code/${segments.join("/")}`;
 }
 
 const WORK_STATES = [

@@ -19,7 +19,10 @@ export function codeTransitionName(key: string): string {
 
 /** The view transition name a post's row and its title share, so one grows into the other. */
 export function postTransitionName(href: string): string {
-  return `post-${href.replace(/^\/writing\//, "").replaceAll("/", "-")}`;
+  return `post-${href
+    .replace(/^\/writing\//, "")
+    .replace(/\/$/, "")
+    .replaceAll("/", "-")}`;
 }
 
 /** The pages whose rows open an item: home and the routes with item pages. */

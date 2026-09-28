@@ -219,5 +219,5 @@ export function memberHref(
   repo: Pick<CodeRepo, "owner" | "name">,
   projectId: string,
 ): string {
-  return `/code/${repo.owner}/${repo.name}?${new URLSearchParams({ from: projectId })}`;
+  return `/code/${repo.owner}/${repo.name}/?${new URLSearchParams({ from: projectId })}`;
 }

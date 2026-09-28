@@ -28,11 +28,11 @@ function cloudflareRules(): string[][] {
 describe("STATIC_REDIRECTS", () => {
   it("sends each retired page to the route that replaced it", () => {
     expect(STATIC_REDIRECTS).toEqual({
-      "/activity/cycling": "/rides",
-      "/activity/code": "/code",
+      "/activity/cycling": "/rides/",
+      "/activity/code": "/code/",
       "/activity/code.md": "/code.md",
-      "/posts": "/writing",
-      "/archives": "/writing",
+      "/posts": "/writing/",
+      "/archives": "/writing/",
     });
   });
 

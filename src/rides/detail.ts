@@ -13,7 +13,7 @@ import { decodedSegment } from "@/detail/url";
 /** Activity ids are ULIDs. Anything else is refused before it reaches a query. */
 export const RIDE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
-const RIDE_PATH = /^\/rides\/([^/]+)$/;
+const RIDE_PATH = /^\/rides\/([^/]+)\/?$/;
 
 /** The query parameter the Rides list names an open ride under. */
 export const RIDE_PARAM = "ride";

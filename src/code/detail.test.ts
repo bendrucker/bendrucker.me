@@ -15,11 +15,11 @@ import {
 
 describe("codeKey", () => {
   it("reads a repository's page as owner and name", () => {
-    expect(codeKey("/code/bendrucker/dotfiles")).toBe("bendrucker/dotfiles");
+    expect(codeKey("/code/bendrucker/dotfiles/")).toBe("bendrucker/dotfiles");
   });
 
   it("reads a project's page as its id", () => {
-    expect(codeKey("/code/terraform-linters")).toBe("terraform-linters");
+    expect(codeKey("/code/terraform-linters/")).toBe("terraform-linters");
   });
 
   it("is null for the list and for deeper paths", () => {
@@ -52,7 +52,7 @@ describe("parseCodeKey", () => {
 describe("codePageHref", () => {
   it("is the item's page, with its JSON beside it", () => {
     expect(codePageHref("bendrucker/dotfiles")).toBe(
-      "/code/bendrucker/dotfiles",
+      "/code/bendrucker/dotfiles/",
     );
     expect(codeDetailUrl("tflint")).toBe("/code/tflint.json");
   });
