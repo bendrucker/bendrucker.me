@@ -34,8 +34,6 @@ const SETTLE_LIMIT_MS = 1500;
 let named: HTMLElement | null = null;
 /** The name of the item a return is leaving, to find its row once the list is in. */
 let returning: string | null = null;
-/** Records on the ride's entry which Rides list entry it was opened from. */
-let markOpened: (() => void) | null = null;
 /** Settles once the Rides list returned to has put back its saved months and place. */
 let settling: Promise<void> | null = null;
 
@@ -77,7 +75,6 @@ function onBeforePreparation(event: Event) {
   const root = document.documentElement;
   const opening = itemTransitionName(event.to.pathname);
   const leaving = itemTransitionName(event.from.pathname);
-  markOpened = null;
   settling = null;
   returning = null;
 
@@ -94,12 +91,10 @@ function onBeforePreparation(event: Event) {
     }
     if (event.from.pathname === RIDES_PATH) {
       whileLoading(event, async () => {
-        const { ensureListEntryId, markOpenedFromList } =
-          await import("@/rides/listEntry");
-        // The list's entry is still the current one until the swap.
-        const id = ensureListEntryId();
-        if (id === null || event.signal.aborted) return;
-        markOpened = () => markOpenedFromList(id);
+        const { ensureListEntryId } = await import("@/rides/listEntry");
+        // The list's entry is still the current one until the swap, and
+        // needs its id for the ride page's Back to restore it by.
+        ensureListEntryId();
       });
     }
   } else if (leaving !== null && isList(event.to.pathname)) {
@@ -144,8 +139,6 @@ function nameReturningRow() {
 
 /** The router restores the scroll offset before this, so a row's place is final. */
 function onAfterSwap() {
-  markOpened?.();
-  markOpened = null;
   // A list with months to put back names its row once it has them.
   if (settling === null) nameReturningRow();
 }

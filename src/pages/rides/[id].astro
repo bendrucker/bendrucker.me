@@ -46,7 +46,6 @@ const thisYear = String(new Date().getUTCFullYear());
         ride={ride}
         units={units}
         thisYear={thisYear}
-        backLabel="Rides"
         backHref={ridesHref({ view: "log", q: "", units })}
         transitionName={rideTransitionName(ride.id)}
       >
@@ -64,14 +63,3 @@ const thisYear = String(new Date().getUTCFullYear());
     </div>
   </main>
 </Layout>
-
-<script>
-  import { linkBackToList } from "@/rides/listEntry";
-
-  // Runs on every arrival, since the router swaps one ride page for another
-  // without loading this script again.
-  document.addEventListener("astro:page-load", () => {
-    const back = document.querySelector("[data-ride-page] header > a");
-    if (back instanceof HTMLAnchorElement) linkBackToList(back);
-  });
-</script>

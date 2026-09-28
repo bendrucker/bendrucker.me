@@ -19,7 +19,6 @@ const props = withDefaults(
     thisYear: string;
     /** The ride's page titles it with an `h1`, the list's modal with an `h2`. */
     level?: 1 | 2;
-    backLabel?: string;
     backHref?: string;
     transitionName?: string;
   }>(),
@@ -48,7 +47,6 @@ const mapLabel = computed(() => `Route of ${props.ride.name}`);
   <div class="flex flex-col gap-4 md:gap-5">
     <ItemHeader
       :title="ride.name"
-      :back-label="backLabel"
       :back-href="backHref"
       :date="date"
       :dek="ride.description ?? undefined"

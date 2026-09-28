@@ -11,12 +11,11 @@ import { SITE } from "@/config";
 
 export interface Props {
   detail: Detail;
-  backLabel: string;
   backHref: string;
   sourcePath: string;
 }
 
-const { detail, backLabel, backHref, sourcePath } = Astro.props;
+const { detail, backHref, sourcePath } = Astro.props;
 ---
 
 <Layout
@@ -29,7 +28,7 @@ const { detail, backLabel, backHref, sourcePath } = Astro.props;
       class="mx-auto max-w-[632px] bg-background px-4 pt-4 md:pt-10"
       style={{ viewTransitionName: transitionName(detail.key) }}
     >
-      <CodeDetail detail={detail} backLabel={backLabel} backHref={backHref} />
+      <CodeDetail detail={detail} backHref={backHref} />
     </article>
   </main>
 </Layout>

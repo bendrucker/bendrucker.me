@@ -10,7 +10,6 @@ withDefaults(
     detail: CodeDetail;
     /** A page titles it with an `h1`, the list's modal with an `h2`. */
     level?: 1 | 2;
-    backLabel?: string;
     backHref?: string;
   }>(),
   { level: 1 },
@@ -24,7 +23,6 @@ withDefaults(
   <div class="flex flex-col gap-5">
     <ItemHeader
       :title="detail.title"
-      :back-label="backLabel"
       :back-href="backHref"
       :org="detail.org"
       :dek="detail.dek"

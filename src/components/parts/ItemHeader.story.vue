@@ -9,7 +9,6 @@ import StatTile from "./StatTile.vue";
 interface HeaderSample {
   category: string;
   title: string;
-  backLabel: string;
   date?: string;
   org?: string;
   dek?: string;
@@ -21,7 +20,6 @@ const samples: Record<string, HeaderSample> = {
   ride: {
     category: "rides",
     title: "Friends of Tam",
-    backLabel: "Rides",
     date: "Saturday, July 11",
     dek: "MV FF BF SB RRG",
     size: "page",
@@ -29,7 +27,6 @@ const samples: Record<string, HeaderSample> = {
   repo: {
     category: "code",
     title: "oapi-codegen",
-    backLabel: "Code",
     org: "oapi-codegen",
     dek: "Generate Go client and server boilerplate from OpenAPI 3 specifications",
     size: "page",
@@ -38,7 +35,6 @@ const samples: Record<string, HeaderSample> = {
   post: {
     category: "writing",
     title: "Friends of Tam",
-    backLabel: "Writing",
     date: "Tuesday, September 15",
     dek: "Open source lets you give back and learn more.",
     size: "post",
@@ -47,7 +43,6 @@ const samples: Record<string, HeaderSample> = {
     category: "writing",
     title:
       "How to Start Contributing to Open Source Without Waiting to Be Asked",
-    backLabel: "Home",
     date: "Friday, February 19, 2021",
     size: "post",
   },
@@ -94,7 +89,6 @@ function sample(key: unknown): HeaderSample {
           <ItemHeader
             :title="sample(state.sample).title"
             back-href="#"
-            :back-label="sample(state.sample).backLabel"
             :date="sample(state.sample).date"
             :org="sample(state.sample).org"
             :dek="sample(state.sample).dek"
@@ -112,7 +106,7 @@ function sample(key: unknown): HeaderSample {
                 aria-label="Open on GitHub"
                 class="inline-flex size-8 flex-none items-center justify-center rounded-md text-dim hover:bg-hover hover:text-foreground"
               >
-                <span aria-hidden="true" class="icon-[lucide--github] size-4" />
+                <span aria-hidden="true" class="size-4 icon-[lucide--github]" />
               </a>
             </template>
             <template v-if="state.sample === 'repo'" #actions>

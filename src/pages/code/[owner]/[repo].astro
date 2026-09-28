@@ -26,7 +26,6 @@ const parent = parentProject(page.repo, Astro.url.searchParams.get("from"));
 
 <CodeItem
   detail={repoDetail(page)}
-  backLabel={parent?.title ?? "Code"}
   backHref={parent ? `/code/${parent.id}` : "/code"}
   sourcePath="src/pages/code/[owner]/[repo].astro"
 />

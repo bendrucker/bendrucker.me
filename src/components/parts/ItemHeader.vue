@@ -2,8 +2,10 @@
 withDefaults(
   defineProps<{
     title: string;
-    /** Where the back link returns: "Code", "Home", or a project's name. */
-    backLabel?: string;
+    /**
+     * Where the back link goes when the reader didn't arrive from this site.
+     * From anywhere on it, the link steps back through history instead.
+     */
     backHref?: string;
     /** The date over the title, already formatted. */
     date?: string;
@@ -25,12 +27,13 @@ withDefaults(
 <template>
   <header class="flex flex-col gap-2">
     <a
-      v-if="backHref && backLabel"
+      v-if="backHref"
       :href="backHref"
+      data-back-link
       class="-ml-1.5 inline-flex min-h-8 items-center gap-1 self-start rounded-md px-1.5 text-[13px] text-cat no-underline hover:bg-hover focus-visible:outline-2 focus-visible:outline-cat"
     >
-      <span aria-hidden="true" class="icon-[lucide--chevron-left] size-3.5" />
-      {{ backLabel }}
+      <span aria-hidden="true" class="size-3.5 icon-[lucide--chevron-left]" />
+      Back
     </a>
     <slot name="hero" />
     <div class="flex items-start gap-3">
