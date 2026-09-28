@@ -24,10 +24,12 @@ import type {
 export type ScoredRepo = CodeRepo & { score: number };
 
 /**
- * The pull requests a year's sync reads per repository. A year stored at
- * exactly this many was cut off there, before the sync read GitHub's total.
+ * The pull requests or authored issues a year's sync reads per repository. A
+ * year stored at exactly this many was cut off there: pull requests before the
+ * sync read GitHub's total, and issue rows still, since only the first page
+ * names the issues to fetch.
  */
-const PULL_PAGE = 100;
+const CONTRIBUTION_PAGE = 100;
 
 function repoRows(db: Kysely<Database>) {
   return db
@@ -222,8 +224,13 @@ async function workFor(db: Kysely<Database>, repos: readonly RepoRecord[]) {
 
 /**
  * Per repository: the stored rows, the yearly counts, and the dates that bound
- * when contributing there began. The yearly counts reach back past the per-PR
- * rows wherever a backfill filled them and the rows did not.
+ * when contributing there began. The yearly pull request counts reach back
+ * past the per-PR rows wherever a backfill filled them and the rows did not.
+ *
+ * Issues are counted from the rows alone. The yearly issue count comes from a
+ * search for every issue the owner is involved in, opened by anyone and
+ * updated any time after the year began, so it is neither the authored issues
+ * the page lists nor confined to its year.
  */
 async function queryStatRows(db: Kysely<Database>, ids: readonly number[]) {
   if (ids.length === 0) return [];
@@ -254,7 +261,7 @@ async function queryStatRows(db: Kysely<Database>, ids: readonly number[]) {
       eb
         .selectFrom("repoActivity")
         .whereRef("repoActivity.repoId", "=", "repos.id")
-        .where("repoActivity.prCount", "=", PULL_PAGE)
+        .where("repoActivity.prCount", "=", CONTRIBUTION_PAGE)
         .select(({ fn }) => fn.countAll<number>().as("count"))
         .as("pullYearsCapped"),
       eb
@@ -262,6 +269,14 @@ async function queryStatRows(db: Kysely<Database>, ids: readonly number[]) {
         .whereRef("issues.repoId", "=", "repos.id")
         .select(({ fn }) => fn.countAll<number>().as("count"))
         .as("issueRows"),
+      eb
+        .selectFrom("issues")
+        .whereRef("issues.repoId", "=", "repos.id")
+        .groupBy(sql`substr(${sql.ref("issues.createdAt")}, 1, 4)`)
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .orderBy(sql`count(*)`, "desc")
+        .limit(1)
+        .as("issueRowsBusiestYear"),
       eb
         .selectFrom("pullRequests")
         .whereRef("pullRequests.repoId", "=", "repos.id")
@@ -315,6 +330,9 @@ function totals(rows: readonly StatRow[]): CodeStats {
     ),
     prsCapped: rows.some((row) => (row.pullYearsCapped ?? 0) > 0),
     issues: rows.reduce((sum, row) => sum + (row.issueRows ?? 0), 0),
+    issuesCapped: rows.some(
+      (row) => (row.issueRowsBusiestYear ?? 0) >= CONTRIBUTION_PAGE,
+    ),
     since: since ?? null,
   };
 }

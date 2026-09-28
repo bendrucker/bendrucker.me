@@ -98,6 +98,7 @@ describe("stat tiles", () => {
         prs: 5,
         prsCapped: false,
         issues: 0,
+        issuesCapped: false,
         since: "2020-01-01T00:00:00.000Z",
       }).map((tile) => [tile.label, tile.value]),
     ).toEqual([
@@ -112,10 +113,23 @@ describe("stat tiles", () => {
       prs: 1100,
       prsCapped: true,
       issues: 0,
+      issuesCapped: false,
       repositories: 2,
       since: null,
     });
     expect(prs?.value).toBe("1,100+");
+  });
+
+  it("marks an issue count that is only a floor", () => {
+    const [, issues] = projectStatTiles({
+      prs: 4,
+      prsCapped: false,
+      issues: 100,
+      issuesCapped: true,
+      repositories: 2,
+      since: null,
+    });
+    expect(issues).toMatchObject({ label: "issues", value: "100+" });
   });
 
   it("gives a project repositories in place of stars", () => {
@@ -124,6 +138,7 @@ describe("stat tiles", () => {
         prs: 40,
         prsCapped: false,
         issues: 3,
+        issuesCapped: false,
         repositories: 7,
         since: null,
       }).map((tile) => tile.label),

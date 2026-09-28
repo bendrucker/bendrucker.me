@@ -175,6 +175,7 @@ describe("code queries", () => {
         prs: 5,
         prsCapped: false,
         issues: 1,
+        issuesCapped: false,
         since: "2020-01-01T00:00:00.000Z",
       });
     });
@@ -189,6 +190,41 @@ describe("code queries", () => {
       expect(page?.stats).toMatchObject({ prs: 100, prsCapped: true });
     });
 
+    // The yearly issue count covers issues opened by anyone that the owner
+    // took part in, which the page does not list.
+    it("counts issues from the authored rows, not the yearly count", async () => {
+      await syncActivity(testStore(db), [
+        makeRepo({
+          name: "involved",
+          activitySummary: { ...activity(1), issueCount: 17 },
+        }),
+      ]);
+
+      const page = await queryRepo(db, "bendrucker", "involved");
+
+      expect(page?.stats).toMatchObject({ issues: 0, issuesCapped: false });
+    });
+
+    it("counts a year stored at a full page of issues as a floor", async () => {
+      const issues = Array.from({ length: 100 }, (_, index) =>
+        makeIssue({
+          id: `I_busy_${index}`,
+          repository: { owner: "bendrucker", name: "busy" },
+          number: index + 1,
+          createdAt: new Date(Date.UTC(2025, 0, 1 + index)),
+        }),
+      );
+      await syncActivity(
+        testStore(db),
+        [makeRepo({ name: "busy", activitySummary: activity(1) })],
+        { work: { pullRequests: [], issues } },
+      );
+
+      const page = await queryRepo(db, "bendrucker", "busy");
+
+      expect(page?.stats).toMatchObject({ issues: 100, issuesCapped: true });
+    });
+
     it("dates someone else's repository from the first contribution", async () => {
       const page = await queryRepo(db, "terraform-linters", "tflint");
 
@@ -197,6 +233,7 @@ describe("code queries", () => {
         prs: 1,
         prsCapped: false,
         issues: 0,
+        issuesCapped: false,
         since: "2024-03-01T00:00:00.000Z",
       });
     });
@@ -223,6 +260,7 @@ describe("code queries", () => {
         prs: 1,
         prsCapped: false,
         issues: 1,
+        issuesCapped: false,
         repositories: 2,
         since: "2023-08-01T00:00:00.000Z",
       });

@@ -145,16 +145,20 @@ function since(iso: string | null): StatTileData[] {
   return iso ? [{ value: monthYear(iso), label: "since" }] : [];
 }
 
-function issues(n: number): StatTileData[] {
+/** A count that is only a floor reads as one. */
+const atLeast = (n: number, capped: boolean) =>
+  capped ? `${count(n)}+` : count(n);
+
+function issues({ issues: n, issuesCapped }: CodeStats): StatTileData[] {
   return n > 0
-    ? [{ icon: "circle-dot", value: count(n), label: "issues" }]
+    ? [{ icon: "circle-dot", value: atLeast(n, issuesCapped), label: "issues" }]
     : [];
 }
 
 function pulls({ prs, prsCapped }: CodeStats): StatTileData {
   return {
     icon: "git-pull-request",
-    value: prsCapped ? `${count(prs)}+` : count(prs),
+    value: atLeast(prs, prsCapped),
     label: "pull requests",
   };
 }
@@ -164,7 +168,7 @@ export function repoStatTiles(stats: RepoStats): StatTileData[] {
   return [
     { icon: "star", value: count(stats.stars), label: "stars" },
     pulls(stats),
-    ...issues(stats.issues),
+    ...issues(stats),
     ...since(stats.since),
   ];
 }
@@ -173,7 +177,7 @@ export function repoStatTiles(stats: RepoStats): StatTileData[] {
 export function projectStatTiles(stats: ProjectStats): StatTileData[] {
   return [
     pulls(stats),
-    ...issues(stats.issues),
+    ...issues(stats),
     {
       icon: "folder-git-2",
       value: count(stats.repositories),
