@@ -125,11 +125,12 @@ const drawerId = computed(() => `${props.id}-drawer`);
     --drawer-fade 0.4s;
 }
 
-/* A featured card rests tall enough to show its feature whole with a row
-   beneath it, so the work Ben does stands taller than what he consumes. */
+/* A featured card rests tall enough to show its feature whole with the first
+   row fading beneath it. On a phone that is a tease like every other card, so
+   the cards after it still reach the first screen. */
 .drawer-tall,
 .drawer-tall-phone {
-  --drawer-peek: 280px;
+  --drawer-peek: 176px;
 }
 
 @media (width >= 48rem) {
