@@ -11,7 +11,7 @@ tags:
 description: What I've learned about life and startups in six months as a full time founder and college dropout
 ---
 
-Today marks six months since what would have been the start of my junior year at Columbia. I made the [decision to leave school](http://www.bendrucker.me/posts/going-all-in/) to work full time on [Valet.io](http://www.valet.io) in July, but it wasn't entirely real until September, when all my friends returned to school for a new semester. As they set their class schedules, I found myself alone in New York City with no schedule or structure—just a blank slate.
+Today marks six months since what would have been the start of my junior year at Columbia. I made the [decision to leave school](/writing/going-all-in) to work full time on [Valet.io](http://www.valet.io) in July, but it wasn't entirely real until September, when all my friends returned to school for a new semester. As they set their class schedules, I found myself alone in New York City with no schedule or structure—just a blank slate.
 
 I struggled for the first few months with this unshakable feeling of both physical and creative isolation. My two original co-founders drifted away early on. It was disheartening, even though I knew it would happen. When something went wrong, it would weigh on me for days, even weeks. I found myself intensely preoccupied with my motivation and energy levels, concerned that I wasn't working hard enough. I went from having thousands of peers in my immediate vicinity to virtually zero. Unfunded, twenty-year-old, dropout founders are not especially numerous. It's hard to grasp just how influential and stabilizing your peer group is until it's all but empty.
 

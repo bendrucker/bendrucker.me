@@ -70,10 +70,21 @@ async function escape(event: KeyboardEvent) {
 }
 </script>
 
+<!--
+  Both states are always in the markup, switched by `hidden`, `data-open`, and
+  `aria-expanded` rather than `v-if`. A route that ships no framework renders
+  this without hydrating it and drives it through the `data-search*` hooks, as
+  `src/writing/enhance.ts` does.
+-->
 <template>
-  <div class="flex min-w-0 items-center gap-1.5" :class="open ? 'flex-1' : ''">
+  <div
+    data-search
+    :data-open="open ? '' : undefined"
+    class="flex min-w-0 items-center gap-1.5 data-open:flex-1"
+  >
     <label
-      v-if="open"
+      data-search-field
+      :hidden="!open"
       class="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-[10px] border border-line bg-background px-3 transition-[border-color,box-shadow] duration-200 focus-within:border-[color-mix(in_srgb,var(--cat)_60%,var(--line))] focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--cat)_16%,transparent)]"
     >
       <span
@@ -94,7 +105,8 @@ async function escape(event: KeyboardEvent) {
         @keydown.esc="escape"
       />
       <button
-        v-if="modelValue !== ''"
+        data-search-clear
+        :hidden="modelValue === ''"
         type="button"
         aria-label="Clear search"
         class="-mr-1.5 inline-flex size-7 flex-none items-center justify-center rounded-md text-dim hover:bg-hover hover:text-foreground"
@@ -106,19 +118,26 @@ async function escape(event: KeyboardEvent) {
     <button
       v-if="collapsible"
       ref="toggle"
+      data-search-toggle
+      :data-label="`Search ${noun}`"
       type="button"
-      :aria-expanded="open"
+      :aria-expanded="open ? 'true' : 'false'"
       :aria-label="open ? 'Close search' : `Search ${noun}`"
       :title="open ? 'Close search' : `Search ${noun}`"
-      class="inline-flex size-10 flex-none items-center justify-center rounded-[10px] text-dim transition-colors hover:bg-hover hover:text-foreground aria-expanded:tint-16 aria-expanded:text-cat"
+      class="group/toggle inline-flex size-10 flex-none items-center justify-center rounded-[10px] text-dim transition-colors hover:bg-hover hover:text-foreground aria-expanded:tint-16 aria-expanded:text-cat"
       @click="flip"
     >
       <span
         aria-hidden="true"
-        class="size-4"
-        :class="open ? 'icon-[lucide--x]' : 'icon-[lucide--search]'"
+        class="icon-[lucide--search] size-4 group-aria-expanded/toggle:hidden"
+      />
+      <span
+        aria-hidden="true"
+        class="icon-[lucide--x] hidden size-4 group-aria-expanded/toggle:inline-block"
       />
     </button>
-    <span class="sr-only" role="status" aria-live="polite">{{ status }}</span>
+    <span data-search-status class="sr-only" role="status" aria-live="polite">{{
+      status
+    }}</span>
   </div>
 </template>

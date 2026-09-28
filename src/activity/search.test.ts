@@ -35,6 +35,20 @@ describe("matches", () => {
     expect(matches({ title: "Ctools" }, "c.")).toBe(false);
   });
 
+  it("matches a hyphen and the characters a pattern escapes", () => {
+    const post = { title: "The Future is Service-Oriented" };
+    expect(matches(post, "service-oriented")).toBe(true);
+    expect(matches(post, "-")).toBe(true);
+    expect(matches({ title: "a/b {c} [d] ^e$ |f|" }, "/b {c} [d] ^e$ |")).toBe(
+      true,
+    );
+    expect(markParts("e-mail and e-mail", "E-MAIL")).toEqual([
+      { text: "e-mail", hit: true },
+      { text: " and ", hit: false },
+      { text: "e-mail", hit: true },
+    ]);
+  });
+
   it("trims the query", () => {
     expect(matches(repo, "  tflint ")).toBe(true);
   });

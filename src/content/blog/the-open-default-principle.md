@@ -42,4 +42,4 @@ That means that a lot of the code I write for [Valet.io](http://valet.io) and so
 
 You may wish to set a different privacy threshold than I have. That's certainly in keeping with the principle. Don't do anything that makes you especially uncomfortable, but don't shy from the mild discomfort that might be caused by lingering validation anxiety. The only stipulation is that you change your default setting to "Open." Ask "does this need to be private?" instead of "is there a reason to share?" Don't worry that any one shared idea might not resonate. Listen to every voice but your own—it's your most vocal critic.
 
-[^5am]: I seem to enjoy creating principles. I wrote about another one for finding the time for creativity called [The 5 a.m. Principle](http://www.bendrucker.me/posts/the-5-am-principle/).
+[^5am]: I seem to enjoy creating principles. I wrote about another one for finding the time for creativity called [The 5 a.m. Principle](/writing/the-5-am-principle).

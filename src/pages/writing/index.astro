@@ -2,13 +2,14 @@
 import RouteLayout from "@/layouts/RouteLayout.astro";
 import EmptyState from "@/components/parts/EmptyState.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
+import SearchControl from "@/components/parts/SearchControl.vue";
 import SectionHead from "@/components/parts/SectionHead.vue";
 import SelectControl from "@/components/parts/SelectControl.vue";
 import TimelineGutter from "@/components/parts/TimelineGutter.vue";
-import SearchToggle from "@/components/writing/SearchToggle.astro";
 import { isEnabled, SITE } from "@/config";
 import { loadWriting } from "@/writing/load";
 import { findTag, postTags, transitionName, writingView } from "@/writing/rows";
+import { searchStatus } from "@/writing/status";
 
 if (!isEnabled("writing")) return Astro.rewrite("/404");
 
@@ -19,6 +20,7 @@ const tag = findTag(tags, Astro.url.searchParams.get("tag"));
 const view = writingView(rows, { query, tag }, thisYear);
 const tagOptions = tags.map((t) => ({ value: t.slug, label: t.name }));
 const tagValue = tag?.slug ?? "";
+const status = searchStatus(query, view.count);
 
 // A phone shows three highlights. The server can't know the width, so the
 // rest ship hidden below the desktop breakpoint.
@@ -29,6 +31,10 @@ const PHONE_HIGHLIGHTS = 3;
   category="writing"
   description={`Posts by ${SITE.author} on open source, startups, and getting work done.`}
 >
+  {
+    /* Writing's budget is no framework JS, so the search renders without
+      hydrating and `src/writing/enhance.ts` drives it. */
+  }
   <form
     slot="tools"
     action="/writing"
@@ -37,7 +43,13 @@ const PHONE_HIGHLIGHTS = 3;
     data-writing-tools
     class="flex min-w-0 flex-1 items-center justify-end gap-2"
   >
-    <SearchToggle query={query} noun="posts" class="data-open:order-first" />
+    <SearchControl
+      modelValue={query}
+      noun="posts"
+      status={status}
+      collapsible
+      class="data-open:order-first"
+    />
     <SelectControl
       modelValue={tagValue}
       options={tagOptions}
@@ -64,9 +76,11 @@ const PHONE_HIGHLIGHTS = 3;
       icon="tag"
       name="tag"
     />
-    <SearchToggle
-      query={query}
+    <SearchControl
+      modelValue={query}
       noun="posts"
+      status={status}
+      collapsible
       class="ml-auto data-open:order-first data-open:ml-0 data-open:basis-full"
     />
   </form>

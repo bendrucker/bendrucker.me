@@ -5,14 +5,8 @@
  * of it. Every URL it leaves in the address bar renders the same list.
  */
 import { navigate } from "astro:transitions/client";
-import { markParts, matches } from "@/activity/search";
-
-/** `MarkedText`'s mark, so a match looks the same typed as loaded. */
-const MARK_CLASS = "-mx-px rounded-[3px] bg-cat/24 px-px text-inherit";
-
-function countLabel(count: number): string {
-  return count === 1 ? "1 post" : `${count} posts`;
-}
+import { MARK_CLASS, markParts, matches } from "@/activity/search";
+import { searchStatus } from "@/writing/status";
 
 function writingUrl(query: string, tag: string): string {
   const params = new URLSearchParams();
@@ -143,7 +137,7 @@ export function enhanceWriting(): void {
     for (const { input, clear, status } of searches) {
       if (input.value !== next) input.value = next;
       clear.hidden = next === "";
-      status.textContent = next.trim() ? countLabel(count) : "";
+      status.textContent = searchStatus(next, count);
     }
     history.replaceState(history.state, "", writingUrl(next, tag));
   }
