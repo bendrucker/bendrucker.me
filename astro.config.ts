@@ -22,6 +22,10 @@ const isDev = process.env.NODE_ENV === "development";
 
 const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
 
+// Routes that render `noindex` while their data is still fixtures, so the
+// sitemap leaves them out too.
+const UNLISTED_ROUTES = new Set(["/reading", "/watching", "/listening"]);
+
 function copyStaticFiles(src: string, dest: string) {
   try {
     mkdirSync(dest, { recursive: true });
@@ -67,7 +71,9 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
-      filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
+      filter: (page) =>
+        (SITE.showArchives || !page.endsWith("/archives")) &&
+        !UNLISTED_ROUTES.has(new URL(page).pathname.replace(/\/$/, "")),
     }),
     vue(),
     ...(isDev
