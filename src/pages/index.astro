@@ -2,6 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import CodeFeature from "@/components/parts/CodeFeature.vue";
 import HomeCard from "@/components/parts/HomeCard.vue";
+import HomeDetail from "@/components/parts/HomeDetail.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
 import RideFeature from "@/components/parts/RideFeature.vue";
 import { KIND_ICONS } from "@/components/parts/icons";
@@ -11,6 +12,17 @@ import { homeCredits, type CategoryId } from "@/categories";
 import { SITE } from "@/config";
 import { desktopOnly } from "@/home/cards";
 import { loadHome } from "@/home/load";
+import {
+  HOME_PARAM,
+  parseHomeKey,
+  type HomeDetail as Detail,
+} from "@/home/detail";
+import { queryRideById } from "@/activity/feed";
+import { loadCodeDetail } from "@/code/detail";
+import { getDb } from "@/db";
+import { rethrowLocally } from "@/fallback";
+import type { OpenDetail } from "@/detail/useDetailModal";
+import { RIDE_ID, toRideDetailWire } from "@/rides/detail";
 import { climbFigure, distanceFigure, fullDate } from "@/rides/format";
 import { rideHref } from "@/rides/links";
 import { isHilly } from "@/rides/rank";
@@ -36,6 +48,34 @@ function short(index: number) {
 function tallness(id: CategoryId) {
   if (id !== "rides" && id !== "code") return undefined;
   return pairedFeatures ? "always" : "phone";
+}
+
+// A shared link to an item open over the cards renders it open, as the lists
+// do. A key naming nothing leaves the cards alone, and the island takes the
+// parameter back out of the URL.
+const openKey = Astro.url.searchParams.get(HOME_PARAM);
+const openItem = openKey === null ? null : parseHomeKey(openKey);
+let open: OpenDetail<Detail> | null = null;
+if (openKey !== null && openItem !== null) {
+  try {
+    const db = await getDb();
+    if (openItem.kind === "ride" && RIDE_ID.test(openItem.id)) {
+      const detail = await queryRideById(db, openItem.id);
+      if (detail !== null) {
+        open = {
+          key: openKey,
+          data: { kind: "ride", ride: toRideDetailWire(detail) },
+        };
+      }
+    } else if (openItem.kind === "code") {
+      const detail = await loadCodeDetail(db, openItem.key);
+      if (detail !== null) {
+        open = { key: openKey, data: { kind: "code", detail } };
+      }
+    }
+  } catch (error) {
+    rethrowLocally(error, "Failed to load home detail", { key: openKey });
+  }
 }
 
 const ride = features.rides;
@@ -190,6 +230,11 @@ const rideFigures = ride
         }
       </div>
     </div>
+    <HomeDetail
+      client:idle
+      thisYear={String(new Date().getUTCFullYear())}
+      open={open}
+    />
   </main>
 </Layout>
 
