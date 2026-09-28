@@ -27,6 +27,9 @@ function initState() {
         <div
           class="h-[60vh] overflow-y-auto"
           :class="storyCategory(state.category).scope"
+          tabindex="0"
+          role="region"
+          aria-label="Sample post"
         >
           <ReadingProgress />
           <div
@@ -58,5 +61,6 @@ lacking scroll timelines leaves it empty.
 
 The bar follows its nearest scroller. On a post that is the page itself. The
 story book's own panes never scroll that element, so the story wraps the prose in
-a box of its own that does.
+a box of its own that does. That box takes focus, so the arrow keys scroll it
+too.
 </docs>
