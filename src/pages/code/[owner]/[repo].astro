@@ -1,0 +1,49 @@
+---
+import CodeItem from "@/components/code/CodeItem.astro";
+import WorkList from "@/components/code/WorkList.astro";
+import { isEnabled } from "@/config";
+import { getDb } from "@/db";
+import { queryRepo, type RepoPage } from "@/code/query";
+import { moreUrl, parentProject, repoStatTiles, workList } from "@/code/page";
+import { languageColor } from "@/code/rows";
+import { transitionName } from "@/code/view";
+import { rethrowLocally } from "@/fallback";
+
+if (!isEnabled("code")) return Astro.rewrite("/404");
+
+const { owner = "", repo: name = "" } = Astro.params;
+let page: RepoPage | null = null;
+
+try {
+  page = await queryRepo(await getDb(), owner, name);
+} catch (error) {
+  rethrowLocally(error, "Failed to load repository", { owner, name });
+}
+
+if (!page) return Astro.rewrite("/404");
+
+const { repo, stats } = page;
+// A member opened from its project's page returns there.
+const parent = parentProject(repo, Astro.url.searchParams.get("from"));
+const work = workList([repo]);
+---
+
+<CodeItem
+  title={repo.name}
+  org={repo.mine ? undefined : repo.owner}
+  dek={repo.description || undefined}
+  backLabel={parent?.title ?? "Code"}
+  backHref={parent ? `/code/${parent.id}` : "/code"}
+  mark="dot"
+  dot={languageColor(repo)}
+  githubUrl={repo.url}
+  tiles={repoStatTiles(stats)}
+  transitionName={transitionName(repo.repo)}
+  description={repo.description || `${repo.repo} on GitHub`}
+  sourcePath="src/pages/code/[owner]/[repo].astro"
+>
+  <WorkList
+    items={work.items}
+    moreHref={work.more ? moreUrl({ repos: [repo.repo] }) : undefined}
+  />
+</CodeItem>

@@ -54,6 +54,19 @@ export default defineConfig({
   cache: {
     provider: cacheCloudflare(),
   },
+  // `/activity/code/[year]` redirects from its own endpoint: a dynamic
+  // redirect to a page route resolves to `/code/index.html`.
+  //
+  // Writing's old addresses redirect the same way. The adapter writes a
+  // dynamic redirect into `_redirects` with a literal `*` in its destination,
+  // which Cloudflare discards, so `/posts/*` lives in static/_redirects with
+  // `:splat`. `/tags/<tag>` carries its tag into a query string, which
+  // neither can write, so src/middleware/redirects.ts answers it.
+  redirects: {
+    "/activity/code": "/code",
+    "/posts": "/writing",
+    "/archives": "/writing",
+  },
   // On-demand routes that only change on deploy. `/` and `/activity` are
   // absent because their max-age is aligned to the hourly GitHub sync and
   // computed per request in src/middleware.ts. Prerendered routes are not
@@ -66,15 +79,6 @@ export default defineConfig({
     "/writing/[...slug].md": DEPLOY_SCOPED_CACHE,
     "/og.png": DEPLOY_SCOPED_CACHE,
     "/llms.txt": DEPLOY_SCOPED_CACHE,
-  },
-  // Writing's old addresses. The adapter writes a dynamic redirect into
-  // `_redirects` with a literal `*` in its destination, which Cloudflare
-  // discards, so `/posts/*` lives in static/_redirects with `:splat`.
-  // `/tags/<tag>` carries its tag into a query string, which neither can
-  // write, so src/middleware/redirects.ts answers it.
-  redirects: {
-    "/posts": "/writing",
-    "/archives": "/writing",
   },
   integrations: [
     sitemap({

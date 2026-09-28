@@ -102,7 +102,10 @@ export function aggregateActivityByRepository(
     if (!repoContrib.contributions.nodes?.length) return;
 
     const repo = getOrCreateRepo(repoMap, repoContrib.repository);
-    repo.activitySummary.prCount += repoContrib.contributions.nodes.length;
+    repo.activitySummary.prCount += Math.max(
+      repoContrib.contributions.totalCount,
+      repoContrib.contributions.nodes.length,
+    );
     repo.pullRequestIds.push(
       ...repoContrib.contributions.nodes.map(
         (contrib) => contrib.pullRequest.id,

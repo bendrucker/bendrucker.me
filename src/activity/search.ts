@@ -26,8 +26,9 @@ export const MARK_CLASS =
   "-mx-px rounded-[3px] bg-cat/24 px-px text-foreground";
 
 /**
- * Escapes what a pattern reads as syntax outside a character class. Under the
- * `u` flag, escaping anything else, like `-`, is itself a syntax error.
+ * Escapes only the characters the `u` flag lets a pattern escape. A hyphen is
+ * special only inside a character class, and `\-` outside one is a syntax
+ * error under `u`.
  */
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\/]/g, String.raw`\$&`);

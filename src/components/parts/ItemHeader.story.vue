@@ -100,10 +100,20 @@ function sample(key: unknown): HeaderSample {
             :dek="sample(state.sample).dek"
             :size="sample(state.sample).size"
           >
-            <template v-if="sample(state.sample).lead" #lead>
+            <template v-if="sample(state.sample).lead" #mark>
               <span
-                class="mt-2 size-3 flex-none rotate-45 rounded-[2px] bg-[#00ADD8]"
+                aria-hidden="true"
+                class="size-3 flex-none rotate-45 rounded-[2px] bg-[#00ADD8]"
               />
+            </template>
+            <template v-if="sample(state.sample).lead" #title-end>
+              <a
+                href="#"
+                aria-label="Open on GitHub"
+                class="inline-flex size-8 flex-none items-center justify-center rounded-md text-dim hover:bg-hover hover:text-foreground"
+              >
+                <span aria-hidden="true" class="icon-[lucide--github] size-4" />
+              </a>
             </template>
             <template v-if="state.sample === 'repo'" #actions>
               <div class="mt-2 grid grid-cols-2 gap-1.5">
@@ -127,7 +137,8 @@ function sample(key: unknown): HeaderSample {
 
 The top of every item page: a back link naming where it returns, the date as a
 label, the title, and your description as a dek. A repository puts its owner
-above the title and its diamond ahead of it.
+above the title, its diamond ahead of it in the `mark` slot, and its GitHub link
+after it in the `title-end` slot. Both share the title's line.
 
 A post's title and dek run larger than an item page's. The long title shows
 where a post's title wraps at a phone's width.

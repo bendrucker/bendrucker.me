@@ -3,7 +3,14 @@
 import { sql, type InferResult, type Kysely } from "kysely";
 import { SITE } from "@/config";
 import type { Database } from "@/db";
-import { PROJECTS, isMine, projects, repoScore, type Project } from "./rank";
+import {
+  PROJECTS,
+  isMine,
+  projects,
+  repoScore,
+  type Project,
+  type ProjectOptions,
+} from "./rank";
 import type {
   CodeRepo,
   CodeStats,
@@ -15,6 +22,14 @@ import type {
 } from "./types";
 
 export type ScoredRepo = CodeRepo & { score: number };
+
+/**
+ * The pull requests or authored issues a year's sync reads per repository. A
+ * year stored at exactly this many was cut off there: pull requests before the
+ * sync read GitHub's total, and issue rows still, since only the first page
+ * names the issues to fetch.
+ */
+const CONTRIBUTION_PAGE = 100;
 
 function repoRows(db: Kysely<Database>) {
   return db
@@ -209,8 +224,13 @@ async function workFor(db: Kysely<Database>, repos: readonly RepoRecord[]) {
 
 /**
  * Per repository: the stored rows, the yearly counts, and the dates that bound
- * when contributing there began. The yearly counts reach back past the per-PR
- * rows wherever a backfill filled them and the rows did not.
+ * when contributing there began. The yearly pull request counts reach back
+ * past the per-PR rows wherever a backfill filled them and the rows did not.
+ *
+ * Issues are counted from the rows alone. The yearly issue count comes from a
+ * search for every issue the owner is involved in, opened by anyone and
+ * updated any time after the year began, so it is neither the authored issues
+ * the page lists nor confined to its year.
  */
 async function queryStatRows(db: Kysely<Database>, ids: readonly number[]) {
   if (ids.length === 0) return [];
@@ -239,10 +259,24 @@ async function queryStatRows(db: Kysely<Database>, ids: readonly number[]) {
         )
         .as("pullsCounted"),
       eb
+        .selectFrom("repoActivity")
+        .whereRef("repoActivity.repoId", "=", "repos.id")
+        .where("repoActivity.prCount", "=", CONTRIBUTION_PAGE)
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .as("pullYearsCapped"),
+      eb
         .selectFrom("issues")
         .whereRef("issues.repoId", "=", "repos.id")
         .select(({ fn }) => fn.countAll<number>().as("count"))
         .as("issueRows"),
+      eb
+        .selectFrom("issues")
+        .whereRef("issues.repoId", "=", "repos.id")
+        .groupBy(sql`substr(${sql.ref("issues.createdAt")}, 1, 4)`)
+        .select(({ fn }) => fn.countAll<number>().as("count"))
+        .orderBy(sql`count(*)`, "desc")
+        .limit(1)
+        .as("issueRowsBusiestYear"),
       eb
         .selectFrom("pullRequests")
         .whereRef("pullRequests.repoId", "=", "repos.id")
@@ -294,7 +328,11 @@ function totals(rows: readonly StatRow[]): CodeStats {
       (sum, row) => sum + Math.max(row.pullRows ?? 0, row.pullsCounted ?? 0),
       0,
     ),
+    prsCapped: rows.some((row) => (row.pullYearsCapped ?? 0) > 0),
     issues: rows.reduce((sum, row) => sum + (row.issueRows ?? 0), 0),
+    issuesCapped: rows.some(
+      (row) => (row.issueRowsBusiestYear ?? 0) >= CONTRIBUTION_PAGE,
+    ),
     since: since ?? null,
   };
 }
@@ -336,12 +374,14 @@ export interface ProjectPage {
 /**
  * A configured family by its id, or someone else's organization by its login,
  * over every repository stored for it. Null when that leaves fewer than two.
+ * Passing an empty `configured` reads the id as an organization only.
  */
 export async function queryProject(
   db: Kysely<Database>,
   id: string,
+  { configured: families = PROJECTS }: ProjectOptions = {},
 ): Promise<ProjectPage | null> {
-  const configured = PROJECTS.find((project) => project.id === id);
+  const configured = families.find((project) => project.id === id);
   if (!configured && id === SITE.githubUsername) return null;
 
   const rows = await repoRows(db)

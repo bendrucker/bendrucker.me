@@ -46,8 +46,13 @@ const props = withDefaults(
     compact?: boolean;
     /** Names the row for a view transition into its page. */
     transitionName?: string;
+    /**
+     * A row on an item page's plain ground, which a lightened background
+     * would vanish into, takes the category's tint instead.
+     */
+    tinted?: boolean;
   }>(),
-  { lead: "none", query: "", compact: false },
+  { lead: "none", query: "", compact: false, tinted: false },
 );
 
 const leaves = computed(() => props.via !== undefined);
@@ -55,8 +60,15 @@ const leaves = computed(() => props.via !== undefined);
 const linkClass = computed(() =>
   props.compact
     ? "-mx-1.5 w-[calc(100%+12px)] gap-2.5 rounded-md px-1.5 py-1 hover:bg-hover"
-    : "min-h-11 w-full flex-1 gap-2.5 rounded-xl bg-background/60 py-[9px] pr-2.5 pl-3 transition-[background-color,translate,scale] duration-[250ms,400ms,400ms] ease-spring hover:translate-x-[3px] hover:bg-background active:scale-[.97] motion-reduce:transition-none motion-reduce:hover:translate-x-0",
+    : "min-h-11 w-full flex-1 gap-2.5 rounded-xl py-[9px] pr-2.5 pl-3 transition-[background-color,translate,scale] duration-[250ms,400ms,400ms] ease-spring hover:translate-x-[3px] active:scale-[.97] motion-reduce:transition-none motion-reduce:hover:translate-x-0",
 );
+
+const groundClass = computed(() => {
+  if (props.compact) return "";
+  return props.tinted
+    ? "tint-6 hover:tint-10"
+    : "bg-background/60 hover:bg-background";
+});
 
 function tickBackground(fraction: number): string {
   const on = "var(--cat)";
@@ -73,7 +85,7 @@ function tickBackground(fraction: number): string {
     <a
       :href="href"
       class="group/row flex min-w-0 items-center text-left text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat focus-visible:outline-solid"
-      :class="linkClass"
+      :class="[linkClass, groundClass]"
       :style="
         transitionName ? { viewTransitionName: transitionName } : undefined
       "

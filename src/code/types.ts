@@ -54,7 +54,19 @@ export interface CodeRepo {
 /** Totals over everything stored, whatever window the page lists. */
 export interface CodeStats {
   prs: number;
+  /**
+   * Whether `prs` is only a floor: a year synced before the sync read
+   * GitHub's total stored its first page of pull requests and nothing past it.
+   */
+  prsCapped: boolean;
+  /** Authored issues. */
   issues: number;
+  /**
+   * Whether `issues` is only a floor: a year's sync names the first page of
+   * authored issues in each repository, and a year stored at a full page was
+   * cut off there.
+   */
+  issuesCapped: boolean;
   /** ISO timestamp of the earliest contribution on record. */
   since: string | null;
 }

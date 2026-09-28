@@ -15,15 +15,17 @@ export interface CachePolicy {
 /**
  * The pages that render from the activity database, whose freshness tracks
  * the hourly sync rather than the deploy. The homepage lists the same rows
- * the activity pages do, and the Rides route and each ride's page read the
- * feed.
+ * the activity pages do, the Rides route and each ride's page read the feed,
+ * and the Code route lists them by repository.
  */
 export function isActivityPath(pathname: string): boolean {
   return (
     pathname === "/" ||
     pathname.startsWith("/activity") ||
     pathname === "/rides" ||
-    pathname.startsWith("/rides/")
+    pathname.startsWith("/rides/") ||
+    pathname === "/code" ||
+    pathname.startsWith("/code/")
   );
 }
 

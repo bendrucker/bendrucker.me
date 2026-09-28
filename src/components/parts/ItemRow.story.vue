@@ -158,11 +158,18 @@ const controls: StoryControlSet = {
   query: { type: "text", title: "search" },
   compact: { type: "checkbox", title: "home row" },
   gutter: { type: "checkbox", title: "gutter" },
+  tinted: { type: "checkbox", title: "page ground" },
   width: { type: "slider", title: "width", min: 240, max: 680, step: 10 },
 };
 
 function initState() {
-  return { query: "", compact: false, gutter: true, width: 680 };
+  return {
+    query: "",
+    compact: false,
+    gutter: true,
+    tinted: false,
+    width: 680,
+  };
 }
 </script>
 
@@ -183,14 +190,18 @@ function initState() {
           <li
             v-for="sample in samples"
             :key="sample.key"
-            class="rounded-2xl tint-5 p-2"
-            :class="storyCategory(sample.category).scope"
+            class="rounded-2xl p-2"
+            :class="[
+              storyCategory(sample.category).scope,
+              state.tinted ? 'bg-background' : 'tint-5',
+            ]"
           >
             <p class="mb-1 px-1 label-caps">{{ sample.label }}</p>
             <ItemRow
               v-bind="sample.row"
               :query="state.query"
               :compact="state.compact"
+              :tinted="state.tinted"
             >
               <template v-if="state.gutter && !state.compact" #gutter>
                 <TimelineGutter :day="sample.day" :sub="sample.sub" week-end />
@@ -221,4 +232,8 @@ in an outward arrow and says where it goes.
 Type in search to see every rendered field marked, not only the title. Turn on
 the home row to see the compact form the home cards use: one line, drawn
 without the gutter or the chevron, since the card is the container.
+
+Turn on page ground to see a row on an item page's plain background, as a
+project lists its repositories. It takes the category's tint, where the list
+routes' lightened background would vanish.
 </docs>

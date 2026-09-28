@@ -96,8 +96,12 @@ function makeIssueRepo(
   };
 }
 
-function makePrRepo(repository: Repository, nodes: PrContribution[]): PrRepo {
-  return { repository, contributions: { nodes } };
+function makePrRepo(
+  repository: Repository,
+  nodes: PrContribution[],
+  totalCount = nodes.length,
+): PrRepo {
+  return { repository, contributions: { totalCount, nodes } };
 }
 
 interface ReviewContributionOptions {
@@ -355,6 +359,29 @@ describe("aggregateActivityByRepository", () => {
       expect(names(result)).toEqual(["merged-pr"]);
       expect(result[0].activitySummary.prCount).toBe(1);
       expect(result[0].activitySummary.hasMergedPRs).toBe(true);
+    });
+
+    it("counts pull requests past the first page by the connection's total", () => {
+      const contributions = makeContributions({
+        pullRequest: [
+          makePrRepo(
+            makeRepo({ name: "busy" }),
+            [
+              makePrContribution({
+                occurredAt: "2024-01-01T00:00:00Z",
+                merged: true,
+                mergedAt: "2024-01-02T00:00:00Z",
+              }),
+            ],
+            240,
+          ),
+        ],
+      });
+
+      const [busy] = aggregateActivityByRepository(contributions);
+
+      expect(busy.activitySummary.prCount).toBe(240);
+      expect(busy.pullRequestIds).toEqual(["PR_1"]);
     });
   });
 

@@ -107,6 +107,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
             ...RepositoryInfo
           }
           contributions(first: 100) {
+            totalCount
             nodes {
               occurredAt
               pullRequest {

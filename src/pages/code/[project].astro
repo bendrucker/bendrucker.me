@@ -1,0 +1,78 @@
+---
+import CodeItem from "@/components/code/CodeItem.astro";
+import WorkList from "@/components/code/WorkList.astro";
+import ItemRow from "@/components/parts/ItemRow.vue";
+import { isEnabled } from "@/config";
+import { getDb } from "@/db";
+import { queryProject, type ProjectPage } from "@/code/query";
+import { memberHref, moreUrl, projectStatTiles, workList } from "@/code/page";
+import { languageColor } from "@/code/rows";
+import { memberSummary, transitionName } from "@/code/view";
+import { rethrowLocally } from "@/fallback";
+
+if (!isEnabled("code")) return Astro.rewrite("/404");
+
+const id = Astro.params.project ?? "";
+let page: ProjectPage | null = null;
+
+try {
+  const db = await getDb();
+  // Someone else's organization wins over a configured family of the same
+  // name, since `/code/<owner>` reads as that owner's page.
+  page =
+    (await queryProject(db, id, { configured: [] })) ??
+    (await queryProject(db, id));
+} catch (error) {
+  rethrowLocally(error, "Failed to load project", { id });
+}
+
+if (!page) return Astro.rewrite("/404");
+
+const { project, stats } = page;
+const isOrg = project.owner === id && !project.mine;
+const [best] = project.members;
+const work = workList(project.members, { withRepo: true });
+---
+
+<CodeItem
+  title={project.title}
+  org={project.org || undefined}
+  backLabel="Code"
+  backHref="/code"
+  mark="ring"
+  dot={best ? languageColor(best) : "currentColor"}
+  githubUrl={isOrg ? `https://github.com/${project.owner}` : undefined}
+  tiles={projectStatTiles(stats)}
+  transitionName={transitionName(project.id)}
+  description={`${project.title}: ${memberSummary(project.members.map((member) => member.name))}`}
+  sourcePath="src/pages/code/[project].astro"
+>
+  <ul aria-label="Repositories" class="flex flex-col gap-1.5">
+    {
+      project.members.map((member) => (
+        <li>
+          <ItemRow
+            href={memberHref(member, project.id)}
+            title={member.name}
+            text={member.description || undefined}
+            lead="dot"
+            dot={languageColor(member)}
+            transitionName={transitionName(member.repo)}
+            tinted
+          />
+        </li>
+      ))
+    }
+  </ul>
+
+  <WorkList
+    items={work.items}
+    moreHref={work.more
+      ? moreUrl(
+          isOrg
+            ? { org: project.owner }
+            : { repos: project.members.map((member) => member.repo) },
+        )
+      : undefined}
+  />
+</CodeItem>

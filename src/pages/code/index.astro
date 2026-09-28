@@ -1,0 +1,47 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import CodeRoute from "@/components/code/CodeRoute.vue";
+import { category } from "@/categories";
+import { SITE, isEnabled } from "@/config";
+import { getDb } from "@/db";
+import { queryCodeRows } from "@/code/query";
+import {
+  buildCodeRows,
+  codeWindow,
+  languageOptions,
+  localDay,
+} from "@/code/rows";
+import { parseFilters, type CodeRow, type LanguageOption } from "@/code/view";
+import { rethrowLocally } from "@/fallback";
+
+if (!isEnabled("code")) return Astro.rewrite("/404");
+
+const now = new Date();
+let rows: CodeRow[] = [];
+let languages: LanguageOption[] = [];
+
+try {
+  const repos = await queryCodeRows(await getDb(), codeWindow(now));
+  rows = buildCodeRows(repos);
+  languages = languageOptions(repos);
+} catch (error) {
+  rethrowLocally(error, "Failed to load code rows");
+}
+
+const cat = category("code");
+---
+
+<Layout
+  title={`${cat.name} | ${SITE.title}`}
+  description="The repositories I have worked on lately, and the projects they belong to."
+  credits={cat.credits}
+  sourcePath="src/pages/code/index.astro"
+>
+  <CodeRoute
+    client:load
+    rows={rows}
+    languages={languages}
+    initial={parseFilters(Astro.url.searchParams, languages)}
+    thisYear={localDay(now.toISOString()).slice(0, 4)}
+  />
+</Layout>
