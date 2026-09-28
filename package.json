@@ -28,7 +28,8 @@
     "seed": "node --import tsx scripts/seed.ts",
     "backfill:climbs": "node --import tsx scripts/backfill-climbs.ts",
     "fetch-activity": "node --import tsx scripts/fetch-github-activity.ts",
-    "generate:favicons": "node --import tsx scripts/generate-favicons.ts"
+    "generate:favicons": "node --import tsx scripts/generate-favicons.ts",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@astrojs/cloudflare": "14.3.1",
@@ -85,6 +86,7 @@
     "opentype.js": "^2.0.0",
     "oxlint": "^1.80.0",
     "oxlint-tsgolint": "^7.0.2001",
+    "patch-package": "^8.0.1",
     "png-to-ico": "^3.0.2",
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",

@@ -164,6 +164,15 @@ listens on a Unix socket the sandbox refuses.
 screen: seeding, the URLs worth requesting, and screenshotting both themes at
 both widths.
 
+### Dependency Patches
+
+`patch-package` applies `patches/` on every install. The one patch narrows what
+`@cloudflare/vite-plugin`'s runner re-evaluates on a server reload: the edited
+file and its importers, rather than every module in workerd. That took an
+`.astro` save from about 490ms to 290ms. A bump of the plugin that moves the
+patched code fails the install, and the patch has to be regenerated with
+`npx patch-package @astrojs/cloudflare/@cloudflare/vite-plugin` or dropped.
+
 ### New Worktrees
 
 `.config/wt.toml` seeds a worktree from its base branch's checkout when
