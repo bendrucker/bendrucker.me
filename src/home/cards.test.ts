@@ -104,7 +104,7 @@ describe("homeCards", () => {
 });
 
 describe("desktopOnly", () => {
-  it("shows three on a phone and five on a desktop", () => {
+  it("shows three of a shelf on a phone and five on a desktop", () => {
     expect([0, 1, 2, 3, 4].map((i) => desktopOnly(i))).toEqual([
       false,
       false,

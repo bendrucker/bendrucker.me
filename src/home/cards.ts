@@ -1,7 +1,9 @@
 // What home shows: a card per category that is on and has something to show,
 // each holding the first highlights of its route in the route's own order.
-// Every card carries five, and the page hides the last two below the desktop
-// breakpoint, since the server can't know the width it renders for.
+// Every card carries five. A list card rests at a peek height and keeps the
+// rows past it in a drawer, so a phone carries all five too. A shelf lays its
+// art out in one row, which a phone's width fits three of, so the page hides
+// the last two there, since the server can't know the width it renders for.
 import { dayShuffle } from "@/activity/shuffle";
 import { enabledCategories, type CategoryId } from "@/categories";
 import type { CodeRow } from "@/code/view";
@@ -10,8 +12,8 @@ import type { MediaRow } from "@/media/types";
 import type { RideRow } from "@/rides/rows";
 import type { PostRow } from "@/writing/rows";
 
-/** Highlights a card shows: three on a phone, five from the desktop breakpoint up. */
-export const HOME_ROWS = { phone: 3, desktop: 5 } as const;
+/** Highlights a card carries, and how many of a shelf's a phone shows. */
+export const HOME_ROWS = { card: 5, phoneShelf: 3 } as const;
 
 /** Each category's highlights, ranked the way its route ranks them. */
 export interface HomeSources {
@@ -27,14 +29,14 @@ export type HomeCard = {
   [K in CategoryId]: { id: K; items: HomeSources[K] };
 }[CategoryId];
 
-/** Whether the row at this index shows only from the desktop breakpoint up. */
+/** Whether a shelf's item at this index shows only from the desktop breakpoint up. */
 export function desktopOnly(index: number): boolean {
-  return index >= HOME_ROWS.phone;
+  return index >= HOME_ROWS.phoneShelf;
 }
 
 /** A category's card with its first five, or the day's order for the shelf. */
 function cardFor(id: CategoryId, sources: HomeSources, now: Date): HomeCard {
-  const top = <T>(items: readonly T[]) => items.slice(0, HOME_ROWS.desktop);
+  const top = <T>(items: readonly T[]) => items.slice(0, HOME_ROWS.card);
   switch (id) {
     case "rides":
       return { id, items: top(sources.rides) };
