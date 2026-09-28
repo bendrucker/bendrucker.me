@@ -32,8 +32,7 @@ You wouldn't show up to a job interview without simple preparations like a thoro
 
 Even some of the most popular open source project (like AngularJS) are relatively new. The number and pace of projects will only continue to grow as more and more companies identify supporting open source projects as an inexpensive way to improve developer productivity and recruit better talent.
 
-<blockquote class="twitter-tweet" lang="en"><p>Whoa! Even I don&#39;t qualify! RT <a href="https://twitter.com/joshfinnie">@JoshFinnie</a>: 5 to 6 years of <a href="https://twitter.com/angularjs">@angularjs</a> experience? Hmmm... <a href="http://t.co/m89JLJTVgA">pic.twitter.com/m89JLJTVgA</a></p>&mdash; Igor Minar (@IgorMinar) <a href="https://twitter.com/IgorMinar/statuses/406300631238844416">November 29, 2013</a></blockquote>
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<blockquote><p>Whoa! Even I don&#39;t qualify! RT <a href="https://twitter.com/joshfinnie">@JoshFinnie</a>: 5 to 6 years of <a href="https://twitter.com/angularjs">@angularjs</a> experience? Hmmm... <a href="http://t.co/m89JLJTVgA">pic.twitter.com/m89JLJTVgA</a></p>&mdash; Igor Minar (@IgorMinar) <a href="https://twitter.com/IgorMinar/statuses/406300631238844416">November 29, 2013</a></blockquote>
 
 Taking even the smallest concrete step forward today will kick off the cycle of compound growth in both project experience and technical skill. Consider adopting the ["don't break the chain" approach](http://lifehacker.com/281626/jerry-seinfelds-productivity-secret) and do something, no matter how small, daily. John Resig, creator of jQuery, has also written about [the powerful effect of shipping code every day](http://ejohn.org/blog/write-code-every-day).
 
