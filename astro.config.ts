@@ -92,7 +92,6 @@ export default defineConfig({
         ? writingSitemapPages(SITE.website)
         : [],
       filter: (page) =>
-        (SITE.showArchives || !page.endsWith("/archives")) &&
         !UNLISTED_ROUTES.has(new URL(page).pathname.replace(/\/$/, "")),
     }),
     vue(),
