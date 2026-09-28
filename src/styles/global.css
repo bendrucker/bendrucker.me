@@ -4,7 +4,7 @@
 
 @plugin "@iconify/tailwind4";
 
-/* Posts carry no utility classes. Scanning them made every post save send the
+/* Posts don't use utility classes. Scanning them made every post save send the
    dev server a reload that re-ran every server module. */
 @source not "../content";
 
