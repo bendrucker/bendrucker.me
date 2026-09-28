@@ -1,0 +1,39 @@
+import { describe, expect, it } from "vitest";
+import { loadMediaFeed } from "./load";
+
+describe("loadMediaFeed", () => {
+  it("orders rows newest first", async () => {
+    for (const id of ["reading", "watching", "listening"] as const) {
+      const { rows } = await loadMediaFeed(id);
+      const days = rows.map((r) => r.day);
+      expect(days).toEqual(days.toSorted().toReversed());
+    }
+  });
+
+  it("ranks Listening by plays, which no row carries", async () => {
+    const { rows, highlightKeys } = await loadMediaFeed("listening");
+    const byKey = new Map(rows.map((r) => [r.key, r.title]));
+    expect(highlightKeys.map((k) => byKey.get(k))).toEqual([
+      "Promises",
+      "Hard Fork",
+      "In Rainbows",
+      "Acquired",
+      "Blonde",
+    ]);
+    expect(rows.some((r) => "plays" in r)).toBe(false);
+  });
+
+  it("draws a show's episodes as ticks and leaves a movie without", async () => {
+    const { rows } = await loadMediaFeed("watching");
+    const silo = rows.find((r) => r.title === "Silo");
+    expect(silo?.ticks).toEqual([1, 1, 1, 1, 1, 1, 1, 0, 0, 0]);
+    expect(silo?.tickLabel).toBe("7 of 10 episodes watched");
+    expect(rows.find((r) => r.title === "Sinners")?.ticks).toBeUndefined();
+  });
+
+  it("carries an album's label color and every row's way out", async () => {
+    const { rows } = await loadMediaFeed("listening");
+    expect(rows.find((r) => r.title === "Blonde")?.label).toBe("#9fb4a5");
+    expect(rows.every((r) => r.url.startsWith("https://"))).toBe(true);
+  });
+});

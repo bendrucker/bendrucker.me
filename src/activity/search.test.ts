@@ -39,6 +39,7 @@ describe("matches", () => {
     const post = { title: "The Future is Service-Oriented" };
     expect(matches(post, "service-oriented")).toBe(true);
     expect(matches(post, "-")).toBe(true);
+    expect(matches({ title: "Piranesi" }, "-")).toBe(false);
     expect(matches({ title: "a/b {c} [d] ^e$ |f|" }, "/b {c} [d] ^e$ |")).toBe(
       true,
     );
@@ -60,6 +61,14 @@ describe("matches", () => {
       { text: "ruleset-", hit: true },
       { text: "aws", hit: false },
     ]);
+  });
+
+  it("matches every character a pattern would treat specially", () => {
+    const title = "a.*+?^$ {}()|[]/-z";
+    expect(matches({ title }, title)).toBe(true);
+    expect(matches({ title: String.raw`C:\tools` }, String.raw`:\t`)).toBe(
+      true,
+    );
   });
 
   it("trims the query", () => {

@@ -26,11 +26,10 @@ function setPreference() {
 function reflectPreference() {
   document.firstElementChild.setAttribute("data-theme", themeValue);
 
-  // The button names the theme it switches to.
-  const button = document.querySelector("#theme-btn");
-  const target = themeValue === "dark" ? "Light theme" : "Dark theme";
-  button?.setAttribute("aria-label", target);
-  button?.setAttribute("title", target);
+  // A toggle keeps one name, "Dark theme", and reports whether it is on.
+  document
+    .querySelector("#theme-btn")
+    ?.setAttribute("aria-pressed", String(themeValue === "dark"));
 
   // Get a reference to the body element
   const body = document.body;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import MarkedText from "./MarkedText.vue";
+import { vArtFallback } from "./artFallback";
 import { PART_ICONS, type PartIcon } from "./icons";
 
 /**
@@ -127,25 +128,34 @@ function tickBackground(fraction: number): string {
           :class="PART_ICONS[kind]"
         />
       </span>
-      <img
-        v-else-if="lead === 'poster' && art"
-        :src="art"
-        :alt="leadLabel ?? ''"
-        width="30"
-        height="45"
-        loading="lazy"
-        class="aspect-[2/3] w-[30px] flex-none rounded-[3px] object-cover shadow-[0_4px_10px_-6px_var(--shadow)] transition-transform duration-400 ease-spring group-hover/row:-rotate-2 motion-reduce:transition-none"
-      />
-      <img
-        v-else-if="lead === 'sleeve' && art"
-        :src="art"
-        :alt="leadLabel ?? ''"
-        width="38"
-        height="38"
-        loading="lazy"
-        class="size-[38px] flex-none object-cover shadow-[0_4px_10px_-6px_var(--shadow)] transition-transform duration-400 ease-spring group-hover/row:-rotate-2 motion-reduce:transition-none"
-        :class="podcast ? 'rounded-lg' : 'rounded-[3px]'"
-      />
+      <!-- Art sits on a tile, which is all that shows when it is missing or
+           fails to load. The kind is spoken rather than put in the alt, so a
+           broken image has no text to spill out of a 30px slot. -->
+      <span
+        v-else-if="lead === 'poster' || lead === 'sleeve'"
+        class="flex-none overflow-hidden bg-tile shadow-[0_4px_10px_-6px_var(--shadow)] transition-transform duration-400 ease-spring group-hover/row:-rotate-2 motion-reduce:transition-none"
+        :class="
+          lead === 'poster'
+            ? 'aspect-[2/3] w-[30px] rounded-[3px]'
+            : ['size-[38px]', podcast ? 'rounded-lg' : 'rounded-[3px]']
+        "
+      >
+        <img
+          v-if="art"
+          v-art-fallback
+          :src="art"
+          alt=""
+          :width="lead === 'poster' ? 30 : 38"
+          :height="lead === 'poster' ? 45 : 38"
+          loading="lazy"
+          class="size-full object-cover"
+        />
+      </span>
+      <span
+        v-if="(lead === 'poster' || lead === 'sleeve') && leadLabel"
+        class="sr-only"
+        >{{ leadLabel }}</span
+      >
 
       <span v-if="compact" class="flex min-w-0 flex-1 flex-col gap-px">
         <span

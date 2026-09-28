@@ -29,7 +29,11 @@ defineExpose({ focus });
     class="flex flex-col items-start gap-1.5 py-6"
     :class="gutter ? 'pl-[34px]' : 'pl-1'"
   >
-    <p ref="heading" tabindex="-1" class="text-[15px] outline-none">
+    <p
+      ref="heading"
+      tabindex="-1"
+      class="max-w-full text-[15px] wrap-anywhere outline-none"
+    >
       <template v-if="query">No {{ noun }} match “{{ query }}”.</template>
       <template v-else>No {{ noun }} match these filters.</template>
     </p>

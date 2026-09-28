@@ -1,0 +1,91 @@
+<script setup lang="ts">
+import { tickBackground } from "@/media/ticks";
+import { vArtFallback } from "@/components/parts/artFallback";
+import { useOutbound } from "./outbound";
+
+export interface ShelfPoster {
+  key: string;
+  type: string;
+  title: string;
+  /** The season, for a show. */
+  text?: string;
+  art?: string;
+  url: string;
+  via: string;
+  ticks?: readonly number[];
+  tickLabel?: string;
+  /** Past a phone's three: shown from the desktop breakpoint up. */
+  desktopOnly?: boolean;
+}
+
+defineProps<{ items: readonly ShelfPoster[] }>();
+
+const { playing, open } = useOutbound();
+</script>
+
+<template>
+  <!-- Posters share the row evenly, so three fill a phone and five a desktop. -->
+  <ul class="flex gap-2.5 md:gap-3">
+    <li
+      v-for="item in items"
+      :key="item.key"
+      class="flex min-w-0 flex-1 basis-0"
+      :class="item.desktopOnly ? 'max-md:hidden' : ''"
+    >
+      <a
+        :href="item.url"
+        target="_blank"
+        rel="noopener"
+        :data-state="playing === item.key ? 'out' : undefined"
+        class="group/poster flex w-full min-w-0 flex-col gap-1.5 text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat focus-visible:outline-solid"
+        @click="open($event, item.key, item.url)"
+      >
+        <span
+          class="relative block aspect-[2/3] w-full overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"
+        >
+          <img
+            v-if="item.art"
+            v-art-fallback
+            :src="item.art"
+            alt=""
+            width="120"
+            height="180"
+            loading="lazy"
+            decoding="async"
+            class="size-full object-cover"
+          />
+          <span
+            v-if="item.type === 'Movie'"
+            role="img"
+            aria-label="Movie"
+            class="absolute top-1 right-1 z-1 flex size-[18px] items-center justify-center rounded-[4px] bg-black/42 text-white"
+          >
+            <span aria-hidden="true" class="icon-[lucide--film] size-[11px]" />
+          </span>
+        </span>
+        <span class="line-clamp-1 text-xs leading-[1.35]">{{
+          item.title
+        }}</span>
+        <span
+          v-if="item.text"
+          class="-mt-[3px] line-clamp-1 text-[11px] text-dim"
+          >{{ item.text }}</span
+        >
+        <span
+          v-if="item.ticks?.length"
+          role="img"
+          :aria-label="item.tickLabel"
+          class="-mt-0.5 flex gap-0.5"
+        >
+          <span
+            v-for="(fraction, i) in item.ticks"
+            :key="i"
+            class="h-[3px] flex-1 rounded-[1px]"
+            :style="{ background: tickBackground(fraction) }"
+          />
+        </span>
+        <span class="sr-only">Opens {{ item.via }}</span>
+      </a>
+    </li>
+  </ul>
+</template>
