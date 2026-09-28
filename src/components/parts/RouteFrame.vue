@@ -53,7 +53,7 @@ function shows(region: RouteRegion): boolean {
            opens it. The body is first-party Markdown from `src/content/notes`. -->
       <details
         v-if="note?.html"
-        class="group/note mt-2 max-w-[62ch] border-l-2 border-cat/40 pl-3 text-[13px] leading-normal text-dim italic md:mt-3 md:text-sm"
+        class="group/note mt-2 max-w-[62ch] border-l-2 border-cat/40 pl-3 text-xs leading-normal text-dim italic md:mt-3"
       >
         <summary
           class="cursor-pointer list-none rounded-sm focus-visible:outline-2 focus-visible:outline-cat [&::-webkit-details-marker]:hidden"
@@ -69,7 +69,7 @@ function shows(region: RouteRegion): boolean {
       </details>
       <p
         v-else-if="note"
-        class="mt-2 max-w-[62ch] border-l-2 border-cat/40 pl-3 text-[13px] leading-normal text-dim italic md:mt-3 md:text-sm"
+        class="mt-2 max-w-[62ch] border-l-2 border-cat/40 pl-3 text-xs leading-normal text-dim italic md:mt-3"
       >
         {{ note.lede }}
       </p>
