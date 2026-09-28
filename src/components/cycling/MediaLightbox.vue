@@ -14,13 +14,22 @@ import StravaLink from "./StravaLink.vue";
 import type { RideMedia } from "@/activity/types";
 import { withinVideo } from "./mediaTarget";
 
-const props = defineProps<{
-  media: RideMedia[];
-  index: number;
-  rideName: string;
-  rideUrl?: string;
-  open: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    media: RideMedia[];
+    index: number;
+    rideName: string;
+    rideUrl?: string;
+    open: boolean;
+    /**
+     * `page` lays the viewer over the page's own ground. `black` is a ride
+     * page's viewer: black in either theme, with the count and the close
+     * button across the top and nothing else competing with the photo.
+     */
+    tone?: "page" | "black";
+  }>(),
+  { tone: "page" },
+);
 
 const emit = defineEmits<{
   close: [];
@@ -93,11 +102,15 @@ function onKeydown(event: KeyboardEvent) {
 <template>
   <DialogRoot :open="open && count > 0" @update:open="onOpenChange">
     <DialogPortal>
-      <DialogOverlay class="fixed inset-0 z-50 bg-background/95" />
+      <DialogOverlay
+        class="fixed inset-0 z-50"
+        :class="tone === 'black' ? 'bg-[#0b0b0c]' : 'bg-background/95'"
+      />
       <!-- The whole viewport, so an item is as large as the screen allows.
            Capping the width left a postage stamp on a wide display. -->
       <DialogContent
         class="fixed inset-0 z-50 flex flex-col outline-none"
+        :class="tone === 'black' ? 'text-white' : ''"
         @keydown="onKeydown"
       >
         <DialogTitle class="sr-only">{{ rideName }}</DialogTitle>
@@ -112,6 +125,25 @@ function onKeydown(event: KeyboardEvent) {
         />
 
         <div
+          v-if="tone === 'black'"
+          class="order-first flex shrink-0 items-center justify-between py-2.5 pr-3 pl-[18px] font-mono text-xs text-white/70"
+        >
+          <p>
+            <span aria-hidden="true">{{ position + 1 }} / {{ count }}</span>
+            <span class="sr-only" aria-live="polite">
+              Item {{ position + 1 }} of {{ count }}.
+              {{ item?.alt }}
+            </span>
+          </p>
+          <DialogClose
+            class="inline-flex size-10 items-center justify-center rounded-[10px] bg-white/8 text-white transition-colors hover:bg-white/16 focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <span class="icon-[lucide--x] size-[18px]" aria-hidden="true" />
+            <span class="sr-only">Close media viewer</span>
+          </DialogClose>
+        </div>
+        <div
+          v-else
           class="flex shrink-0 items-center gap-3 px-4 pb-4 text-[11px] text-foreground/70"
         >
           <p class="shrink-0">

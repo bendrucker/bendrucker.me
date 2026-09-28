@@ -47,10 +47,20 @@ const controls: StoryControlSet = {
   },
   width: { type: "slider", title: "width", min: 64, max: 480 },
   height: { type: "slider", title: "height", min: 64, max: 300 },
+  fluid: { type: "checkbox", title: "fluid" },
+  tint: { type: "checkbox", title: "tint" },
+  strokeWidth: { type: "slider", title: "stroke", min: 1, max: 4 },
 };
 
 function initState() {
-  return { route: "epic", width: 150, height: 140 };
+  return {
+    route: "epic",
+    width: 150,
+    height: 140,
+    fluid: false,
+    tint: false,
+    strokeWidth: 2,
+  };
 }
 </script>
 
@@ -64,12 +74,17 @@ function initState() {
     <Variant title="Route map" :init-state="initState">
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
-        <RouteMap
-          :route="routes[state.route]!"
-          :width="state.width"
-          :height="state.height"
-          label="Route map"
-        />
+        <div class="cat-rides">
+          <RouteMap
+            :route="routes[state.route]!"
+            :width="state.width"
+            :height="state.height"
+            :fluid="state.fluid"
+            :tint="state.tint"
+            :stroke-width="state.strokeWidth"
+            label="Route map"
+          />
+        </div>
       </template>
 
       <template #controls="{ state }">

@@ -9,7 +9,11 @@
 export const RIDE_MAP = { width: 150, height: 140 } as const;
 export const HIGHLIGHT_MAP = { width: 260, height: 130 } as const;
 
-const MAP_SIZES = [RIDE_MAP, HIGHLIGHT_MAP];
+/** A ride page's hero: the phone's column, then desktop's. */
+export const HERO_MAP_PHONE = { width: 358, height: 320 } as const;
+export const HERO_MAP = { width: 600, height: 320 } as const;
+
+const MAP_SIZES = [RIDE_MAP, HIGHLIGHT_MAP, HERO_MAP_PHONE, HERO_MAP];
 
 export function isMapSize(width: number, height: number): boolean {
   return MAP_SIZES.some(

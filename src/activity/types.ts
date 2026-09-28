@@ -86,6 +86,11 @@ export interface RideMedia {
   thumbnailUrl: string;
   fullUrl: string;
   alt: string;
+  /**
+   * A shot at its own shape, bounded by height, for a ride's own page. Only
+   * that page sets it, so the log's pages don't carry a URL they never draw.
+   */
+  previewUrl?: string;
 }
 
 // The log page's wire schema builds its enum from this array, so the schema

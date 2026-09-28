@@ -68,6 +68,20 @@ export function thumbnailUrl(key: string): string {
   return `/photos/thumbnails/${THUMBNAIL_VERSION}/${key}`;
 }
 
+/**
+ * The height a ride page's shot is cut to: the phone strip's 210px, doubled
+ * for dense displays and rounded up to cover a gallery row a little taller.
+ */
+export const PREVIEW_PX = 480;
+
+/** Bumped with any change to the preview's transform, as `THUMBNAIL_VERSION` is. */
+export const PREVIEW_VERSION = 1;
+
+/** A ride page's shot: the photo, or a video's first frame, at its own shape. */
+export function previewUrl(key: string): string {
+  return `/photos/previews/${PREVIEW_VERSION}/${key}`;
+}
+
 /** What a photo response reads off a stored object. */
 export interface PhotoObject {
   body: ReadableStream;

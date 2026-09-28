@@ -233,6 +233,33 @@ export async function queryLatestRides(
     .map((entry) => entry.ride);
 }
 
+/** A ride for its own page, with the metres its figures format from. */
+export interface RideDetail {
+  ride: Ride;
+  distanceM: number;
+  elevationM: number;
+}
+
+/**
+ * One ride with its track and media, for its own page, or null where no ride
+ * carries the id. A commute has a page like any other ride.
+ */
+export async function queryRideById(
+  db: Kysely<Database>,
+  id: string,
+): Promise<RideDetail | null> {
+  const row = await db
+    .selectFrom("activityFeed")
+    .select(LOG_COLUMNS)
+    .where("activityId", "=", id)
+    .where("sport", "=", "ride")
+    .executeTakeFirst();
+  if (row === undefined) return null;
+  const { ride, distanceM, elevationM } = toEntry(row);
+  attachTrack(ride, row);
+  return { ride, distanceM, elevationM };
+}
+
 /**
  * The tracks the page draws: every ride in the log's window, and the
  * highlighted rides from the months before it. The window is bounded on
@@ -296,7 +323,12 @@ export async function queryCyclingLogPage(
     // A month's badges and totals compare only the rides inside it. A page
     // needs no context from the pages around it.
     months: groupMonths(inWindow).map((month) => month.group),
-    logCursor: await pageCursor(db, entries, start, startBound),
+    logCursor: await pageCursor(
+      db,
+      entries.map((entry) => entry.monthKey),
+      start,
+      startBound,
+    ),
   };
 }
 
@@ -304,15 +336,15 @@ export async function queryCyclingLogPage(
  * The month the page after this one loads before: the newest month older than
  * the window, so an off-season gap costs one round trip.
  */
-async function pageCursor(
+export async function pageCursor(
   db: Kysely<Database>,
-  entries: readonly Entry[],
+  monthKeys: readonly string[],
   start: string,
   startBound: string,
 ): Promise<string | null> {
   // The slack rows already reach a couple of days past the window, so one of
   // them falling under an older month names that month without another query.
-  if (entries.some((entry) => entry.monthKey < start)) return start;
+  if (monthKeys.some((key) => key < start)) return start;
 
   const older = await db
     .selectFrom("activityFeed")
@@ -330,12 +362,12 @@ async function pageCursor(
 }
 
 /** The earliest instant a ride keyed to `month` or later could carry. */
-function lowerBound(month: string): string {
+export function lowerBound(month: string): string {
   return new Date(monthInstant(month) - SLACK_MS).toISOString();
 }
 
 /** The latest instant a ride keyed before `month` could carry. */
-function upperBound(month: string): string {
+export function upperBound(month: string): string {
   return new Date(monthInstant(month) + SLACK_MS).toISOString();
 }
 
@@ -512,7 +544,7 @@ function toEntry(row: RideRow): Entry {
  * formatter to show as-is. `TZDate` accepts any zone name and yields an
  * invalid date for one it cannot resolve, so the check is on the result.
  */
-function wallClock(startedAt: string, timezone: string): string {
+export function wallClock(startedAt: string, timezone: string): string {
   const instant = new Date(startedAt);
   if (Number.isNaN(instant.getTime())) return startedAt;
   const zoned = new TZDate(instant, timezone);

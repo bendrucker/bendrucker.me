@@ -1,12 +1,56 @@
 <script setup lang="ts">
-import { ref, useTemplateRef, watch } from "vue";
+import { onMounted, ref, useTemplateRef, watch } from "vue";
 import type { RideMedia } from "@/activity/types";
 
-const props = defineProps<{ media: RideMedia[] }>();
+const props = withDefaults(
+  defineProps<{
+    media: RideMedia[];
+    /**
+     * `thumb` is a card's row of 48px squares. `shot` is a ride page's: each
+     * item at its own shape, a snapping strip that bleeds to the edge on a
+     * phone and a justified gallery from the desktop breakpoint up. One list
+     * serves both, switched in CSS, so the page pays for each image once.
+     */
+    size?: "thumb" | "shot";
+  }>(),
+  { size: "thumb" },
+);
 
 defineEmits<{ open: [index: number] }>();
 
 const strip = useTemplateRef<HTMLElement>("strip");
+
+/**
+ * Width over height, per item, once its image has loaded. Until then a photo
+ * is assumed landscape and a video portrait, the shapes a phone shoots most.
+ */
+const ratios = ref(new Map<string, number>());
+
+function ratioOf(item: RideMedia): number {
+  return ratios.value.get(item.id) ?? (item.kind === "video" ? 9 / 16 : 4 / 3);
+}
+
+function measureShot(item: RideMedia, image: HTMLImageElement) {
+  if (image.naturalHeight === 0) return;
+  const ratio = image.naturalWidth / image.naturalHeight;
+  if (Math.abs(ratio - ratioOf(item)) < 0.01) return;
+  ratios.value = new Map(ratios.value).set(item.id, ratio);
+}
+
+function onShotLoad(item: RideMedia, event: Event) {
+  if (event.target instanceof HTMLImageElement) measureShot(item, event.target);
+}
+
+const shots = useTemplateRef<HTMLElement>("shots");
+
+// A server-rendered shot can finish loading before the component hydrates,
+// and its `load` event is gone by then. Those are measured where they stand.
+onMounted(() => {
+  for (const image of shots.value?.querySelectorAll("img") ?? []) {
+    const item = props.media.find((entry) => entry.id === image.dataset.id);
+    if (item && image.complete) measureShot(item, image);
+  }
+});
 
 /**
  * Whether items are still hidden past the trailing edge. The fade is painted
@@ -50,8 +94,59 @@ watch(() => props.media.length, measure, { flush: "post" });
 </script>
 
 <template>
+  <!-- The gallery's trailing pseudo-element soaks up a short last row, so its
+       items keep the row height rather than stretching to fill it. -->
   <ul
-    v-if="media.length > 0"
+    v-if="media.length > 0 && size === 'shot'"
+    ref="shots"
+    aria-label="Photos and video"
+    class="shots flex gap-2 max-md:-mx-4 max-md:snap-x max-md:snap-mandatory max-md:scroll-px-4 max-md:overflow-x-auto max-md:px-4 md:flex-wrap md:after:grow-[1000] md:after:content-['']"
+  >
+    <li
+      v-for="(item, index) in media"
+      :key="item.id"
+      class="max-md:shrink-0 max-md:snap-start md:grow-(--r) md:basis-[calc(var(--r)*150px)]"
+      :style="{ '--r': ratioOf(item) }"
+    >
+      <button
+        type="button"
+        class="group/shot relative block aspect-(--r) cursor-zoom-in overflow-hidden rounded-xl bg-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat max-md:h-[210px] md:w-full"
+        @click="$emit('open', index)"
+      >
+        <img
+          v-if="!posterFailed.has(item.id)"
+          :src="item.previewUrl ?? item.thumbnailUrl"
+          :data-id="item.id"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          :width="Math.round(210 * ratioOf(item))"
+          height="210"
+          class="block size-full object-cover transition-transform duration-500 ease-spring group-hover/shot:scale-[1.03] motion-reduce:transition-none"
+          @load="onShotLoad(item, $event)"
+          @error="onPosterError(item)"
+        />
+        <template v-if="item.kind === 'video'">
+          <span
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/45 to-transparent to-45%"
+          />
+          <span
+            aria-hidden="true"
+            class="pointer-events-none absolute top-1/2 left-1/2 flex size-10 -translate-1/2 items-center justify-center rounded-xl bg-black/40 text-white backdrop-blur-md"
+          >
+            <span class="ml-0.5 icon-[lucide--play] size-4" />
+          </span>
+        </template>
+        <span class="sr-only">
+          Open {{ item.kind }} {{ index + 1 }} of {{ media.length }}:
+          {{ item.alt }}
+        </span>
+      </button>
+    </li>
+  </ul>
+  <ul
+    v-else-if="media.length > 0"
     ref="strip"
     class="strip flex gap-1.5 overflow-x-auto"
     :class="{ clipped }"
@@ -112,6 +207,15 @@ watch(() => props.media.length, measure, { flush: "post" });
 }
 
 .strip::-webkit-scrollbar {
+  display: none;
+}
+
+.shots {
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.shots::-webkit-scrollbar {
   display: none;
 }
 

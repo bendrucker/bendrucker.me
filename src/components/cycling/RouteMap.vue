@@ -3,15 +3,33 @@ import { computed, ref, watch } from "vue";
 import { mapImageUrl } from "./basemap";
 import { decodePolyline, fitRoute } from "./geo";
 
-const props = defineProps<{
-  /** The ride the basemap is rendered for. See `Ride.id`. */
-  id?: string;
-  /** The ride's track as an encoded polyline. See `Ride.route`. */
-  route?: string;
-  width: number;
-  height: number;
-  label?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    /** The ride the basemap is rendered for. See `Ride.id`. */
+    id?: string;
+    /** The ride's track as an encoded polyline. See `Ride.route`. */
+    route?: string;
+    width: number;
+    height: number;
+    label?: string;
+    /**
+     * Scales to its container's width at the `width` by `height` shape, rather
+     * than standing at that size. The basemap is still rendered at the size
+     * named, so the two only part ways by the container's rounding.
+     */
+    fluid?: boolean;
+    /** Stands on the category's tint with the line in `--cat`, as a ride page's hero. */
+    tint?: boolean;
+    strokeWidth?: number;
+  }>(),
+  { fluid: false, tint: false, strokeWidth: 2 },
+);
+
+const box = computed(() =>
+  props.fluid
+    ? { width: "100%", aspectRatio: `${props.width} / ${props.height}` }
+    : { width: `${props.width}px`, height: `${props.height}px` },
+);
 
 const coordinates = computed(() =>
   props.route ? decodePolyline(props.route) : [],
@@ -68,8 +86,9 @@ watch(basemaps, () => {
 
 <template>
   <div
-    class="relative overflow-hidden bg-muted text-accent"
-    :style="{ width: `${width}px`, height: `${height}px` }"
+    class="relative overflow-hidden"
+    :class="tint ? 'tint-7 text-cat' : 'bg-muted text-accent'"
+    :style="box"
   >
     <template v-if="basemaps">
       <img
@@ -85,15 +104,18 @@ watch(basemaps, () => {
         :width="width"
         :height="height"
         class="absolute inset-0"
-        :class="theme === 'dark' ? 'hidden dark:block' : 'dark:hidden'"
+        :class="[
+          theme === 'dark' ? 'hidden dark:block' : 'dark:hidden',
+          fluid ? 'size-full' : '',
+        ]"
       />
     </template>
     <svg
       v-if="hasRoute"
       class="absolute inset-0"
       :viewBox="`0 0 ${width} ${height}`"
-      :width="width"
-      :height="height"
+      :width="fluid ? '100%' : width"
+      :height="fluid ? '100%' : height"
       role="img"
       :aria-label="label ?? 'Route map'"
     >
@@ -101,7 +123,7 @@ watch(basemaps, () => {
         :d="fitted.path"
         fill="none"
         stroke="currentColor"
-        stroke-width="2"
+        :stroke-width="strokeWidth"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
