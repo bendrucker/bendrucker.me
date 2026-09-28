@@ -166,12 +166,18 @@ both widths.
 
 ### Dependency Patches
 
-`patch-package` applies `patches/` on every install. The one patch narrows what
-`@cloudflare/vite-plugin`'s runner re-evaluates on a server reload: the edited
-file and its importers, rather than every module in workerd. That took an
-`.astro` save from about 490ms to 290ms. A bump of the plugin that moves the
-patched code fails the install, and the patch has to be regenerated with
-`npx patch-package @astrojs/cloudflare/@cloudflare/vite-plugin` or dropped.
+`patch-package` applies `patches/` on every install. Both patches cut the time
+from saving a file to the browser showing it under `astro dev`:
+
+- `@cloudflare/vite-plugin`'s runner re-evaluates only the edited file and its
+  importers on a server reload, rather than every module in workerd. An
+  `.astro` save went from about 490ms to 290ms.
+- Astro writes its content store 50ms after a change rather than 500ms, and
+  the reload waits on that write. A `.md` save went from about 780ms to 520ms.
+
+A bump that moves the patched code fails the install. Regenerate the patch
+with `npx patch-package <package>` (the plugin's is
+`@astrojs/cloudflare/@cloudflare/vite-plugin`) or drop it.
 
 ### New Worktrees
 
