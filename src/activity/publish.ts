@@ -29,6 +29,12 @@ const publishedActivity = z.object({
   activityId: text,
   stravaId: nullable(text),
   name: nullable(z.string()),
+  // Blank is the same as none, so a ride never shows an empty dek. The hub
+  // sends it only once it has one, so the key is optional here as well.
+  description: z
+    .string()
+    .transform((value) => value.trim() || null)
+    .nullish(),
   sport: text,
   startedAt: text.refine(
     (value) => Number.isFinite(Date.parse(value)),
@@ -76,6 +82,7 @@ export async function publishActivity(
       activityId: activity.activityId,
       stravaId: activity.stravaId,
       name: activity.name,
+      description: activity.description ?? null,
       sport: activity.sport,
       startedAt: activity.startedAt,
       timezone: activity.timezone,
@@ -99,6 +106,7 @@ export async function publishActivity(
       conflict.column("activityId").doUpdateSet((eb) => ({
         stravaId: eb.ref("excluded.stravaId"),
         name: eb.ref("excluded.name"),
+        description: eb.ref("excluded.description"),
         sport: eb.ref("excluded.sport"),
         startedAt: eb.ref("excluded.startedAt"),
         timezone: eb.ref("excluded.timezone"),

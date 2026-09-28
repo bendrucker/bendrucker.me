@@ -67,8 +67,12 @@ function select(value: unknown) {
       :value="option.value"
       :aria-label="iconOnly ? option.label : undefined"
       :title="iconOnly ? option.label : undefined"
-      class="inline-flex items-center gap-1.5 rounded-[7px] text-dim transition-[color,background-color,box-shadow] duration-200 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cat data-[state=checked]:bg-background data-[state=checked]:text-cat data-[state=checked]:shadow-[0_1px_2px_var(--shadow)]"
+      class="inline-flex items-center gap-1.5 rounded-[7px] transition-[color,background-color,box-shadow] duration-200 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cat data-[state=checked]:bg-background data-[state=checked]:text-cat data-[state=checked]:shadow-[0_1px_2px_var(--shadow)]"
       :class="[
+        // The track darkens a tinted route's ground, and `dim` on it falls
+        // short of 4.5:1 in the light theme, so an unchecked segment on a
+        // track takes the foreground at a strength that clears it.
+        list ? 'text-dim' : 'text-foreground/70',
         list
           ? 'min-h-9 justify-start px-2.5 text-sm'
           : size === 'sm'

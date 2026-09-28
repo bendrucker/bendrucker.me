@@ -38,10 +38,13 @@ describe("isActivityPath", () => {
     expect(isActivityPath("/activity/code")).toBe(true);
     expect(isActivityPath("/activity/code/2024")).toBe(true);
     expect(isActivityPath("/")).toBe(true);
+    expect(isActivityPath("/rides")).toBe(true);
+    expect(isActivityPath("/rides/01KX8GTM6RBTZH5J8CEQXEDEBV")).toBe(true);
   });
 
   it("leaves everything else to routeRules", () => {
     expect(isActivityPath("/about")).toBe(false);
+    expect(isActivityPath("/ridesharing")).toBe(false);
     expect(isActivityPath("/posts/some-post")).toBe(false);
     expect(isActivityPath("/llms.txt")).toBe(false);
   });

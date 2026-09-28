@@ -1,0 +1,175 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import ItemHeader from "@/components/parts/ItemHeader.vue";
+import StatTile from "@/components/parts/StatTile.vue";
+import RouteMap from "@/components/cycling/RouteMap.vue";
+import RideGallery from "@/components/rides/RideGallery.vue";
+import { HERO_MAP, HERO_MAP_PHONE } from "@/components/cycling/basemap";
+import { queryRideById, type RideDetail } from "@/activity/feed";
+import { isEnabled, SITE } from "@/config";
+import { getDb } from "@/db";
+import { rethrowLocally } from "@/fallback";
+import { previewUrl } from "@/photos";
+import {
+  climbUnit,
+  distanceUnit,
+  formatClimb,
+  formatDistance,
+  fullDate,
+  parseUnits,
+} from "@/rides/format";
+import { rideTransitionName, ridesHref } from "@/rides/links";
+import { isHilly } from "@/rides/rank";
+
+if (!isEnabled("rides")) return Astro.rewrite("/404");
+
+// Activity ids are ULIDs. Anything else is refused before it reaches a query,
+// and before it can land in a map URL the worker would have to escape.
+const ID = /^[A-Za-z0-9_-]{1,64}$/;
+const id = Astro.params.id ?? "";
+if (!ID.test(id)) return Astro.rewrite("/404");
+
+let detail: RideDetail | null = null;
+try {
+  detail = await queryRideById(await getDb(), id);
+} catch (error) {
+  rethrowLocally(error, "Failed to load ride", { id });
+}
+if (detail === null) return Astro.rewrite("/404");
+
+const { ride, distanceM, elevationM, description } = detail;
+const units = parseUnits(Astro.url.searchParams.get("units"));
+const thisYear = String(new Date().getUTCFullYear());
+const hilly = isHilly({ distanceM, climbM: elevationM });
+const media = ride.media.map((item) => ({
+  ...item,
+  previewUrl: previewUrl(item.id),
+}));
+const mapLabel = `Route of ${ride.name}`;
+---
+
+<Layout
+  title={`${ride.name} | ${SITE.title}`}
+  description={description ??
+    `${ride.name}, a ride on ${fullDate(ride.startedAt.slice(0, 10), "")}.`}
+  credits={ride.route ? ["maps"] : []}
+  sourcePath="src/pages/rides/[id].astro"
+>
+  <main id="main-content" class="flex-1 bg-background cat-rides">
+    <div
+      data-ride-page
+      class="mx-auto flex w-full max-w-[680px] flex-col gap-4 px-4 pt-1.5 pb-10 md:gap-5 md:px-10 md:pt-6 md:pb-14"
+    >
+      <ItemHeader
+        title={ride.name}
+        backLabel="Rides"
+        backHref={ridesHref({ view: "log", q: "", units })}
+        date={fullDate(ride.startedAt.slice(0, 10), thisYear)}
+        dek={description ?? undefined}
+        transitionName={rideTransitionName(ride.id)}
+      >
+        {
+          ride.route && (
+            <div slot="hero" class="relative my-2 overflow-hidden rounded-2xl">
+              <RouteMap
+                id={ride.id}
+                route={ride.route}
+                width={HERO_MAP_PHONE.width}
+                height={HERO_MAP_PHONE.height}
+                label={mapLabel}
+                fluid
+                tint
+                strokeWidth={3}
+                class="md:hidden"
+              />
+              <RouteMap
+                id={ride.id}
+                route={ride.route}
+                width={HERO_MAP.width}
+                height={HERO_MAP.height}
+                label={mapLabel}
+                fluid
+                tint
+                strokeWidth={3}
+                class="max-md:hidden"
+              />
+              {ride.stravaUrl && (
+                <a
+                  href={ride.stravaUrl}
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Open on Strava"
+                  title="Open on Strava"
+                  class="absolute right-2.5 bottom-2.5 inline-flex size-7 items-center justify-center rounded-lg text-dim opacity-60 transition-[opacity,background-color,translate] duration-[200ms,200ms,350ms] ease-spring hover:translate-x-px hover:-translate-y-px hover:bg-background hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-cat"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="icon-[lucide--arrow-up-right] size-3.5"
+                  />
+                </a>
+              )}
+            </div>
+          )
+        }
+      </ItemHeader>
+
+      {
+        (distanceM !== null || elevationM !== null) && (
+          <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-1.5">
+            {distanceM !== null && (
+              <StatTile
+                value={formatDistance(distanceM, units)}
+                unit={distanceUnit(units)}
+                label="distance"
+              />
+            )}
+            {elevationM !== null && (
+              <StatTile
+                value={formatClimb(elevationM, units)}
+                unit={climbUnit(units)}
+                label="climbing"
+                icon={hilly ? "mountain" : undefined}
+              />
+            )}
+          </div>
+        )
+      }
+
+      {
+        media.length > 0 && (
+          <RideGallery client:visible media={media} rideName={ride.name} />
+        )
+      }
+
+      {
+        !ride.route && ride.stravaUrl && (
+          <a
+            href={ride.stravaUrl}
+            target="_blank"
+            rel="noopener"
+            aria-label="Open on Strava"
+            title="Open on Strava"
+            class="inline-flex size-7 items-center justify-center self-end rounded-lg text-dim opacity-60 transition-[opacity,background-color] hover:bg-hover hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-cat"
+          >
+            <span
+              aria-hidden="true"
+              class="icon-[lucide--arrow-up-right] size-3.5"
+            />
+          </a>
+        )
+      }
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { linkBackToList } from "@/rides/listEntry";
+  import "@/rides/morph";
+
+  // Runs on every arrival, since the router swaps one ride page for another
+  // without loading this script again.
+  document.addEventListener("astro:page-load", () => {
+    const back = document.querySelector("[data-ride-page] header > a");
+    if (back instanceof HTMLAnchorElement) linkBackToList(back);
+  });
+</script>

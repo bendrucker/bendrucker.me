@@ -27,6 +27,7 @@ function activity(
     activityId: "a1",
     stravaId: "9911",
     name: "Morning Ride",
+    description: null,
     sport: "ride",
     startedAt: "2026-01-01T14:00:00.000Z",
     timezone: "America/Los_Angeles",
@@ -71,6 +72,25 @@ describe("publishActivity", () => {
     expect(rows[0]!.name).toBe("Renamed");
     expect(rows[0]!.distanceM).toBe(50000);
     expect(rows[0]!.elevationProfile).toBeNull();
+  });
+
+  it("stores a description, trimmed", async () => {
+    await publishActivity(
+      store,
+      activity({ description: "  In the fog, above the fog\n" }),
+    );
+
+    expect((await feedRow()).description).toBe("In the fog, above the fog");
+  });
+
+  it.each([
+    ["missing", {}],
+    ["blank", { description: "  " }],
+  ])("stores a %s description as null", async (_label, fields) => {
+    const { description: _, ...rest } = activity();
+    await publishActivity(store, { ...rest, ...fields });
+
+    expect((await feedRow()).description).toBeNull();
   });
 
   it("stores a track thinned to what a card draws", async () => {

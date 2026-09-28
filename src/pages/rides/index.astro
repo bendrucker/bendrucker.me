@@ -1,0 +1,72 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import RidesRoute from "@/components/rides/RidesRoute.vue";
+import { category } from "@/categories";
+import { isEnabled, SITE } from "@/config";
+import { getDb } from "@/db";
+import { rethrowLocally } from "@/fallback";
+import { parseUnits } from "@/rides/format";
+import { parseView } from "@/rides/links";
+import { queryRidesPage, type RidesPage } from "@/rides/query";
+
+if (!isEnabled("rides")) return Astro.rewrite("/404");
+
+const cat = category("rides");
+const params = Astro.url.searchParams;
+const view = parseView(params.get("view"));
+const q = (params.get("q") ?? "").slice(0, 100);
+const units = parseUnits(params.get("units"));
+
+let page: RidesPage;
+try {
+  page = await queryRidesPage(await getDb(), q);
+} catch (error) {
+  rethrowLocally(error, "Failed to load rides");
+  page = {
+    latestDay: null,
+    highlights: [],
+    months: [],
+    logCursor: null,
+    records: { longest: [], climbing: [] },
+    matchRecords: null,
+    routes: [],
+    matches: null,
+    partial: false,
+  };
+}
+
+const thisYear = String(new Date().getUTCFullYear());
+
+// One island renders the whole frame, since its views, search, and units are
+// state the sidebar and the list share. `RouteLayout` hands each region to a
+// separate slot, and separate islands cannot share state. The route tiles are
+// the ride's own track with no basemap, so nothing here needs the map credit a
+// ride's own page carries.
+---
+
+<Layout
+  title={`${cat.name} | ${SITE.title}`}
+  description="My rides: the log, the routes, and the records."
+  credits={[]}
+  sourcePath="src/pages/rides/index.astro"
+>
+  <RidesRoute
+    client:load
+    view={view}
+    q={q}
+    units={units}
+    thisYear={thisYear}
+    highlights={page.highlights}
+    months={page.months}
+    logCursor={page.logCursor}
+    records={page.records}
+    matchRecords={page.matchRecords}
+    routes={page.routes}
+    matches={page.matches}
+    partial={page.partial}
+  />
+</Layout>
+
+<script>
+  import "@/rides/morph";
+</script>
