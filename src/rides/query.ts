@@ -356,12 +356,13 @@ function rankInYear(column: "distanceM" | "elevationM") {
 /**
  * Every period's records: all time, then each year newest first. Indoor rides
  * are left out, and so is a manual entry with no distance, which never went
- * anywhere.
+ * anywhere. Climbs are read whole, since one named climb's best effort can sit
+ * anywhere in a year, and they are a few small columns each.
  */
 export async function queryRideRecords(
   db: Kysely<Database>,
 ): Promise<PeriodRecords[]> {
-  const [rows, points] = await Promise.all([
+  const [rows, points, climbs] = await Promise.all([
     db
       .selectFrom((eb) =>
         eb
@@ -425,6 +426,30 @@ export async function queryRideRecords(
       .selectAll()
       .where((eb) => eb.or([eb("edge", "=", 1), eb("rank", "=", 1)]))
       .execute(),
+    db
+      .selectFrom("activityClimb")
+      .innerJoin(
+        "activityFeed",
+        "activityFeed.activityId",
+        "activityClimb.activityId",
+      )
+      .select([
+        "activityClimb.activityId",
+        "activityClimb.position",
+        "activityClimb.gainM",
+        "activityClimb.name as climb",
+        "activityFeed.name",
+        "activityFeed.startedAt",
+        "activityFeed.timezone",
+      ])
+      .where("activityFeed.sport", "=", "ride")
+      .where((eb) =>
+        eb.or([
+          eb("activityFeed.indoor", "is", null),
+          eb("activityFeed.indoor", "=", 0),
+        ]),
+      )
+      .execute(),
   ]);
   return rankPeriods(
     rows.map((row) => ({
@@ -440,6 +465,14 @@ export async function queryRideRecords(
       day: wallClock(point.startedAt, point.timezone).slice(0, 10),
       durationS: point.durationS,
       watts: Math.round(point.watts),
+    })),
+    climbs.map((climb) => ({
+      id: climb.activityId,
+      position: climb.position,
+      climb: climb.climb,
+      ride: climb.name ?? UNNAMED,
+      day: wallClock(climb.startedAt, climb.timezone).slice(0, 10),
+      gainM: Math.round(climb.gainM),
     })),
   );
 }

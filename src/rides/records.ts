@@ -1,6 +1,7 @@
 // The Records view: for all time and for each year, the best power held over a
-// ladder of durations and the rides that went furthest, climbed most, and
-// moved longest. Only outdoor rides count, and only a power meter's figures.
+// ladder of durations, the rides that went furthest and climbed most, and the
+// biggest single climbs. Only outdoor rides count, and only a power meter's
+// figures.
 //
 // The page renders one period and the island fetches the others as the reader
 // picks them, so every period travels as the compact tuples below and the
@@ -36,6 +37,19 @@ export type RecordTuple = [string, string, string, number, number | null];
 /** A power best: `[durationS, watts, id, name, day]`. */
 export type PowerTuple = [number, number, string, string, string];
 
+/**
+ * One climb within a ride: `[id, position, climb, ride, day, gainM]`. The
+ * climb's name is null where OpenStreetMap had nothing near its summit.
+ */
+export type ClimbTuple = [
+  string,
+  number,
+  string | null,
+  string,
+  string,
+  number,
+];
+
 export interface PeriodRecords {
   /** `all`, or a year. */
   period: string;
@@ -43,6 +57,7 @@ export interface PeriodRecords {
   power: PowerTuple[];
   longest: RecordTuple[];
   climbing: RecordTuple[];
+  climbs: ClimbTuple[];
 }
 
 /** What the view renders from: one period, and every period it can pick. */
@@ -68,6 +83,15 @@ const powerTuple = z.tuple([
   z.string(),
 ]) satisfies z.ZodMiniType<PowerTuple>;
 
+const climbTuple = z.tuple([
+  z.string(),
+  z.number(),
+  z.nullable(z.string()),
+  z.string(),
+  z.string(),
+  z.number(),
+]) satisfies z.ZodMiniType<ClimbTuple>;
+
 export const recordsPage = z.object({
   periods: z.array(z.string()),
   records: z.object({
@@ -75,6 +99,7 @@ export const recordsPage = z.object({
     power: z.array(powerTuple),
     longest: z.array(recordTuple),
     climbing: z.array(recordTuple),
+    climbs: z.array(climbTuple),
   }),
 }) satisfies z.ZodMiniType<RecordsPage>;
 
@@ -115,6 +140,17 @@ export interface PowerPoint {
   watts: number;
 }
 
+/** One climb as the ranking reads it, named for its ride. */
+export interface ClimbEffort {
+  id: string;
+  /** Its order within the ride, which keys it beside the ride's other climbs. */
+  position: number;
+  climb: string | null;
+  ride: string;
+  day: string;
+  gainM: number;
+}
+
 export function toRecordTuple(row: RecordRow): RecordTuple {
   const { id, name, day, distanceM, climbM } = row;
   return [id, name, day, distanceM, climbM];
@@ -138,6 +174,7 @@ export function fromRecordTuple([
 export function rankPeriods(
   rows: readonly RecordRow[],
   points: readonly PowerPoint[],
+  climbs: readonly ClimbEffort[] = [],
 ): PeriodRecords[] {
   if (rows.length === 0) return [];
   const years = [...new Set(rows.map((row) => row.day.slice(0, 4)))].toSorted(
@@ -150,6 +187,7 @@ export function rankPeriods(
       name,
       rows.filter((row) => within(row.day)),
       points.filter((point) => within(point.day)),
+      climbs.filter((climb) => within(climb.day)),
     );
   };
   return [period(ALL_TIME), ...years.map((year) => period(year))];
@@ -170,7 +208,7 @@ export function pickRecords(
   if (period !== ALL_TIME) return null;
   return {
     periods: [ALL_TIME],
-    records: { period, power: [], longest: [], climbing: [] },
+    records: { period, power: [], longest: [], climbing: [], climbs: [] },
   };
 }
 
@@ -178,6 +216,7 @@ function rankPeriod(
   period: string,
   rows: readonly RecordRow[],
   points: readonly PowerPoint[],
+  climbs: readonly ClimbEffort[],
 ): PeriodRecords {
   const top = (measure: (row: RecordRow) => number | null) =>
     rows
@@ -212,5 +251,41 @@ function rankPeriod(
     power,
     longest: top((row) => row.distanceM),
     climbing: top((row) => row.climbM),
+    climbs: rankClimbs(climbs),
   };
+}
+
+/**
+ * A climb ridden many times places once, by its biggest effort, and the
+ * earlier ride keeps a tie. A climb OSM named nothing near is labeled with its
+ * ride, and two of those are rarely the same hill, so they are never merged.
+ */
+function rankClimbs(climbs: readonly ClimbEffort[]): ClimbTuple[] {
+  const byName = new Map<string, ClimbEffort>();
+  const unnamed: ClimbEffort[] = [];
+  for (const climb of climbs) {
+    if (climb.climb === null) {
+      unnamed.push(climb);
+      continue;
+    }
+    const standing = byName.get(climb.climb);
+    if (
+      standing === undefined ||
+      climb.gainM > standing.gainM ||
+      (climb.gainM === standing.gainM && climb.day < standing.day)
+    ) {
+      byName.set(climb.climb, climb);
+    }
+  }
+  return [...byName.values(), ...unnamed]
+    .toSorted((a, b) => b.gainM - a.gainM || a.day.localeCompare(b.day))
+    .slice(0, RECORD_ROWS)
+    .map(({ id, position, climb, ride, day, gainM }) => [
+      id,
+      position,
+      climb,
+      ride,
+      day,
+      gainM,
+    ]);
 }

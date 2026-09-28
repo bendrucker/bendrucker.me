@@ -5,8 +5,25 @@ import {
   parsePeriod,
   periodLabel,
   rankPeriods,
+  type ClimbEffort,
   type RecordRow,
 } from "./records";
+
+function climb(
+  id: string,
+  day: string,
+  overrides: Partial<ClimbEffort> = {},
+): ClimbEffort {
+  return {
+    id,
+    position: 0,
+    climb: null,
+    ride: `Ride ${id}`,
+    day,
+    gainM: 500,
+    ...overrides,
+  };
+}
 
 function row(id: string, day: string, overrides: Partial<RecordRow> = {}) {
   return {
@@ -68,6 +85,45 @@ describe("rankPeriods", () => {
 
     expect(all?.climbing.map(([id]) => id)).toEqual(["hill"]);
     expect(all?.longest.map(([id]) => id)).toEqual(["hill", "flat"]);
+  });
+
+  it("places a named climb once, by its biggest effort", () => {
+    const [all] = rankPeriods(
+      [row("first", "2024-05-01")],
+      [],
+      [
+        climb("first", "2024-05-01", { climb: "Mount Diablo", gainM: 1_000 }),
+        climb("tie", "2025-05-01", { climb: "Mount Diablo", gainM: 1_000 }),
+        climb("slow", "2025-06-01", { climb: "Mount Diablo", gainM: 900 }),
+        climb("a", "2025-07-01", { gainM: 800 }),
+        climb("b", "2025-08-01", { gainM: 800 }),
+      ],
+    );
+
+    expect(all?.climbs).toEqual([
+      ["first", 0, "Mount Diablo", "Ride first", "2024-05-01", 1_000],
+      ["a", 0, null, "Ride a", "2025-07-01", 800],
+      ["b", 0, null, "Ride b", "2025-08-01", 800],
+    ]);
+  });
+
+  it("ranks a year's climbs from that year's rides only", () => {
+    const periods = rankPeriods(
+      [row("old", "2024-05-01"), row("new", "2025-05-01")],
+      [],
+      [
+        climb("old", "2024-05-01", { climb: "Mount Diablo", gainM: 1_000 }),
+        climb("new", "2025-05-01", { climb: "Mount Diablo", gainM: 700 }),
+      ],
+    );
+
+    expect(
+      periods.map(({ period, climbs }) => [period, climbs.map(([id]) => id)]),
+    ).toEqual([
+      ["all", ["old"]],
+      ["2025", ["new"]],
+      ["2024", ["old"]],
+    ]);
   });
 });
 

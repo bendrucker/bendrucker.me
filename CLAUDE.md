@@ -308,8 +308,8 @@ month, and a section mounts as soon as it is scrolled to.
 ## Ride Records
 
 The Records view on `/rides` ranks all time and each year: best power over five
-durations, and the five longest rides and rides with the most climbing.
-`queryRideRecords` in `src/rides/query.ts` reads only each year's
+durations, the five longest rides and rides with the most climbing, and the
+five biggest climbs. `queryRideRecords` in `src/rides/query.ts` reads only each year's
 leaders, and `rankPeriods` in `src/rides/records.ts` ranks them.
 
 A year is the ride's local year, which differs from its UTC year only for a ride
@@ -323,8 +323,8 @@ which keeps the log's HTML free of records.
 
 ## Biggest Climbs
 
-The PRs tab ranks climbs from `activity_climb`, one row per climb, so a ride
-over Diablo and then Hamilton places twice. The rows are written at publish
+The Records view ranks climbs from `activity_climb`, one row per climb, so a
+ride over Diablo and then Hamilton places twice. The rows are written at publish
 time because a name costs an Overpass request, which a page render can't make.
 
 A climb is a segment of the walk `climbSpans` in `src/activity/climb.ts`
@@ -339,8 +339,8 @@ A ride often tops out below the summit its climb is known by, beside a lesser
 knoll, so the tallest peak in reach beats the nearest. Failing that, it takes
 the nearest drivable road within 60 m, less a trailing " Road". A climb OSM
 can't name is labeled with its ride and never merged with another. The list
-keeps each name's biggest effort. The OSM credit beneath the cycling views
-covers these names.
+keeps each name's biggest effort, and `rankClimbs` in `src/rides/records.ts`
+applies that per period.
 
 `publishActivity` reuses a stored name for an unchanged summit, asking Overpass
 again for a changed route or a summit that came back unnamed. After a change to

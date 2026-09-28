@@ -185,6 +185,23 @@ function recordLists(records: PeriodRecords): ShownList[] {
         climbFigure(row.climbM, props.units),
       ),
     },
+    {
+      key: "climbs",
+      label: "Biggest climbs",
+      none: "No climbs.",
+      rows: records.climbs.map(([id, position, climb, ride, day, gainM]) => {
+        const shownRow: ShownRow = {
+          key: `${id}:${position}`,
+          id,
+          title: climb ?? ride,
+          day,
+          figure: climbFigure(gainM, props.units),
+          hilly: true,
+        };
+        if (climb !== null) shownRow.text = ride;
+        return shownRow;
+      }),
+    },
   ];
 }
 

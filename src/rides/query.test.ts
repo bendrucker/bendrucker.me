@@ -383,6 +383,37 @@ describe("queryRideRecords", () => {
     }
   });
 
+  it("ranks outdoor rides' climbs under the ride's local day", async () => {
+    await seed(
+      ride("road", { name: "Diablo loop" }),
+      ride("zwift", { startedAt: "2026-09-19T15:00:00Z", indoor: true }),
+    );
+    await db
+      .insertInto("activityClimb")
+      .values(
+        [
+          ["road", 0, 850.4, "Mount Diablo"],
+          ["road", 1, 300, null],
+          ["zwift", 0, 1_500, "Alpe du Zwift"],
+        ].map(([activityId, position, gainM, name]) => ({
+          activityId: String(activityId),
+          position: Number(position),
+          gainM: Number(gainM),
+          summitLat: 37.88,
+          summitLng: -121.91,
+          name: name === null ? null : String(name),
+        })),
+      )
+      .execute();
+
+    const all = period(await queryRideRecords(db), "all");
+
+    expect(all.climbs).toEqual([
+      ["road", 0, "Mount Diablo", "Diablo loop", "2026-09-20", 850],
+      ["road", 1, null, "Diablo loop", "2026-09-20", 300],
+    ]);
+  });
+
   it("takes power from a meter only, the best of each duration", async () => {
     await seed(
       ride("meter"),
@@ -434,6 +465,7 @@ describe("queryRideRecords", () => {
         power: [],
         longest: [],
         climbing: [],
+        climbs: [],
       },
     });
   });

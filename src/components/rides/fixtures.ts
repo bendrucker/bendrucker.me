@@ -5,6 +5,7 @@ import {
   LADDER_DURATIONS,
   pickRecords,
   rankPeriods,
+  type ClimbEffort,
   type PeriodRecords,
   type PowerPoint,
   type RecordRow,
@@ -143,9 +144,25 @@ const powerPoints: PowerPoint[] = recordRows.flatMap((ride, index) =>
       })),
 );
 
+// Names repeat so the list shows a climb ridden twice placing once, and some
+// are null for a summit OpenStreetMap had nothing near.
+const CLIMB_NAMES = ["Mount Diablo", "Mount Hamilton", null, "Old La Honda"];
+
+const climbEfforts: ClimbEffort[] = recordRows
+  .filter((ride) => (ride.climbM ?? 0) >= 450)
+  .map((ride, index) => ({
+    id: ride.id,
+    position: 0,
+    climb: CLIMB_NAMES[index % CLIMB_NAMES.length] ?? null,
+    ride: ride.name,
+    day: ride.day,
+    gainM: Math.round((ride.climbM ?? 0) * 0.7),
+  }));
+
 export const recordPeriods: PeriodRecords[] = rankPeriods(
   recordRows,
   powerPoints,
+  climbEfforts,
 );
 
 /** What the page renders for a period, as the route would answer for it. */

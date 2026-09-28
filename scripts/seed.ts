@@ -32,7 +32,6 @@ import type { ClimbNamer } from "../src/activity/climb-name";
 import type { ActivityStore } from "../src/activity/store";
 import { haversineMiles } from "../src/activity/track";
 import type { Coordinate } from "../src/activity/types";
-import { noClimbNames } from "../src/test/db";
 import {
   MARIN,
   NAPA,
@@ -59,9 +58,9 @@ async function main(): Promise<void> {
     await clear(store, env.RAW);
 
     const rides = remote ? exportProduction() : seedRides();
-    // Real rides stay unnamed rather than asking Overpass about every one at
-    // once, which it answers with 429s.
-    const nameClimbs = remote ? noClimbNames : standInNames;
+    // Real rides take the names production already looked up, rather than
+    // asking Overpass about every one at once, which it answers with 429s.
+    const nameClimbs = remote ? productionNames() : standInNames;
     for (const { activity, bests } of rides) {
       await publishActivity(store, activity, nameClimbs);
       if (bests.length > 0) {
@@ -161,6 +160,34 @@ const remoteActivity = z.object({
   // Absent until the migration that adds it reaches production.
   indoor: z.number().nullish(),
 });
+
+const remoteClimb = z.object({
+  summit_lat: z.number(),
+  summit_lng: z.number(),
+  name: z.string().nullable(),
+});
+
+function summitKey([lat, lng]: Coordinate): string {
+  return `${lat},${lng}`;
+}
+
+/**
+ * Names production stored for each summit. A seeded ride finds its climbs from
+ * the same stored profile and route the backfill read, so its summits match.
+ */
+function productionNames(): ClimbNamer {
+  const names = new Map(
+    queryD1(
+      remoteClimb,
+      "select summit_lat, summit_lng, name from activity_climb where name is not null",
+    ).map((climb) => [
+      summitKey([climb.summit_lat, climb.summit_lng]),
+      climb.name,
+    ]),
+  );
+  return async (summits) =>
+    summits.map((summit) => names.get(summitKey(summit)) ?? null);
+}
 
 const remoteBest = z.object({
   activity_id: z.string(),
