@@ -1,6 +1,7 @@
 import { sql, type CompiledQuery, type Kysely } from "kysely";
 import type { Database } from "../db";
-import type { RepoActivity } from "@workspace/github";
+import type { RepoActivity, WorkItems } from "@workspace/github";
+import { workStatements } from "./work";
 
 export function upsertRepo(db: Kysely<Database>, repo: RepoActivity) {
   return db
@@ -140,18 +141,24 @@ export function upsertLanguageExtension(
 /**
  * Every statement a fetch translates to, sorted so that two fetches carrying
  * the same data compile identically no matter what order GitHub returned the
- * repos in. `hashStatements` reads that as "nothing to write".
+ * repos in. `hashStatements` reads that as "nothing to write". Pull requests
+ * and issues follow every repository row, which they reference.
  */
 export function activityStatements(
   db: Kysely<Database>,
   repos: RepoActivity[],
+  work: WorkItems = { pullRequests: [], issues: [] },
 ): CompiledQuery[] {
-  return repos
-    .toSorted(
-      (a, b) => a.owner.localeCompare(b.owner) || a.name.localeCompare(b.name),
-    )
-    .flatMap((repo) => [
-      upsertRepo(db, repo).compile(),
-      upsertActivity(db, repo).compile(),
-    ]);
+  return [
+    ...repos
+      .toSorted(
+        (a, b) =>
+          a.owner.localeCompare(b.owner) || a.name.localeCompare(b.name),
+      )
+      .flatMap((repo) => [
+        upsertRepo(db, repo).compile(),
+        upsertActivity(db, repo).compile(),
+      ]),
+    ...workStatements(db, work),
+  ];
 }

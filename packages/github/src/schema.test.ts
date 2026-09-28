@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { contributionsResponse, issueSearchPage } from "./schema";
+import {
+  contributionsResponse,
+  issueSearchPage,
+  workNodesResponse,
+} from "./schema";
 
 const repository = {
   name: "repo",
@@ -120,5 +124,58 @@ describe("contributionsResponse", () => {
     };
 
     expect(() => contributionsResponse.parse(response)).toThrow();
+  });
+});
+
+const pullRequest = {
+  __typename: "PullRequest",
+  id: "PR_1",
+  number: 1,
+  title: "Add a thing",
+  state: "MERGED",
+  isDraft: false,
+  createdAt: "2024-01-01T00:00:00Z",
+  mergedAt: "2024-01-02T00:00:00Z",
+  additions: 3,
+  deletions: 1,
+  reactions: { totalCount: 2 },
+  repository: { name: "repo", owner: { login: "bendrucker" } },
+};
+
+const openIssue = {
+  __typename: "Issue",
+  id: "I_1",
+  number: 2,
+  title: "A thing is missing",
+  state: "OPEN",
+  stateReason: null,
+  createdAt: "2024-01-01T00:00:00Z",
+  closedAt: null,
+  reactions: { totalCount: 0 },
+  repository: { name: "repo", owner: { login: "bendrucker" } },
+};
+
+describe("workNodesResponse", () => {
+  it("reads pull requests and issues by their __typename", () => {
+    const { nodes } = workNodesResponse.parse({
+      nodes: [pullRequest, openIssue],
+    });
+
+    expect(nodes.map((node) => node?.__typename)).toEqual([
+      "PullRequest",
+      "Issue",
+    ]);
+  });
+
+  // A deleted pull request, or one the token can no longer see, comes back
+  // null. The stored row stays as it was rather than failing the sync.
+  it("keeps a node that no longer resolves as null", () => {
+    expect(workNodesResponse.parse({ nodes: [null] }).nodes).toEqual([null]);
+  });
+
+  it("rejects a pull request missing a field the row stores", () => {
+    const { additions: _additions, ...rest } = pullRequest;
+
+    expect(() => workNodesResponse.parse({ nodes: [rest] })).toThrow();
   });
 });

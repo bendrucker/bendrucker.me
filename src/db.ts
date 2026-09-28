@@ -66,9 +66,38 @@ export interface ActivityPowerCurveTable {
   watts: number;
 }
 
+// Timestamps are ISO strings. A merged or closed row is never rewritten.
+export interface PullRequestsTable {
+  id: string;
+  repoId: number;
+  number: number;
+  title: string;
+  state: "OPEN" | "CLOSED" | "MERGED";
+  isDraft: 0 | 1;
+  createdAt: string;
+  mergedAt: string | null;
+  additions: number;
+  deletions: number;
+  reactions: number;
+}
+
+export interface IssuesTable {
+  id: string;
+  repoId: number;
+  number: number;
+  title: string;
+  state: "OPEN" | "CLOSED";
+  stateReason: string | null;
+  createdAt: string;
+  closedAt: string | null;
+  reactions: number;
+}
+
 export interface Database {
   repos: ReposTable;
   repoActivity: RepoActivityTable;
+  pullRequests: PullRequestsTable;
+  issues: IssuesTable;
   languageExtensions: LanguageExtensionsTable;
   syncState: SyncStateTable;
   activityFeed: ActivityFeedTable;

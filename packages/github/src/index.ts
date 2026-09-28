@@ -1,8 +1,7 @@
-import { graphql } from "@octokit/graphql";
-import { createTokenAuth } from "@octokit/auth-token";
-import { z } from "zod";
+import type { z } from "zod";
 import { logger } from "@workspace/logger";
 import { aggregateActivityByRepository } from "./aggregate";
+import { createClient, type GraphQLClient } from "./client";
 import {
   contributionsResponse,
   issueSearchPage,
@@ -10,8 +9,14 @@ import {
   type RateLimit,
   type SearchPage,
 } from "./schema";
-
 export { aggregateActivityByRepository } from "./aggregate";
+export {
+  fetchWorkItems,
+  type Issue,
+  type PullRequest,
+  type RepositoryRef,
+  type WorkItems,
+} from "./work";
 
 export const GITHUB_EPOCH_YEAR = 2008;
 
@@ -37,6 +42,10 @@ export interface RepoActivity {
     color: string;
   } | null;
   stargazerCount: number;
+  /** Node ids of the pull requests the user opened here inside the window. */
+  pullRequestIds: string[];
+  /** Node ids of the issues the user opened here inside the window. */
+  issueIds: string[];
 }
 
 export interface GitHubConfig {
@@ -101,10 +110,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
             nodes {
               occurredAt
               pullRequest {
-                number
-                title
-                url
-                state
+                id
                 merged
                 mergedAt
               }
@@ -141,9 +147,7 @@ const GET_USER_CONTRIBUTIONS_QUERY = gql`
             nodes {
               occurredAt
               issue {
-                number
-                title
-                url
+                id
               }
             }
           }
@@ -256,7 +260,7 @@ const SEARCH_PAGE_SIZE = 100;
 const SEARCH_MAX_RESULTS = 1000;
 
 async function paginateSearch<T>(
-  graphqlWithAuth: typeof graphql,
+  graphqlWithAuth: GraphQLClient,
   query: string,
   searchQuery: string,
   page: z.ZodType<SearchPage<T>>,
@@ -286,16 +290,7 @@ export async function fetchGitHubActivity(
   token: string,
   config: GitHubConfig,
 ): Promise<GitHubActivityResult> {
-  const auth = createTokenAuth(token);
-
-  const graphqlWithAuth = graphql.defaults({
-    request: {
-      hook: auth.hook,
-    },
-    headers: {
-      "user-agent": `${config.title} Activity Fetcher`,
-    },
-  });
+  const graphqlWithAuth = createClient(token, config.title);
 
   const now = new Date();
   const to = config.to ?? now;
