@@ -21,15 +21,25 @@ import { execFileSync } from "node:child_process";
 import { Resvg } from "@cf-wasm/resvg/node";
 import { logger } from "@workspace/logger";
 import { z } from "zod";
-import { connectD1 } from "./d1";
+import { connectD1, queryD1 } from "./d1";
 import {
   publishActivity,
   publishPowerCurve,
   type PowerBest,
   type PublishedActivity,
 } from "../src/activity/publish";
+import type { ClimbNamer } from "../src/activity/climb-name";
 import type { ActivityStore } from "../src/activity/store";
-import { seedRides, type SeededRide } from "../src/test/rides";
+import { haversineMiles } from "../src/activity/track";
+import type { Coordinate } from "../src/activity/types";
+import { noClimbNames } from "../src/test/db";
+import {
+  MARIN,
+  NAPA,
+  PENINSULA,
+  seedRides,
+  type SeededRide,
+} from "../src/test/rides";
 
 const DATABASE = "bendrucker-activity";
 
@@ -49,8 +59,11 @@ async function main(): Promise<void> {
     await clear(store, env.RAW);
 
     const rides = remote ? exportProduction() : seedRides();
+    // Real rides stay unnamed rather than asking Overpass about every one at
+    // once, which it answers with 429s.
+    const nameClimbs = remote ? noClimbNames : standInNames;
     for (const { activity, bests } of rides) {
-      await publishActivity(store, activity);
+      await publishActivity(store, activity, nameClimbs);
       if (bests.length > 0) {
         await publishPowerCurve(store, activity.activityId, bests);
       }
@@ -69,6 +82,30 @@ async function main(): Promise<void> {
     await dispose();
   }
 }
+
+/** Climbs from the region each seeded loop is drawn around. */
+const REGIONS: { center: Coordinate; names: (string | null)[] }[] = [
+  { center: MARIN, names: ["Mount Tamalpais", "Mount Vision", null] },
+  {
+    center: NAPA,
+    names: ["Mount Veeder", "Atlas Peak", "Howell Mountain", null],
+  },
+  { center: PENINSULA, names: ["Old La Honda", "Kings Mountain", null] },
+];
+
+const standInNames: ClimbNamer = async (summits) =>
+  summits.map((summit) => {
+    const region = REGIONS.reduce((best, candidate) =>
+      haversineMiles(candidate.center, summit) <
+      haversineMiles(best.center, summit)
+        ? candidate
+        : best,
+    );
+    const hash = Math.abs(
+      Math.round(summit[0] * 1e5) + Math.round(summit[1] * 1e5),
+    );
+    return region.names[hash % region.names.length] ?? null;
+  });
 
 /**
  * A fresh worktree has an empty state directory, and the proxy will happily
@@ -89,6 +126,7 @@ function applyMigrations(): void {
  */
 async function clear(store: ActivityStore, bucket: R2Bucket): Promise<void> {
   await store.db.deleteFrom("activityPowerCurve").execute();
+  await store.db.deleteFrom("activityClimb").execute();
   await store.db.deleteFrom("activityFeed").execute();
 
   let cursor: string | undefined;
@@ -135,20 +173,17 @@ const remoteBest = z.object({
 const storedProfile = z.array(z.number());
 const storedPhotoKeys = z.array(z.string());
 
-/** What `wrangler d1 execute --json` prints: one entry per statement. */
-const queryResult = z.array(z.object({ results: z.array(z.unknown()) })).min(1);
-
 /**
  * The real feed, read out of production D1 and written into the local one.
  * Photo bytes stay in the production bucket, so the placeholders below stand
  * in for them and the strips have something to draw.
  */
 function exportProduction(): SeededRide[] {
-  const activities = query(
+  const activities = queryD1(
     remoteActivity,
     "select * from activity_feed order by started_at",
   );
-  const bests = query(
+  const bests = queryD1(
     remoteBest,
     "select activity_id, duration_s, watts from activity_power_curve",
   );
@@ -187,18 +222,6 @@ function exportProduction(): SeededRide[] {
 
 function powerSource(value: string): PublishedActivity["powerSource"] {
   return z.enum(["measured", "estimated", "none"]).parse(value);
-}
-
-function query<T>(schema: z.ZodType<T>, sql: string): T[] {
-  const stdout = execFileSync(
-    "wrangler",
-    ["d1", "execute", DATABASE, "--remote", "--json", "--command", sql],
-    // The whole ride archive comes back as one JSON document, several times
-    // the 1 MiB Node buffers a child's stdout in by default.
-    { encoding: "utf-8", maxBuffer: 256 * 1024 * 1024 },
-  );
-  const [first] = queryResult.parse(JSON.parse(stdout));
-  return first!.results.map((row) => schema.parse(row));
 }
 
 /**

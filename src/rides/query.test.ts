@@ -7,7 +7,7 @@ import {
   type PublishedActivity,
 } from "@/activity/publish";
 import type { Database } from "@/db";
-import { createTestDb, testStore } from "@/test/db";
+import { createTestDb, noClimbNames, testStore } from "@/test/db";
 import {
   foldsLikeBrowser,
   MATCH_COUNT,
@@ -55,7 +55,7 @@ function ride(
 
 async function seed(...rides: PublishedActivity[]) {
   const store = testStore(db);
-  for (const row of rides) await publishActivity(store, row);
+  for (const row of rides) await publishActivity(store, row, noClimbNames);
 }
 
 describe("queryRidesPage", () => {

@@ -3,7 +3,7 @@ import type { Kysely } from "kysely";
 import { queryRideById } from "@/activity/feed";
 import { publishActivity, type PublishedActivity } from "@/activity/publish";
 import type { Database } from "@/db";
-import { createTestDb, testStore } from "@/test/db";
+import { createTestDb, noClimbNames, testStore } from "@/test/db";
 import {
   rideDetailUrl,
   rideDetailWire,
@@ -45,7 +45,7 @@ function ride(
 }
 
 async function detailOf(activity: PublishedActivity) {
-  await publishActivity(testStore(db), activity);
+  await publishActivity(testStore(db), activity, noClimbNames);
   const detail = await queryRideById(db, activity.activityId);
   if (detail === null) throw new Error("ride not found");
   return toRideDetailWire(detail);

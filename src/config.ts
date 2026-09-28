@@ -1,5 +1,6 @@
 export const SITE = {
   website: "https://www.bendrucker.me/",
+  trailingSlash: "always",
   author: "Ben Drucker",
   profile: "https://www.bendrucker.me/",
   desc: "Programmer, photographer, cyclist.",

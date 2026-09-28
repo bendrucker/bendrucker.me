@@ -1,0 +1,50 @@
+name: Sweep previews
+
+# The nightly backstop for what cleanup.yml missed: a failed or raced job, or
+# a preview made by hand.
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List what would be deleted without changing anything"
+        type: boolean
+        default: true
+
+concurrency:
+  group: sweep-previews
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: "☁️ Checkout repository"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: "📦 Setup Node.js"
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: "📦 Install dependencies"
+        run: npm ci
+
+      - name: "🔧 Build shared packages"
+        run: npm run build:packages
+
+      - name: "🧹 Sweep orphaned preview resources"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
+          # Null on a scheduled run, so only a manual dispatch can rehearse.
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+        run: npm run preview -- sweep ${{ env.DRY_RUN == 'true' && '--dry-run' || '' }}

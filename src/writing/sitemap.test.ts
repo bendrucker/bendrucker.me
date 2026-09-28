@@ -26,8 +26,8 @@ describe("writingSitemapPages", () => {
         "title: Joining Eaze\npubDatetime: 2015-01-01T12:00:00Z\ndraft: false",
     });
     expect(writingSitemapPages(SITE, { root, now: NOW })).toEqual([
-      "https://www.bendrucker.me/writing/going-all-in",
-      "https://www.bendrucker.me/writing/joining-eaze",
+      "https://www.bendrucker.me/writing/going-all-in/",
+      "https://www.bendrucker.me/writing/joining-eaze/",
     ]);
   });
 
@@ -45,7 +45,7 @@ describe("writingSitemapPages", () => {
       "Side Projects/valet.md": "pubDatetime: 2014-01-01T12:00:00Z",
     });
     expect(writingSitemapPages(SITE, { root, now: NOW })).toEqual([
-      "https://www.bendrucker.me/writing/side-projects/valet",
+      "https://www.bendrucker.me/writing/side-projects/valet/",
     ]);
   });
 });

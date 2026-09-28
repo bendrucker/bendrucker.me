@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { PhotoBucket, PhotoObject, Square } from "./photos";
-import { contentRange, isVideoKey, servePhoto, serveThumbnail } from "./photos";
+import {
+  contentRange,
+  isVideoKey,
+  routablePhotoRequest,
+  servePhoto,
+  serveThumbnail,
+} from "./photos";
 
 describe("isVideoKey", () => {
   it.each(["a.mp4", "a.MP4", "a.mov", "a.m4v"])("matches %s", (key) => {
@@ -268,4 +274,26 @@ describe("serveThumbnail", () => {
 
     expect(response.status).toBe(404);
   });
+});
+
+describe("routablePhotoRequest", () => {
+  it.each([
+    "/photos/raw/strava/activities/1/photos/a.jpg",
+    "/photos/thumbnails/1/raw/strava/activities/1/photos/a.mp4",
+  ])("adds the trailing slash Astro routes %s by", (path) => {
+    const request = new Request(`https://example.com${path}?v=1`, {
+      headers: { range: "bytes=0-1" },
+    });
+    const routed = routablePhotoRequest(request);
+    expect(routed.url).toBe(`https://example.com${path}/?v=1`);
+    expect(routed.headers.get("range")).toBe("bytes=0-1");
+  });
+
+  it.each(["/activity/cycling/", "/map/1/a/b.png", "/photos/a.jpg/"])(
+    "leaves %s alone",
+    (path) => {
+      const request = new Request(`https://example.com${path}`);
+      expect(routablePhotoRequest(request)).toBe(request);
+    },
+  );
 });

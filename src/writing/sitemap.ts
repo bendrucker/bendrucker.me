@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { join } from "node:path";
+import { slug } from "github-slugger";
 // Relative, because `astro.config.ts` imports this before the `@` alias exists.
-import { writingPath } from "../blog/path";
+import { getPath } from "../blog/path";
 
 const BLOG_PATH = "src/content/blog";
 
@@ -22,7 +23,7 @@ function published(source: string, now: Date): boolean {
  * Every published post's `/writing/<slug>` URL. The sitemap integration only
  * finds routes it can enumerate, and a post page renders on demand, so the
  * posts are read from the collection's files here. The file selection mirrors
- * the collection's `**\/[^_]*.md` glob.
+ * the collection's glob, which leaves out any `_` file or directory.
  */
 export function writingSitemapPages(
   site: string,
@@ -30,16 +31,28 @@ export function writingSitemapPages(
 ): string[] {
   const files = readdirSync(join(root, BLOG_PATH), { recursive: true })
     .map(String)
-    .filter((file) => file.endsWith(".md") && !basename(file).startsWith("_"))
+    .filter(
+      (file) =>
+        file.endsWith(".md") &&
+        !file.split("/").some((segment) => segment.startsWith("_")),
+    )
     .toSorted();
 
   return files
-    .filter((file) =>
-      published(readFileSync(join(root, BLOG_PATH, file), "utf8"), now),
-    )
-    .map((file) => {
-      const id = file.replace(/\.md$/, "");
-      const path = writingPath(id, `${BLOG_PATH}/${file}`);
-      return new URL(path, site).href;
+    .map((file) => ({
+      file,
+      source: readFileSync(join(root, BLOG_PATH, file), "utf8"),
+    }))
+    .filter(({ source }) => published(source, now))
+    .map(({ file, source }) => {
+      // The glob loader's id: a frontmatter `slug`, else each segment slugged.
+      const id =
+        field(source, "slug") ??
+        file
+          .replace(/\.md$/, "")
+          .split("/")
+          .map((segment) => slug(segment))
+          .join("/");
+      return new URL(getPath(id), site).href;
     });
 }

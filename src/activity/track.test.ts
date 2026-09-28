@@ -4,10 +4,12 @@ import {
   decodeProfile,
   encodePolyline,
   encodeProfile,
+  haversineMiles,
   MAX_ROUTE_POINTS,
   thin,
   thinPolyline,
 } from "./track";
+import type { Coordinate } from "./types";
 
 /** Google's documented polyline example. */
 const GOOGLE_EXAMPLE = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
@@ -38,9 +40,16 @@ describe("thin", () => {
   it("bounds a long series and keeps both endpoints", () => {
     const series = Array.from({ length: 1000 }, (_, i) => i);
     const kept = thin(series, 100);
-    expect(kept.length).toBeLessThanOrEqual(101);
+    expect(kept).toHaveLength(100);
     expect(kept[0]).toBe(0);
     expect(kept.at(-1)).toBe(999);
+  });
+
+  it("spaces the kept items evenly", () => {
+    const series = Array.from({ length: 1001 }, (_, i) => i);
+    expect(thin(series, 11)).toEqual([
+      0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+    ]);
   });
 });
 
@@ -54,7 +63,7 @@ describe("thinPolyline", () => {
     const full = decodePolyline(GOOGLE_EXAMPLE.repeat(400));
     const thinned = decodePolyline(thinPolyline(GOOGLE_EXAMPLE.repeat(400)));
     expect(full).toHaveLength(1200);
-    expect(thinned.length).toBeLessThanOrEqual(MAX_ROUTE_POINTS + 1);
+    expect(thinned).toHaveLength(MAX_ROUTE_POINTS);
     expect(thinned[0]).toEqual(full[0]);
     expect(thinned.at(-1)).toEqual(full.at(-1));
   });
@@ -98,5 +107,24 @@ describe("decodeProfile", () => {
 
   it("stops where only the second digit of a sample is outside it", () => {
     expect(decodeProfile("001gff")).toEqual([0]);
+  });
+});
+
+const LAX: Coordinate = [33.9416, -118.4085];
+const JFK: Coordinate = [40.6413, -73.7781];
+
+describe("haversineMiles", () => {
+  it("measures a known long distance", () => {
+    const miles = haversineMiles(LAX, JFK);
+    expect(miles).toBeGreaterThan(2468);
+    expect(miles).toBeLessThan(2472);
+  });
+
+  it("is zero for a point against itself", () => {
+    expect(haversineMiles(LAX, LAX)).toBe(0);
+  });
+
+  it("is symmetric", () => {
+    expect(haversineMiles(LAX, JFK)).toBeCloseTo(haversineMiles(JFK, LAX), 6);
   });
 });

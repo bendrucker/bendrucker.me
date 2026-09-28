@@ -5,7 +5,7 @@ import AdjacentNav from "@/components/parts/AdjacentNav.vue";
 import ItemHeader from "@/components/parts/ItemHeader.vue";
 import ReadingProgress from "@/components/parts/ReadingProgress.vue";
 import TagChips from "@/components/parts/TagChips.vue";
-import { writingPath } from "@/blog/path";
+import { getPath } from "@/blog/path";
 import { isEnabled, SITE } from "@/config";
 import { loadWriting } from "@/writing/load";
 import {
@@ -17,10 +17,10 @@ import {
 
 if (!isEnabled("writing")) return Astro.rewrite("/404");
 
-const pathname = Astro.url.pathname.replace(/\/$/, "");
+const pathname = Astro.url.pathname.replace(/\/?$/, "/");
 const { entries, rows, thisYear } = await loadWriting();
-const entry = entries.find((p) => writingPath(p.id, p.filePath) === pathname);
 const row = rows.find((r) => r.href === pathname);
+const entry = entries.find((p) => getPath(p.id) === pathname);
 if (!entry || !row) return Astro.rewrite("/404");
 
 const { Content } = await render(entry);
@@ -37,7 +37,7 @@ const ogPath =
   typeof ogImage === "string"
     ? ogImage
     : (ogImage?.src ??
-      (SITE.dynamicOgImage ? `${pathname}/index.png` : undefined));
+      (SITE.dynamicOgImage ? `${pathname}index.png` : undefined));
 ---
 
 <Layout

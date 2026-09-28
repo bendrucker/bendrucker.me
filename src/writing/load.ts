@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from "astro:content";
-import { writingPath } from "@/blog/path";
+import { getPath } from "@/blog/path";
 import { postFilter } from "@/blog/posts";
 import { SITE } from "@/config";
 import { localDay, postRows, type PostRow } from "./rows";
@@ -17,7 +17,7 @@ export async function loadWriting(now = new Date()): Promise<Writing> {
   return {
     entries,
     rows: postRows(entries, {
-      href: (post) => writingPath(post.id, post.filePath),
+      href: (post) => getPath(post.id),
       timeZone: SITE.timezone,
     }),
     thisYear: localDay(now, SITE.timezone).slice(0, 4),

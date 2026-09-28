@@ -18,15 +18,17 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 ## Commands
 
 ```bash
-npm run dev           # Spotlight + Astro dev server
-npm run dev:json      # Astro dev server with JSON logs (no Spotlight)
-npm run build         # packages → wrangler types → astro check → astro build
-npm test              # vitest, whole suite
-npm run lint          # oxlint + ESLint
-npm run lint:types    # oxlint's type-aware rules, via tsgolint
-npm run format        # Prettier
-npm run story:dev     # Histoire component stories on :6006
-npm run story:build   # Static story book into .histoire/dist
+npm run dev                # Spotlight + Astro dev server
+npm run dev:json           # Astro dev server with JSON logs (no Spotlight)
+npm run build              # packages → wrangler types → astro check → astro build
+npm test                   # vitest, whole suite
+npm run lint               # oxlint + ESLint
+npm run lint:types         # oxlint's type-aware rules, via tsgolint
+npm run format             # Prettier
+npm run story:dev          # Histoire component stories on :6006
+npm run story:build        # Static story book into .histoire/dist
+npm run preview -- deploy  # Build and deploy this branch as a Worker Preview
+npm run preview -- delete  # Remove this branch's previews and database
 ```
 
 The suite is the cheapest check here, a few seconds for the whole of it, and
@@ -235,6 +237,11 @@ refused rather than guessed at, since Astro decodes a path param with
 leaves the route line on the card's own ground. The story book has no worker and
 renders every card that way.
 
+A render that throws answers 500. The card falls back as it does for a 404. The
+edge never caches the error, so the next deploy redraws the map, and the failure
+shows in the worker's `/map/` status rate. A placeholder PNG would hide the bug
+for a year behind an immutable cache.
+
 A card carries both themes as separate images and swaps them with CSS, because
 the site's theme is an attribute a reader toggles rather than an OS setting.
 That costs two image requests where one is shown, in exchange for a toggle that
@@ -314,6 +321,32 @@ The page renders only the period it opens on, and only on the records view. The
 island fetches any other period from `/activity/cycling/records/<period>.json`,
 which keeps the log's HTML free of records.
 
+## Biggest Climbs
+
+The PRs tab ranks climbs from `activity_climb`, one row per climb, so a ride
+over Diablo and then Hamilton places twice. The rows are written at publish
+time because a name costs an Overpass request, which a page render can't make.
+
+A climb is a segment of the walk `climbSpans` in `src/activity/climb.ts`
+performs over the stored profile: a dip deeper than 5% of the ride's altitude
+range ends one segment and starts the next. A segment gaining at least 150 m is
+stored. Climbs come from the thinned profile and route that the feed already
+stores, so a backfilled ride and a freshly published one rank the same.
+
+`pickClimbName` names a climb after the tallest OpenStreetMap peak or pass
+within a kilometre of its summit, less a directional suffix like "West Peak".
+A ride often tops out below the summit its climb is known by, beside a lesser
+knoll, so the tallest peak in reach beats the nearest. Failing that, it takes
+the nearest drivable road within 60 m, less a trailing " Road". A climb OSM
+can't name is labeled with its ride and never merged with another. The list
+keeps each name's biggest effort. The OSM credit beneath the cycling views
+covers these names.
+
+`publishActivity` reuses a stored name for an unchanged summit, asking Overpass
+again for a changed route or a summit that came back unnamed. After a change to
+the climb or naming rule, `npm run backfill:climbs` recomputes every ride's
+climbs from production D1. `-- --dry-run` prints them first.
+
 ## Indoor Rides
 
 activity-hub flags trainer and Zwift rides as `indoor`. They stay in the log,
@@ -352,12 +385,30 @@ the pattern, and its keys are the names the parts accept.
 
 ## Workers
 
-All deploy via GitHub Actions matrix on push to `main`. Use `@workspace/logger` for logging.
+All deploy via GitHub Actions matrix on push to `main`, and a pull request
+deploys Worker Previews of them (below). Use `@workspace/logger` for logging.
 
-| Worker | Config                         | Purpose              |
-| ------ | ------------------------------ | -------------------- |
-| www    | `wrangler.toml`                | Main site, reads D1  |
-| github | `workers/github/wrangler.toml` | GitHub activity → D1 |
+| Worker  | Config                          | Purpose              |
+| ------- | ------------------------------- | -------------------- |
+| www     | `wrangler.toml`                 | Main site, reads D1  |
+| github  | `workers/github/wrangler.toml`  | GitHub activity → D1 |
+| stories | `workers/stories/wrangler.toml` | Component story book |
+
+### Previews
+
+A pull request deploys `www` and `stories` as Worker Previews named
+`pr-<number>`, and `npm run preview -- deploy` previews `www` for the current
+branch. A preview takes only assets, routes, and compatibility settings from the
+top level of `wrangler.toml`, so a new binding goes in the `previews` block too.
+
+Each preview gets its own D1 database, `bendrucker-activity-<name>`, seeded from
+production and migrated by the branch. `cleanup.yml` deletes a pull request's
+previews and database when it closes, and `sweep-previews.yml` nightly deletes
+any whose pull request has closed. A branch preview with no pull request is
+never swept. A worker added to the deploy matrix with `previews: true` also goes
+in the script's `WORKERS` list, or its previews are never deleted.
+
+### Generated Types
 
 Run `npx wrangler types` after changing any `wrangler.toml`. The `types` CI job
 regenerates types at the root and in each worker. On a pull request from a

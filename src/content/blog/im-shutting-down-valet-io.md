@@ -45,4 +45,4 @@ The 1,100+ closed-source commits on Valet.io apps are now [open source](https://
 
 ## What's Next
 
-I haven't thought about it too much. If you're interested in working with me, [drop me a line](mailto:bvdrucker@gmail.com). Right now, I'm really just looking forward to two weeks of travel with a clear head and an open mind. I'll be speaking at [ng-vegas](http://www.ng-vegas.org/) this week and then heading on to Amsterdam after that to spend time with family. Then I'll be ready to look for my next adventure.
+I haven't thought about it too much. If you're interested in working with me, [drop me a line](mailto:bvdrucker@gmail.com). Right now, I'm really just looking forward to two weeks of travel with a clear head and an open mind. I'll be speaking at [ng-vegas](https://web.archive.org/web/20150604042623/http://www.ng-vegas.org/) this week and then heading on to Amsterdam after that to spend time with family. Then I'll be ready to look for my next adventure.

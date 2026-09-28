@@ -11,6 +11,7 @@ import {
   publishActivity,
   publishPowerCurve,
 } from "./activity/publish";
+import { lookupClimbNames } from "./activity/climb-name";
 import { d1Store } from "./activity/store";
 
 export { ValidationError } from "./activity/publish";
@@ -22,7 +23,7 @@ export type {
 
 export class Publish extends WorkerEntrypoint<Env> {
   async publishActivity(row: unknown): Promise<void> {
-    await publishActivity(d1Store(this.env.ACTIVITY_DB), row);
+    await publishActivity(d1Store(this.env.ACTIVITY_DB), row, lookupClimbNames);
   }
 
   async publishPowerCurve(activityId: unknown, bests: unknown): Promise<void> {

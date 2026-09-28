@@ -103,6 +103,15 @@ export interface IssuesTable {
   reactions: number;
 }
 
+export interface ActivityClimbTable {
+  activityId: string;
+  position: number;
+  gainM: number;
+  summitLat: number;
+  summitLng: number;
+  name: string | null;
+}
+
 export interface Database {
   repos: ReposTable;
   repoActivity: RepoActivityTable;
@@ -112,6 +121,7 @@ export interface Database {
   syncState: SyncStateTable;
   activityFeed: ActivityFeedTable;
   activityPowerCurve: ActivityPowerCurveTable;
+  activityClimb: ActivityClimbTable;
 }
 
 export function createDb(d1: D1Database): Kysely<Database> {

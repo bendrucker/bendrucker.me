@@ -1,5 +1,4 @@
 import { getCollection } from "astro:content";
-import { writingPath } from "@/blog/path";
 import { getSortedPosts, postFilter } from "@/blog/posts";
 import { isEnabled } from "@/config";
 import type { Representation } from "./types";
@@ -14,9 +13,7 @@ export const writing: Representation = {
     if (!slug || !isEnabled("writing")) return null;
 
     const entries = await getCollection("blog", postFilter);
-    const entry = entries.find(
-      (post) => writingPath(post.id, post.filePath) === `/writing/${slug}`,
-    );
+    const entry = entries.find((post) => post.id === slug);
     if (entry?.body == null) return null;
     return `# ${entry.data.title}\n\n${entry.body}`;
   },
@@ -25,7 +22,8 @@ export const writing: Representation = {
     if (!isEnabled("writing")) return [];
     const entries = await getCollection("blog");
     return getSortedPosts(entries).map((post) => ({
-      path: writingPath(post.id, post.filePath),
+      // `/llms.txt` appends `.md` to this, so it carries no trailing slash.
+      path: `/writing/${post.id}`,
       title: post.data.title,
       description: post.data.description,
     }));
