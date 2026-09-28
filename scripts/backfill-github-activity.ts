@@ -40,6 +40,10 @@ async function rateLimitBackoff(rateLimit: RateLimit): Promise<void> {
 
 const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
+type WorkIdFields = "pullRequestIds" | "issueIds";
+type CachedRepo = Omit<RepoActivity, WorkIdFields> &
+  Partial<Pick<RepoActivity, WorkIdFields>>;
+
 function mergeRepos(a: RepoActivity[], b: RepoActivity[]): RepoActivity[] {
   const map = new Map<string, RepoActivity>();
 
@@ -61,6 +65,11 @@ function mergeRepos(a: RepoActivity[], b: RepoActivity[]): RepoActivity[] {
     existing.activitySummary.issueCount += repo.activitySummary.issueCount;
     existing.activitySummary.mergeCount += repo.activitySummary.mergeCount;
     existing.activitySummary.hasMergedPRs ||= repo.activitySummary.hasMergedPRs;
+    existing.pullRequestIds = [
+      ...existing.pullRequestIds,
+      ...repo.pullRequestIds,
+    ];
+    existing.issueIds = [...existing.issueIds, ...repo.issueIds];
   }
 
   return Array.from(map.values());
@@ -172,10 +181,18 @@ async function main() {
   for (let year = startYear; year <= currentYear; year++) {
     const cacheFile = join(cacheDir, `${year}.json`);
     if (!existsSync(cacheFile)) continue;
-    allRepos.push(...JSON.parse(readFileSync(cacheFile, "utf-8")));
+    // A year cached before authored items were tracked has no id lists.
+    const cached: CachedRepo[] = JSON.parse(readFileSync(cacheFile, "utf-8"));
+    allRepos.push(
+      ...cached.map((repo) => ({
+        ...repo,
+        pullRequestIds: repo.pullRequestIds ?? [],
+        issueIds: repo.issueIds ?? [],
+      })),
+    );
   }
 
-  await importActivity(allRepos, values.remote);
+  await importActivity(allRepos, values.remote, token);
 }
 
 try {

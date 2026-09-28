@@ -1,6 +1,6 @@
 import { logger } from "@workspace/logger";
 import { d1Store } from "../../src/activity/store";
-import { fetchActivity } from "../../src/activity/github";
+import { fetchActivity, fetchWork } from "../../src/activity/github";
 import { syncActivity } from "../../src/activity/sync";
 
 type Env = Required<Cloudflare.Env> & {
@@ -23,11 +23,15 @@ async function updateGitHubActivity(env: Env): Promise<void> {
     to: now,
   });
 
-  const result = await syncActivity(d1Store(env.ACTIVITY_DB), repos);
+  const store = d1Store(env.ACTIVITY_DB);
+  const work = await fetchWork(env.GITHUB_TOKEN, store.db, repos);
+  const result = await syncActivity(store, repos, { work });
 
   logger.info(
     {
       repositoryCount: repos.length,
+      pullRequestCount: work.pullRequests.length,
+      issueCount: work.issues.length,
       durationMs: Date.now() - startTime,
       ...result,
     },
