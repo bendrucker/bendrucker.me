@@ -40,22 +40,21 @@ const controls: StoryControlSet = {
     options: {
       epic: "map and photos",
       everyday: "short loop",
-      trackless: "photo, no route",
-      bare: "no route or photo",
+      trackless: "photos, no route",
+      bare: "no route or photos",
     },
   },
-  photo: { type: "checkbox", title: "photo" },
-  width: { type: "slider", title: "width", min: 280, max: 560, step: 10 },
+  photos: { type: "select", title: "photos", options: ["0", "1", "2", "4"] },
+  width: { type: "slider", title: "width", min: 280, max: 720, step: 10 },
 };
 
 function initState() {
   const ride: RideKey = "epic";
-  return { ride, photo: true, width: 358 };
+  return { ride, photos: "2", width: 358 };
 }
 
-function featureProps(key: RideKey, withPhoto: boolean) {
+function featureProps(key: RideKey, count: number) {
   const { ride, route, figures, hilly } = RIDES[key];
-  const [first] = ride.media;
   return {
     href: "#",
     id: ride.id,
@@ -64,10 +63,9 @@ function featureProps(key: RideKey, withPhoto: boolean) {
     figures,
     hilly,
     route,
-    photo:
-      withPhoto && first
-        ? { url: first.thumbnailUrl, alt: first.alt }
-        : undefined,
+    photos: ride.media
+      .slice(0, count)
+      .map((item) => ({ url: item.thumbnailUrl, alt: item.alt })),
   };
 }
 </script>
@@ -86,7 +84,9 @@ function featureProps(key: RideKey, withPhoto: boolean) {
           class="rounded-xl tint-5 p-4 cat-rides"
           :style="{ width: `${state.width}px`, maxWidth: '100%' }"
         >
-          <RideFeature v-bind="featureProps(state.ride, state.photo)" />
+          <RideFeature
+            v-bind="featureProps(state.ride, Number(state.photos))"
+          />
         </div>
       </template>
 
@@ -100,15 +100,15 @@ function featureProps(key: RideKey, withPhoto: boolean) {
 <docs lang="md">
 # Ride feature
 
-The Rides home card leads with its top highlight: the route map beside the
-ride's day, name, distance, and climbing, so the words show within the card's
-peek at either width. On a phone the map is 120px wide with one photo inset in
-its corner. From the desktop breakpoint up the map grows to 176px and the photo
-gets its own tile between the map and the words. Widen the frame past 768px of
+The Rides home card leads with its top highlight: the route map, then the
+ride's day, name, distance, and climbing, then a row of photos, so the words
+show within the card's peek at either width. The map is 120px wide on a phone
+and 176px from the desktop breakpoint up. Widen the frame past 768px of
 viewport to see that.
 
-A ride with no route drops the map and shows its photo alone, or only its
-words when it has neither.
+The row holds up to four photos and shows as many as the card has room for:
+two on a phone, three on a desktop card, and four on a wide one. A ride with no route
+drops the map and keeps its words and photos.
 
 The story book has no worker, so the map draws its route line on the card's
 tint with no basemap behind it. The photos are placeholder images.

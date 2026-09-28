@@ -12,8 +12,8 @@ export interface RideFeature {
   ride: RideRow;
   /** The track as an encoded polyline, when the ride has one to draw. */
   route?: string;
-  /** The ride's first photo, as a square thumbnail. Videos are passed over. */
-  photo?: { url: string; alt: string };
+  /** The ride's first four photos, as square thumbnails. Videos are passed over. */
+  photos: { url: string; alt: string }[];
 }
 
 export interface CodeFeature {
@@ -27,17 +27,16 @@ export interface HomeFeatures {
   code?: CodeFeature;
 }
 
-/** The top ride, with the track and a photo its page would show, when they loaded. */
+/** The top ride, with the track and photos its page would show, when they loaded. */
 export function rideFeature(
   ride: RideRow,
   detail: RideDetail | null,
 ): RideFeature {
-  const photo = detail?.ride.media.find((item) => item.kind === "photo");
-  return {
-    ride,
-    route: detail?.ride.route,
-    photo: photo && { url: photo.thumbnailUrl, alt: photo.alt },
-  };
+  const photos = (detail?.ride.media ?? [])
+    .filter((item) => item.kind === "photo")
+    .slice(0, 4)
+    .map((item) => ({ url: item.thumbnailUrl, alt: item.alt }));
+  return { ride, route: detail?.ride.route, photos };
 }
 
 /**

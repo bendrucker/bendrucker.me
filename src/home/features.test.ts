@@ -78,7 +78,7 @@ function repo(key: string, pulls: PullRow[]): CodeRepo {
 }
 
 describe("rideFeature", () => {
-  it("carries the track and the first photo, passing over videos", () => {
+  it("carries the track and the first four photos, passing over videos", () => {
     const feature = rideFeature(
       RIDE,
       detail({
@@ -98,13 +98,31 @@ describe("rideFeature", () => {
             fullUrl: "",
             alt: "Photo 2",
           },
+          {
+            id: "q.jpg",
+            kind: "photo",
+            thumbnailUrl: "/t/q",
+            fullUrl: "",
+            alt: "Photo 3",
+          },
+          {
+            id: "r.jpg",
+            kind: "photo",
+            thumbnailUrl: "/t/r",
+            fullUrl: "",
+            alt: "Photo 4",
+          },
         ],
       }),
     );
     expect(feature).toEqual({
       ride: RIDE,
       route: "abc",
-      photo: { url: "/t/p", alt: "Photo 2" },
+      photos: [
+        { url: "/t/p", alt: "Photo 2" },
+        { url: "/t/q", alt: "Photo 3" },
+        { url: "/t/r", alt: "Photo 4" },
+      ],
     });
   });
 
@@ -112,7 +130,7 @@ describe("rideFeature", () => {
     expect(rideFeature(RIDE, null)).toEqual({
       ride: RIDE,
       route: undefined,
-      photo: undefined,
+      photos: [],
     });
   });
 });
@@ -161,7 +179,7 @@ describe("withoutFeatured", () => {
     const [top] = CODE_ROWS;
     if (top === undefined) throw new Error("fixture missing");
     const [rideCard, codeCard] = withoutFeatured([rides, code], {
-      rides: { ride: RIDE },
+      rides: { ride: RIDE, photos: [] },
       code: { row: top },
     });
     expect(rideCard).toEqual({ id: "rides", items: [{ ...RIDE, id: "r2" }] });

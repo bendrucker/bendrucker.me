@@ -2,6 +2,14 @@
 import RouteMap from "@/components/cycling/RouteMap.vue";
 import { FEATURE_MAP } from "@/components/cycling/basemap";
 
+/** The card width each photo past the first needs before it shows. */
+const PHOTO_ROOM = [
+  "",
+  "hidden @[310px]:block",
+  "hidden @[540px]:block",
+  "hidden @[610px]:block",
+];
+
 defineProps<{
   href: string;
   name: string;
@@ -14,27 +22,26 @@ defineProps<{
   id: string;
   /** The track as an encoded polyline. Without one the map is left out. */
   route?: string;
-  /** A square thumbnail. */
-  photo?: { url: string; alt: string };
+  /** Square thumbnails, as many as the card has room for up to four. */
+  photos?: readonly { url: string; alt: string }[];
 }>();
 </script>
 
 <template>
-  <!-- The Rides card's lead: the top highlight's map beside its words, so the
-       name and figures show within the card's peek at either width. A phone
-       insets the photo in the map's corner. Desktop has the room to give it a
-       tile of its own between the map and the words.
+  <!-- The Rides card's lead: the top highlight's map, its words, then a row of
+       photos that grows with the card's width, so the name and figures show
+       within the card's peek at either width.
 
-       The photo is a background on a tile rather than an <img>. Nothing
-       hydrates this markup, so an image that fails to load could not hide
-       itself, and would draw a broken-image glyph over the map. -->
+       A photo is a background on a tile rather than an <img>. Nothing hydrates
+       this markup, so an image that fails to load could not hide itself, and
+       would draw a broken-image glyph. -->
   <a
     :href="href"
-    class="group/feature -mx-1.5 flex min-w-0 items-center gap-3 rounded-lg p-1.5 text-foreground no-underline hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat focus-visible:outline-solid md:gap-4"
+    class="group/feature @container -mx-1.5 flex min-w-0 items-center gap-3 rounded-lg p-1.5 text-foreground no-underline hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat focus-visible:outline-solid md:gap-4"
   >
     <span
       v-if="route"
-      class="relative block w-[120px] flex-none overflow-hidden rounded-lg md:w-[176px]"
+      class="block w-[120px] flex-none overflow-hidden rounded-lg md:w-[176px]"
     >
       <RouteMap
         :id="id"
@@ -46,23 +53,8 @@ defineProps<{
         tint
         :stroke-width="2.5"
       />
-      <span
-        v-if="photo"
-        role="img"
-        :aria-label="photo.alt"
-        class="absolute right-1.5 bottom-1.5 size-9 rotate-3 rounded-md border-2 border-background bg-tile bg-cover bg-center shadow-[0_6px_14px_-6px_var(--shadow)] md:hidden"
-        :style="{ backgroundImage: `url(${photo.url})` }"
-      />
     </span>
-    <span
-      v-if="photo"
-      role="img"
-      :aria-label="photo.alt"
-      class="size-[90px] flex-none rounded-lg bg-tile bg-cover bg-center md:size-[132px]"
-      :class="route ? 'max-md:hidden' : ''"
-      :style="{ backgroundImage: `url(${photo.url})` }"
-    />
-    <span class="flex min-w-0 flex-col gap-1">
+    <span class="flex min-w-0 flex-1 flex-col gap-1">
       <span class="label-caps text-[11px] leading-none text-dim">{{
         when
       }}</span>
@@ -84,6 +76,17 @@ defineProps<{
           <span class="whitespace-nowrap">{{ figure }}</span>
         </template>
       </span>
+    </span>
+    <span v-if="photos?.length" class="flex flex-none gap-1">
+      <span
+        v-for="(photo, i) in photos.slice(0, 4)"
+        :key="photo.url"
+        role="img"
+        :aria-label="photo.alt"
+        class="size-10 rounded-md bg-tile bg-cover bg-center md:size-16"
+        :class="PHOTO_ROOM[i]"
+        :style="{ backgroundImage: `url(${photo.url})` }"
+      />
     </span>
   </a>
 </template>
