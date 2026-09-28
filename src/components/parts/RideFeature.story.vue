@@ -60,6 +60,7 @@ function featureProps(key: RideKey, withPhoto: boolean) {
     href: "#",
     id: ride.id,
     name: ride.name,
+    when: "Saturday, July 11",
     figures,
     hilly,
     route,
@@ -99,14 +100,15 @@ function featureProps(key: RideKey, withPhoto: boolean) {
 <docs lang="md">
 # Ride feature
 
-The Rides home card leads with its top highlight: the route map at the
-highlight size, one photo tilted in the map's corner, and the ride's name over
-its distance and climbing. On a phone the map takes the card's width and the
-words sit beneath it. From the desktop breakpoint up the map stands 260px wide
-with the words beside it. Widen the frame past 768px of viewport to see that.
+The Rides home card leads with its top highlight: the route map beside the
+ride's day, name, distance, and climbing, so the words show within the card's
+peek at either width. On a phone the map is 120px wide with one photo inset in
+its corner. From the desktop breakpoint up the map grows to 176px and the photo
+gets its own tile between the map and the words. Widen the frame past 768px of
+viewport to see that.
 
 A ride with no route drops the map and shows its photo alone, or only its
-words when it has neither. Hover straightens the photo.
+words when it has neither.
 
 The story book has no worker, so the map draws its route line on the card's
 tint with no basemap behind it. The photos are placeholder images.

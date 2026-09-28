@@ -11,7 +11,7 @@ import { homeCredits, type CategoryId } from "@/categories";
 import { SITE } from "@/config";
 import { desktopOnly } from "@/home/cards";
 import { loadHome } from "@/home/load";
-import { climbFigure, distanceFigure } from "@/rides/format";
+import { climbFigure, distanceFigure, fullDate } from "@/rides/format";
 import { rideHref } from "@/rides/links";
 import { isHilly } from "@/rides/rank";
 
@@ -22,6 +22,17 @@ if (features.rides?.route) credits.push("maps");
 // Rides and Code lead with a feature and rest taller. Desktop raises them
 // only when they share the first row, so every row's cards stand level.
 const pairedFeatures = cards[0]?.id === "rides" && cards[1]?.id === "code";
+// Watching and Listening show only a shelf each, so when they share a row
+// that row rests shorter on desktop rather than standing over empty ground.
+const SHELVES = new Set<CategoryId>(["watching", "listening"]);
+function short(index: number) {
+  const row = index - (index % 2);
+  return (
+    cards.slice(row, row + 2).every((card) => SHELVES.has(card.id)) &&
+    cards.length > row + 1
+  );
+}
+
 function tallness(id: CategoryId) {
   if (id !== "rides" && id !== "code") return undefined;
   return pairedFeatures ? "always" : "phone";
@@ -63,12 +74,20 @@ const rideFigures = ride
            row's top. -->
       <div class="grid grid-cols-1 items-start gap-2 md:grid-cols-2 md:gap-4">
         {
-          cards.map((card) => (
-            <HomeCard id={card.id} tall={tallness(card.id)}>
+          cards.map((card, index) => (
+            <HomeCard
+              id={card.id}
+              tall={tallness(card.id)}
+              short={short(index)}
+            >
               {card.id === "rides" && ride && (
                 <RideFeature
                   href={rideHref(ride.ride.id, "imperial")}
                   name={ride.ride.name}
+                  when={fullDate(
+                    ride.ride.day,
+                    String(new Date().getUTCFullYear()),
+                  )}
                   figures={rideFigures}
                   hilly={isHilly(ride.ride)}
                   id={ride.ride.id}

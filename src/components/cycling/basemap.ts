@@ -13,7 +13,16 @@ export const HIGHLIGHT_MAP = { width: 260, height: 130 } as const;
 export const HERO_MAP_PHONE = { width: 358, height: 320 } as const;
 export const HERO_MAP = { width: 600, height: 320 } as const;
 
-const MAP_SIZES = [RIDE_MAP, HIGHLIGHT_MAP, HERO_MAP_PHONE, HERO_MAP];
+/** The home Rides card's lead, drawn smaller on a phone than on desktop. */
+export const FEATURE_MAP = { width: 200, height: 150 } as const;
+
+const MAP_SIZES = [
+  RIDE_MAP,
+  HIGHLIGHT_MAP,
+  HERO_MAP_PHONE,
+  HERO_MAP,
+  FEATURE_MAP,
+];
 
 export function isMapSize(width: number, height: number): boolean {
   return MAP_SIZES.some(

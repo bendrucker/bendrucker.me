@@ -79,16 +79,19 @@ const { playing, open } = useOutbound();
         <span class="line-clamp-1 text-xs leading-[1.35]">{{
           item.title
         }}</span>
+        <!-- On the home card the words sit above the poster, so a film with
+             no season or progress keeps their space and its poster stays level
+             with the shows beside it. -->
         <span
-          v-if="item.text"
-          class="-mt-[3px] line-clamp-1 text-[11px] text-dim"
+          v-if="item.text || layout === 'home'"
+          class="-mt-[3px] line-clamp-1 min-h-[1lh] text-[11px] text-dim"
           >{{ item.text }}</span
         >
         <span
-          v-if="item.ticks?.length"
-          role="img"
-          :aria-label="item.tickLabel"
-          class="-mt-0.5 flex gap-0.5"
+          v-if="item.ticks?.length || layout === 'home'"
+          :role="item.ticks?.length ? 'img' : undefined"
+          :aria-label="item.ticks?.length ? item.tickLabel : undefined"
+          class="-mt-0.5 flex h-[3px] gap-0.5"
         >
           <span
             v-for="(fraction, i) in item.ticks"

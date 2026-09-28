@@ -11,6 +11,11 @@ const props = defineProps<{
    * featured cards that share a row.
    */
   tall?: "phone" | "always";
+  /**
+   * Rests the drawer shorter on desktop, for two poster shelves sharing a row,
+   * which the standard peek leaves standing over empty ground.
+   */
+  short?: boolean;
 }>();
 
 const cat = computed(() => category(props.id));
@@ -54,13 +59,14 @@ const drawerId = computed(() => `${props.id}-drawer`);
       :id="drawerId"
       data-drawer
       class="drawer"
-      :class="
+      :class="[
         tall === 'always'
           ? 'drawer-tall'
           : tall === 'phone'
             ? 'drawer-tall-phone'
-            : ''
-      "
+            : '',
+        short ? 'drawer-short' : '',
+      ]"
     >
       <div data-drawer-body class="flex flex-col gap-3">
         <slot />
@@ -134,6 +140,10 @@ const drawerId = computed(() => `${props.id}-drawer`);
 
   .drawer-tall {
     --drawer-peek: 288px;
+  }
+
+  .drawer-short {
+    --drawer-peek: 176px;
   }
 }
 
