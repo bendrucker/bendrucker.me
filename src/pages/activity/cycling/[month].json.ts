@@ -19,8 +19,8 @@ export const GET: APIRoute = async ({ params, url }) => {
     return new Response("Not Found", { status: 404 });
   }
 
-  // `?format=rows` is the Rides route's log: every ride as a five-value row,
-  // with no tracks, media, or badges to carry.
+  // `?format=rows` is the Rides route's log: every ride as a compact row, with
+  // no tracks, media, or badges to carry.
   const rows = url.searchParams.get("format") === "rows";
 
   try {

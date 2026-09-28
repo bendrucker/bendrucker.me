@@ -1,4 +1,4 @@
-// The Rides route's reads. Every list on the route is a row of five values, so
+// The Rides route's reads. Every list on the route is a row of a few values, so
 // each query selects only the columns a row needs and leaves the track, the
 // profile, and the photos to the ride's own page. The one exception is the
 // Routes view, which reads the polylines of the two dozen tiles it draws.
@@ -26,6 +26,7 @@ import { routeTilePath } from "./tile";
 const ROW_COLUMNS = [
   "activityId",
   "name",
+  "description",
   "startedAt",
   "timezone",
   "distanceM",
@@ -64,6 +65,7 @@ const DAY_MS = 24 * 3600 * 1000;
 interface RowSource {
   activityId: string;
   name: string | null;
+  description: string | null;
   startedAt: string;
   timezone: string;
   distanceM: number | null;
@@ -74,13 +76,15 @@ interface RowSource {
 export const UNNAMED = "Ride";
 
 export function toRideRow(row: RowSource): RideRow {
-  return {
+  const ride: RideRow = {
     id: row.activityId,
     name: row.name ?? UNNAMED,
     day: wallClock(row.startedAt, row.timezone).slice(0, 10),
     distanceM: row.distanceM === null ? null : Math.round(row.distanceM),
     climbM: row.elevationM === null ? null : Math.round(row.elevationM),
   };
+  if (row.description !== null) ride.description = row.description;
+  return ride;
 }
 
 /**
@@ -93,13 +97,14 @@ export function foldsLikeBrowser(query: string): boolean {
 }
 
 /**
- * Whether the name a row shows holds the query, in any case. `instr` rather
- * than `LIKE`, which D1 caps at fifty bytes of pattern, shorter than some
- * ride names a reader can search for in full.
+ * Whether the name or the description a row shows holds the query, in any
+ * case. `instr` rather than `LIKE`, which D1 caps at fifty bytes of pattern,
+ * shorter than some ride names a reader can search for in full.
  */
-function nameHolds(query: string): Expression<SqlBool> {
+function rowHolds(query: string): Expression<SqlBool> {
   const needle = query.trim().toLowerCase();
-  return sql<SqlBool>`instr(lower(coalesce(name, ${UNNAMED})), ${needle}) > 0`;
+  return sql<SqlBool>`(instr(lower(coalesce(name, ${UNNAMED})), ${needle}) > 0
+    or instr(lower(coalesce(description, '')), ${needle}) > 0)`;
 }
 
 export interface RidesPage {
@@ -267,7 +272,7 @@ async function queryRecords(
       // A manual entry logs a figure with no distance, like a year of commutes
       // as one climb, and isn't a ride to hold a record.
       .where("distanceM", ">", 0);
-    if (query !== "") select = select.where(nameHolds(query));
+    if (query !== "") select = select.where(rowHolds(query));
     const rows = await select
       .orderBy(column, "desc")
       .orderBy("startedAt", "desc")
@@ -328,7 +333,7 @@ async function queryMatches(
     .selectFrom("activityFeed")
     .select(ROW_COLUMNS)
     .where("sport", "=", "ride")
-    .where(nameHolds(query))
+    .where(rowHolds(query))
     .orderBy("startedAt", "desc")
     .limit(MATCH_COUNT + 1)
     .execute();

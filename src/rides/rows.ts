@@ -17,10 +17,22 @@ export interface RideRow {
   day: string;
   distanceM: number | null;
   climbM: number | null;
+  /** What the rider wrote on the activity, when there is something. */
+  description?: string;
 }
 
-/** A row on the wire: `[id, name, day, distanceM, climbM]`. */
-export type RideTuple = [string, string, string, number | null, number | null];
+/**
+ * A row on the wire: `[id, name, day, distanceM, climbM, description?]`. Most
+ * rides carry no description, and theirs stops at the climb.
+ */
+export type RideTuple = [
+  string,
+  string,
+  string,
+  number | null,
+  number | null,
+  string?,
+];
 
 /** A tile on the Routes view: a row plus its track drawn as an SVG path. */
 export type RouteTuple = [
@@ -56,6 +68,7 @@ export const rideTuple = z.tuple([
   z.string(),
   z.nullable(z.number()),
   z.nullable(z.number()),
+  z.optional(z.string()),
 ]) satisfies z.ZodMiniType<RideTuple>;
 
 export const rideRowsPage = z.object({
@@ -71,7 +84,10 @@ export const rideIndex = z.object({
 export type RideIndex = z.infer<typeof rideIndex>;
 
 export function toTuple(row: RideRow): RideTuple {
-  return [row.id, row.name, row.day, row.distanceM, row.climbM];
+  const { id, name, day, distanceM, climbM, description } = row;
+  return description === undefined
+    ? [id, name, day, distanceM, climbM]
+    : [id, name, day, distanceM, climbM, description];
 }
 
 export function fromTuple([
@@ -80,12 +96,16 @@ export function fromTuple([
   day,
   distanceM,
   climbM,
+  description,
 ]: RideTuple): RideRow {
-  return { id, name, day, distanceM, climbM };
+  const row: RideRow = { id, name, day, distanceM, climbM };
+  if (description !== undefined) row.description = description;
+  return row;
 }
 
+/** A tile shows only the name, so it leaves the description behind. */
 export function toRouteTuple(tile: RouteTile): RouteTuple {
-  return [...toTuple(tile), tile.path];
+  return [tile.id, tile.name, tile.day, tile.distanceM, tile.climbM, tile.path];
 }
 
 export function fromRouteTuple([

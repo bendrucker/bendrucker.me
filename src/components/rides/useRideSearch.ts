@@ -69,7 +69,9 @@ export function useRideSearch(
   const results = computed(() =>
     trimmed.value === ""
       ? []
-      : pool.value.filter((row) => matches({ title: row.name }, trimmed.value)),
+      : pool.value.filter((row) =>
+          matches({ title: row.name, text: row.description }, trimmed.value),
+        ),
   );
 
   const complete = computed(

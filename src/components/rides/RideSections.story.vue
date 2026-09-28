@@ -39,7 +39,7 @@ function initState() {
 
 function rowsFor(state: ReturnType<typeof initState>) {
   return rowSets[state.rows].filter((row) =>
-    matches({ title: row.name }, state.query),
+    matches({ title: row.name, text: row.description }, state.query),
   );
 }
 </script>

@@ -30,6 +30,7 @@ function ride(
     activityId,
     stravaId: activityId,
     name: `Ride ${activityId}`,
+    description: null,
     sport: "ride",
     startedAt: "2026-09-20T15:00:00Z",
     timezone: "America/Los_Angeles",
@@ -253,6 +254,28 @@ describe("search", () => {
     );
   });
 
+  it("matches a description and carries it on the row", async () => {
+    await seed(
+      ride("fog", { description: "In the fog, above the fog" }),
+      ride("clear"),
+    );
+
+    const page = await queryRidesPage(db, "FOG");
+
+    expect(page.matches).toEqual([
+      [
+        "fog",
+        "Ride fog",
+        "2026-09-20",
+        40_000,
+        600,
+        "In the fog, above the fog",
+      ],
+    ]);
+    const lengths = page.months[0]?.rides.map((row) => row.length);
+    expect(lengths?.toSorted((a, b) => a - b)).toEqual([5, 6]);
+  });
+
   it("leaves a query SQLite can't fold for the browser to finish", async () => {
     await seed(ride("cafe", { name: "Café" }));
 
@@ -343,6 +366,15 @@ describe("queryRideById", () => {
     expect(found?.ride.route).toBe(GOOGLE_EXAMPLE);
     expect(found?.distanceM).toBe(40_000);
     expect(found?.elevationM).toBe(600);
+    expect(found?.description).toBeNull();
+  });
+
+  it("reads the description the page shows as its dek", async () => {
+    await seed(ride("tam", { description: "MV FF BF SB RRG" }));
+
+    expect((await queryRideById(db, "tam"))?.description).toBe(
+      "MV FF BF SB RRG",
+    );
   });
 
   it("keeps a figure the ride never recorded as null", async () => {

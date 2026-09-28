@@ -45,7 +45,8 @@ import type {
   YearTotals,
 } from "./types";
 
-export type FeedRow = Selectable<ActivityFeedTable>;
+/** A row as the feed reads it. Only a ride's own page shows its description. */
+export type FeedRow = Omit<Selectable<ActivityFeedTable>, "description">;
 
 /** Every column but the track: what the totals and ranked lists read. */
 export type RideRow = Omit<
@@ -241,6 +242,8 @@ export interface RideDetail {
   ride: Ride;
   distanceM: number | null;
   elevationM: number | null;
+  /** What the rider wrote on the activity, shown as the page's dek. */
+  description: string | null;
 }
 
 /**
@@ -253,14 +256,19 @@ export async function queryRideById(
 ): Promise<RideDetail | null> {
   const row = await db
     .selectFrom("activityFeed")
-    .select(LOG_COLUMNS)
+    .select([...LOG_COLUMNS, "description"])
     .where("activityId", "=", id)
     .where("sport", "=", "ride")
     .executeTakeFirst();
   if (row === undefined) return null;
   const { ride } = toEntry(row);
   attachTrack(ride, row);
-  return { ride, distanceM: row.distanceM, elevationM: row.elevationM };
+  return {
+    ride,
+    distanceM: row.distanceM,
+    elevationM: row.elevationM,
+    description: row.description,
+  };
 }
 
 /**

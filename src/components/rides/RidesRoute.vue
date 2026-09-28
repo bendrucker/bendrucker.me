@@ -32,7 +32,6 @@ import {
   announceListSettled,
   currentListEntry,
   ensureListEntryId,
-  listEntryIdOfState,
   saveListEntry,
 } from "@/rides/listEntry";
 import { isHilly, rankRecords, type Records } from "@/rides/rank";
@@ -116,16 +115,17 @@ const log = useMonthPages(props.months, props.logCursor, fetchRows);
 //
 // A traversal has already made the destination the current entry by the time
 // the router announces it, so leaving that way writes nothing to history and
-// saves under the id the list's entry had when it was shown.
+// saves under the id the list's entry was given when it was shown. Every entry
+// gets its id then, so a list the reader reached by a push and left by Back
+// still has one to save under.
 let entryId: string | null = null;
 
-function onLeave(event: Event) {
-  const traversal =
-    "navigationType" in event && event.navigationType === "traverse";
-  if (!traversal) writeUrl();
-  leaving = true;
-  const id = traversal ? entryId : ensureListEntryId();
-  if (id === null) return;
+function claimEntryId() {
+  if (leaving || location.pathname !== "/rides") return;
+  entryId = ensureListEntryId();
+}
+
+function save(id: string) {
   saveListEntry({
     id,
     href: listHref.value,
@@ -134,10 +134,36 @@ function onLeave(event: Event) {
   });
 }
 
+function onLeave(event: Event) {
+  const traversal =
+    "navigationType" in event && event.navigationType === "traverse";
+  if (!traversal) writeUrl();
+  leaving = true;
+  const id = traversal ? entryId : ensureListEntryId();
+  if (id !== null) save(id);
+}
+
+// A reload or a full page load elsewhere leaves without the router, and saves
+// here instead. Otherwise the record would still hold the place the reader
+// last left for a ride, and the reload would jump back to it.
+function onPageHide() {
+  if (leaving) return;
+  writeUrl();
+  const id = entryId ?? ensureListEntryId();
+  if (id !== null) save(id);
+}
+
 onMounted(async () => {
   document.addEventListener("astro:before-preparation", onLeave);
-  entryId = listEntryIdOfState();
+  window.addEventListener("pagehide", onPageHide);
   const saved = currentListEntry();
+  // The router gives a new entry its state before the page is shown, but on a
+  // first load its script can run after the island mounts. Until it has, there
+  // is no state to keep the id in, so the id waits for the page-load event.
+  claimEntryId();
+  if (entryId === null) {
+    document.addEventListener("astro:page-load", claimEntryId, { once: true });
+  }
   if (saved !== null) {
     if (saved.log.months.length > log.months.value.length) {
       log.restore(saved.log);
@@ -151,6 +177,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   leaving = true;
   document.removeEventListener("astro:before-preparation", onLeave);
+  document.removeEventListener("astro:page-load", claimEntryId);
+  window.removeEventListener("pagehide", onPageHide);
 });
 
 const logRows = computed(() =>
@@ -360,6 +388,7 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
           <ItemRow
             :href="rideHref(ride.id, units)"
             :title="ride.name"
+            :text="ride.description"
             :figure="distanceFigure(ride.distanceM, units)"
             :hilly="isHilly(ride)"
           >
@@ -455,6 +484,7 @@ function figure(row: RideRow, kind: "distance" | "climb"): string {
               <ItemRow
                 :href="rideHref(ride.id, units)"
                 :title="ride.name"
+                :text="ride.description"
                 :figure="figure(ride, list.figure)"
                 :hilly="isHilly(ride)"
                 :query="query.trim()"

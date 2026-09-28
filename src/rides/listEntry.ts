@@ -65,13 +65,14 @@ function writeState(fields: EntryState): boolean {
 }
 
 /** The id of the list entry being shown, when it was given one. */
-export function listEntryIdOfState(): string | null {
+function listEntryIdOfState(): string | null {
   return readState()?.ridesList ?? null;
 }
 
 /**
  * The id of the list entry being shown, giving it one if it has none. Called
- * as the reader leaves, while the entry is still the current one.
+ * as the list is shown and again as the reader leaves, while the entry is
+ * still the current one.
  */
 export function ensureListEntryId(): string | null {
   const existing = listEntryIdOfState();

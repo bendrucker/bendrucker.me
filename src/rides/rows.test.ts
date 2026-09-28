@@ -25,6 +25,17 @@ describe("tuples", () => {
     expect(fromRouteTuple(toRouteTuple(tile))).toEqual(tile);
   });
 
+  it("carry a description only on a row that has one", () => {
+    const plain = row("a", "2026-09-01");
+    const described = { ...plain, description: "MV FF BF SB RRG" };
+    expect(toTuple(plain)).toHaveLength(5);
+    expect(fromTuple(toTuple(described))).toEqual(described);
+    expect(
+      rideIndex.safeParse({ rides: [toTuple(plain), toTuple(described)] })
+        .success,
+    ).toBe(true);
+  });
+
   it("refuses an index whose rows lost a field", () => {
     expect(
       rideIndex.safeParse({ rides: [["a", "b", "2026-09-01", 1]] }).success,

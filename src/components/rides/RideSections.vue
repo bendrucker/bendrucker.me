@@ -126,6 +126,7 @@ function withinMargin(element: HTMLElement | null): boolean {
             <ItemRow
               :href="rideHref(row.item.id, units)"
               :title="row.item.name"
+              :text="row.item.description"
               :figure="distanceFigure(row.item.distanceM, units)"
               :hilly="isHilly(row.item)"
               :query="query"

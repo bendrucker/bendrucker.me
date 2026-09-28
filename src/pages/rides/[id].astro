@@ -37,7 +37,7 @@ try {
 }
 if (detail === null) return Astro.rewrite("/404");
 
-const { ride, distanceM, elevationM } = detail;
+const { ride, distanceM, elevationM, description } = detail;
 const units = parseUnits(Astro.url.searchParams.get("units"));
 const thisYear = String(new Date().getUTCFullYear());
 const hilly = isHilly({ distanceM, climbM: elevationM });
@@ -50,7 +50,8 @@ const mapLabel = `Route of ${ride.name}`;
 
 <Layout
   title={`${ride.name} | ${SITE.title}`}
-  description={`${ride.name}, a ride on ${fullDate(ride.startedAt.slice(0, 10), "")}.`}
+  description={description ??
+    `${ride.name}, a ride on ${fullDate(ride.startedAt.slice(0, 10), "")}.`}
   credits={ride.route ? ["maps"] : []}
   sourcePath="src/pages/rides/[id].astro"
 >
@@ -64,6 +65,7 @@ const mapLabel = `Route of ${ride.name}`;
         backLabel="Rides"
         backHref={ridesHref({ view: "log", q: "", units })}
         date={fullDate(ride.startedAt.slice(0, 10), thisYear)}
+        dek={description ?? undefined}
         transitionName={rideTransitionName(ride.id)}
       >
         {

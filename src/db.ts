@@ -46,6 +46,8 @@ export interface ActivityFeedTable {
   activityId: string;
   stravaId: string | null;
   name: string | null;
+  /** What the rider wrote on the activity, or null where the activity has none. */
+  description: string | null;
   sport: string;
   startedAt: string;
   timezone: string;
