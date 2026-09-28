@@ -8,16 +8,13 @@
 // twice on a list at once, in the highlights and the months below them, and
 // two elements sharing a name abort the whole transition. Naming every row
 // would also lift each one out of the list's snapshot to fade on its own.
+//
+// This script ships on every page. The Rides list's saved place is loaded only
+// by a navigation to or from that list, so a post carries none of its code.
 import {
   TransitionBeforePreparationEvent,
   TransitionBeforeSwapEvent,
 } from "astro:transitions/client";
-import {
-  currentListEntry,
-  ensureListEntryId,
-  LIST_SETTLED,
-  markOpenedFromList,
-} from "@/rides/listEntry";
 import { isList, itemTransitionName } from "./names";
 
 /** The list that saves its place for the trip back from a ride. */
@@ -34,8 +31,8 @@ const SETTLE_LIMIT_MS = 1500;
 let named: HTMLElement | null = null;
 /** The name of the item a return is leaving, to find its row once the list is in. */
 let returning: string | null = null;
-/** The Rides list entry a ride is being opened from, to record on the ride's entry. */
-let openedFrom: string | null = null;
+/** Records on the ride's entry which Rides list entry it was opened from. */
+let markOpened: (() => void) | null = null;
 /** Settles once the Rides list returned to has put back its saved months and place. */
 let settling: Promise<void> | null = null;
 
@@ -44,10 +41,10 @@ function name(element: HTMLElement, transitionName: string) {
   named = element;
 }
 
-async function listSettled(): Promise<void> {
+async function listSettled(settledEvent: string): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
   const stop = new AbortController();
-  document.addEventListener(LIST_SETTLED, () => resolve(), {
+  document.addEventListener(settledEvent, () => resolve(), {
     once: true,
     signal: stop.signal,
   });
@@ -57,12 +54,27 @@ async function listSettled(): Promise<void> {
   window.clearTimeout(timer);
 }
 
+/**
+ * Runs `work` alongside the page's fetch, before the router swaps anything in
+ * or moves the history entry. `work` checks the event's signal before setting
+ * anything, so a navigation abandoned mid-fetch can't overwrite the next one.
+ */
+function whileLoading(
+  event: TransitionBeforePreparationEvent,
+  work: () => Promise<void>,
+) {
+  const load = event.loader;
+  event.loader = async () => {
+    await Promise.all([work(), load()]);
+  };
+}
+
 function onBeforePreparation(event: Event) {
   if (!(event instanceof TransitionBeforePreparationEvent)) return;
   const root = document.documentElement;
   const opening = itemTransitionName(event.to.pathname);
   const leaving = itemTransitionName(event.from.pathname);
-  openedFrom = null;
+  markOpened = null;
   settling = null;
   returning = null;
 
@@ -77,18 +89,28 @@ function onBeforePreparation(event: Event) {
       name(row, opening);
       root.dataset.vt = "page";
     }
-    if (event.from.pathname === RIDES_PATH) openedFrom = ensureListEntryId();
+    if (event.from.pathname === RIDES_PATH) {
+      whileLoading(event, async () => {
+        const { ensureListEntryId, markOpenedFromList } =
+          await import("@/rides/listEntry");
+        // The list's entry is still the current one until the swap.
+        const id = ensureListEntryId();
+        if (id === null || event.signal.aborted) return;
+        markOpened = () => markOpenedFromList(id);
+      });
+    }
   } else if (leaving !== null && isList(event.to.pathname)) {
     returning = leaving;
     root.dataset.vt = "back";
     // A traversal has already made the list's entry the current one, so its
-    // saved record can be looked up before the list is fetched.
-    if (
-      holding &&
-      event.to.pathname === RIDES_PATH &&
-      currentListEntry() !== null
-    ) {
-      settling = listSettled();
+    // saved record can be looked up while the list is fetched.
+    if (holding && event.to.pathname === RIDES_PATH) {
+      whileLoading(event, async () => {
+        const { currentListEntry, LIST_SETTLED } =
+          await import("@/rides/listEntry");
+        if (currentListEntry() === null || event.signal.aborted) return;
+        settling = listSettled(LIST_SETTLED);
+      });
     }
   }
 }
@@ -119,10 +141,8 @@ function nameReturningRow() {
 
 /** The router restores the scroll offset before this, so a row's place is final. */
 function onAfterSwap() {
-  if (openedFrom !== null) {
-    markOpenedFromList(openedFrom);
-    openedFrom = null;
-  }
+  markOpened?.();
+  markOpened = null;
   // A list with months to put back names its row once it has them.
   if (settling === null) nameReturningRow();
 }

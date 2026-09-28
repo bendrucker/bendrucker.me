@@ -1,11 +1,21 @@
-@import "tailwindcss";
+/*
+ * Class candidates come only from `src/`. Automatic detection honors the
+ * repository's `.gitignore` but not a global one, so scratch files in a
+ * checkout (a copied `dist/`, design boards) would otherwise add their classes.
+ */
+@import "tailwindcss" source("../");
 @import "./typography.css";
 @import "./about.css";
 @import "./transitions.css";
 
-/* `site` holds the icons no collection has, drawn to Lucide's grid and stroke. */
+/*
+ * `site` holds the icons no collection has, drawn to Lucide's grid and stroke.
+ * Each `icon-[…]` class sets only its `--svg`, and one rule below draws every
+ * icon, rather than the plugin repeating the same nine declarations per icon.
+ */
 @plugin "@iconify/tailwind4" {
   icon-sets: from-folder(site, "./src/icons");
+  override-only: true;
 }
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
@@ -138,6 +148,20 @@ html[data-theme="dark"] {
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+}
+
+/*
+ * Every icon, drawn as a mask of the `--svg` its class sets, at the text's
+ * size and color. A layer below the utilities, so `size-4` and the like win.
+ */
+@layer components {
+  [class*="icon-["] {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    background-color: currentColor;
+    mask: var(--svg) no-repeat center / 100% 100%;
   }
 }
 

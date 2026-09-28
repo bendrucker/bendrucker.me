@@ -448,7 +448,4 @@ export function highlightMarks(
   };
 }
 
-/** A view transition name for a row and the page it opens, as a CSS identifier. */
-export function transitionName(key: string): string {
-  return `code-${key.replaceAll(/[^\w-]/g, "_")}`;
-}
+export { codeTransitionName as transitionName } from "@/transitions/names";

@@ -2,9 +2,25 @@
 // derived from its path, and a row linking to that path takes the same name
 // for the one navigation it starts, so the row grows into the page and the
 // page shrinks back into the row.
-import { transitionName as codeTransitionName } from "@/code/view";
-import { rideTransitionName } from "@/rides/links";
-import { transitionName as postTransitionName } from "@/writing/rows";
+//
+// Every page's router script imports this module, so it imports nothing: the
+// modules that render rows re-export the names from here rather than pulling
+// their search and grouping code onto pages with no list.
+
+/** The view transition name a ride's row and its page's title share. */
+export function rideTransitionName(id: string): string {
+  return `ride-${id}`;
+}
+
+/** A view transition name for a code row and the page it opens, as a CSS identifier. */
+export function codeTransitionName(key: string): string {
+  return `code-${key.replaceAll(/[^\w-]/g, "_")}`;
+}
+
+/** The view transition name a post's row and its title share, so one grows into the other. */
+export function postTransitionName(href: string): string {
+  return `post-${href.replace(/^\/writing\//, "").replaceAll("/", "-")}`;
+}
 
 /** The pages whose rows open an item: home and the routes with item pages. */
 const LISTS = new Set(["/", "/rides", "/code", "/writing"]);

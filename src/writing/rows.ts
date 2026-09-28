@@ -216,7 +216,4 @@ export function fullDate(day: string, thisYear: string): string {
   }).format(new Date(`${day}T12:00:00Z`));
 }
 
-/** The view transition name a post's row and its title share, so one grows into the other. */
-export function transitionName(href: string): string {
-  return `post-${href.replace(/^\/writing\//, "").replaceAll("/", "-")}`;
-}
+export { postTransitionName as transitionName } from "@/transitions/names";

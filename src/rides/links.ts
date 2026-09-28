@@ -31,10 +31,7 @@ export function ridesHref({ view, q, units }: RidesState): string {
   return `/rides${search(params)}`;
 }
 
-/** The view transition name a ride's row and its page's title share. */
-export function rideTransitionName(id: string): string {
-  return `ride-${id}`;
-}
+export { rideTransitionName } from "@/transitions/names";
 
 /** A ride's page, in the units the list was showing. */
 export function rideHref(id: string, units: Units): string {
