@@ -9,7 +9,7 @@ import {
   type MediaView,
 } from "./view";
 
-const OPTIONS = { q: "", type: "", thisYear: "2026" };
+const OPTIONS = { q: "", type: "", active: false, thisYear: "2026" };
 
 /** A bare row, enough for the filters to read. */
 function bareRow(key: string, type: string, active?: boolean): MediaRow {
@@ -87,22 +87,32 @@ describe("buildMediaView", () => {
     ]);
   });
 
-  it("narrows Watching to the shows mid-season", () => {
+  it("narrows to what is in progress, across types or within one", () => {
     const rows = [
       bareRow("Silo", "Show", true),
       bareRow("Severance", "Show"),
       bareRow("Sinners", "Movie"),
+      bareRow("Clip", "Video", true),
     ];
-    const view = buildMediaView(rows, [], { ...OPTIONS, type: "Active" });
+    const view = buildMediaView(rows, [], { ...OPTIONS, active: true });
     const listed = view.sections.flatMap((s) =>
       s.weeks.flatMap((w) => w.rows.map((r) => r.item.title)),
     );
 
-    expect(listed).toEqual(["Silo"]);
+    expect(listed).toEqual(["Silo", "Clip"]);
+    const shows = buildMediaView(rows, [], {
+      ...OPTIONS,
+      type: "Show",
+      active: true,
+    });
+    expect(shows.count).toBe(1);
     const types = category("watching").types ?? [];
     expect(
-      filtersFromUrl(new URL("https://x.test/watching/?type=active"), types),
-    ).toEqual({ q: "", type: "Active" });
+      filtersFromUrl(
+        new URL("https://x.test/watching/?type=shows&active=1"),
+        types,
+      ),
+    ).toEqual({ q: "", type: "Show", active: true });
   });
 
   it("leads Watching with the latest watched", async () => {
@@ -197,7 +207,7 @@ describe("filters in the URL", () => {
   it("reads a type by its plural label", () => {
     expect(
       filtersFromUrl(new URL("https://x/watching?type=Movies&q=bear"), types),
-    ).toEqual({ q: "bear", type: "Movie" });
+    ).toEqual({ q: "bear", type: "Movie", active: false });
     expect(
       filtersFromUrl(new URL("https://x/watching?type=books"), types).type,
     ).toBe("");
@@ -205,8 +215,14 @@ describe("filters in the URL", () => {
 
   it("writes them back, keeping other parameters", () => {
     expect(
-      searchWithFilters("?utm=1&type=shows", types, { q: "", type: "Movie" }),
+      searchWithFilters("?utm=1&type=shows", types, {
+        q: "",
+        type: "Movie",
+        active: false,
+      }),
     ).toBe("?utm=1&type=movies");
-    expect(searchWithFilters("?q=x", types, { q: "", type: "" })).toBe("");
+    expect(
+      searchWithFilters("?q=x", types, { q: "", type: "", active: false }),
+    ).toBe("");
   });
 });

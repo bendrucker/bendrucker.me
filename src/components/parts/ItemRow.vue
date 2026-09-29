@@ -133,18 +133,29 @@ function tickBackground(fraction: number): string {
           :class="PART_ICONS[kind]"
         />
       </span>
-      <!-- Art sits on a tile, which is all that shows when it is missing or
-           fails to load. The kind is spoken rather than put in the alt, so a
-           broken image has no text to spill out of a 30px slot. -->
+      <!-- Art sits on a tile, which shows a dim glyph when the art is missing
+           or fails to load. The kind is spoken rather than put in the alt, so
+           a broken image has no text to spill out of a 30px slot. -->
       <span
         v-else-if="lead === 'poster' || lead === 'sleeve'"
-        class="flex-none overflow-hidden bg-tile shadow-[0_4px_10px_-6px_var(--shadow)] transition-transform duration-400 ease-spring group-hover/row:-rotate-2 motion-reduce:transition-none"
+        class="relative flex flex-none items-center justify-center overflow-hidden bg-tile shadow-[0_4px_10px_-6px_var(--shadow)] transition-transform duration-400 ease-spring group-hover/row:-rotate-2 motion-reduce:transition-none"
         :class="
           lead === 'poster'
             ? 'aspect-[2/3] w-[30px] rounded-[3px]'
             : ['size-[38px]', podcast ? 'rounded-lg' : 'rounded-[3px]']
         "
       >
+        <span
+          aria-hidden="true"
+          class="absolute size-3.5 text-dim/60"
+          :class="
+            lead === 'poster'
+              ? 'icon-[lucide--clapperboard]'
+              : podcast
+                ? 'icon-[lucide--mic]'
+                : 'icon-[lucide--disc-3]'
+          "
+        />
         <img
           v-if="art"
           v-art-fallback
@@ -153,7 +164,7 @@ function tickBackground(fraction: number): string {
           :width="lead === 'poster' ? 30 : 38"
           :height="lead === 'poster' ? 45 : 38"
           loading="lazy"
-          class="size-full object-cover"
+          class="relative size-full object-cover"
         />
       </span>
       <span

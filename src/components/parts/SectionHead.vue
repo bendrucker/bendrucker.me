@@ -20,7 +20,7 @@ withDefaults(
   <component
     :is="`h${level}`"
     v-if="section"
-    class="pt-3 pb-1 pl-1 text-lg leading-tight font-semibold text-foreground md:pt-1"
+    class="pt-3 pb-1 text-lg leading-tight font-semibold text-foreground md:pt-0"
   >
     {{ label }}
   </component>
@@ -28,7 +28,7 @@ withDefaults(
     :is="`h${level}`"
     v-else
     class="pt-5 pb-2 label-caps md:first:pt-1"
-    :class="gutter ? 'pl-[34px]' : 'pl-1'"
+    :class="gutter ? 'pl-[34px]' : ''"
   >
     {{ label }}
   </component>

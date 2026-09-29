@@ -6,14 +6,6 @@ import type { MediaRow } from "./types";
 /** Highlights: three on a phone, five from the desktop breakpoint up. */
 export const HIGHLIGHTS = { phone: 3, desktop: 5 } as const;
 
-/** The segment value that picks shows mid-season rather than a type. */
-export const ACTIVE = "Active";
-
-function ofType(row: MediaRow, type: string): boolean {
-  if (type === "") return true;
-  return type === ACTIVE ? row.active === true : row.type === type;
-}
-
 /** A row of the list below the highlights. */
 export interface ListRow extends MediaRow {
   /**
@@ -46,6 +38,8 @@ export interface MediaFilters {
   q: string;
   /** A type value, like "Book", or "" for all. */
   type: string;
+  /** Only what is still in progress, whatever its type. */
+  active: boolean;
 }
 
 export interface ViewOptions extends MediaFilters {
@@ -61,10 +55,15 @@ export interface ViewOptions extends MediaFilters {
 export function buildMediaView(
   rows: readonly MediaRow[],
   highlightKeys: readonly string[],
-  { q, type, thisYear }: ViewOptions,
+  { q, type, active, thisYear }: ViewOptions,
 ): MediaView {
-  const hit = rows.filter((row) => matches(row, q) && ofType(row, type));
-  const plain = q.trim() !== "" || type !== "";
+  const hit = rows.filter(
+    (row) =>
+      matches(row, q) &&
+      (type === "" || row.type === type) &&
+      (!active || row.active === true),
+  );
+  const plain = q.trim() !== "" || type !== "" || active;
 
   const byKey = new Map(hit.map((row) => [row.key, row]));
   const top = plain
@@ -124,6 +123,7 @@ export function filtersFromUrl(
   return {
     q: url.searchParams.get("q") ?? "",
     type: typeFromParam(types, url.searchParams.get("type")),
+    active: url.searchParams.get("active") === "1",
   };
 }
 
@@ -131,7 +131,7 @@ export function filtersFromUrl(
 export function searchWithFilters(
   search: string,
   types: readonly CategoryType[],
-  { q, type }: MediaFilters,
+  { q, type, active }: MediaFilters,
 ): string {
   const params = new URLSearchParams(search);
   if (q === "") params.delete("q");
@@ -139,6 +139,8 @@ export function searchWithFilters(
   const param = typeParam(types, type);
   if (param === "") params.delete("type");
   else params.set("type", param);
+  if (active) params.set("active", "1");
+  else params.delete("active");
   const out = params.toString();
   return out === "" ? "" : `?${out}`;
 }

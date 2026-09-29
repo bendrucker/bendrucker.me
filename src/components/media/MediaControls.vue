@@ -45,6 +45,10 @@ const q = computed({
   },
 });
 
+function toggleActive() {
+  filters.active = !filters.active;
+}
+
 const status = computed(() => {
   if (filters.q.trim() === "") return "";
   return filters.count === 1 ? "1 match" : `${filters.count} matches`;
@@ -54,14 +58,14 @@ const status = computed(() => {
 <template>
   <!--
     Without a script the field submits as a plain form, and the server renders
-    the result. The sidebar is too narrow for equal thirds to hold "Podcasts",
-    so there each segment starts from its label's width and shares what is left.
+    the result. In the sidebar the types stack as a list under the search, as
+    the Rides view switch does, which leaves room for a type to be added.
   -->
   <form
     method="get"
     role="search"
     :action="cat.route"
-    class="tool-row w-full"
+    :class="sidebar ? 'flex flex-col gap-4' : 'tool-row w-full'"
     @submit.prevent
   >
     <input
@@ -70,14 +74,72 @@ const status = computed(() => {
       name="type"
       :value="typeParam(types, filters.type)"
     />
-    <SegmentGroup
-      v-model="type"
-      :options="options"
-      :label="`${cat.name} type`"
-      fill
-      class="min-w-0 flex-1"
-      :class="sidebar ? '*:basis-auto' : ''"
-    />
-    <SearchControl v-model="q" :noun="cat.noun" :status="status" collapsible />
+    <input v-if="filters.active" type="hidden" name="active" value="1" />
+    <template v-if="sidebar">
+      <div class="tool-row">
+        <SearchControl
+          v-model="q"
+          :noun="cat.noun"
+          :status="status"
+          collapsible
+          class="ml-auto"
+        />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <p class="px-1 label-caps">Type</p>
+        <SegmentGroup
+          v-model="type"
+          :options="options"
+          :label="`${cat.name} type`"
+          list
+        />
+      </div>
+      <div v-if="cat.progress" class="flex flex-col gap-1.5">
+        <p class="px-1 label-caps">Status</p>
+        <button
+          type="button"
+          :aria-pressed="filters.active"
+          class="inline-flex min-h-9 items-center gap-2 rounded-[7px] px-2.5 text-sm text-dim transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cat aria-pressed:bg-background aria-pressed:text-cat aria-pressed:shadow-[0_1px_2px_var(--shadow)]"
+          @click="toggleActive"
+        >
+          <span
+            aria-hidden="true"
+            class="size-4"
+            :class="
+              filters.active
+                ? 'icon-[lucide--square-check]'
+                : 'icon-[lucide--square]'
+            "
+          />
+          {{ cat.progress }}
+        </button>
+      </div>
+    </template>
+    <template v-else>
+      <SegmentGroup
+        v-model="type"
+        :options="options"
+        :label="`${cat.name} type`"
+        fill
+        class="min-w-0 flex-1"
+      />
+      <button
+        v-if="cat.progress"
+        type="button"
+        :aria-pressed="filters.active"
+        :aria-label="cat.progress"
+        :title="cat.progress"
+        class="inline-flex size-9 flex-none items-center justify-center rounded-[10px] text-foreground/70 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cat aria-pressed:bg-foreground/6 aria-pressed:text-cat"
+        @click="toggleActive"
+      >
+        <span aria-hidden="true" class="size-4 icon-[lucide--circle-dashed]" />
+      </button>
+      <SearchControl
+        v-model="q"
+        :noun="cat.noun"
+        :status="status"
+        collapsible
+      />
+    </template>
   </form>
 </template>

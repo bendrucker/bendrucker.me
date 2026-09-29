@@ -30,6 +30,7 @@ const view = computed(() =>
   buildMediaView(props.rows, props.highlightKeys, {
     q: filters.q,
     type: filters.type,
+    active: filters.active,
     thisYear: props.thisYear,
   }),
 );
@@ -47,6 +48,7 @@ const list = useTemplateRef<HTMLElement>("list");
 async function reset() {
   filters.q = "";
   filters.type = "";
+  filters.active = false;
   await nextTick();
   list.value?.focus();
 }

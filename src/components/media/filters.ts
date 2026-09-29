@@ -28,7 +28,7 @@ if (typeof document !== "undefined") {
   });
 }
 
-/** The route's search and type filter, kept in the URL so it can be shared. */
+/** The route's search and filters, kept in the URL so they can be shared. */
 export function useMediaFilters(
   id: MediaCategory,
   initial: MediaState,
@@ -43,7 +43,7 @@ export function useMediaFilters(
 
   const types = category(id).types ?? [];
   watch(
-    () => ({ q: state.q, type: state.type }),
+    () => ({ q: state.q, type: state.type, active: state.active }),
     (next) => {
       const search = searchWithFilters(location.search, types, next);
       history.replaceState(

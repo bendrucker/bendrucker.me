@@ -14,7 +14,6 @@ export type Credit = keyof typeof CREDIT_LINES;
 const CREDIT_ORDER: readonly Credit[] = ["maps", "posters", "covers"];
 
 export interface CategoryType {
-  /** A row's `type`, or `ACTIVE`, which picks shows mid-season instead. */
   value: string;
   label: string;
 }
@@ -38,6 +37,8 @@ export interface Category {
   credits: readonly Credit[];
   /** The kinds its type segment filters between. */
   types?: readonly CategoryType[];
+  /** Names the filter for what is still in progress, where rows track it. */
+  progress?: string;
 }
 
 export const CATEGORIES: readonly Category[] = [
@@ -96,10 +97,10 @@ export const CATEGORIES: readonly Category[] = [
     art: "posters",
     credits: ["posters"],
     types: [
-      { value: "Active", label: "Active" },
       { value: "Show", label: "Shows" },
       { value: "Movie", label: "Movies" },
     ],
+    progress: "In progress",
   },
   {
     id: "listening",

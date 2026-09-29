@@ -64,8 +64,12 @@ const { playing, open } = useOutbound();
           "
         >
           <span
-            class="relative block aspect-[2/3] w-full overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"
+            class="relative flex aspect-[2/3] w-full items-center justify-center overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"
           >
+            <span
+              aria-hidden="true"
+              class="absolute size-6 text-dim/60 icon-[lucide--clapperboard]"
+            />
             <img
               v-if="item.art"
               v-art-fallback
@@ -75,13 +79,13 @@ const { playing, open } = useOutbound();
               height="180"
               loading="lazy"
               decoding="async"
-              class="size-full object-cover"
+              class="relative size-full object-cover"
             />
           </span>
+          <!-- The row stays when there is no meter, so every title lines up. -->
           <span
-            v-if="item.ticks?.length"
-            role="img"
-            :aria-label="item.tickLabel"
+            :role="item.ticks?.length ? 'img' : undefined"
+            :aria-label="item.ticks?.length ? item.tickLabel : undefined"
             class="flex h-[3px] gap-px"
           >
             <span
