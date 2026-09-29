@@ -81,6 +81,8 @@ export interface MediaRow {
   art?: string;
   /** Album label color. */
   label?: string;
+  /** A show whose season is still in progress. */
+  active?: boolean;
   /** Each episode tick's watched share, 0 to 1. */
   ticks?: number[];
   tickLabel?: string;

@@ -14,6 +14,7 @@ export type Credit = keyof typeof CREDIT_LINES;
 const CREDIT_ORDER: readonly Credit[] = ["maps", "posters", "covers"];
 
 export interface CategoryType {
+  /** A row's `type`, or `ACTIVE`, which picks shows mid-season instead. */
   value: string;
   label: string;
 }
@@ -95,6 +96,7 @@ export const CATEGORIES: readonly Category[] = [
     art: "posters",
     credits: ["posters"],
     types: [
+      { value: "Active", label: "Active" },
       { value: "Show", label: "Shows" },
       { value: "Movie", label: "Movies" },
     ],

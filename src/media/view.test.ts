@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { category } from "@/categories";
 import { loadMediaFeed } from "./load";
+import type { MediaRow } from "./types";
 import {
   buildMediaView,
   filtersFromUrl,
@@ -9,6 +10,19 @@ import {
 } from "./view";
 
 const OPTIONS = { q: "", type: "", thisYear: "2026" };
+
+/** A bare row, enough for the filters to read. */
+function bareRow(key: string, type: string, active?: boolean): MediaRow {
+  return {
+    key,
+    type,
+    title: key,
+    day: "2026-09-01",
+    url: `https://example.com/${key}`,
+    via: "Trakt",
+    ...(active && { active }),
+  };
+}
 
 function titles(view: MediaView) {
   return {
@@ -69,6 +83,24 @@ describe("buildMediaView", () => {
       ],
     });
     expect(desktop(view).highlights).toHaveLength(4);
+  });
+
+  it("narrows Watching to the shows mid-season", () => {
+    const rows = [
+      bareRow("Silo", "Show", true),
+      bareRow("Severance", "Show"),
+      bareRow("Sinners", "Movie"),
+    ];
+    const view = buildMediaView(rows, [], { ...OPTIONS, type: "Active" });
+    const listed = view.sections.flatMap((s) =>
+      s.weeks.flatMap((w) => w.rows.map((r) => r.item.title)),
+    );
+
+    expect(listed).toEqual(["Silo"]);
+    const types = category("watching").types ?? [];
+    expect(
+      filtersFromUrl(new URL("https://x.test/watching/?type=active"), types),
+    ).toEqual({ q: "", type: "Active" });
   });
 
   it("leads Watching with the latest watched", async () => {

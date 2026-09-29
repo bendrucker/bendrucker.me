@@ -42,9 +42,10 @@ function watchingRow(key: string, item: WatchingItem): MediaRow {
       season: item.season,
     }),
     // A finished season has nothing left to track, so only one in progress
-    // carries a meter.
+    // is active and carries a meter.
     ...(item.episodes &&
       item.episodes.watched < item.episodes.aired && {
+        active: true,
         ticks: episodeTicks(item.episodes.watched, item.episodes.aired),
         tickLabel: tickLabel(item.episodes.watched, item.episodes.aired),
       }),

@@ -6,6 +6,14 @@ import type { MediaRow } from "./types";
 /** Highlights: three on a phone, five from the desktop breakpoint up. */
 export const HIGHLIGHTS = { phone: 3, desktop: 5 } as const;
 
+/** The segment value that picks shows mid-season rather than a type. */
+export const ACTIVE = "Active";
+
+function ofType(row: MediaRow, type: string): boolean {
+  if (type === "") return true;
+  return type === ACTIVE ? row.active === true : row.type === type;
+}
+
 /** A row of the list below the highlights. */
 export interface ListRow extends MediaRow {
   /**
@@ -55,9 +63,7 @@ export function buildMediaView(
   highlightKeys: readonly string[],
   { q, type, thisYear }: ViewOptions,
 ): MediaView {
-  const hit = rows.filter(
-    (row) => matches(row, q) && (type === "" || row.type === type),
-  );
+  const hit = rows.filter((row) => matches(row, q) && ofType(row, type));
   const plain = q.trim() !== "" || type !== "";
 
   const byKey = new Map(hit.map((row) => [row.key, row]));
