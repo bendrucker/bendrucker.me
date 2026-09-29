@@ -19,6 +19,11 @@ const props = withDefaults(
     org?: string;
     /** A description, an author, or a season. */
     text?: string;
+    /**
+     * Leaves a compact row's `text` to the desktop, where a description has
+     * room to say something rather than trail off after a word.
+     */
+    wideText?: boolean;
     /** Your own note, set off by a rule in the category color. */
     note?: string;
     lead?: RowLead;
@@ -53,7 +58,13 @@ const props = withDefaults(
      */
     tinted?: boolean;
   }>(),
-  { lead: "none", query: "", compact: false, tinted: false },
+  {
+    lead: "none",
+    query: "",
+    compact: false,
+    tinted: false,
+    wideText: false,
+  },
 );
 
 const leaves = computed(() => props.via !== undefined);
@@ -168,7 +179,11 @@ function tickBackground(fraction: number): string {
           <span class="line-clamp-1 max-w-full flex-none text-sm">
             <MarkedText :text="title" :query="query" />
           </span>
-          <span v-if="text" class="line-clamp-1 min-w-0 text-xs text-dim">
+          <span
+            v-if="text"
+            class="line-clamp-1 min-w-0 text-xs text-dim"
+            :class="wideText ? 'max-md:hidden' : ''"
+          >
             <MarkedText :text="text" :query="query" />
           </span>
         </span>
@@ -225,7 +240,7 @@ function tickBackground(fraction: number): string {
             v-if="hilly"
             role="img"
             aria-label="Hilly"
-            class="icon-[lucide--mountain] size-[13px] group-hover/row:animate-nudge motion-reduce:group-hover/row:animate-none"
+            class="size-[13px] icon-[lucide--mountain] group-hover/row:animate-nudge motion-reduce:group-hover/row:animate-none"
           />
         </span>
         <span class="min-w-[6ch] text-right">{{ figure }}</span>
@@ -235,13 +250,13 @@ function tickBackground(fraction: number): string {
         v-if="leaves"
         role="img"
         :aria-label="`Opens ${via}`"
-        class="icon-[lucide--arrow-up-right] flex-none self-center text-dim transition-[opacity,translate] duration-[200ms,350ms] ease-spring group-hover/row:translate-x-0.5 group-hover/row:-translate-y-0.5 group-hover/row:opacity-100"
+        class="flex-none self-center text-dim transition-[opacity,translate] duration-[200ms,350ms] ease-spring icon-[lucide--arrow-up-right] group-hover/row:translate-x-0.5 group-hover/row:-translate-y-0.5 group-hover/row:opacity-100"
         :class="compact ? 'size-3 opacity-50' : 'size-[13px] opacity-60'"
       />
       <span
         v-else-if="!compact"
         aria-hidden="true"
-        class="icon-[lucide--chevron-right] size-3.5 flex-none self-center text-cat opacity-35 transition-[opacity,translate] duration-[200ms,400ms] ease-spring group-hover/row:translate-x-0.5 group-hover/row:opacity-100 group-focus-visible/row:opacity-100"
+        class="size-3.5 flex-none self-center text-cat opacity-35 transition-[opacity,translate] duration-[200ms,400ms] ease-spring icon-[lucide--chevron-right] group-hover/row:translate-x-0.5 group-hover/row:opacity-100 group-focus-visible/row:opacity-100"
       />
     </a>
   </div>

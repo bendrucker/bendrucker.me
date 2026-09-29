@@ -200,7 +200,13 @@ const rideFigures = ride
                 <ul class="flex flex-col gap-0.5 md:gap-1">
                   {card.items.map((post) => (
                     <li>
-                      <ItemRow href={post.href} title={post.title} compact />
+                      <ItemRow
+                        href={post.href}
+                        title={post.title}
+                        text={post.text}
+                        wideText
+                        compact
+                      />
                     </li>
                   ))}
                 </ul>

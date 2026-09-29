@@ -33,7 +33,7 @@ function initState() {
         >
           <ReadingProgress />
           <div
-            class="flex max-w-[680px] flex-col gap-4 pt-4 text-[17px] leading-[1.7]"
+            class="flex max-w-[760px] flex-col gap-4 pt-4 text-[17px] leading-[1.7]"
           >
             <p v-for="n in 12" :key="n">
               Paragraph {{ n }}. Scroll this box and the bar under its top edge
