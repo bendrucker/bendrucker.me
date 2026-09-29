@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, toRef } from "vue";
+import { monthsByYear } from "@/activity/sections";
+import {
+  scrollToSection,
+  useScrollSpy,
+} from "@/components/cycling/useScrollSpy";
+import DateRail from "@/components/parts/DateRail.vue";
 import SearchControl from "@/components/parts/SearchControl.vue";
 import SegmentGroup from "@/components/parts/SegmentGroup.vue";
 import { category } from "@/categories";
@@ -44,6 +50,18 @@ const q = computed({
     filters.q = value;
   },
 });
+
+/*
+ * Only the sidebar copy draws the rail, and the list is another island, so
+ * the spy looks for its sections across the whole page.
+ */
+const sections = toRef(filters, "sections");
+const rail = computed(() => monthsByYear(sections.value));
+const activeMonth = props.sidebar ? useScrollSpy(sections) : null;
+
+function jump(key: string) {
+  scrollToSection(null, key);
+}
 
 function toggleActive() {
   filters.active = !filters.active;
@@ -114,6 +132,12 @@ const status = computed(() => {
           {{ cat.progress }}
         </button>
       </div>
+      <DateRail
+        v-if="rail.length"
+        :years="rail"
+        :active="activeMonth ?? sections[0] ?? null"
+        @jump="jump"
+      />
     </template>
     <template v-else>
       <SegmentGroup

@@ -1,13 +1,14 @@
 // What the Code list shows for a set of filters. The server renders it from
 // the URL and the island reruns it as the filters change, so both read the
 // same function and a shared link lands on the same list.
-import { matches } from "@/activity/search";
 import {
-  groupRows,
-  monthShort,
-  type GroupedRow,
-  type Section,
-} from "@/activity/sections";
+  markGutters,
+  type Guttered,
+  type GutteredSection,
+  type Listed,
+} from "@/activity/gutter";
+import { matches } from "@/activity/search";
+import { groupRows, monthShort, type GroupedRow } from "@/activity/sections";
 
 /** A repository, or a project standing in for its repositories. */
 export interface CodeRow {
@@ -282,27 +283,10 @@ export function rankHighlights(
     .slice(0, count);
 }
 
-/** What a row's timeline gutter draws: its day, and whether the line stops under it. */
-export interface GutterMarks {
-  showDay: boolean;
-  weekEnd: boolean;
-}
+/** A row in the month list, with its gutter at each width. */
+export type ListedRow = Guttered<CodeRow & Listed>;
 
-/**
- * A row in the month list. Highlights past the phone's three still show in
- * the months on a phone, where they are hidden from the highlights, and only
- * there, so nothing is listed twice at either width. A desktop skips those
- * rows, so its gutter can differ: the next row may be the first of its day,
- * or the one its week's line stops under.
- */
-export interface ListedRow extends CodeRow {
-  phoneOnly: boolean;
-  phone: GutterMarks;
-  desktop: GutterMarks;
-}
-
-/** A month section, which a desktop hides when it holds only phone rows. */
-export type ListedSection = Section<ListedRow> & { phoneOnly: boolean };
+export type ListedSection = GutteredSection<CodeRow & Listed>;
 
 export interface CodeView {
   highlights: CodeRow[];
@@ -350,7 +334,7 @@ export function codeView(
   const onDesktop = new Set(highlights);
   const listed = hit
     .filter((row) => !onPhone.has(row))
-    .map((row) => ({ row, phoneOnly: onDesktop.has(row), day: row.day }));
+    .map((row) => ({ ...row, phoneOnly: onDesktop.has(row) }));
 
   return {
     highlights,
@@ -358,80 +342,6 @@ export function codeView(
     sorted: [],
     count: hit.length,
   };
-}
-
-interface Listing {
-  row: CodeRow;
-  phoneOnly: boolean;
-  day: string;
-}
-
-/** Each row's gutter at both widths, reading the list as each width shows it. */
-function markGutters(sections: Section<Listing>[]): ListedSection[] {
-  let desktopDay: string | undefined;
-
-  return sections.map((section) => {
-    const weeks = section.weeks.map((week) => {
-      const lastOnDesktop = week.rows.findLast(({ item }) => !item.phoneOnly);
-      return {
-        key: week.key,
-        rows: week.rows.map((grouped, i) => {
-          const { row, phoneOnly } = grouped.item;
-          const desktop = {
-            showDay: !phoneOnly && row.day !== desktopDay,
-            weekEnd: grouped === lastOnDesktop,
-          };
-          if (!phoneOnly) desktopDay = row.day;
-          return {
-            ...grouped,
-            item: {
-              ...row,
-              phoneOnly,
-              phone: {
-                showDay: grouped.showDay,
-                weekEnd: i === week.rows.length - 1,
-              },
-              desktop,
-            },
-          };
-        }),
-      };
-    });
-
-    return {
-      key: section.key,
-      label: section.label,
-      weeks,
-      phoneOnly: weeks.every((week) =>
-        week.rows.every(({ item }) => item.phoneOnly),
-      ),
-    };
-  });
-}
-
-export interface GutterCopy {
-  key: string;
-  marks: GutterMarks;
-  /** Which width draws this copy, when the two differ. */
-  class: "" | "md:hidden" | "max-md:hidden";
-}
-
-/**
- * The gutters a row draws: one when both widths mark it alike, otherwise one
- * per width, switched in CSS since a width check in script would paint the
- * wrong one before hydrating.
- */
-export function gutterCopies(
-  phone: GutterMarks,
-  desktop: GutterMarks,
-): GutterCopy[] {
-  if (phone.showDay === desktop.showDay && phone.weekEnd === desktop.weekEnd) {
-    return [{ key: "both", marks: phone, class: "" }];
-  }
-  return [
-    { key: "phone", marks: phone, class: "md:hidden" },
-    { key: "desktop", marks: desktop, class: "max-md:hidden" },
-  ];
 }
 
 export { codeTransitionName as transitionName } from "@/transitions/names";

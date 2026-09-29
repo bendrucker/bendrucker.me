@@ -39,6 +39,8 @@ export interface Category {
   types?: readonly CategoryType[];
   /** Names the filter for what is still in progress, where rows track it. */
   progress?: string;
+  /** False keeps its list's days private: rows show the month, never the day. */
+  dated?: boolean;
 }
 
 export const CATEGORIES: readonly Category[] = [
@@ -101,6 +103,7 @@ export const CATEGORIES: readonly Category[] = [
       { value: "Movie", label: "Movies" },
     ],
     progress: "In progress",
+    dated: false,
   },
   {
     id: "listening",

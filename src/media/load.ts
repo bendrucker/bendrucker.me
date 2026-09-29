@@ -33,7 +33,31 @@ function common(key: string, item: ReadingItem | WatchingItem | ListeningItem) {
   };
 }
 
-function watchingRow(key: string, item: WatchingItem): MediaRow {
+/**
+ * A show's season lists under every month it was watched in, dated to the
+ * last watch that month. Only the latest carries the meter, so the in-progress
+ * filter finds each season once.
+ */
+function watchingRows(key: string, item: WatchingItem): MediaRow[] {
+  const base = watchingBase(key, item);
+  const byMonth = new Map<string, string>();
+  for (const day of item.watchedDays ?? []) {
+    const month = day.slice(0, 7);
+    if (month !== item.day.slice(0, 7) && day > (byMonth.get(month) ?? "")) {
+      byMonth.set(month, day);
+    }
+  }
+  return [
+    { ...base, ...progress(item) },
+    ...[...byMonth].map(([month, day]) => ({
+      ...base,
+      key: `${key}-${month}`,
+      day,
+    })),
+  ];
+}
+
+function watchingBase(key: string, item: WatchingItem): MediaRow {
   return {
     ...common(key, item),
     ...(item.art !== undefined && { art: item.art }),
@@ -41,14 +65,19 @@ function watchingRow(key: string, item: WatchingItem): MediaRow {
       text: `Season ${item.season}`,
       season: item.season,
     }),
-    // A finished season has nothing left to track, so only one in progress
-    // is active and carries a meter.
-    ...(item.episodes &&
-      item.episodes.watched < item.episodes.aired && {
-        active: true,
-        ticks: episodeTicks(item.episodes.watched, item.episodes.aired),
-        tickLabel: tickLabel(item.episodes.watched, item.episodes.aired),
-      }),
+  };
+}
+
+/**
+ * A finished season has nothing left to track, so only one in progress is
+ * active and carries a meter.
+ */
+function progress({ episodes }: WatchingItem): Partial<MediaRow> {
+  if (!episodes || episodes.watched >= episodes.aired) return {};
+  return {
+    active: true,
+    ticks: episodeTicks(episodes.watched, episodes.aired),
+    tickLabel: tickLabel(episodes.watched, episodes.aired),
   };
 }
 
@@ -63,11 +92,13 @@ function listeningRow(key: string, item: ListeningItem): MediaRow {
 function feed<T>(
   items: readonly T[],
   rank: (items: readonly T[]) => T[],
-  row: (key: string, item: T) => MediaRow,
+  rows: (key: string, item: T) => MediaRow | MediaRow[],
 ): MediaFeed {
   const keys = new Map(items.map((item, i) => [item, `m${i}`]));
   return {
-    rows: items.map((item) => row(keys.get(item)!, item)),
+    rows: items
+      .flatMap((item) => rows(keys.get(item)!, item))
+      .toSorted((a, b) => b.day.localeCompare(a.day)),
     highlightKeys: rank(items).map((item) => keys.get(item)!),
   };
 }
@@ -80,7 +111,7 @@ export async function loadMediaFeed(
     return feed(await loadReading(), rankReading, common);
   }
   if (category === "watching") {
-    return feed(await loadWatching(), rankWatching, watchingRow);
+    return feed(await loadWatching(), rankWatching, watchingRows);
   }
   return feed(await loadListening(), rankListening, listeningRow);
 }

@@ -35,7 +35,13 @@ function initState() {
           <MediaControls
             :key="`${state.category}-${state.sidebar}`"
             :id="mediaCategory(state.category)"
-            :initial="{ q: '', type: '', count: 0 }"
+            :initial="{
+              q: '',
+              type: '',
+              active: false,
+              count: 0,
+              sections: [],
+            }"
             :sidebar="state.sidebar"
           />
         </div>

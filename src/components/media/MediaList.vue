@@ -2,11 +2,13 @@
 import { computed, nextTick, useTemplateRef, watch } from "vue";
 import EmptyState from "@/components/parts/EmptyState.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
+import MonthSections from "@/components/parts/MonthSections.vue";
+import RowGutter from "@/components/parts/RowGutter.vue";
 import SectionHead from "@/components/parts/SectionHead.vue";
 import { KIND_ICONS } from "@/components/parts/icons";
 import { category } from "@/categories";
 import type { MediaCategory, MediaRow } from "@/media/types";
-import { buildMediaView } from "@/media/view";
+import { buildMediaView, desktopSections } from "@/media/view";
 import { useMediaFilters, type MediaState } from "./filters";
 import PosterShelf from "./PosterShelf.vue";
 import RecordShelf from "./RecordShelf.vue";
@@ -39,6 +41,13 @@ watch(
   () => view.value.count,
   (count) => {
     filters.count = count;
+  },
+);
+
+watch(
+  () => desktopSections(view.value),
+  (sections) => {
+    filters.sections = sections;
   },
 );
 
@@ -107,30 +116,15 @@ function rowProps(row: MediaRow) {
 
     <SectionHead v-if="view.sections.length" label="Recent" section />
 
-    <section
-      v-for="section in view.sections"
-      :key="section.key"
-      :aria-labelledby="`media-${section.key}`"
-      :class="section.phoneOnly ? 'md:hidden' : ''"
-    >
-      <SectionHead
-        :id="`media-${section.key}`"
-        :label="section.label"
-        :level="3"
-        :gutter="false"
-      />
-      <ul class="flex flex-col gap-2">
-        <template v-for="week in section.weeks" :key="week.key">
-          <li
-            v-for="row in week.rows"
-            :key="row.item.key"
-            :class="row.item.phoneOnly ? 'md:hidden' : ''"
-          >
-            <ItemRow v-bind="rowProps(row.item)" />
-          </li>
-        </template>
-      </ul>
-    </section>
+    <MonthSections :sections="view.sections" :dated="cat.dated !== false">
+      <template #row="{ item, dayNum, dated }">
+        <ItemRow v-bind="rowProps(item)">
+          <template v-if="dated" #gutter>
+            <RowGutter :row="item" :day="dayNum" />
+          </template>
+        </ItemRow>
+      </template>
+    </MonthSections>
 
     <EmptyState
       v-if="view.empty"

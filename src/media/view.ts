@@ -1,24 +1,21 @@
+import {
+  markGutters,
+  type Guttered,
+  type GutteredSection,
+  type Listed,
+} from "@/activity/gutter";
 import { matches } from "@/activity/search";
-import { groupRows, type Section } from "@/activity/sections";
+import { groupRows } from "@/activity/sections";
 import type { CategoryType } from "@/categories";
 import type { MediaRow } from "./types";
 
 /** Highlights: three on a phone, five from the desktop breakpoint up. */
 export const HIGHLIGHTS = { phone: 3, desktop: 5 } as const;
 
-/** A row of the list below the highlights. */
-export interface ListRow extends MediaRow {
-  /**
-   * Highlighted on a desktop, so the list there leaves it out. A phone shows
-   * three highlights, so the fourth and fifth fall back into its list.
-   */
-  phoneOnly: boolean;
-}
+/** A row of the month list below the highlights, with its day gutter. */
+export type ListRow = Guttered<MediaRow & Listed>;
 
-export interface ListSection extends Section<ListRow> {
-  /** Every row in it is phone-only, so the heading is too. */
-  phoneOnly: boolean;
-}
+export type ListSection = GutteredSection<MediaRow & Listed>;
 
 export interface Highlight extends MediaRow {
   /** Past the phone's three: shown from the desktop breakpoint up. */
@@ -74,16 +71,11 @@ export function buildMediaView(
   const onPhone = new Set(top.slice(0, HIGHLIGHTS.phone).map((row) => row.key));
   const onDesktop = new Set(top.map((row) => row.key));
 
-  const rest: ListRow[] = hit
+  const rest = hit
     .filter((row) => !onPhone.has(row.key))
     .map((row) => ({ ...row, phoneOnly: onDesktop.has(row.key) }));
 
-  const sections = groupRows(rest, "season", { thisYear }).map((section) => ({
-    ...section,
-    phoneOnly: section.weeks.every((week) =>
-      week.rows.every((row) => row.item.phoneOnly),
-    ),
-  }));
+  const sections = markGutters(groupRows(rest, "month", { thisYear }));
 
   return {
     highlights: top.map((row, i) => ({
@@ -94,6 +86,13 @@ export function buildMediaView(
     empty: hit.length === 0,
     count: hit.length,
   };
+}
+
+/** The keys of the sections a desktop shows, which the sidebar's rail jumps to. */
+export function desktopSections(view: MediaView): string[] {
+  return view.sections
+    .filter((section) => !section.phoneOnly)
+    .map((section) => section.key);
 }
 
 /**

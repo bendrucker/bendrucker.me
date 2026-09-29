@@ -16,8 +16,10 @@ import {
   useScrollSpy,
 } from "@/components/cycling/useScrollSpy";
 import ItemRow from "@/components/parts/ItemRow.vue";
+import MonthSections from "@/components/parts/MonthSections.vue";
 import RouteFrame from "@/components/parts/RouteFrame.vue";
 import type { RouteNote } from "@/notes";
+import RowGutter from "@/components/parts/RowGutter.vue";
 import SearchControl from "@/components/parts/SearchControl.vue";
 import SectionHead from "@/components/parts/SectionHead.vue";
 import SegmentGroup from "@/components/parts/SegmentGroup.vue";
@@ -29,7 +31,6 @@ import {
   SORT_OPTIONS,
   codeView,
   countLabel,
-  gutterCopies,
   ownerFrom,
   parseFilters,
   sortFrom,
@@ -287,55 +288,23 @@ async function reset() {
 
       <template v-else-if="filters.sort === 'recent'">
         <SectionHead label="Recent" section />
-        <section
-          v-for="section in view.sections"
-          :id="`month-${section.key}`"
-          :key="section.key"
-          :data-month-key="section.key"
-          :aria-label="section.label"
-          tabindex="-1"
-          class="scroll-mt-16 outline-none md:scroll-mt-6 md:sidebar-collapsed:scroll-mt-16"
-          :class="section.phoneOnly ? 'md:hidden' : ''"
-        >
-          <SectionHead :label="section.label" :level="3" />
-          <div class="flex flex-col gap-1.5">
-            <ul
-              v-for="week in section.weeks"
-              :key="week.key"
-              class="flex flex-col gap-1.5"
+        <MonthSections :sections="view.sections">
+          <template #row="{ item, dayNum }">
+            <ItemRow
+              :href="item.href"
+              :title="item.title"
+              :org="item.org"
+              :text="item.text"
+              :lead="item.lead"
+              :dot="item.dot"
+              :query="filters.q"
             >
-              <li
-                v-for="{ item, dayNum } in week.rows"
-                :key="item.key"
-                :class="item.phoneOnly ? 'md:hidden' : ''"
-              >
-                <ItemRow
-                  :href="item.href"
-                  :title="item.title"
-                  :org="item.org"
-                  :text="item.text"
-                  :lead="item.lead"
-                  :dot="item.dot"
-                  :query="filters.q"
-                >
-                  <template #gutter>
-                    <TimelineGutter
-                      v-for="copy in gutterCopies(
-                        item.phone,
-                        item.phoneOnly ? item.phone : item.desktop,
-                      )"
-                      :key="copy.key"
-                      :class="copy.class"
-                      :day="dayNum"
-                      :show-day="copy.marks.showDay"
-                      :week-end="copy.marks.weekEnd"
-                    />
-                  </template>
-                </ItemRow>
-              </li>
-            </ul>
-          </div>
-        </section>
+              <template #gutter>
+                <RowGutter :row="item" :day="dayNum" />
+              </template>
+            </ItemRow>
+          </template>
+        </MonthSections>
       </template>
 
       <section v-else :aria-label="sortLabel">

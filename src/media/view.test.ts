@@ -73,7 +73,7 @@ describe("buildMediaView", () => {
       "The Overstory",
     ]);
     expect(phone(view).sections[0]).toEqual({
-      label: "Fall",
+      label: "September",
       rows: [
         "Breakneck",
         "Piranesi",
@@ -125,22 +125,35 @@ describe("buildMediaView", () => {
       "Abbott Elementary",
     ]);
     expect(desktop(view).sections[0]).toEqual({
-      label: "Fall",
+      label: "September",
       rows: ["The Simpsons", "Bugonia"],
     });
+    // The Pitt's second season spans three months and lists under each.
+    const pitt = view.sections.flatMap((section) =>
+      section.weeks.flatMap((week) =>
+        week.rows
+          .filter(({ item }) => item.title === "The Pitt" && item.season === 2)
+          .map(({ item }) => [section.label, item.ticks !== undefined]),
+      ),
+    );
+    expect(pitt).toEqual([
+      ["August", false],
+      ["July", false],
+    ]);
   });
 
   it("drops a section from the desktop when its rows are all highlighted there", async () => {
     const { rows, highlightKeys } = await loadMediaFeed("listening");
     const view = buildMediaView(rows, highlightKeys, OPTIONS);
 
-    // Cowboy Carter is the fifth highlight and all Spring 2024 holds.
+    // Cowboy Carter is the fifth highlight and all April 2024 holds.
     expect(desktop(view).highlights.at(-1)).toBe("Cowboy Carter");
-    expect(phone(view).sections.find((s) => s.label === "Spring 2024")).toEqual(
-      { label: "Spring 2024", rows: ["Cowboy Carter"] },
-    );
+    expect(phone(view).sections.find((s) => s.label === "April 2024")).toEqual({
+      label: "April 2024",
+      rows: ["Cowboy Carter"],
+    });
     expect(desktop(view).sections.map((s) => s.label)).not.toContain(
-      "Spring 2024",
+      "April 2024",
     );
   });
 
@@ -153,7 +166,7 @@ describe("buildMediaView", () => {
     });
     expect(titles(searched)).toEqual({
       highlights: [],
-      sections: [{ label: "Summer", rows: ["Reflections on Trusting Trust"] }],
+      sections: [{ label: "July", rows: ["Reflections on Trusting Trust"] }],
     });
 
     const books = buildMediaView(rows, highlightKeys, {
@@ -187,17 +200,20 @@ describe("buildMediaView", () => {
     expect(view).toMatchObject({ empty: true, count: 0, sections: [] });
   });
 
-  it("names a season's year once it isn't this one, and opens winter in December", () => {
+  it("names a month's year once it isn't this one", () => {
     const row = { type: "Book", url: "https://example.com", via: "x" };
     const view = buildMediaView(
       [
-        { ...row, key: "a", title: "A", day: "2026-12-02" },
-        { ...row, key: "b", title: "B", day: "2026-11-30" },
+        { ...row, key: "a", title: "A", day: "2027-01-02" },
+        { ...row, key: "b", title: "B", day: "2026-12-30" },
       ],
       [],
       { ...OPTIONS, thisYear: "2026" },
     );
-    expect(view.sections.map((s) => s.label)).toEqual(["Winter 2027", "Fall"]);
+    expect(view.sections.map((s) => s.label)).toEqual([
+      "January 2027",
+      "December",
+    ]);
   });
 });
 

@@ -40,7 +40,13 @@ async function initState() {
         >
           <MediaControls
             :id="mediaCategory(state.category)"
-            :initial="{ q: '', type: '', count: 0 }"
+            :initial="{
+              q: '',
+              type: '',
+              active: false,
+              count: 0,
+              sections: [],
+            }"
           />
           <MediaList
             :id="mediaCategory(state.category)"
@@ -48,7 +54,13 @@ async function initState() {
             :highlight-keys="
               state.feeds[mediaCategory(state.category)].highlightKeys
             "
-            :initial="{ q: '', type: '', count: 0 }"
+            :initial="{
+              q: '',
+              type: '',
+              active: false,
+              count: 0,
+              sections: [],
+            }"
             :this-year="STORY_YEAR"
           />
         </div>

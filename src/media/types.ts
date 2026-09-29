@@ -34,6 +34,11 @@ export const WatchingItemSchema = z.object({
   art: z.string().min(1).optional(),
   /** The season a show's episodes belong to. */
   season: z.number().int().positive().optional(),
+  /**
+   * The days a show's episodes were watched, `day` among them as the latest.
+   * They only place the season in each month it spans and never show.
+   */
+  watchedDays: z.array(z.iso.date()).optional(),
   /** A show's season: episodes watched out of those aired. */
   episodes: z
     .object({

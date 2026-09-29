@@ -1,9 +1,9 @@
+import { gutterCopies } from "@/activity/gutter";
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_FILTERS,
   codeView,
   countLabel,
-  gutterCopies,
   filterRows,
   filterSearch,
   isDefault,

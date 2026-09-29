@@ -110,19 +110,23 @@ function shows(region: RouteRegion): boolean {
           v-if="shows('sidebar')"
           :id="`${cat.id}-sidebar`"
           :aria-label="`${cat.name} controls`"
-          class="sticky top-24 flex flex-col gap-5 max-md:hidden sidebar-collapsed:hidden"
+          class="flex flex-col self-stretch max-md:hidden sidebar-collapsed:hidden"
         >
-          <slot name="sidebar" />
+          <!-- The aside runs the list's full height, so its controls stick to
+               the top of the viewport and the collapse button to the bottom. -->
+          <div class="sticky top-24 flex flex-col gap-5">
+            <slot name="sidebar" />
+          </div>
           <button
             type="button"
             data-sidebar-toggle
             :aria-controls="`${cat.id}-sidebar`"
             aria-label="Sidebar"
-            class="-mt-2 inline-flex size-7 items-center justify-center self-end rounded-[7px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat"
+            class="sticky bottom-4 mt-auto -mr-1.5 inline-flex size-6 flex-none items-center justify-center self-end rounded-[6px] text-dim transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-cat"
           >
             <span
               aria-hidden="true"
-              class="size-4 icon-[lucide--panel-left-close]"
+              class="size-2.5 icon-[lucide--panel-left-close]"
             />
           </button>
         </aside>

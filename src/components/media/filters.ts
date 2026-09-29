@@ -16,6 +16,8 @@ import { searchWithFilters, type MediaFilters } from "@/media/view";
 export interface MediaState extends MediaFilters {
   /** How many rows match. The list keeps it, and the search announces it. */
   count: number;
+  /** The list's desktop sections, which the sidebar's rail names. */
+  sections: string[];
 }
 
 const stores = new Map<MediaCategory, MediaState>();
