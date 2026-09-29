@@ -13,12 +13,13 @@ describe("loadMediaFeed", () => {
   it("ranks Listening by plays, which no row carries", async () => {
     const { rows, highlightKeys } = await loadMediaFeed("listening");
     const byKey = new Map(rows.map((r) => [r.key, r.title]));
+    // The Daily and Hard Fork tie on plays, so the newer leads.
     expect(highlightKeys.slice(0, 5).map((k) => byKey.get(k))).toEqual([
       "Promises",
+      "Brat",
+      "The Daily",
       "Hard Fork",
-      "In Rainbows",
-      "Acquired",
-      "Blonde",
+      "Cowboy Carter",
     ]);
     expect(rows.some((r) => "plays" in r)).toBe(false);
   });
@@ -42,5 +43,11 @@ describe("loadMediaFeed", () => {
     const { rows } = await loadMediaFeed("listening");
     expect(rows.find((r) => r.title === "Blonde")?.label).toBe("#9fb4a5");
     expect(rows.every((r) => r.url.startsWith("https://"))).toBe(true);
+  });
+
+  it("leaves art off a row that has none, so its tile shows", async () => {
+    const { rows } = await loadMediaFeed("listening");
+    expect(rows.find((r) => r.title === "The Daily")).not.toHaveProperty("art");
+    expect(rows.find((r) => r.title === "Promises")?.art).toBeDefined();
   });
 });

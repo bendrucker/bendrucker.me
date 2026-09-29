@@ -36,7 +36,7 @@ function common(key: string, item: ReadingItem | WatchingItem | ListeningItem) {
 function watchingRow(key: string, item: WatchingItem): MediaRow {
   return {
     ...common(key, item),
-    art: item.art,
+    ...(item.art !== undefined && { art: item.art }),
     ...(item.season !== undefined && {
       text: `Season ${item.season}`,
       season: item.season,
@@ -55,7 +55,7 @@ function watchingRow(key: string, item: WatchingItem): MediaRow {
 function listeningRow(key: string, item: ListeningItem): MediaRow {
   return {
     ...common(key, item),
-    art: item.art,
+    ...(item.art !== undefined && { art: item.art }),
     ...(item.label !== undefined && { label: item.label }),
   };
 }

@@ -67,22 +67,24 @@ describe("buildMediaView", () => {
     const { rows, highlightKeys } = await loadMediaFeed("reading");
     const view = buildMediaView(rows, highlightKeys, OPTIONS);
 
-    expect(phone(view)).toEqual({
-      highlights: ["The Web We Lost", "The Overstory", "Piranesi"],
-      sections: [
-        { label: "Fall", rows: ["Local-first software"] },
-        {
-          label: "Summer",
-          rows: [
-            "Choose Boring Technology",
-            "Things You Should Never Do, Part I",
-            "Tomorrow, and Tomorrow, and Tomorrow",
-            "Reflections on Trusting Trust",
-          ],
-        },
+    expect(phone(view).highlights).toEqual([
+      "The Web We Lost",
+      "The Bitter Lesson",
+      "The Overstory",
+    ]);
+    expect(phone(view).sections[0]).toEqual({
+      label: "Fall",
+      rows: [
+        "Breakneck",
+        "Piranesi",
+        "The Ministry of Time",
+        "Local-first software",
       ],
     });
-    expect(desktop(view).highlights).toHaveLength(4);
+    expect(desktop(view).highlights.slice(3)).toEqual([
+      "James",
+      "Gödel, Escher, Bach: An Eternal Golden Braid",
+    ]);
   });
 
   it("narrows Watching to the shows mid-season", () => {
@@ -108,41 +110,28 @@ describe("buildMediaView", () => {
     const view = buildMediaView(rows, highlightKeys, OPTIONS);
 
     expect(phone(view).highlights).toEqual([
+      "The Pitt",
       "Slow Horses",
-      "Silo",
-      "One Battle After Another",
+      "Abbott Elementary",
     ]);
-    expect(desktop(view).sections).toEqual([
-      { label: "Summer", rows: ["Sinners", "Andor", "The Pitt"] },
-    ]);
+    expect(desktop(view).sections[0]).toEqual({
+      label: "Fall",
+      rows: ["The Simpsons", "Bugonia"],
+    });
   });
 
   it("drops a section from the desktop when its rows are all highlighted there", async () => {
     const { rows, highlightKeys } = await loadMediaFeed("listening");
     const view = buildMediaView(rows, highlightKeys, OPTIONS);
 
-    expect(phone(view)).toEqual({
-      highlights: ["Promises", "Hard Fork", "In Rainbows"],
-      sections: [
-        { label: "Fall", rows: ["Acquired"] },
-        {
-          label: "Summer",
-          rows: ["Blonde", "The Rest Is History", "Titanic Rising"],
-        },
-      ],
-    });
-    expect(desktop(view)).toEqual({
-      highlights: [
-        "Promises",
-        "Hard Fork",
-        "In Rainbows",
-        "Acquired",
-        "Blonde",
-      ],
-      sections: [
-        { label: "Summer", rows: ["The Rest Is History", "Titanic Rising"] },
-      ],
-    });
+    // Cowboy Carter is the fifth highlight and all Spring 2024 holds.
+    expect(desktop(view).highlights.at(-1)).toBe("Cowboy Carter");
+    expect(phone(view).sections.find((s) => s.label === "Spring 2024")).toEqual(
+      { label: "Spring 2024", rows: ["Cowboy Carter"] },
+    );
+    expect(desktop(view).sections.map((s) => s.label)).not.toContain(
+      "Spring 2024",
+    );
   });
 
   it("shows the plain list under a search or a type filter", async () => {
@@ -162,7 +151,7 @@ describe("buildMediaView", () => {
       type: "Book",
     });
     expect(books.highlights).toEqual([]);
-    expect(books.count).toBe(3);
+    expect(books.count).toBe(22);
   });
 
   it("matches notes, which the row renders", async () => {
@@ -171,7 +160,12 @@ describe("buildMediaView", () => {
       ...OPTIONS,
       q: "matter annotation",
     });
-    expect(titles(view).sections[0]?.rows).toEqual(["The Web We Lost"]);
+    expect(titles(view).sections.flatMap((s) => s.rows)).toEqual([
+      "The Web We Lost",
+      "The Bitter Lesson",
+      "Do Things that Don't Scale",
+      "The Tyranny of Structurelessness",
+    ]);
   });
 
   it("is empty when nothing matches", async () => {

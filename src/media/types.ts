@@ -30,8 +30,8 @@ export const ReadingItemSchema = z.object({
 export const WatchingItemSchema = z.object({
   ...base,
   type: z.enum(["Show", "Movie"]),
-  /** A poster, 2:3. */
-  art: z.string().min(1),
+  /** A poster, 2:3. Without one, the row draws its bare tile. */
+  art: z.string().min(1).optional(),
   /** The season a show's episodes belong to. */
   season: z.number().int().positive().optional(),
   /** A show's season: episodes watched out of those aired. */
@@ -46,8 +46,8 @@ export const WatchingItemSchema = z.object({
 export const ListeningItemSchema = z.object({
   ...base,
   type: z.enum(["Album", "Podcast"]),
-  /** A square sleeve. */
-  art: z.string().min(1),
+  /** A square sleeve. Without one, the row draws its bare tile. */
+  art: z.string().min(1).optional(),
   /** The record label's color, for the disc an album slides out. */
   label: z
     .string()
