@@ -55,8 +55,10 @@ twelve episodes one tick stands for several and fills by the share of them
 watched. A movie has neither, which is what marks it.
 
 The `home` layout is the home card's: the title comes first and the poster
-sits beneath it at 56px wide on a phone and 72px on desktop, so a card cut
-short at its peek still names each show. The Watching route keeps the default `route` layout.
+sits beneath it, capped at 72px on desktop, so a card cut short at its peek
+still names each show. A phone's poster fills its share of the row, and a
+touch screen names it only once tapped: the first tap lays the title over the
+art with an outbound mark, and a second opens it. The Watching route keeps the default `route` layout.
 
 Hover lifts and tilts a poster with a sheen across it. A tap plays a bigger
 lift, then opens the poster's link in a new tab. Under reduced motion the

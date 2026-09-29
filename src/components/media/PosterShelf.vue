@@ -62,9 +62,7 @@ const { playing, armed, open } = useOutbound();
       >
         <span
           class="flex flex-col gap-0.5"
-          :class="
-            layout === 'home' ? 'order-last mt-1 max-w-14 md:max-w-18' : ''
-          "
+          :class="layout === 'home' ? 'order-last mt-1 md:max-w-18' : ''"
         >
           <span
             class="relative flex aspect-[2/3] w-full items-center justify-center overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=armed]/poster:-translate-y-[3px] group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"

@@ -159,6 +159,14 @@ const drawerId = computed(() => `${props.id}-drawer`);
   }
 }
 
+/* A phone stacks the cards in one column, so no row needs a shared height and
+   a card whose body fits stands at the body's height. */
+@media (width < 48rem) {
+  [data-size="fits"] > .drawer {
+    height: auto;
+  }
+}
+
 [data-size="fits"] > .drawer,
 [data-state="open"] > .drawer {
   --drawer-fade: 0px;

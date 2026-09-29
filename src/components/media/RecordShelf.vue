@@ -37,11 +37,11 @@ function itemSize(type: string): string {
   const home = props.layout === "home";
   if (type === "Album") {
     return home
-      ? "grow-[1.45] [--s:min(calc(100cqi/1.45),56px)] md:[--s:min(calc(100cqi/1.45),72px)]"
+      ? "grow [--s:100cqi] md:grow-[1.45] md:[--s:min(calc(100cqi/1.45),72px)]"
       : "grow-[1.45] [--s:calc(100cqi/1.45)]";
   }
   return home
-    ? "grow [--s:min(100cqi,56px)] md:[--s:min(100cqi,72px)]"
+    ? "grow [--s:100cqi] md:[--s:min(100cqi,72px)]"
     : "grow [--s:100cqi]";
 }
 
@@ -59,11 +59,12 @@ const VINYL = [
 <template>
   <!--
     Each item sizes itself from its own width, a container: `--s` is the
-    sleeve's side and `--o` the room either side of it, which the record slides
-    right into as the sleeve slides left. An album is 1.45 sleeves wide to hold
-    its record, and a podcast is a sleeve alone. On home the sleeve stops at
-    56px on a phone and 72px on desktop, matching the posters' width, and the
-    item's leftover width goes to its words.
+    sleeve's side, `--o` how far the record slides right as the sleeve slides
+    left, and `--p` the sleeve's inset. An album is 1.45 sleeves wide to hold
+    its record, and a podcast is a sleeve alone. On home a desktop's sleeve
+    stops at 72px, matching the posters' width, and the item's leftover width
+    goes to its words. A phone's home album is a sleeve wide like a podcast, so
+    four sleeves fill the row, and its record slides over the gap as it leaves.
   -->
   <ul class="flex gap-3 md:gap-4">
     <li
@@ -85,9 +86,11 @@ const VINYL = [
           class="relative block h-(--s)"
           :class="[
             item.type === 'Album'
-              ? 'w-[calc(var(--s)*1.45)] [--o:calc(var(--s)*.225)]'
-              : 'w-(--s) [--o:0px]',
-            layout === 'home' ? 'order-last mt-0.5' : '',
+              ? 'w-[calc(var(--s)*1.45)] [--o:calc(var(--s)*.225)] [--p:var(--o)]'
+              : 'w-(--s) [--o:0px] [--p:0px]',
+            layout === 'home'
+              ? 'order-last mt-0.5 max-md:w-(--s) max-md:[--p:0px]'
+              : '',
           ]"
         >
           <!-- Pulling a record: it catches on the sleeve, glides once free,
@@ -95,7 +98,7 @@ const VINYL = [
           <span
             v-if="item.type === 'Album'"
             aria-hidden="true"
-            class="absolute top-[3%] left-[calc(var(--o)+var(--s)*.03)] block size-[calc(var(--s)*.94)] translate-x-[6%] transition-transform duration-350 ease-[cubic-bezier(.45,0,.2,1)] group-hover/album:translate-x-[calc(var(--o)*.85)] group-hover/album:duration-550 group-hover/album:ease-[linear(0,.03_8%,.12_18%,.3_30%,.55_44%,.78_58%,.92_72%,1.015_86%,1)] group-data-[state=out]/album:translate-x-(--o) group-data-[state=out]/album:duration-450 group-data-[state=out]/album:ease-[linear(0,.03_8%,.12_18%,.3_30%,.55_44%,.78_58%,.92_72%,1.015_86%,1)] motion-reduce:transition-none motion-reduce:group-hover/album:translate-x-[6%] motion-reduce:group-data-[state=out]/album:translate-x-[6%]"
+            class="absolute top-[3%] left-[calc(var(--p)+var(--s)*.03)] block size-[calc(var(--s)*.94)] translate-x-[6%] transition-transform duration-350 ease-[cubic-bezier(.45,0,.2,1)] group-hover/album:translate-x-[calc(var(--o)*.85)] group-hover/album:duration-550 group-hover/album:ease-[linear(0,.03_8%,.12_18%,.3_30%,.55_44%,.78_58%,.92_72%,1.015_86%,1)] group-data-[state=out]/album:translate-x-(--o) group-data-[state=out]/album:duration-450 group-data-[state=out]/album:ease-[linear(0,.03_8%,.12_18%,.3_30%,.55_44%,.78_58%,.92_72%,1.015_86%,1)] motion-reduce:transition-none motion-reduce:group-hover/album:translate-x-[6%] motion-reduce:group-data-[state=out]/album:translate-x-[6%]"
           >
             <!-- The record only turns once it has cleared the sleeve. -->
             <span
@@ -112,7 +115,7 @@ const VINYL = [
           <!-- The sleeve is the hand holding still: it gives way a beat after
                the pull starts. -->
           <span
-            class="absolute top-0 left-(--o) block size-(--s) overflow-hidden rounded-[3px] bg-tile shadow-[0_1px_0_rgb(255_255_255/.25)_inset,0_8px_18px_-10px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.45,0,.2,1)] group-hover/album:translate-x-[calc(var(--o)*-.85)] group-hover/album:-rotate-[1.5deg] group-hover/album:delay-40 group-hover/album:duration-500 group-hover/album:ease-[cubic-bezier(.3,.6,.2,1)] group-data-[state=out]/album:translate-x-[calc(var(--o)*-1)] group-data-[state=out]/album:-rotate-3 motion-reduce:transition-none motion-reduce:group-hover/album:translate-x-0 motion-reduce:group-hover/album:rotate-0 motion-reduce:group-data-[state=out]/album:translate-x-0 motion-reduce:group-data-[state=out]/album:rotate-0"
+            class="absolute top-0 left-(--p) block size-(--s) overflow-hidden rounded-[3px] bg-tile shadow-[0_1px_0_rgb(255_255_255/.25)_inset,0_8px_18px_-10px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.45,0,.2,1)] group-hover/album:translate-x-[calc(var(--o)*-.85)] group-hover/album:-rotate-[1.5deg] group-hover/album:delay-40 group-hover/album:duration-500 group-hover/album:ease-[cubic-bezier(.3,.6,.2,1)] group-data-[state=out]/album:translate-x-[calc(var(--o)*-1)] group-data-[state=out]/album:-rotate-3 motion-reduce:transition-none motion-reduce:group-hover/album:translate-x-0 motion-reduce:group-hover/album:rotate-0 motion-reduce:group-data-[state=out]/album:translate-x-0 motion-reduce:group-data-[state=out]/album:rotate-0"
           >
             <img
               v-if="item.art"

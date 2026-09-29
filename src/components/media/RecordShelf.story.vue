@@ -48,15 +48,17 @@ async function initState() {
 <docs lang="md">
 # Record shelf
 
-Listening's highlights, ranked by plays: three on a phone, five from the
+Listening's highlights, ranked by plays: four on a phone, five from the
 desktop breakpoint up. An album sits in its sleeve with the disc peeking out
 behind it, labelled in the color the fixture gives it. A podcast is a square
 cover with a podcast badge and no disc.
 
 The `home` layout is the home card's: the title and artist come first and the
-sleeve sits beneath them, capped at 56px on a phone and 72px on desktop, so a
-card cut short at its peek still names each record. The Listening route keeps
-the default `route` layout.
+sleeve sits beneath them, capped at 72px on desktop, so a card cut short at
+its peek still names each record. On a phone an album takes a sleeve's
+share of the row like a podcast, its disc sliding over the gap as it leaves,
+and a touch screen names it only once tapped. The Listening route keeps the
+default `route` layout.
 
 Hover slides the disc further out over 0.55s. A tap slides it out over 0.45s,
 spins it once clear of the sleeve, then opens the link in a new tab. It slides
