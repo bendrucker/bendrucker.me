@@ -26,6 +26,7 @@ import { RIDE_ID, toRideDetailWire } from "@/rides/detail";
 import { climbFigure, distanceFigure, fullDate } from "@/rides/format";
 import { rideHref } from "@/rides/links";
 import { isHilly } from "@/rides/rank";
+import { readingFigure } from "@/writing/rows";
 
 const { cards, features } = await loadHome();
 const credits = homeCredits(cards.map((card) => card.id));
@@ -203,8 +204,7 @@ const rideFigures = ride
                       <ItemRow
                         href={post.href}
                         title={post.title}
-                        text={post.text}
-                        wideText
+                        figure={readingFigure(post.minutes)}
                         compact
                       />
                     </li>

@@ -37,6 +37,7 @@ function posts(count: number): PostRow[] {
     tags: [],
     day: "2020-01-01",
     featured: true,
+    minutes: 4,
   }));
 }
 

@@ -6,6 +6,7 @@ import {
   localDay,
   neighbors,
   postRows,
+  readingMinutes,
   postTags,
   transitionName,
   writingView,
@@ -78,12 +79,35 @@ describe("postRows", () => {
     expect(east?.day).toBe("2014-02-20");
   });
 
+  it("reads a post's minutes from its body", () => {
+    const [long] = postRows(
+      [
+        {
+          ...post("long", "2014-01-01T12:00:00Z"),
+          body: "word ".repeat(1500),
+        },
+      ],
+      OPTIONS,
+    );
+    expect(long?.minutes).toBe(7);
+  });
+
   it("drops a description that repeats the title", () => {
     const [same] = postRows(
       [post("same", "2014-01-01T12:00:00Z", { description: "same" })],
       OPTIONS,
     );
     expect(same?.text).toBeUndefined();
+  });
+});
+
+describe("readingMinutes", () => {
+  it.each<{ name: string; body: string; minutes: number }>([
+    { name: "an empty body", body: "", minutes: 1 },
+    { name: "a short note", body: "a few words", minutes: 1 },
+    { name: "a long post", body: "word ".repeat(2300), minutes: 10 },
+  ])("$name", ({ body, minutes }) => {
+    expect(readingMinutes(body)).toBe(minutes);
   });
 });
 

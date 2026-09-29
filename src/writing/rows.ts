@@ -11,6 +11,8 @@ import { groupRows, monthShort, type GroupedRow } from "@/activity/sections";
 export interface PostSource {
   id: string;
   filePath?: string;
+  /** The Markdown source, which a reading time is counted from. */
+  body?: string;
   data: {
     title: string;
     description: string;
@@ -36,6 +38,20 @@ export interface PostRow {
   /** The local calendar day it was published, `YYYY-MM-DD`. */
   day: string;
   featured: boolean;
+  /** Minutes to read, so a long, deep post stands apart from a short one. */
+  minutes: number;
+}
+
+const WORDS_PER_MINUTE = 230;
+
+export function readingMinutes(body: string): number {
+  const words = body.match(/\S+/g)?.length ?? 0;
+  return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+}
+
+/** A reading time as a row's figure: "6 min". */
+export function readingFigure(minutes: number): string {
+  return `${minutes} min`;
 }
 
 /** Highlights on a desktop. A phone shows the first three, hiding the rest in CSS. */
@@ -80,6 +96,7 @@ export function postRows(
         tags: tags.map((name) => ({ name, slug: tagSlug(name) })),
         day: localDay(post.data.pubDatetime, timezone ?? timeZone),
         featured: featured === true,
+        minutes: readingMinutes(post.body ?? ""),
       };
     });
 }

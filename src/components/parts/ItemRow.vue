@@ -19,11 +19,6 @@ const props = withDefaults(
     org?: string;
     /** A description, an author, or a season. */
     text?: string;
-    /**
-     * Leaves a compact row's `text` to the desktop, where a description has
-     * room to say something rather than trail off after a word.
-     */
-    wideText?: boolean;
     /** Your own note, set off by a rule in the category color. */
     note?: string;
     lead?: RowLead;
@@ -63,7 +58,6 @@ const props = withDefaults(
     query: "",
     compact: false,
     tinted: false,
-    wideText: false,
   },
 );
 
@@ -179,11 +173,7 @@ function tickBackground(fraction: number): string {
           <span class="line-clamp-1 max-w-full flex-none text-sm">
             <MarkedText :text="title" :query="query" />
           </span>
-          <span
-            v-if="text"
-            class="line-clamp-1 min-w-0 text-xs text-dim"
-            :class="wideText ? 'max-md:hidden' : ''"
-          >
+          <span v-if="text" class="line-clamp-1 min-w-0 text-xs text-dim">
             <MarkedText :text="text" :query="query" />
           </span>
         </span>
