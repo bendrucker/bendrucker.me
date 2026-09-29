@@ -4,13 +4,11 @@ import {
   type GutteredSection,
   type Listed,
 } from "@/activity/gutter";
+import { splitHighlights } from "@/activity/highlights";
 import { matches } from "@/activity/search";
 import { groupRows } from "@/activity/sections";
 import type { CategoryType } from "@/categories";
 import type { MediaRow } from "./types";
-
-/** Highlights: three on a phone, five from the desktop breakpoint up. */
-export const HIGHLIGHTS = { phone: 3, desktop: 5 } as const;
 
 /** A row of the month list below the highlights, with its day gutter. */
 export type ListRow = Guttered<MediaRow & Listed>;
@@ -63,26 +61,14 @@ export function buildMediaView(
   const plain = q.trim() !== "" || type !== "" || active;
 
   const byKey = new Map(hit.map((row) => [row.key, row]));
-  const top = plain
+  const ranked = plain
     ? []
-    : highlightKeys
-        .slice(0, HIGHLIGHTS.desktop)
-        .flatMap((key) => byKey.get(key) ?? []);
-  const onPhone = new Set(top.slice(0, HIGHLIGHTS.phone).map((row) => row.key));
-  const onDesktop = new Set(top.map((row) => row.key));
-
-  const rest = hit
-    .filter((row) => !onPhone.has(row.key))
-    .map((row) => ({ ...row, phoneOnly: onDesktop.has(row.key) }));
-
-  const sections = markGutters(groupRows(rest, "month", { thisYear }));
+    : highlightKeys.flatMap((key) => byKey.get(key) ?? []);
+  const { highlights, rest } = splitHighlights(hit, ranked);
 
   return {
-    highlights: top.map((row, i) => ({
-      ...row,
-      desktopOnly: i >= HIGHLIGHTS.phone,
-    })),
-    sections,
+    highlights,
+    sections: markGutters(groupRows(rest, "month", { thisYear })),
     empty: hit.length === 0,
     count: hit.length,
   };

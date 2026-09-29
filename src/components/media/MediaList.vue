@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, useTemplateRef, watch } from "vue";
 import EmptyState from "@/components/parts/EmptyState.vue";
+import HighlightList from "@/components/parts/HighlightList.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
 import MonthSections from "@/components/parts/MonthSections.vue";
 import RowGutter from "@/components/parts/RowGutter.vue";
@@ -100,18 +101,17 @@ function rowProps(row: MediaRow) {
       aria-labelledby="media-favorites"
       class="pb-8"
     >
-      <SectionHead id="media-favorites" label="Favorites" section />
-      <PosterShelf v-if="id === 'watching'" :items="view.highlights" />
-      <RecordShelf v-else-if="id === 'listening'" :items="view.highlights" />
-      <ul v-else class="flex flex-col gap-2">
-        <li
-          v-for="row in view.highlights"
-          :key="row.key"
-          :class="row.desktopOnly ? 'max-md:hidden' : ''"
-        >
-          <ItemRow v-bind="rowProps(row)" />
-        </li>
-      </ul>
+      <HighlightList
+        v-if="id === 'reading'"
+        heading-id="media-favorites"
+        label="Favorites"
+        :rows="view.highlights.map(rowProps)"
+      />
+      <template v-else>
+        <SectionHead id="media-favorites" label="Favorites" section />
+        <PosterShelf v-if="id === 'watching'" :items="view.highlights" />
+        <RecordShelf v-else :items="view.highlights" />
+      </template>
     </section>
 
     <SectionHead v-if="view.sections.length" label="Recent" section />
