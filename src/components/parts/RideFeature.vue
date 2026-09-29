@@ -7,7 +7,7 @@ const PHOTO_ROOM = [
   "",
   "hidden @[310px]:block",
   "hidden @[540px]:block",
-  "hidden @[610px]:block",
+  "hidden @[640px]:block",
 ];
 
 defineProps<{

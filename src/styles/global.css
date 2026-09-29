@@ -215,6 +215,14 @@ html[data-theme="dark"] {
  * the row's end. Open, it takes the whole row and the other controls step
  * aside until it closes.
  */
+/*
+ * Full-bleed padding that stops the content widening past the point where the
+ * home cards show anything more: the Rides card's fourth photo.
+ */
+@utility px-site {
+  padding-inline: max(var(--spacing) * 12, (100% - 86rem) / 2);
+}
+
 @utility tool-row {
   display: flex;
   min-width: 0;
