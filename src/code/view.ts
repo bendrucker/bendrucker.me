@@ -7,6 +7,7 @@ import {
   type GutteredSection,
   type Listed,
 } from "@/activity/gutter";
+import { HIGHLIGHTS, splitHighlights } from "@/activity/highlights";
 import { matches } from "@/activity/search";
 import { groupRows, monthShort, type GroupedRow } from "@/activity/sections";
 
@@ -92,10 +93,6 @@ export const DEFAULT_FILTERS: Readonly<CodeFilters> = {
   lang: "",
   sort: "recent",
 };
-
-/** Highlights on a desktop. A phone shows the first three, hiding the rest in CSS. */
-export const HIGHLIGHTS = 5;
-export const PHONE_HIGHLIGHTS = 3;
 
 function oneOf<T extends string>(
   values: readonly T[],
@@ -275,7 +272,7 @@ export function byRecency(a: CodeRow, b: CodeRow): number {
 /** Ranked by score, strongest first. A row with nothing to rank never leads. */
 export function rankHighlights(
   rows: readonly CodeRow[],
-  count = HIGHLIGHTS,
+  count: number = HIGHLIGHTS.desktop,
 ): CodeRow[] {
   return rows
     .filter((row) => row.score > 0)
@@ -289,7 +286,7 @@ export type ListedRow = Guttered<CodeRow & Listed>;
 export type ListedSection = GutteredSection<CodeRow & Listed>;
 
 export interface CodeView {
-  highlights: CodeRow[];
+  highlights: (CodeRow & { desktopOnly: boolean })[];
   /** Month sections, while the list is sorted by recency. */
   sections: ListedSection[];
   /** One unlabeled run, under any other sort. */
@@ -329,16 +326,14 @@ export function codeView(
     };
   }
 
-  const highlights = isDefault(filters) ? rankHighlights(hit) : [];
-  const onPhone = new Set(highlights.slice(0, PHONE_HIGHLIGHTS));
-  const onDesktop = new Set(highlights);
-  const listed = hit
-    .filter((row) => !onPhone.has(row))
-    .map((row) => ({ ...row, phoneOnly: onDesktop.has(row) }));
+  const { highlights, rest } = splitHighlights(
+    hit,
+    isDefault(filters) ? rankHighlights(hit) : [],
+  );
 
   return {
     highlights,
-    sections: markGutters(groupRows(listed, "month", { thisYear })),
+    sections: markGutters(groupRows(rest, "month", { thisYear })),
     sorted: [],
     count: hit.length,
   };

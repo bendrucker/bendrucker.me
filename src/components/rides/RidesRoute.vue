@@ -16,7 +16,7 @@ import {
 } from "@/components/cycling/useScrollSpy";
 import type { Units } from "@/components/cycling/types";
 import EmptyState from "@/components/parts/EmptyState.vue";
-import ItemRow from "@/components/parts/ItemRow.vue";
+import HighlightList from "@/components/parts/HighlightList.vue";
 import RouteFrame from "@/components/parts/RouteFrame.vue";
 import type { RouteNote } from "@/notes";
 import SearchControl from "@/components/parts/SearchControl.vue";
@@ -228,6 +228,16 @@ const highlights = computed(() =>
   props.highlights.map((row) => fromTuple(row)),
 );
 
+const highlightRows = computed(() =>
+  highlights.value.map((ride) => ({
+    href: rideHref(ride.id, units.value),
+    title: ride.name,
+    text: ride.description,
+    figure: distanceFigure(ride.distanceM, units.value),
+    hilly: isHilly(ride),
+  })),
+);
+
 /** Everything on the page already, for a new query to filter until the index lands. */
 const onPage = computed(() => {
   const byId = new Map<string, RideRow>();
@@ -379,22 +389,7 @@ async function clear() {
     </template>
 
     <template #highlights>
-      <SectionHead label="Highlights" section />
-      <ul class="flex flex-col gap-1.5">
-        <li
-          v-for="(ride, index) in highlights"
-          :key="ride.id"
-          :class="index >= 3 ? 'max-md:hidden' : ''"
-        >
-          <ItemRow
-            :href="rideHref(ride.id, units)"
-            :title="ride.name"
-            :text="ride.description"
-            :figure="distanceFigure(ride.distanceM, units)"
-            :hilly="isHilly(ride)"
-          />
-        </li>
-      </ul>
+      <HighlightList :rows="highlightRows" />
     </template>
 
     <!-- Once mounted, the log stays mounted behind the other views and behind a

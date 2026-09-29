@@ -1,6 +1,7 @@
 ---
 import RouteLayout from "@/layouts/RouteLayout.astro";
 import EmptyState from "@/components/parts/EmptyState.vue";
+import HighlightList from "@/components/parts/HighlightList.vue";
 import ItemRow from "@/components/parts/ItemRow.vue";
 import SearchControl from "@/components/parts/SearchControl.vue";
 import SectionHead from "@/components/parts/SectionHead.vue";
@@ -21,10 +22,6 @@ const view = writingView(rows, { query, tag }, thisYear);
 const tagOptions = tags.map((t) => ({ value: t.slug, label: t.name }));
 const tagValue = tag?.slug ?? "";
 const status = searchStatus(query, view.count);
-
-// A phone shows three highlights. The server can't know the width, so the
-// rest ship hidden below the desktop breakpoint.
-const PHONE_HIGHLIGHTS = 3;
 ---
 
 <RouteLayout
@@ -109,19 +106,14 @@ const PHONE_HIGHLIGHTS = 3;
         data-highlights
         hidden={!view.highlights.some((r) => r.shown)}
       >
-        <SectionHead label="Highlights" section />
-        <ul class="flex flex-col gap-1.5">
-          {view.highlights.map((row, i) => (
-            <li class:list={[{ "max-md:hidden": i >= PHONE_HIGHLIGHTS }]}>
-              <ItemRow
-                href={row.item.href}
-                title={row.item.title}
-                text={row.item.text}
-                figure={readingFigure(row.item.minutes)}
-              />
-            </li>
-          ))}
-        </ul>
+        <HighlightList
+          rows={view.highlights.map(({ item }) => ({
+            href: item.href,
+            title: item.title,
+            text: item.text,
+            figure: readingFigure(item.minutes),
+          }))}
+        />
       </div>
     )
   }

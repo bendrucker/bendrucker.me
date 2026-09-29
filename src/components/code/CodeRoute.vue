@@ -11,6 +11,7 @@ import {
 import { monthsByYear } from "@/activity/sections";
 import DateRail from "@/components/parts/DateRail.vue";
 import EmptyState from "@/components/parts/EmptyState.vue";
+import HighlightList from "@/components/parts/HighlightList.vue";
 import {
   scrollToSection,
   useScrollSpy,
@@ -84,6 +85,17 @@ const filters = reactive<CodeFilters>({ ...props.initial });
 
 const view = computed(() =>
   codeView(props.rows, filters, { thisYear: props.thisYear }),
+);
+
+const highlightRows = computed(() =>
+  view.value.highlights.map((row) => ({
+    href: row.href,
+    title: row.title,
+    org: row.org,
+    text: row.text,
+    lead: row.lead,
+    dot: row.dot,
+  })),
 );
 
 const languageDot = computed(
@@ -252,23 +264,7 @@ async function reset() {
     </template>
 
     <template #highlights>
-      <SectionHead label="Highlights" section />
-      <ul class="flex flex-col gap-1.5">
-        <li
-          v-for="(row, i) in view.highlights"
-          :key="row.key"
-          :class="i >= 3 ? 'max-md:hidden' : ''"
-        >
-          <ItemRow
-            :href="row.href"
-            :title="row.title"
-            :org="row.org"
-            :text="row.text"
-            :lead="row.lead"
-            :dot="row.dot"
-          />
-        </li>
-      </ul>
+      <HighlightList :rows="highlightRows" />
     </template>
 
     <div

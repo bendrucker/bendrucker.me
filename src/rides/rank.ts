@@ -1,15 +1,13 @@
 // Which rides stand out. A big ride goes past 80 km or climbs past 1,200 m,
 // and its score is how far past that bar it goes on whichever it clears by
 // more. The same rule picks the highlights on the Rides route and on home.
+import { HIGHLIGHTS } from "@/activity/highlights";
 import type { RideRow } from "./rows";
 
 export const BIG = { distanceM: 80_000, climbM: 1_200 } as const;
 
 /** Metres climbed per kilometre that earn a row the mountain mark. */
 export const HILLY_M_PER_KM = 18;
-
-/** How many rides the highlights lead with: three on a phone, five on desktop. */
-export const HIGHLIGHT_COUNT = 5;
 
 /** How many rides each record list names. */
 export const RECORD_COUNT = 3;
@@ -45,7 +43,7 @@ export function isHilly({ distanceM, climbM }: Measured): boolean {
 /** The big rides, biggest first. Ties keep the newer ride first. */
 export function rankHighlights<T extends Measured>(
   rides: readonly T[],
-  count = HIGHLIGHT_COUNT,
+  count: number = HIGHLIGHTS.desktop,
 ): T[] {
   return rides
     .filter((ride) => isBig(ride))

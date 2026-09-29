@@ -5,7 +5,7 @@ import type { CodeRow } from "@/code/view";
 import type { MediaRow } from "@/media/types";
 import type { RideRow } from "@/rides/rows";
 import type { PostRow } from "@/writing/rows";
-import { desktopOnly, homeCards, type HomeSources } from "./cards";
+import { homeCards, type HomeSources } from "./cards";
 
 const NOW = new Date("2026-09-27T18:00:00Z");
 
@@ -101,17 +101,5 @@ describe("homeCards", () => {
 
     expect(ridesCard?.id).toBe("rides");
     expect(ridesCard?.items).toEqual(sources().rides.slice(0, 5));
-  });
-});
-
-describe("desktopOnly", () => {
-  it("shows three of a shelf on a phone and five on a desktop", () => {
-    expect([0, 1, 2, 3, 4].map((i) => desktopOnly(i))).toEqual([
-      false,
-      false,
-      false,
-      true,
-      true,
-    ]);
   });
 });

@@ -5,6 +5,7 @@
 // past it in a drawer, so a phone carries all five too. A shelf lays its art
 // out in one row, which a phone's width fits three of, so the page hides the
 // rest there, since the server can't know the width it renders for.
+import { HIGHLIGHTS } from "@/activity/highlights";
 import { dayShuffle } from "@/activity/shuffle";
 import { enabledCategories, type CategoryId } from "@/categories";
 import type { CodeRow } from "@/code/view";
@@ -14,7 +15,11 @@ import type { RideRow } from "@/rides/rows";
 import type { PostRow } from "@/writing/rows";
 
 /** Highlights a card carries, and how many of a shelf's a phone shows. */
-export const HOME_ROWS = { card: 5, posters: 6, phoneShelf: 3 } as const;
+export const HOME_ROWS = {
+  card: HIGHLIGHTS.desktop,
+  posters: 6,
+  phoneShelf: HIGHLIGHTS.phone,
+} as const;
 
 /** Each category's highlights, ranked the way its route ranks them. */
 export interface HomeSources {
@@ -29,11 +34,6 @@ export interface HomeSources {
 export type HomeCard = {
   [K in CategoryId]: { id: K; items: HomeSources[K] };
 }[CategoryId];
-
-/** Whether a shelf's item at this index shows only from the desktop breakpoint up. */
-export function desktopOnly(index: number): boolean {
-  return index >= HOME_ROWS.phoneShelf;
-}
 
 /** A category's card with its first highlights, or the day's order for Listening. */
 function cardFor(id: CategoryId, sources: HomeSources, now: Date): HomeCard {

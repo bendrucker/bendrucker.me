@@ -4,6 +4,7 @@
  * the content collection supplies, so it runs without `astro:content`.
  */
 import kebabcase from "lodash.kebabcase";
+import { HIGHLIGHTS } from "@/activity/highlights";
 import { matches } from "@/activity/search";
 import { groupRows, monthShort, type GroupedRow } from "@/activity/sections";
 
@@ -53,9 +54,6 @@ export function readingMinutes(body: string): number {
 export function readingFigure(minutes: number): string {
   return `${minutes} min`;
 }
-
-/** Highlights on a desktop. A phone shows the first three, hiding the rest in CSS. */
-export const HIGHLIGHT_COUNT = 5;
 
 export function tagSlug(name: string): string {
   return kebabcase(name);
@@ -130,7 +128,7 @@ export function hasTag(row: PostRow, tag: PostTag | undefined): boolean {
 
 /** The featured posts, newest first. */
 export function highlightRows(rows: readonly PostRow[]): PostRow[] {
-  return rows.filter((row) => row.featured).slice(0, HIGHLIGHT_COUNT);
+  return rows.filter((row) => row.featured).slice(0, HIGHLIGHTS.desktop);
 }
 
 export interface WritingFilter {
