@@ -61,4 +61,18 @@ describe("splitHighlights", () => {
     const { rest } = splitHighlights(rows, [{ key: "a" }]);
     expect(rest.map((row) => row.key)).toContain("a");
   });
+
+  it("leads a phone with as many as a shelf fits", () => {
+    const { highlights, rest } = splitHighlights(rows, rows.slice(0, 5), 4);
+    expect(highlights.map((row) => row.desktopOnly)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      true,
+    ]);
+    expect(rest.filter((row) => row.phoneOnly).map((row) => row.key)).toEqual([
+      "e",
+    ]);
+  });
 });

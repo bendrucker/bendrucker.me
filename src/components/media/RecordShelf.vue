@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { vArtFallback } from "@/components/parts/artFallback";
-import { useOutbound } from "./outbound";
+import { linkState, useOutbound } from "./outbound";
 
 export interface ShelfRecord {
   key: string;
@@ -14,7 +14,7 @@ export interface ShelfRecord {
   label?: string;
   url: string;
   via: string;
-  /** Past a phone's three: shown from the desktop breakpoint up. */
+  /** Past a phone's four: shown from the desktop breakpoint up. */
   desktopOnly?: boolean;
 }
 
@@ -30,7 +30,7 @@ const props = withDefaults(
   { layout: "route" },
 );
 
-const { playing, open } = useOutbound();
+const { playing, armed, open } = useOutbound();
 
 /** The item's share of the row and its sleeve's side, capped on home. */
 function itemSize(type: string): string {
@@ -76,7 +76,8 @@ const VINYL = [
         :href="item.url"
         target="_blank"
         rel="noopener"
-        :data-state="playing === item.key ? 'out' : undefined"
+        :data-key="item.key"
+        :data-state="linkState(item.key, playing, armed)"
         class="group/album flex w-full min-w-0 flex-col items-center gap-2 text-center text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat focus-visible:outline-solid"
         @click="open($event, item.key, item.url)"
       >
@@ -125,6 +126,18 @@ const VINYL = [
               class="size-full object-cover"
             />
             <span
+              aria-hidden="true"
+              class="pointer-events-none absolute inset-x-0 bottom-0 z-1 translate-y-2 bg-linear-to-t from-black/85 via-black/60 to-transparent px-1.5 pt-8 pb-1.5 text-left text-[11px] leading-tight text-white opacity-0 transition duration-200 group-data-[state=armed]/album:translate-y-0 group-data-[state=armed]/album:opacity-100 motion-reduce:transition-none"
+            >
+              <span class="line-clamp-3">{{ item.title }}</span>
+            </span>
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute top-1 left-1 z-2 flex size-5 items-center justify-center rounded-[5px] bg-black/55 text-white opacity-0 transition-opacity duration-200 group-hover/album:opacity-100 group-focus-visible/album:opacity-100 group-data-[state=armed]/album:opacity-100"
+            >
+              <span class="size-3 icon-[lucide--arrow-up-right]" />
+            </span>
+            <span
               v-if="item.type === 'Podcast'"
               role="img"
               aria-label="Podcast"
@@ -138,7 +151,7 @@ const VINYL = [
           </span>
         </span>
         <span
-          class="w-full leading-snug"
+          class="w-full leading-snug pointer-coarse:sr-only"
           :class="
             layout === 'home'
               ? 'line-clamp-1 text-xs'
@@ -148,7 +161,7 @@ const VINYL = [
         >
         <span
           v-if="item.text"
-          class="line-clamp-1 w-full text-dim"
+          class="line-clamp-1 w-full text-dim pointer-coarse:sr-only"
           :class="layout === 'home' ? '-mt-1.5 text-[11px]' : '-mt-1 text-xs'"
           >{{ item.text }}</span
         >

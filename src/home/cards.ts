@@ -3,9 +3,9 @@
 // Every card carries five, except Watching, whose narrow posters fit six
 // across a desktop card. A list card rests at a peek height and keeps the rows
 // past it in a drawer, so a phone carries all five too. A shelf lays its art
-// out in one row, which a phone's width fits three of, so the page hides the
+// out in one row, which a phone's width fits four of, so the page hides the
 // rest there, since the server can't know the width it renders for.
-import { HIGHLIGHTS } from "@/activity/highlights";
+import { HIGHLIGHTS, SHELF_PHONE } from "@/activity/highlights";
 import { dayShuffle } from "@/activity/shuffle";
 import { enabledCategories, type CategoryId } from "@/categories";
 import type { CodeRow } from "@/code/view";
@@ -18,7 +18,7 @@ import type { PostRow } from "@/writing/rows";
 export const HOME_ROWS = {
   card: HIGHLIGHTS.desktop,
   posters: 6,
-  phoneShelf: HIGHLIGHTS.phone,
+  phoneShelf: SHELF_PHONE,
 } as const;
 
 /** Each category's highlights, ranked the way its route ranks them. */

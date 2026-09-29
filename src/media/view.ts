@@ -4,11 +4,11 @@ import {
   type GutteredSection,
   type Listed,
 } from "@/activity/gutter";
-import { splitHighlights } from "@/activity/highlights";
+import { SHELF_PHONE, splitHighlights } from "@/activity/highlights";
 import { matches } from "@/activity/search";
 import { groupRows } from "@/activity/sections";
 import type { CategoryType } from "@/categories";
-import type { MediaRow } from "./types";
+import type { MediaCategory, MediaRow } from "./types";
 
 /** A row of the month list below the highlights, with its day gutter. */
 export type ListRow = Guttered<MediaRow & Listed>;
@@ -16,7 +16,7 @@ export type ListRow = Guttered<MediaRow & Listed>;
 export type ListSection = GutteredSection<MediaRow & Listed>;
 
 export interface Highlight extends MediaRow {
-  /** Past the phone's three: shown from the desktop breakpoint up. */
+  /** Past the phone's highlights: shown from the desktop breakpoint up. */
   desktopOnly: boolean;
 }
 
@@ -39,6 +39,8 @@ export interface MediaFilters {
 
 export interface ViewOptions extends MediaFilters {
   thisYear: string;
+  /** How many highlights a phone leads with. */
+  phone?: number;
 }
 
 /**
@@ -50,7 +52,7 @@ export interface ViewOptions extends MediaFilters {
 export function buildMediaView(
   rows: readonly MediaRow[],
   highlightKeys: readonly string[],
-  { q, type, active, thisYear }: ViewOptions,
+  { q, type, active, thisYear, phone }: ViewOptions,
 ): MediaView {
   const hit = rows.filter(
     (row) =>
@@ -64,7 +66,7 @@ export function buildMediaView(
   const ranked = plain
     ? []
     : highlightKeys.flatMap((key) => byKey.get(key) ?? []);
-  const { highlights, rest } = splitHighlights(hit, ranked);
+  const { highlights, rest } = splitHighlights(hit, ranked, phone);
 
   return {
     highlights,
@@ -72,6 +74,11 @@ export function buildMediaView(
     empty: hit.length === 0,
     count: hit.length,
   };
+}
+
+/** How many highlights a phone leads with: a shelf's four, or a list's three. */
+export function phoneHighlights(category: MediaCategory): number | undefined {
+  return category === "reading" ? undefined : SHELF_PHONE;
 }
 
 /** The keys of the sections a desktop shows, which the sidebar's rail jumps to. */

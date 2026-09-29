@@ -4,7 +4,12 @@ import { SITE } from "@/config";
 import { category } from "@/categories";
 import { loadMediaFeed } from "@/media/load";
 import type { MediaCategory } from "@/media/types";
-import { buildMediaView, desktopSections, filtersFromUrl } from "@/media/view";
+import {
+  buildMediaView,
+  desktopSections,
+  filtersFromUrl,
+  phoneHighlights,
+} from "@/media/view";
 import MediaControls from "./MediaControls.vue";
 import MediaList from "./MediaList.vue";
 
@@ -28,7 +33,11 @@ const thisYear = new Intl.DateTimeFormat("en-US", {
   timeZone: SITE.timezone,
   year: "numeric",
 }).format(new Date());
-const view = buildMediaView(rows, highlightKeys, { ...filters, thisYear });
+const view = buildMediaView(rows, highlightKeys, {
+  ...filters,
+  thisYear,
+  phone: phoneHighlights(id),
+});
 
 /*
  * Both copies of the controls hydrate at load, the hidden one included. They

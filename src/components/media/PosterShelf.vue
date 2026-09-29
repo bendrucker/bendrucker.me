@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { tickBackground } from "@/media/ticks";
 import { vArtFallback } from "@/components/parts/artFallback";
-import { useOutbound } from "./outbound";
+import { linkState, useOutbound } from "./outbound";
 
 export interface ShelfPoster {
   key: string;
@@ -13,7 +13,7 @@ export interface ShelfPoster {
   via: string;
   ticks?: readonly number[];
   tickLabel?: string;
-  /** Past a phone's three: shown from the desktop breakpoint up. */
+  /** Past a phone's four: shown from the desktop breakpoint up. */
   desktopOnly?: boolean;
   /** Shown only once the shelf is wide enough for six posters. */
   wideOnly?: boolean;
@@ -31,11 +31,13 @@ withDefaults(
   { layout: "route" },
 );
 
-const { playing, open } = useOutbound();
+const { playing, armed, open } = useOutbound();
 </script>
 
 <template>
-  <!-- Posters share the row evenly, so three fill a phone and five a desktop. -->
+  <!-- Posters share the row evenly, so four fill a phone and five a desktop.
+       A touch screen names a poster only once it is tapped, which is what
+       leaves room for the fourth. -->
   <ul class="@container flex gap-2.5 md:gap-3">
     <li
       v-for="item in items"
@@ -53,7 +55,8 @@ const { playing, open } = useOutbound();
         :href="item.url"
         target="_blank"
         rel="noopener"
-        :data-state="playing === item.key ? 'out' : undefined"
+        :data-key="item.key"
+        :data-state="linkState(item.key, playing, armed)"
         class="group/poster flex w-full min-w-0 flex-col gap-1.5 text-foreground no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat focus-visible:outline-solid"
         @click="open($event, item.key, item.url)"
       >
@@ -64,7 +67,7 @@ const { playing, open } = useOutbound();
           "
         >
           <span
-            class="relative flex aspect-[2/3] w-full items-center justify-center overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"
+            class="relative flex aspect-[2/3] w-full items-center justify-center overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=armed]/poster:-translate-y-[3px] group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"
           >
             <span
               aria-hidden="true"
@@ -81,6 +84,23 @@ const { playing, open } = useOutbound();
               decoding="async"
               class="relative size-full object-cover"
             />
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute inset-x-0 bottom-0 z-1 translate-y-2 bg-linear-to-t from-black/85 via-black/60 to-transparent px-1.5 pt-8 pb-1.5 text-left text-[11px] leading-tight text-white opacity-0 transition duration-200 group-data-[state=armed]/poster:translate-y-0 group-data-[state=armed]/poster:opacity-100 motion-reduce:transition-none"
+            >
+              <span class="line-clamp-3">{{ item.title }}</span>
+              <span
+                v-if="item.season !== undefined"
+                class="font-mono text-[9px] text-white/70"
+                >S{{ item.season }}</span
+              >
+            </span>
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute top-1 left-1 z-2 flex size-5 items-center justify-center rounded-[5px] bg-black/55 text-white opacity-0 transition-opacity duration-200 group-hover/poster:opacity-100 group-focus-visible/poster:opacity-100 group-data-[state=armed]/poster:opacity-100"
+            >
+              <span class="size-3 icon-[lucide--arrow-up-right]" />
+            </span>
           </span>
           <!-- The row stays when there is no meter, so every title lines up. -->
           <span
@@ -96,7 +116,9 @@ const { playing, open } = useOutbound();
             />
           </span>
         </span>
-        <span class="flex min-w-0 items-baseline gap-1 text-xs leading-[1.35]">
+        <span
+          class="flex min-w-0 items-baseline gap-1 text-xs leading-[1.35] pointer-coarse:sr-only"
+        >
           <span class="min-w-0 truncate">{{ item.title }}</span>
           <span
             v-if="item.season !== undefined"

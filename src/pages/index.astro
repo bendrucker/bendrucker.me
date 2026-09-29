@@ -10,7 +10,7 @@ import PosterShelf from "@/components/media/PosterShelf.vue";
 import RecordShelf from "@/components/media/RecordShelf.vue";
 import { homeCredits, type CategoryId } from "@/categories";
 import { SITE } from "@/config";
-import { desktopOnly } from "@/activity/highlights";
+import { desktopOnly, SHELF_PHONE } from "@/activity/highlights";
 import { HOME_ROWS } from "@/home/cards";
 import { loadHome } from "@/home/load";
 import {
@@ -46,6 +46,10 @@ function short(index: number) {
     cards.length > row + 1
   );
 }
+
+// The ride's feature stands shorter than Code's on a phone, so its card rests
+// lower, leaving a row and a half under it.
+const RIDES_PHONE_PEEK = 158;
 
 function tallness(id: CategoryId) {
   if (id !== "rides" && id !== "code") return undefined;
@@ -120,6 +124,7 @@ const rideFigures = ride
             <HomeCard
               id={card.id}
               tall={tallness(card.id)}
+              phonePeek={card.id === "rides" ? RIDES_PHONE_PEEK : undefined}
               short={short(index)}
             >
               {card.id === "rides" && ride && (
@@ -198,7 +203,7 @@ const rideFigures = ride
                   layout="home"
                   items={card.items.map((row, i) => ({
                     ...row,
-                    desktopOnly: desktopOnly(i),
+                    desktopOnly: desktopOnly(i, SHELF_PHONE),
                     wideOnly: i >= HOME_ROWS.card,
                   }))}
                 />
@@ -209,7 +214,7 @@ const rideFigures = ride
                   layout="home"
                   items={card.items.map((row, i) => ({
                     ...row,
-                    desktopOnly: desktopOnly(i),
+                    desktopOnly: desktopOnly(i, SHELF_PHONE),
                   }))}
                 />
               )}

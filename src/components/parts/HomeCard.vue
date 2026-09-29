@@ -16,6 +16,8 @@ const props = defineProps<{
    * which the standard peek leaves standing over empty ground.
    */
   short?: boolean;
+  /** A tall card's peek on a phone, in pixels, when its feature isn't the usual height. */
+  phonePeek?: number;
 }>();
 
 const cat = computed(() => category(props.id));
@@ -65,6 +67,9 @@ const drawerId = computed(() => `${props.id}-drawer`);
       :id="drawerId"
       data-drawer
       class="drawer"
+      :style="
+        phonePeek ? { '--drawer-phone-peek': `${phonePeek}px` } : undefined
+      "
       :class="[
         tall === 'always'
           ? 'drawer-tall'
@@ -136,7 +141,7 @@ const drawerId = computed(() => `${props.id}-drawer`);
    the cards after it still reach the first screen. */
 .drawer-tall,
 .drawer-tall-phone {
-  --drawer-peek: 188px;
+  --drawer-peek: var(--drawer-phone-peek, 188px);
 }
 
 @media (width >= 48rem) {

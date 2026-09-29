@@ -5,9 +5,15 @@
 
 export const HIGHLIGHTS = { phone: 3, desktop: 5 } as const;
 
+/** A shelf of posters or records names its art only when tapped on a phone, so it fits four. */
+export const SHELF_PHONE = 4;
+
 /** Whether the highlight at this index shows only from the desktop breakpoint up. */
-export function desktopOnly(index: number): boolean {
-  return index >= HIGHLIGHTS.phone;
+export function desktopOnly(
+  index: number,
+  phone: number = HIGHLIGHTS.phone,
+): boolean {
+  return index >= phone;
 }
 
 export interface HighlightSplit<T> {
@@ -23,12 +29,16 @@ export interface HighlightSplit<T> {
 export function splitHighlights<T extends object>(
   rows: readonly T[],
   ranked: readonly T[],
+  phone: number = HIGHLIGHTS.phone,
 ): HighlightSplit<T> {
   const top = ranked.slice(0, HIGHLIGHTS.desktop);
-  const onPhone = new Set(top.slice(0, HIGHLIGHTS.phone));
+  const onPhone = new Set(top.slice(0, phone));
   const onDesktop = new Set(top);
   return {
-    highlights: top.map((row, i) => ({ ...row, desktopOnly: desktopOnly(i) })),
+    highlights: top.map((row, i) => ({
+      ...row,
+      desktopOnly: desktopOnly(i, phone),
+    })),
     rest: rows
       .filter((row) => !onPhone.has(row))
       .map((row) => ({ ...row, phoneOnly: onDesktop.has(row) })),

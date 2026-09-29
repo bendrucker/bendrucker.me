@@ -9,7 +9,7 @@ import SectionHead from "@/components/parts/SectionHead.vue";
 import { KIND_ICONS } from "@/components/parts/icons";
 import { category } from "@/categories";
 import type { MediaCategory, MediaRow } from "@/media/types";
-import { buildMediaView, desktopSections } from "@/media/view";
+import { buildMediaView, desktopSections, phoneHighlights } from "@/media/view";
 import { useMediaFilters, type MediaState } from "./filters";
 import PosterShelf from "./PosterShelf.vue";
 import RecordShelf from "./RecordShelf.vue";
@@ -35,6 +35,7 @@ const view = computed(() =>
     type: filters.type,
     active: filters.active,
     thisYear: props.thisYear,
+    phone: phoneHighlights(props.id),
   }),
 );
 
