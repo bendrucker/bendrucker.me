@@ -136,7 +136,7 @@ const drawerId = computed(() => `${props.id}-drawer`);
    the cards after it still reach the first screen. */
 .drawer-tall,
 .drawer-tall-phone {
-  --drawer-peek: 176px;
+  --drawer-peek: 188px;
 }
 
 @media (width >= 48rem) {

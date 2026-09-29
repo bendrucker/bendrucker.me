@@ -5,7 +5,7 @@ import { FEATURE_MAP } from "@/components/cycling/basemap";
 /** The card width each photo past the first needs before it shows. */
 const PHOTO_ROOM = [
   "",
-  "hidden @[310px]:block",
+  "hidden @[380px]:block",
   "hidden @[540px]:block",
   "hidden @[640px]:block",
 ];
@@ -41,7 +41,7 @@ defineProps<{
   >
     <span
       v-if="route"
-      class="block w-[120px] flex-none overflow-hidden rounded-lg md:w-[176px]"
+      class="block w-[92px] flex-none overflow-hidden rounded-lg md:w-[176px]"
     >
       <RouteMap
         :id="id"
@@ -55,21 +55,22 @@ defineProps<{
       />
     </span>
     <span class="flex min-w-0 flex-1 flex-col gap-1">
-      <span class="label-caps text-[11px] leading-none text-dim">{{
-        when
-      }}</span>
       <span
-        class="line-clamp-2 text-base leading-snug font-medium md:text-lg"
+        class="truncate label-caps text-[11px] leading-none text-dim max-md:text-[10px]"
+        >{{ when }}</span
+      >
+      <span
+        class="line-clamp-1 text-[15px] leading-snug font-medium md:line-clamp-2 md:text-lg"
         >{{ name }}</span
       >
       <span
-        class="inline-flex flex-wrap items-center gap-x-1.5 font-mono text-xs text-dim tabular-nums"
+        class="inline-flex items-center gap-x-1.5 font-mono text-xs text-dim tabular-nums max-md:overflow-hidden md:flex-wrap"
       >
         <span
           v-if="hilly"
           role="img"
           aria-label="Hilly"
-          class="size-[13px] icon-[lucide--mountain]"
+          class="size-[13px] flex-none icon-[lucide--mountain]"
         />
         <template v-for="(figure, i) in figures" :key="figure">
           <span v-if="i > 0" aria-hidden="true">·</span>
@@ -83,7 +84,7 @@ defineProps<{
         :key="photo.url"
         role="img"
         :aria-label="photo.alt"
-        class="size-10 rounded-md bg-tile bg-cover bg-center md:size-16"
+        class="size-12 rounded-md bg-tile bg-cover bg-center md:size-16"
         :class="PHOTO_ROOM[i]"
         :style="{ backgroundImage: `url(${photo.url})` }"
       />

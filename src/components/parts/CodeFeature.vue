@@ -21,13 +21,13 @@ defineProps<{
        diamond is drawn larger than a row's and turns the same way on hover. -->
   <a
     :href="href"
-    class="group/feature flex min-w-0 items-start gap-3 rounded-lg bg-background/60 p-3 text-foreground no-underline transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat focus-visible:outline-solid md:gap-3.5 md:p-3.5"
+    class="group/feature flex min-w-0 items-start gap-3 rounded-lg bg-background/60 px-2.5 py-2 text-foreground no-underline transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cat focus-visible:outline-solid md:gap-3.5 md:p-3.5"
   >
     <span
       v-if="lead === 'ring'"
       role="img"
       aria-label="Project"
-      class="mt-2 inline-flex w-5 flex-none items-center justify-center"
+      class="mt-1.5 inline-flex w-5 flex-none items-center justify-center"
     >
       <span
         class="inline-flex size-[15px] rotate-45 items-center justify-center rounded-[3px] border-2 border-current/55 transition-transform duration-600 ease-spring group-hover/feature:rotate-[225deg] motion-reduce:transition-none"
@@ -38,7 +38,7 @@ defineProps<{
     </span>
     <span
       v-else
-      class="mt-2 inline-flex w-5 flex-none items-center justify-center"
+      class="mt-1.5 inline-flex w-5 flex-none items-center justify-center"
     >
       <span
         class="size-[13px] rotate-45 rounded-[3px] transition-transform duration-600 ease-spring group-hover/feature:rotate-[225deg] motion-reduce:transition-none"
@@ -46,20 +46,26 @@ defineProps<{
       />
     </span>
     <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-      <span v-if="org" class="line-clamp-1 text-xs leading-[1.3] text-dim">{{
-        org
-      }}</span>
-      <span class="line-clamp-1 text-base leading-snug font-medium">{{
-        title
-      }}</span>
+      <!-- A phone sets the owner beside the title, saving the line it takes
+           above it on a desktop. -->
+      <span
+        v-if="org"
+        class="line-clamp-1 text-xs leading-[1.3] text-dim max-md:hidden"
+        >{{ org }}</span
+      >
+      <span class="line-clamp-1 text-base leading-snug font-medium">
+        <span v-if="org" class="font-normal text-dim md:hidden"
+          >{{ org }} / </span
+        >{{ title }}
+      </span>
       <span
         v-if="text"
-        class="line-clamp-2 text-[13px] leading-[1.45] text-dim"
+        class="line-clamp-1 text-[13px] leading-[1.45] text-dim md:line-clamp-2"
         >{{ text }}</span
       >
       <span
         v-if="latest"
-        class="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs text-dim"
+        class="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-dim md:mt-1.5"
       >
         <span
           role="img"
