@@ -3,7 +3,7 @@ import Layout from "@/layouts/Layout.astro";
 import CodeFeature from "@/components/parts/CodeFeature.vue";
 import HomeCard from "@/components/parts/HomeCard.vue";
 import HomeDetail from "@/components/parts/HomeDetail.vue";
-import ItemRow from "@/components/parts/ItemRow.vue";
+import HomeItemList from "@/components/parts/HomeItemList.astro";
 import RideFeature from "@/components/parts/RideFeature.vue";
 import { KIND_ICONS } from "@/components/parts/icons";
 import PosterShelf from "@/components/media/PosterShelf.vue";
@@ -148,68 +148,48 @@ const rideFigures = ride
                 />
               )}
               {card.id === "rides" && (
-                <ul class="flex flex-col gap-0.5 md:gap-1">
-                  {card.items.map((ride) => (
-                    <li>
-                      <ItemRow
-                        href={rideHref(ride.id, "imperial")}
-                        title={ride.name}
-                        figure={distanceFigure(ride.distanceM, "imperial")}
-                        hilly={isHilly(ride)}
-                        compact
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <HomeItemList
+                  rows={card.items.map((ride) => ({
+                    href: rideHref(ride.id, "imperial"),
+                    title: ride.name,
+                    figure: distanceFigure(ride.distanceM, "imperial"),
+                    hilly: isHilly(ride),
+                  }))}
+                />
               )}
               {card.id === "code" && (
-                <ul class="flex flex-col gap-0.5 md:gap-1">
-                  {card.items.map((row) => (
-                    <li>
-                      <ItemRow
-                        href={row.href}
-                        title={row.title}
-                        org={row.org || undefined}
-                        lead={row.lead}
-                        dot={row.dot}
-                        compact
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <HomeItemList
+                  rows={card.items.map((row) => ({
+                    href: row.href,
+                    title: row.title,
+                    org: row.org || undefined,
+                    lead: row.lead,
+                    dot: row.dot,
+                  }))}
+                />
               )}
               {card.id === "reading" && (
-                <ul class="flex flex-col gap-0.5 md:gap-1">
-                  {card.items.map((row) => (
-                    <li>
-                      <ItemRow
-                        href={row.url}
-                        via={row.via}
-                        title={row.title}
-                        text={row.text}
-                        note={row.note}
-                        lead="kind"
-                        kind={KIND_ICONS[row.type]}
-                        leadLabel={row.type}
-                        compact
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <HomeItemList
+                  rows={card.items.map((row) => ({
+                    href: row.url,
+                    via: row.via,
+                    title: row.title,
+                    text: row.text,
+                    note: row.note,
+                    lead: "kind",
+                    kind: KIND_ICONS[row.type],
+                    leadLabel: row.type,
+                  }))}
+                />
               )}
               {card.id === "writing" && (
-                <ul class="flex flex-col gap-0.5 md:gap-1">
-                  {card.items.map((post) => (
-                    <li>
-                      <ItemRow
-                        href={post.href}
-                        title={post.title}
-                        figure={readingFigure(post.minutes)}
-                        compact
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <HomeItemList
+                  rows={card.items.map((post) => ({
+                    href: post.href,
+                    title: post.title,
+                    figure: readingFigure(post.minutes),
+                  }))}
+                />
               )}
               {card.id === "watching" && (
                 <PosterShelf
