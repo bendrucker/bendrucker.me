@@ -6,7 +6,7 @@ import { storyFeed, storyHighlights } from "./fixtures";
 import PosterShelf from "./PosterShelf.vue";
 
 const controls: StoryControlSet = {
-  count: { type: "slider", title: "posters", min: 1, max: 5 },
+  count: { type: "slider", title: "posters", min: 1, max: 6 },
   width: { type: "slider", title: "width", min: 240, max: 680, step: 10 },
   layout: { type: "select", title: "layout", options: ["route", "home"] },
 };
@@ -52,7 +52,7 @@ Watching's highlights: three posters on a phone, five from the desktop
 breakpoint up, sharing the row evenly. A show names its season beside its
 title, as "S2", and carries a bar of episode ticks under its poster. Past
 twelve episodes one tick stands for several and fills by the share of them
-watched. A movie wears a film badge instead.
+watched. A movie has neither, which is what marks it.
 
 The `home` layout is the home card's: the title comes first and the poster
 sits beneath it at 56px wide on a phone and 72px on desktop, so a card cut

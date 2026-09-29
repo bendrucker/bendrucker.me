@@ -5,7 +5,6 @@ import { useOutbound } from "./outbound";
 
 export interface ShelfPoster {
   key: string;
-  type: string;
   title: string;
   /** A show's season, named "S2" beside the title. */
   season?: number;
@@ -16,6 +15,8 @@ export interface ShelfPoster {
   tickLabel?: string;
   /** Past a phone's three: shown from the desktop breakpoint up. */
   desktopOnly?: boolean;
+  /** Shown only once the shelf is wide enough for six posters. */
+  wideOnly?: boolean;
 }
 
 withDefaults(
@@ -35,12 +36,18 @@ const { playing, open } = useOutbound();
 
 <template>
   <!-- Posters share the row evenly, so three fill a phone and five a desktop. -->
-  <ul class="flex gap-2.5 md:gap-3">
+  <ul class="@container flex gap-2.5 md:gap-3">
     <li
       v-for="item in items"
       :key="item.key"
       class="flex min-w-0 flex-1 basis-0"
-      :class="item.desktopOnly ? 'max-md:hidden' : ''"
+      :class="
+        item.wideOnly
+          ? 'hidden @[520px]:flex'
+          : item.desktopOnly
+            ? 'max-md:hidden'
+            : ''
+      "
     >
       <a
         :href="item.url"
@@ -70,17 +77,6 @@ const { playing, open } = useOutbound();
               decoding="async"
               class="size-full object-cover"
             />
-            <span
-              v-if="item.type === 'Movie'"
-              role="img"
-              aria-label="Movie"
-              class="absolute top-1 right-1 z-1 flex size-[18px] items-center justify-center rounded-[4px] bg-black/42 text-white"
-            >
-              <span
-                aria-hidden="true"
-                class="size-[11px] icon-[lucide--film]"
-              />
-            </span>
           </span>
           <span
             v-if="item.ticks?.length"
@@ -97,7 +93,7 @@ const { playing, open } = useOutbound();
           </span>
         </span>
         <span class="flex min-w-0 items-baseline gap-1 text-xs leading-[1.35]">
-          <span class="line-clamp-1 min-w-0">{{ item.title }}</span>
+          <span class="min-w-0 truncate">{{ item.title }}</span>
           <span
             v-if="item.season !== undefined"
             :aria-label="`Season ${item.season}`"

@@ -10,9 +10,11 @@ import type {
   ReadingItem,
   WatchingItem,
 } from "./types";
-import { HIGHLIGHTS } from "./view";
 
-/** A media route's rows, newest first, and the keys of its highlights in rank order. */
+/**
+ * A media route's rows, newest first, and every key in rank order. The route
+ * and the home card each take as many highlights as they have room for.
+ */
 export interface MediaFeed {
   rows: MediaRow[];
   highlightKeys: string[];
@@ -65,9 +67,7 @@ function feed<T>(
   const keys = new Map(items.map((item, i) => [item, `m${i}`]));
   return {
     rows: items.map((item) => row(keys.get(item)!, item)),
-    highlightKeys: rank(items)
-      .slice(0, HIGHLIGHTS.desktop)
-      .map((item) => keys.get(item)!),
+    highlightKeys: rank(items).map((item) => keys.get(item)!),
   };
 }
 

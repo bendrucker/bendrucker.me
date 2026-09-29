@@ -13,7 +13,7 @@ describe("loadMediaFeed", () => {
   it("ranks Listening by plays, which no row carries", async () => {
     const { rows, highlightKeys } = await loadMediaFeed("listening");
     const byKey = new Map(rows.map((r) => [r.key, r.title]));
-    expect(highlightKeys.map((k) => byKey.get(k))).toEqual([
+    expect(highlightKeys.slice(0, 5).map((k) => byKey.get(k))).toEqual([
       "Promises",
       "Hard Fork",
       "In Rainbows",

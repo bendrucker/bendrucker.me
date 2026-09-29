@@ -10,7 +10,7 @@ import PosterShelf from "@/components/media/PosterShelf.vue";
 import RecordShelf from "@/components/media/RecordShelf.vue";
 import { homeCredits, type CategoryId } from "@/categories";
 import { SITE } from "@/config";
-import { desktopOnly } from "@/home/cards";
+import { desktopOnly, HOME_ROWS } from "@/home/cards";
 import { loadHome } from "@/home/load";
 import {
   HOME_PARAM,
@@ -218,6 +218,7 @@ const rideFigures = ride
                   items={card.items.map((row, i) => ({
                     ...row,
                     desktopOnly: desktopOnly(i),
+                    wideOnly: i >= HOME_ROWS.card,
                   }))}
                 />
               )}
