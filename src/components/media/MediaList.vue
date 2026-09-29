@@ -86,10 +86,10 @@ function rowProps(row: MediaRow) {
   <div ref="list" tabindex="-1" class="outline-none">
     <section
       v-if="view.highlights.length"
-      aria-labelledby="media-highlights"
+      aria-labelledby="media-favorites"
       class="pb-8"
     >
-      <SectionHead id="media-highlights" label="Highlights" section />
+      <SectionHead id="media-favorites" label="Favorites" section />
       <PosterShelf v-if="id === 'watching'" :items="view.highlights" />
       <RecordShelf v-else-if="id === 'listening'" :items="view.highlights" />
       <ul v-else class="flex flex-col gap-2">

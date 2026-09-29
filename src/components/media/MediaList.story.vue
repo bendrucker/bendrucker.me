@@ -69,7 +69,7 @@ it: highlights, then everything else grouped by season, newest first. December
 opens the next year's winter. Every row leaves the site through an outward
 arrow, since there is no item page.
 
-Highlights lead only the unfiltered list. Reading ranks a book with a note
+Favorites lead only the unfiltered list. Reading ranks a book with a note
 first, Watching shows the latest, and Listening ranks by plays. A phone shows
 three and a desktop five, so the fourth and fifth fall back into the phone's
 list. That split follows the book's viewport, not the width control.
