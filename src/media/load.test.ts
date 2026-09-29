@@ -31,6 +31,13 @@ describe("loadMediaFeed", () => {
     expect(rows.find((r) => r.title === "Sinners")?.ticks).toBeUndefined();
   });
 
+  it("leaves a finished season without ticks", async () => {
+    const { rows } = await loadMediaFeed("watching");
+    const severance = rows.find((r) => r.title === "Severance");
+    expect(severance?.season).toBe(2);
+    expect(severance?.ticks).toBeUndefined();
+  });
+
   it("carries an album's label color and every row's way out", async () => {
     const { rows } = await loadMediaFeed("listening");
     expect(rows.find((r) => r.title === "Blonde")?.label).toBe("#9fb4a5");

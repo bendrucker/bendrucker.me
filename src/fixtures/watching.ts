@@ -12,7 +12,7 @@ const WATCHING = [
   {
     type: "Show",
     title: "Slow Horses",
-    text: "Season 5",
+    season: 5,
     art: "/fixtures/slow-horses.jpg",
     episodes: { watched: 4, aired: 6 },
     day: "2026-09-22",
@@ -22,7 +22,7 @@ const WATCHING = [
   {
     type: "Show",
     title: "Silo",
-    text: "Season 2",
+    season: 2,
     art: "/fixtures/silo.jpg",
     episodes: { watched: 7, aired: 10 },
     day: "2026-09-18",
@@ -40,7 +40,7 @@ const WATCHING = [
   {
     type: "Show",
     title: "Severance",
-    text: "Season 2",
+    season: 2,
     art: "/fixtures/severance.jpg",
     episodes: { watched: 10, aired: 10 },
     day: "2026-08-30",
@@ -50,7 +50,7 @@ const WATCHING = [
   {
     type: "Show",
     title: "The Bear",
-    text: "Season 4",
+    season: 4,
     art: "/fixtures/the-bear.jpg",
     episodes: { watched: 10, aired: 10 },
     day: "2026-08-09",
@@ -68,7 +68,7 @@ const WATCHING = [
   {
     type: "Show",
     title: "Andor",
-    text: "Season 2",
+    season: 2,
     art: "/fixtures/andor.jpg",
     episodes: { watched: 12, aired: 12 },
     day: "2026-07-19",
@@ -78,7 +78,7 @@ const WATCHING = [
   {
     type: "Show",
     title: "The Pitt",
-    text: "Season 1",
+    season: 1,
     art: "/fixtures/the-pitt.jpg",
     episodes: { watched: 15, aired: 15 },
     day: "2026-07-05",

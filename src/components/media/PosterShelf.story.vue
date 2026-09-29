@@ -49,14 +49,14 @@ async function initState() {
 # Poster shelf
 
 Watching's highlights: three posters on a phone, five from the desktop
-breakpoint up, sharing the row evenly. A show carries its season and a bar of
-episode ticks beneath it. Past twelve episodes one tick stands for several and
-fills by the share of them watched. A movie wears a film badge instead.
+breakpoint up, sharing the row evenly. A show names its season beside its
+title, as "S2", and carries a bar of episode ticks under its poster. Past
+twelve episodes one tick stands for several and fills by the share of them
+watched. A movie wears a film badge instead.
 
-The `home` layout is the home card's: the title, season, and ticks come first
-and the poster sits beneath them at 56px wide on a phone and 72px on desktop,
-so a card cut short at its peek still names each show. The Watching route
-keeps the default `route` layout.
+The `home` layout is the home card's: the title comes first and the poster
+sits beneath it at 56px wide on a phone and 72px on desktop, so a card cut
+short at its peek still names each show. The Watching route keeps the default `route` layout.
 
 Hover lifts and tilts a poster with a sheen across it. A tap plays a bigger
 lift, then opens the poster's link in a new tab. Under reduced motion the

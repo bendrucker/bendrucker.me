@@ -35,10 +35,17 @@ function watchingRow(key: string, item: WatchingItem): MediaRow {
   return {
     ...common(key, item),
     art: item.art,
-    ...(item.episodes && {
-      ticks: episodeTicks(item.episodes.watched, item.episodes.aired),
-      tickLabel: tickLabel(item.episodes.watched, item.episodes.aired),
+    ...(item.season !== undefined && {
+      text: `Season ${item.season}`,
+      season: item.season,
     }),
+    // A finished season has nothing left to track, so only one in progress
+    // carries a meter.
+    ...(item.episodes &&
+      item.episodes.watched < item.episodes.aired && {
+        ticks: episodeTicks(item.episodes.watched, item.episodes.aired),
+        tickLabel: tickLabel(item.episodes.watched, item.episodes.aired),
+      }),
   };
 }
 

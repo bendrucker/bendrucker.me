@@ -7,8 +7,8 @@ export interface ShelfPoster {
   key: string;
   type: string;
   title: string;
-  /** The season, for a show. */
-  text?: string;
+  /** A show's season, named "S2" beside the title. */
+  season?: number;
   art?: string;
   url: string;
   via: string;
@@ -51,54 +51,59 @@ const { playing, open } = useOutbound();
         @click="open($event, item.key, item.url)"
       >
         <span
-          class="relative block aspect-[2/3] w-full overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"
+          class="flex flex-col gap-0.5"
           :class="
             layout === 'home' ? 'order-last mt-1 max-w-14 md:max-w-18' : ''
           "
         >
-          <img
-            v-if="item.art"
-            v-art-fallback
-            :src="item.art"
-            alt=""
-            width="120"
-            height="180"
-            loading="lazy"
-            decoding="async"
-            class="size-full object-cover"
-          />
           <span
-            v-if="item.type === 'Movie'"
-            role="img"
-            aria-label="Movie"
-            class="absolute top-1 right-1 z-1 flex size-[18px] items-center justify-center rounded-[4px] bg-black/42 text-white"
+            class="relative block aspect-[2/3] w-full overflow-hidden rounded-[4px] bg-foreground/10 shadow-[0_10px_20px_-14px_var(--shadow)] transition-transform duration-350 ease-[cubic-bezier(.34,1.35,.64,1)] group-hover/poster:-translate-y-[3px] group-hover/poster:-rotate-[1.5deg] group-active/poster:scale-96 group-data-[state=out]/poster:-translate-y-1.5 group-data-[state=out]/poster:scale-104 group-data-[state=out]/poster:-rotate-3 after:absolute after:inset-0 after:-translate-x-[130%] after:bg-[linear-gradient(115deg,transparent_30%,rgb(255_255_255/.4)_46%,transparent_62%)] after:transition-transform after:duration-700 after:ease-out after:content-[''] group-hover/poster:after:translate-x-[130%] group-data-[state=out]/poster:after:translate-x-[130%] motion-reduce:transition-none motion-reduce:after:hidden"
           >
-            <span aria-hidden="true" class="size-[11px] icon-[lucide--film]" />
+            <img
+              v-if="item.art"
+              v-art-fallback
+              :src="item.art"
+              alt=""
+              width="120"
+              height="180"
+              loading="lazy"
+              decoding="async"
+              class="size-full object-cover"
+            />
+            <span
+              v-if="item.type === 'Movie'"
+              role="img"
+              aria-label="Movie"
+              class="absolute top-1 right-1 z-1 flex size-[18px] items-center justify-center rounded-[4px] bg-black/42 text-white"
+            >
+              <span
+                aria-hidden="true"
+                class="size-[11px] icon-[lucide--film]"
+              />
+            </span>
+          </span>
+          <span
+            v-if="item.ticks?.length"
+            role="img"
+            :aria-label="item.tickLabel"
+            class="flex h-[3px] gap-px"
+          >
+            <span
+              v-for="(fraction, i) in item.ticks"
+              :key="i"
+              class="h-[3px] flex-1 rounded-[1px]"
+              :style="{ background: tickBackground(fraction) }"
+            />
           </span>
         </span>
-        <span class="line-clamp-1 text-xs leading-[1.35]">{{
-          item.title
-        }}</span>
-        <!-- On the home card the words sit above the poster, so a film with
-             no season or progress keeps their space and its poster stays level
-             with the shows beside it. -->
-        <span
-          v-if="item.text || layout === 'home'"
-          class="-mt-[3px] line-clamp-1 min-h-[1lh] text-[11px] text-dim"
-          >{{ item.text }}</span
-        >
-        <span
-          v-if="item.ticks?.length || layout === 'home'"
-          :role="item.ticks?.length ? 'img' : undefined"
-          :aria-label="item.ticks?.length ? item.tickLabel : undefined"
-          class="-mt-0.5 flex h-[3px] gap-0.5"
-        >
+        <span class="flex min-w-0 items-baseline gap-1 text-xs leading-[1.35]">
+          <span class="line-clamp-1 min-w-0">{{ item.title }}</span>
           <span
-            v-for="(fraction, i) in item.ticks"
-            :key="i"
-            class="h-[3px] flex-1 rounded-[1px]"
-            :style="{ background: tickBackground(fraction) }"
-          />
+            v-if="item.season !== undefined"
+            :aria-label="`Season ${item.season}`"
+            class="flex-none font-mono text-[10px] text-dim"
+            >S{{ item.season }}</span
+          >
         </span>
         <span class="sr-only">Opens {{ item.via }}</span>
       </a>

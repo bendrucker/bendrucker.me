@@ -32,6 +32,8 @@ export const WatchingItemSchema = z.object({
   type: z.enum(["Show", "Movie"]),
   /** A poster, 2:3. */
   art: z.string().min(1),
+  /** The season a show's episodes belong to. */
+  season: z.number().int().positive().optional(),
   /** A show's season: episodes watched out of those aired. */
   episodes: z
     .object({
@@ -70,6 +72,8 @@ export interface MediaRow {
   type: string;
   title: string;
   text?: string;
+  /** A show's season, which a poster names as "S2" beside its title. */
+  season?: number;
   note?: string;
   day: string;
   url: string;
