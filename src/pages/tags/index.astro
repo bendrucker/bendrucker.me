@@ -16,7 +16,9 @@ const tags = getUniqueTags(posts);
 <Layout title={`Tags | ${SITE.title}`} sourcePath="src/pages/tags/index.astro">
   <Main pageTitle="Tags" pageDesc="All the tags used in posts.">
     <ul>
-      {tags.map(({ tag, tagName }) => <Tag {tag} {tagName} size="lg" />)}
+      {tags.map(({ tag, tagName }) => (
+        <Tag {tag} {tagName} size="lg" />
+      ))}
     </ul>
   </Main>
 </Layout>

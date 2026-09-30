@@ -18,26 +18,22 @@ const sourceUrl = sourcePath
 <footer
   class:list={["w-full border-t border-border", { "mt-auto": !noMarginTop }]}
 >
-  <div
-    class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3.5 text-xs text-foreground/50 sm:px-10 sm:py-4 sm:text-sm"
-  >
+  <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3.5 text-xs text-foreground/50 sm:px-10 sm:py-4 sm:text-sm">
     <div class="flex items-center gap-1.5 sm:gap-2">
       <span>&#169; {currentYear} Ben Drucker</span>
-      {
-        sourceUrl && (
-          <>
-            <span aria-hidden="true">&middot;</span>
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="underline decoration-dashed underline-offset-2 hover:text-accent"
-            >
-              {SITE.viewSource.text}
-            </a>
-          </>
-        )
-      }
+      {sourceUrl && (
+        <>
+          <span aria-hidden="true">&middot;</span>
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline decoration-dashed underline-offset-2 hover:text-accent"
+          >
+            {SITE.viewSource.text}
+          </a>
+        </>
+      )}
     </div>
     <Socials />
   </div>
