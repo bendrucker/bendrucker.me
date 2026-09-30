@@ -4,17 +4,15 @@ import LinkButton from "./LinkButton.astro";
 ---
 
 <div class="flex items-center gap-3 sm:gap-4.5">
-  {
-    SOCIALS.map((social) => (
-      <LinkButton
-        href={social.href}
-        class="-mx-1.5 -my-3.5 px-1.5 py-3.5 text-foreground/50"
-        title={social.linkTitle}
-        newTab={social.href.startsWith("http")}
-      >
-        <social.icon class="inline-block size-4 fill-transparent stroke-current stroke-2 group-hover:fill-transparent" />
-        <span class="sr-only">{social.linkTitle}</span>
-      </LinkButton>
-    ))
-  }
+  {SOCIALS.map((social) => (
+    <LinkButton
+      href={social.href}
+      class="-mx-1.5 -my-3.5 px-1.5 py-3.5 text-foreground/50"
+      title={social.linkTitle}
+      newTab={social.href.startsWith("http")}
+    >
+      <social.icon class="inline-block size-4 fill-transparent stroke-current stroke-2 group-hover:fill-transparent" />
+      <span class="sr-only">{social.linkTitle}</span>
+    </LinkButton>
+  ))}
 </div>

@@ -50,7 +50,9 @@ const { page, tagName } = Astro.props;
       <span>All tags</span>
     </LinkButton>
     <ul>
-      {page.data.map((data) => <Card {...data} />)}
+      {page.data.map((data) => (
+        <Card {...data} />
+      ))}
     </ul>
   </Main>
 
