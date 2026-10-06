@@ -24,22 +24,23 @@ function inZones<T>(zones: string[], fn: () => T): T[] {
 
 const renderedAt = "2026-09-22T03:30:00Z";
 
+function render() {
+  const clock = serverClock(renderedAt);
+  return [
+    "2026-09-22T03:01:00Z",
+    "2026-09-21T20:00:00Z",
+    "2026-09-18T02:00:00Z",
+  ].map((value) => [
+    activityDate(value, clock),
+    createdLabel(value, clock),
+    isNewRepo(value, clock),
+  ]);
+}
+
 describe("serverClock", () => {
   // Hydration fails unless the browser's first render repeats the Worker's
   // text, whatever zone the reader's browser is in.
   it("writes the same dates in every process zone", () => {
-    const render = () => {
-      const clock = serverClock(renderedAt);
-      return [
-        "2026-09-22T03:01:00Z",
-        "2026-09-21T20:00:00Z",
-        "2026-09-18T02:00:00Z",
-      ].map((value) => [
-        activityDate(value, clock),
-        createdLabel(value, clock),
-        isNewRepo(value, clock),
-      ]);
-    };
     expect(
       inZones(["UTC", "America/Los_Angeles"], () =>
         new Date("2026-09-18T02:00:00Z").getDate(),
