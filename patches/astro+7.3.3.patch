@@ -12,7 +12,7 @@ index 2bf22e0..c4e6ef3 100644
  class MutableDataStore extends ImmutableDataStore {
    #writer;
 diff --git a/node_modules/astro/dist/content/vite-plugin-content-virtual-mod.js b/node_modules/astro/dist/content/vite-plugin-content-virtual-mod.js
-index 8087139..aa747e5 100644
+index b3cf5dd..596dc5b 100644
 --- a/node_modules/astro/dist/content/vite-plugin-content-virtual-mod.js
 +++ b/node_modules/astro/dist/content/vite-plugin-content-virtual-mod.js
 @@ -44,6 +44,8 @@ function invalidateAssetImports(viteServer, filePath) {
@@ -24,12 +24,12 @@ index 8087139..aa747e5 100644
      }
    }
  }
-@@ -61,6 +63,8 @@ function invalidateDataStore(viteServer, { notifyClient = true } = {}) {
-     if (runnerModule) {
-       environment.runner.evaluatedModules.invalidateModule(runnerModule);
+@@ -66,6 +68,8 @@ function invalidateDataStore(viteServer, { notifyClient = true } = {}) {
+       if (runnerModule) {
+         environment.runner.evaluatedModules.invalidateModule(runnerModule);
+       }
++    } else if (module) {
++      environment.hot.send({ type: "full-reload", triggeredBy: RESOLVED_DATA_STORE_VIRTUAL_ID, path: "*" });
      }
-+  } else if (module) {
-+    environment.hot.send({ type: "full-reload", triggeredBy: RESOLVED_DATA_STORE_VIRTUAL_ID, path: "*" });
+     environment.hot.send("astro:content-changed", {});
    }
-   environment.hot.send("astro:content-changed", {});
-   if (notifyClient) {
