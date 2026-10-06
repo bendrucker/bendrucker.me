@@ -9,6 +9,27 @@ import {
 
 const ROUTE = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
 
+function themedUrl(theme: "light" | "dark"): string {
+  return mapImageUrl({
+    id: "42",
+    route: ROUTE,
+    width: 150,
+    height: 140,
+    theme,
+  });
+}
+
+function scaledUrl(scale: 1 | 2): string {
+  return mapImageUrl({
+    id: "42",
+    route: ROUTE,
+    width: 150,
+    height: 140,
+    theme: "light",
+    scale,
+  });
+}
+
 describe("isMapSize", () => {
   it("accepts the sizes the cards ask for", () => {
     expect(isMapSize(RIDE_MAP.width, RIDE_MAP.height)).toBe(true);
@@ -67,24 +88,13 @@ describe("mapImageUrl", () => {
 
   // The two themes are fetched as separate images, so they must not collide.
   it("gives the themes different urls", () => {
-    const url = (theme: "light" | "dark") =>
-      mapImageUrl({ id: "42", route: ROUTE, width: 150, height: 140, theme });
-    expect(url("light")).not.toBe(url("dark"));
+    expect(themedUrl("light")).not.toBe(themedUrl("dark"));
   });
 
   // The two scales are fetched as separate images for `srcset` to choose
   // between, so they must not collide either.
   it("gives the scales different urls", () => {
-    const url = (scale: 1 | 2) =>
-      mapImageUrl({
-        id: "42",
-        route: ROUTE,
-        width: 150,
-        height: 140,
-        theme: "light",
-        scale,
-      });
-    expect(url(1)).not.toBe(url(2));
+    expect(scaledUrl(1)).not.toBe(scaledUrl(2));
   });
 
   it("escapes an id that would otherwise reshape the path", () => {
