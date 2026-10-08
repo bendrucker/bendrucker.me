@@ -35,10 +35,11 @@ describe("fadeDepth", () => {
   });
 });
 
-describe("settlesOpen", () => {
-  const at = (height: number, velocity = 0) =>
-    settlesOpen({ velocity, height, peek: PEEK, full: FULL });
+function at(height: number, velocity = 0) {
+  return settlesOpen({ velocity, height, peek: PEEK, full: FULL });
+}
 
+describe("settlesOpen", () => {
   it("settles on whichever end is nearer", () => {
     expect(at(PEEK + 40)).toBe(false);
     expect(at(FULL - 40)).toBe(true);

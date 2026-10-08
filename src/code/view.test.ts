@@ -75,6 +75,10 @@ function listed(view: ReturnType<typeof codeView>) {
   );
 }
 
+function parsedLang(value: string) {
+  return parseFilters(new URLSearchParams({ lang: value }), LANGUAGES).lang;
+}
+
 describe("parseFilters", () => {
   it("reads every filter from the URL", () => {
     expect(
@@ -95,12 +99,9 @@ describe("parseFilters", () => {
   });
 
   it("reads a language in any case as the one the select offers", () => {
-    const lang = (value: string) =>
-      parseFilters(new URLSearchParams({ lang: value }), LANGUAGES).lang;
-
-    expect(lang("go")).toBe("Go");
-    expect(lang("c")).toBe("C");
-    expect(lang("c#")).toBe("C#");
+    expect(parsedLang("go")).toBe("Go");
+    expect(parsedLang("c")).toBe("C");
+    expect(parsedLang("c#")).toBe("C#");
   });
 });
 
@@ -176,10 +177,13 @@ describe("filterRows", () => {
     }),
   ];
 
-  it("splits by owner", () => {
-    const keys = (owner: "mine" | "others") =>
-      filterRows(rows, { ...DEFAULT_FILTERS, owner }).map((r) => r.key);
+  const keys = (owner: "mine" | "others") =>
+    filterRows(rows, { ...DEFAULT_FILTERS, owner }).map((r) => r.key);
 
+  const hits = (q: string) =>
+    filterRows(rows, { ...DEFAULT_FILTERS, q }).map((r) => r.key);
+
+  it("splits by owner", () => {
     expect(keys("mine")).toEqual(["bendrucker/cool-lib"]);
     expect(keys("others")).toEqual(["terraform-linters/tflint", "pydantic"]);
   });
@@ -241,9 +245,6 @@ describe("filterRows", () => {
   });
 
   it("searches the org and every member's name and description", () => {
-    const hits = (q: string) =>
-      filterRows(rows, { ...DEFAULT_FILTERS, q }).map((r) => r.key);
-
     expect(hits("linters")).toEqual(["terraform-linters/tflint"]);
     expect(hits("logfire")).toEqual(["pydantic"]);
     expect(hits("observability")).toEqual(["pydantic"]);

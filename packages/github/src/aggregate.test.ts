@@ -193,11 +193,22 @@ function names(repos: { name: string }[]): string[] {
   return repos.map((repo) => repo.name);
 }
 
+function fork(name: string) {
+  return makeRepo({ name, isFork: true });
+}
+
+function attributed(options: MergedPrNodeOptions) {
+  return aggregateActivityByRepository(
+    makeContributions(),
+    [],
+    [makeMergedPrNode(options)],
+    USERNAME,
+  );
+}
+
 describe("aggregateActivityByRepository", () => {
   describe("fork filtering", () => {
     it("excludes fork repositories from every contribution source", () => {
-      const fork = (name: string) => makeRepo({ name, isFork: true });
-
       const contributions = makeContributions({
         commit: [makeCommitRepo(fork("commit-fork"), ["2024-01-01T00:00:00Z"])],
         pullRequest: [
@@ -499,14 +510,6 @@ describe("aggregateActivityByRepository", () => {
   });
 
   describe("merged-PR search attribution", () => {
-    const attributed = (options: MergedPrNodeOptions) =>
-      aggregateActivityByRepository(
-        makeContributions(),
-        [],
-        [makeMergedPrNode(options)],
-        USERNAME,
-      );
-
     it("counts a node merged by the user on the user's own repository", () => {
       const result = attributed({
         repository: makeRepo({ owner: USERNAME, name: "attributed" }),

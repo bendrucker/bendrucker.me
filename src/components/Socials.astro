@@ -16,20 +16,18 @@ const links = SOCIALS.flatMap((social) => {
 ---
 
 <div class="-mr-2 flex items-center gap-0.5">
-  {
-    links.map((social) => (
-      <a
-        href={social.href}
-        class="inline-flex size-8 items-center justify-center rounded-lg text-dim hover:bg-hover hover:text-foreground"
-        title={social.linkTitle}
-        aria-label={social.linkTitle}
-        {...(social.href.startsWith("http") && {
-          target: "_blank",
-          rel: "noopener noreferrer",
-        })}
-      >
-        <span aria-hidden="true" class:list={[social.icon, "size-[15px]"]} />
-      </a>
-    ))
-  }
+  {links.map((social) => (
+    <a
+      href={social.href}
+      class="inline-flex size-8 items-center justify-center rounded-lg text-dim hover:bg-hover hover:text-foreground"
+      title={social.linkTitle}
+      aria-label={social.linkTitle}
+      {...(social.href.startsWith("http") && {
+        target: "_blank",
+        rel: "noopener noreferrer",
+      })}
+    >
+      <span aria-hidden="true" class:list={[social.icon, "size-[15px]"]} />
+    </a>
+  ))}
 </div>

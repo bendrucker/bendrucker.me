@@ -2,9 +2,7 @@
 import { SITE } from "@/config";
 ---
 
-<header
-  class="sticky top-0 z-30 flex h-12 flex-none items-center justify-between border-b border-line bg-background px-4 [view-transition-name:site-head] md:h-18 md:px-site"
->
+<header class="sticky top-0 z-30 flex h-12 flex-none items-center justify-between border-b border-line bg-background px-4 [view-transition-name:site-head] md:h-18 md:px-site">
   <a
     id="skip-to-content"
     href="#main-content"
@@ -22,32 +20,30 @@ import { SITE } from "@/config";
     <a
       href="/about/"
       class="inline-flex min-h-8 items-center text-[13px] text-foreground"
-      aria-current={Astro.url.pathname.startsWith("/about")
-        ? "page"
-        : undefined}
+      aria-current={
+        Astro.url.pathname.startsWith("/about") ? "page" : undefined
+      }
     >
       About
     </a>
-    {
-      SITE.lightAndDarkMode && (
-        <button
-          id="theme-btn"
-          type="button"
-          class="group -mr-2 inline-flex size-8 items-center justify-center rounded-lg text-dim transition-colors hover:bg-hover hover:text-foreground"
-          title="Dark theme"
-          aria-label="Dark theme"
-          aria-pressed="false"
-        >
-          <span
-            aria-hidden="true"
-            class="size-4 transition-transform duration-500 ease-spring icon-[lucide--moon] group-hover:-rotate-25 motion-reduce:transition-none dark:hidden"
-          />
-          <span
-            aria-hidden="true"
-            class="hidden size-4 transition-transform duration-500 ease-spring icon-[lucide--sun] group-hover:-rotate-25 motion-reduce:transition-none dark:inline-block"
-          />
-        </button>
-      )
-    }
+    {SITE.lightAndDarkMode && (
+      <button
+        id="theme-btn"
+        type="button"
+        class="group -mr-2 inline-flex size-8 items-center justify-center rounded-lg text-dim transition-colors hover:bg-hover hover:text-foreground"
+        title="Dark theme"
+        aria-label="Dark theme"
+        aria-pressed="false"
+      >
+        <span
+          aria-hidden="true"
+          class="size-4 transition-transform duration-500 ease-spring icon-[lucide--moon] group-hover:-rotate-25 motion-reduce:transition-none dark:hidden"
+        />
+        <span
+          aria-hidden="true"
+          class="hidden size-4 transition-transform duration-500 ease-spring icon-[lucide--sun] group-hover:-rotate-25 motion-reduce:transition-none dark:inline-block"
+        />
+      </button>
+    )}
   </nav>
 </header>

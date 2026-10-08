@@ -255,18 +255,18 @@ function ids(tuples: readonly (readonly unknown[])[]) {
   return tuples.map((tuple) => tuple[0]);
 }
 
-describe("queryRideRecords", () => {
-  async function curve(id: string, watts: Record<number, number>) {
-    await publishPowerCurve(
-      testStore(db),
-      id,
-      Object.entries(watts).map(([durationS, value]) => ({
-        durationS: Number(durationS),
-        watts: value,
-      })),
-    );
-  }
+async function curve(id: string, watts: Record<number, number>) {
+  await publishPowerCurve(
+    testStore(db),
+    id,
+    Object.entries(watts).map(([durationS, value]) => ({
+      durationS: Number(durationS),
+      watts: value,
+    })),
+  );
+}
 
+describe("queryRideRecords", () => {
   it("has no periods before the first ride", async () => {
     expect(await queryRideRecords(db)).toEqual([]);
   });

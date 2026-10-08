@@ -29,21 +29,19 @@ const credited = creditLine(credits);
   <div class="flex items-center justify-between gap-3">
     <span>
       &#169; {currentYear} Ben Drucker
-      {
-        sourceUrl && (
-          <>
-            <span aria-hidden="true">&middot;</span>
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-dim hover:text-foreground"
-            >
-              {SITE.viewSource.text}
-            </a>
-          </>
-        )
-      }
+      {sourceUrl && (
+        <>
+          <span aria-hidden="true">&middot;</span>
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-dim hover:text-foreground"
+          >
+            {SITE.viewSource.text}
+          </a>
+        </>
+      )}
     </span>
     <Socials />
   </div>

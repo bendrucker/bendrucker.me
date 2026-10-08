@@ -72,9 +72,11 @@ describe("closeStep", () => {
   });
 });
 
-describe("ownsTraversal", () => {
-  const at = (href: string) => new URL(href, ORIGIN);
+function at(href: string) {
+  return new URL(href, ORIGIN);
+}
 
+describe("ownsTraversal", () => {
   it("owns a traversal that opens or closes an item on the same list", () => {
     expect(ownsTraversal(at("/rides"), at("/rides?ride=abc"), "ride")).toBe(
       true,

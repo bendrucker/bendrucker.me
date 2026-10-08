@@ -35,9 +35,12 @@ export type HomeCard = {
   [K in CategoryId]: { id: K; items: HomeSources[K] };
 }[CategoryId];
 
+function top<T>(items: readonly T[]): T[] {
+  return items.slice(0, HOME_ROWS.card);
+}
+
 /** A category's card with its first highlights, or the day's order for Listening. */
 function cardFor(id: CategoryId, sources: HomeSources, now: Date): HomeCard {
-  const top = <T>(items: readonly T[]) => items.slice(0, HOME_ROWS.card);
   switch (id) {
     case "rides":
       return { id, items: top(sources.rides) };
