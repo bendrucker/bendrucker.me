@@ -16,6 +16,7 @@ import {
   unchanged,
   type Validators,
 } from "./middleware/cache";
+import { trackDegraded } from "./middleware/degraded";
 import { prefersMarkdown } from "./middleware/negotiate";
 import { redirects } from "./middleware/redirects";
 import { MARKDOWN_CONTENT_TYPE, representationFor } from "./representations";
@@ -46,9 +47,17 @@ const cache: MiddlewareHandler = async (context, next) => {
     }
   }
 
-  const response = await next();
+  const { value: response, degraded } = await trackDegraded(async () => next());
   if (method !== "GET" && method !== "HEAD") return response;
   if (context.isPrerendered) return response;
+
+  // An empty fallback beats an error page for this reader, but it must not be
+  // what every reader gets from the edge or the browser until the next sync.
+  if (degraded) {
+    context.cache.set(false);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
 
   // Only the activity branch above sets a policy before the route runs, so
   // anywhere else one is the route's own.
