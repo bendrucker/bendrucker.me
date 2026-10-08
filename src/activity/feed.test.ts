@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
-import type { Insertable, Kysely } from "kysely";
+import type { Kysely } from "kysely";
 import { activity as fixture } from "@/components/cycling/fixtures";
-import type { ActivityClimbTable, Database } from "@/db";
+import type { Database } from "@/db";
 import { createTestDb, noClimbNames, testStore, tick } from "@/test/db";
 import {
   buildCyclingActivity,
   queryCyclingActivity,
   queryCyclingLogPage,
+  queryRideById,
   readFeedVersion,
 } from "./feed";
 import { decodePolyline, decodeProfile } from "./track";
 import {
   deleteActivity,
-  updateActivity,
   publishActivity,
   publishPowerCurve,
   type PublishedActivity,
@@ -68,7 +68,6 @@ describe("queryCyclingActivity", () => {
       totals: { year: 2026, distanceMi: 0, elevationFt: 0, rideCount: 0 },
       months: [],
       highlightMonths: [],
-      records: [],
       logCursor: null,
     });
   });
@@ -154,7 +153,7 @@ describe("queryCyclingActivity", () => {
     expect(totals.year).toBe(2026);
   });
 
-  it("logs three months, highlights twelve, and ranks every ride", async () => {
+  it("logs three months and highlights twelve", async () => {
     await seed(
       ride("latest", { startedAt: "2026-07-11T13:00:55Z", distanceM: 10_000 }),
       ride("logged", { startedAt: "2026-05-11T13:00:55Z", distanceM: 15_000 }),
@@ -164,21 +163,13 @@ describe("queryCyclingActivity", () => {
       ride("old", { startedAt: "2025-07-31T13:00:55Z", distanceM: 30_000 }),
     );
 
-    const { months, highlightMonths, records, logCursor } =
-      await queryCyclingActivity(db, NOW);
+    const { months, highlightMonths, logCursor } = await queryCyclingActivity(
+      db,
+      NOW,
+    );
     expect(months.map((month) => month.key)).toEqual(["2026-07", "2026-05"]);
     expect(logCursor).toBe("2026-05");
     expect(highlightMonths.map((month) => month.key)).toEqual(["2025-08"]);
-    const distance = records
-      .find((period) => period.period === "all")!
-      .lists.find((list) => list.metric === "distance")!;
-    expect(distance.rows.map((row) => row.id)).toEqual([
-      "old",
-      "edge",
-      "paged",
-      "logged",
-      "also",
-    ]);
   });
 
   it("reads the tracks of the log and of the highlights beyond it", async () => {
@@ -274,7 +265,7 @@ describe("queryCyclingActivity", () => {
       }),
     );
 
-    const { months, records } = await queryCyclingActivity(db, NOW);
+    const { months } = await queryCyclingActivity(db, NOW);
 
     expect(months[0]!.rides[0]).toEqual({
       id: "bare",
@@ -284,13 +275,6 @@ describe("queryCyclingActivity", () => {
       media: [],
       badges: [],
       facts: [],
-    });
-    expect(records[0]!.lists.map((list) => list.id)).toEqual(["duration"]);
-    expect(records[0]!.lists[0]!.rows[0]).toEqual({
-      id: "bare",
-      name: "Ride",
-      detail: "'26",
-      value: 1_800,
     });
   });
 
@@ -405,229 +389,17 @@ describe("queryCyclingActivity", () => {
     expect(months[1]!.rides[0]!.badges).toEqual([]);
   });
 
-  it("ranks rides for every year and for all time", async () => {
-    await seed(
-      ride("a", { startedAt: "2025-05-01T13:00:00Z", distanceM: 90_000 }),
-      ride("b", { startedAt: "2026-05-01T13:00:00Z", distanceM: 80_000 }),
-      ride("c", {
-        startedAt: "2026-06-01T13:00:00Z",
-        distanceM: 70_000,
-        movingS: 20_000,
-        averageWatts: 180,
-      }),
-    );
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(records.map((period) => period.period)).toEqual([
-      "all",
-      "2026",
-      "2025",
-    ]);
-    const all = records[0]!.lists.find((list) => list.id === "distance")!;
-    expect(all.rows.map((row) => [row.id, row.detail, row.value])).toEqual([
-      ["a", "'25", 55.92],
-      ["b", "'26", 49.71],
-      ["c", "'26", 43.5],
-    ]);
-    expect(all.rows[0]!.href).toBe("https://www.strava.com/activities/a");
-
-    const days = records[1]!.lists.find((list) => list.id === "duration")!;
-    expect(days.rows[0]).toMatchObject({ id: "c", detail: "'26 · 180 W" });
-
-    const year2025 = records[2]!.lists.find((list) => list.id === "distance")!;
-    expect(year2025.rows.map((row) => row.id)).toEqual(["a"]);
-  });
-
-  it("joins the power curve from measured rides only", async () => {
+  it("keeps estimated power off a ride", async () => {
     await seed(
       ride("meter", { averageWatts: 210 }),
       ride("guess", { averageWatts: 400, powerSource: "estimated" }),
     );
-    await publishPowerCurve(store, "meter", [
-      { durationS: 5, watts: 900 },
-      { durationS: 60, watts: 450.4 },
-      { durationS: 1200, watts: 280 },
-    ]);
-    await publishPowerCurve(store, "guess", [{ durationS: 60, watts: 999 }]);
 
-    const { records, months } = await queryCyclingActivity(db, NOW);
+    const { months } = await queryCyclingActivity(db, NOW);
 
-    expect(records[0]!.powerBests).toEqual([
-      { id: "1m", label: "1 min", watts: 450 },
-      { id: "5m", label: "5 min", watts: null },
-      { id: "20m", label: "20 min", watts: 280 },
-      { id: "1h", label: "1 hr", watts: null },
-      { id: "ride", label: "ride avg", watts: 210 },
-    ]);
-    const guess = months[0]!.rides.find((r) => r.id === "guess")!;
-    expect(guess).not.toHaveProperty("averageWatts");
-  });
-
-  it("gives each period the power its own rides set", async () => {
-    await seed(
-      ride("older", {
-        startedAt: "2025-07-11T13:00:55Z",
-        averageWatts: 240,
-      }),
-      ride("newer", { averageWatts: 190 }),
-    );
-    await publishPowerCurve(store, "older", [
-      { durationS: 60, watts: 500 },
-      { durationS: 1200, watts: 300 },
-    ]);
-    await publishPowerCurve(store, "newer", [{ durationS: 60, watts: 420 }]);
-
-    const { records } = await queryCyclingActivity(db, NOW);
-    const watts = (period: string) =>
-      Object.fromEntries(
-        records
-          .find((entry) => entry.period === period)!
-          .powerBests.map((best) => [best.id, best.watts]),
-      );
-
-    // The all-time ladder takes each duration from whichever year holds it.
-    expect(watts("all")).toMatchObject({ "1m": 500, "20m": 300, ride: 240 });
-    expect(watts("2026")).toMatchObject({ "1m": 420, "20m": null, ride: 190 });
-    expect(watts("2025")).toMatchObject({ "1m": 500, "20m": 300, ride: 240 });
-  });
-
-  it("leaves the power panel empty with nothing measured", async () => {
-    await seed(ride("guess", { averageWatts: 400, powerSource: "estimated" }));
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(records.every((period) => period.powerBests.length === 0)).toBe(
-      true,
-    );
-  });
-
-  it("ranks a named climb once, by its biggest effort", async () => {
-    await seed(
-      ride("hamilton", { startedAt: "2026-04-25T13:00:00Z" }),
-      ride("diablo", { startedAt: "2026-05-02T13:00:00Z" }),
-    );
-    await storeClimbs(
-      climb("hamilton", { gainM: 900, name: "Mount Diablo" }),
-      climb("hamilton", { position: 1, gainM: 1_100, name: "Mount Hamilton" }),
-      climb("diablo", { gainM: 1_000, name: "Mount Diablo" }),
-    );
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(climbRows(records, "all")).toEqual([
-      ["hamilton:1", "Mount Hamilton", "'26", 3_609],
-      ["diablo:0", "Mount Diablo", "'26", 3_281],
-    ]);
-    const [top] = records[0]!.lists.find((list) => list.id === "climb")!.rows;
-    expect(top!.href).toBe("https://www.strava.com/activities/hamilton");
-  });
-
-  it("places two climbs from one ride", async () => {
-    await seed(ride("double"));
-    await storeClimbs(
-      climb("double", { gainM: 700, name: "Mount Diablo" }),
-      climb("double", { position: 1, gainM: 600, name: "Mount Hamilton" }),
-    );
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(climbRows(records, "all").map(([id]) => id)).toEqual([
-      "double:0",
-      "double:1",
-    ]);
-  });
-
-  it("labels unnamed climbs with their ride and never merges them", async () => {
-    await seed(ride("a"), ride("b", { startedAt: "2026-07-12T13:00:55Z" }));
-    await storeClimbs(
-      climb("a", { gainM: 400 }),
-      climb("a", { position: 1, gainM: 300 }),
-      climb("b", { gainM: 350 }),
-    );
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(climbRows(records, "all").map(([id, name]) => [id, name])).toEqual([
-      ["a:0", "Ride a"],
-      ["b:0", "Ride b"],
-      ["a:1", "Ride a"],
-    ]);
-  });
-
-  it("gives each year only the climbs its own rides hold", async () => {
-    await seed(
-      ride("older", { startedAt: "2025-07-11T13:00:55Z" }),
-      ride("newer"),
-    );
-    await storeClimbs(
-      climb("older", { gainM: 1_200, name: "Mount Diablo" }),
-      climb("newer", { gainM: 800, name: "Mount Diablo" }),
-    );
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(climbRows(records, "all").map(([id]) => id)).toEqual(["older:0"]);
-    expect(climbRows(records, "2026").map(([id]) => id)).toEqual(["newer:0"]);
-    expect(climbRows(records, "2025").map(([id]) => id)).toEqual(["older:0"]);
-  });
-
-  it("keeps indoor rides out of every record but in the log", async () => {
-    await seed(
-      ride("road", { distanceM: 60_000, elevationM: 900, movingS: 9_000 }),
-      ride("zwift", {
-        startedAt: "2026-07-12T13:00:55Z",
-        distanceM: 90_000,
-        elevationM: 1_600,
-        movingS: 12_000,
-        averageWatts: 260,
-        indoor: true,
-      }),
-    );
-    await publishPowerCurve(store, "road", [{ durationS: 60, watts: 400 }]);
-    await publishPowerCurve(store, "zwift", [{ durationS: 60, watts: 500 }]);
-    await storeClimbs(
-      climb("road", { gainM: 800, name: "Mount Diablo" }),
-      climb("zwift", { gainM: 1_530, name: "Ventoux" }),
-    );
-
-    const { records, months } = await queryCyclingActivity(db, NOW);
-
-    expect(months[0]!.rides.map((r) => r.id)).toEqual(["zwift", "road"]);
-    expect(records.map((period) => period.period)).toEqual(["all", "2026"]);
-    for (const period of records) {
-      for (const list of period.lists) {
-        expect(
-          list.rows.map((row) => row.id),
-          list.id,
-        ).toEqual([list.id === "climb" ? "road:0" : "road"]);
-      }
-      expect(period.powerBests).toMatchObject([
-        { id: "1m", watts: 400 },
-        {},
-        {},
-        {},
-        { id: "ride", watts: 200 },
-      ]);
-    }
-  });
-
-  it("leaves the records empty when every ride is indoor", async () => {
-    await seed(ride("zwift", { indoor: true }));
-
-    const { records } = await queryCyclingActivity(db, NOW);
-
-    expect(records).toEqual([]);
-  });
-
-  it("reads a ride updated to indoor out of the records", async () => {
-    await seed(ride("road"), ride("trainer", { distanceM: 90_000 }));
-    await updateActivity(store, "trainer", { indoor: true });
-
-    const { records } = await queryCyclingActivity(db, NOW);
-    const distance = records[0]!.lists.find((list) => list.id === "distance")!;
-
-    expect(distance.rows.map((row) => row.id)).toEqual(["road"]);
+    const byId = new Map(months[0]!.rides.map((r) => [r.id, r]));
+    expect(byId.get("meter")?.averageWatts).toBe(210);
+    expect(byId.get("guess")).not.toHaveProperty("averageWatts");
   });
 
   it("ignores other sports", async () => {
@@ -779,6 +551,45 @@ describe("readFeedVersion", () => {
   });
 });
 
+describe("queryRideById", () => {
+  it("carries the figures the ride's page shows", async () => {
+    await seed(
+      ride("a", {
+        normalizedWatts: 228,
+        averageHeartRate: 139,
+        temperatureSamples: Array.from(
+          { length: 40 },
+          (_, index): [number, number] => [10 + index / 4, 8],
+        ),
+      }),
+    );
+
+    const detail = await queryRideById(db, "a");
+    expect(detail).toMatchObject({
+      movingS: 5_400,
+      averageWatts: 200,
+      normalizedWatts: 228,
+      averageHeartRate: 139,
+      temperatureLowC: 10.3,
+      temperatureHighC: 19.3,
+    });
+  });
+
+  it("leaves out power a meter did not measure", async () => {
+    await seed(
+      ride("a", {
+        powerSource: "estimated",
+        averageWatts: 150,
+        normalizedWatts: 170,
+      }),
+    );
+
+    const detail = await queryRideById(db, "a");
+    expect(detail?.averageWatts).toBeNull();
+    expect(detail?.normalizedWatts).toBeNull();
+  });
+});
+
 // The stories render the fixtures and the page renders the feed. Both compile
 // against one type, and this keeps that true as a runtime check too: the feed
 // cannot produce a key the fixtures lack, or the reverse.
@@ -802,52 +613,11 @@ describe("contract", () => {
     expect(keys(feed.highlightMonths[0])).toEqual(
       keys(fixture.highlightMonths[0]),
     );
-    expect(keys(feed.records[0])).toEqual(keys(fixture.records[0]));
-    expect(keys(feed.records[0]!.lists[0])).toEqual(
-      keys(fixture.records[0]!.lists[0]),
+    expect(buildCyclingActivity({ rides: [], tracks: [] }, NOW).months).toEqual(
+      [],
     );
-    expect(keys(feed.records[0]!.powerBests[0])).toEqual(
-      keys(fixture.records[0]!.powerBests[0]),
-    );
-    expect(
-      buildCyclingActivity({ rides: [], tracks: [] }, [], [], NOW).months,
-    ).toEqual([]);
   });
 });
-
-function climb(
-  activityId: string,
-  overrides: Partial<Insertable<ActivityClimbTable>> = {},
-): Insertable<ActivityClimbTable> {
-  return {
-    activityId,
-    position: 0,
-    gainM: 500,
-    summitLat: 37.88,
-    summitLng: -121.91,
-    name: null,
-    ...overrides,
-  };
-}
-
-async function storeClimbs(...rows: ReturnType<typeof climb>[]) {
-  await db.insertInto("activityClimb").values(rows).execute();
-}
-
-function climbRows(
-  records: CyclingActivityData["records"],
-  period: string,
-): [string, string, string | undefined, number][] {
-  const list = records
-    .find((entry) => entry.period === period)!
-    .lists.find((entry) => entry.id === "climb");
-  return (list?.rows ?? []).map((row) => [
-    row.id,
-    row.name,
-    row.detail,
-    row.value,
-  ]);
-}
 
 function rideIds(page: { months: { rides: { id: string }[] }[] }): string[] {
   return page.months.flatMap((month) => month.rides.map((entry) => entry.id));

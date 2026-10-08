@@ -1,0 +1,343 @@
+<script setup lang="ts">
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  useTemplateRef,
+  watch,
+} from "vue";
+import { monthsByYear } from "@/activity/sections";
+import DateRail from "@/components/parts/DateRail.vue";
+import EmptyState from "@/components/parts/EmptyState.vue";
+import HighlightList from "@/components/parts/HighlightList.vue";
+import {
+  scrollToSection,
+  useScrollSpy,
+} from "@/components/cycling/useScrollSpy";
+import ItemRow from "@/components/parts/ItemRow.vue";
+import MonthSections from "@/components/parts/MonthSections.vue";
+import RouteFrame from "@/components/parts/RouteFrame.vue";
+import type { RouteNote } from "@/notes";
+import RowGutter from "@/components/parts/RowGutter.vue";
+import SearchControl from "@/components/parts/SearchControl.vue";
+import SectionHead from "@/components/parts/SectionHead.vue";
+import SegmentGroup from "@/components/parts/SegmentGroup.vue";
+import SelectControl from "@/components/parts/SelectControl.vue";
+import TimelineGutter from "@/components/parts/TimelineGutter.vue";
+import {
+  DEFAULT_FILTERS,
+  OWNER_OPTIONS,
+  SORT_OPTIONS,
+  codeView,
+  countLabel,
+  ownerFrom,
+  parseFilters,
+  sortFrom,
+  withFilters,
+  type CodeFilters,
+  type CodeRow,
+  type LanguageOption,
+} from "@/code/view";
+import {
+  CODE_PARAM,
+  codeKey,
+  codePageHref,
+  fetchCodeDetail,
+  type CodeDetail as Detail,
+} from "@/code/detailWire";
+import DetailModal from "@/components/parts/DetailModal.vue";
+import { useDetailModal, type OpenDetail } from "@/detail/useDetailModal";
+import CodeDetail from "./CodeDetail.vue";
+
+const props = defineProps<{
+  /** The owner\'s note on the page. */
+  note?: RouteNote;
+  rows: readonly CodeRow[];
+  languages: readonly LanguageOption[];
+  /** The filters the URL named, so the server and the island render alike. */
+  initial: CodeFilters;
+  /** The year section labels leave unsaid, fixed by the server. */
+  thisYear: string;
+  /** The item a shared link opened over the list, when it named one. */
+  open?: OpenDetail<Detail> | null;
+}>();
+
+// A repository or a project opens over the list rather than replacing it,
+// and its row still links to its page. The filters' own URL writes keep the
+// item's parameter, since they only swap the parameters they own.
+const {
+  key: openKey,
+  data: openItem,
+  failed: openFailed,
+  close: closeItem,
+  restoreFocus,
+} = useDetailModal(
+  { param: CODE_PARAM, keyOf: codeKey, load: fetchCodeDetail },
+  props.open ?? null,
+);
+
+/** The list in its current filters, which closing leaves without script. */
+const closeHref = computed(() => `/code/${withFilters("", filters)}`);
+
+const filters = reactive<CodeFilters>({ ...props.initial });
+
+const view = computed(() =>
+  codeView(props.rows, filters, { thisYear: props.thisYear }),
+);
+
+const highlightRows = computed(() =>
+  view.value.highlights.map((row) => ({
+    href: row.href,
+    title: row.title,
+    org: row.org,
+    text: row.text,
+    lead: row.lead,
+    dot: row.dot,
+  })),
+);
+
+const languageDot = computed(
+  () => props.languages.find((option) => option.value === filters.lang)?.color,
+);
+
+const status = computed(() => countLabel(view.value.count));
+
+const sortLabel = computed(
+  () => SORT_OPTIONS.find((option) => option.value === filters.sort)?.label,
+);
+
+const months = computed(() =>
+  view.value.sections.filter((section) => !section.phoneOnly),
+);
+
+const monthKeys = computed(() => months.value.map((section) => section.key));
+const rail = computed(() => monthsByYear(monthKeys.value));
+
+const results = useTemplateRef<HTMLElement>("results");
+const activeMonth = useScrollSpy(monthKeys, { root: results });
+
+function jumpTo(key: string) {
+  scrollToSection(results.value, key);
+}
+const empty = useTemplateRef<InstanceType<typeof EmptyState>>("empty");
+
+// The URL keeps up with the filters, so a reload or a shared link lands on
+// the same list. Replacing rather than pushing keeps typing out of history,
+// and the router's own state rides along untouched. Writing once on mount
+// swaps a language the server matched in another case for the one it chose.
+function writeUrl() {
+  const search = withFilters(location.search, filters);
+  if (search === location.search) return;
+  history.replaceState(
+    history.state,
+    "",
+    `${location.pathname}${search}${location.hash}`,
+  );
+}
+
+// A Back within the page, like one past a month link, doesn't remount the
+// island, so the filters follow whatever query the entry carries.
+function readUrl() {
+  Object.assign(
+    filters,
+    parseFilters(new URLSearchParams(location.search), props.languages),
+  );
+}
+
+watch(filters, writeUrl);
+
+onMounted(() => {
+  writeUrl();
+  window.addEventListener("popstate", readUrl);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("popstate", readUrl);
+});
+
+function setOwner(value: string) {
+  filters.owner = ownerFrom(value);
+}
+
+function setSort(value: string) {
+  filters.sort = sortFrom(value);
+}
+
+/**
+ * Clearing from the empty state removes the button that had focus, so focus
+ * moves to the list it brought back, or to the empty state if nothing did.
+ */
+async function reset() {
+  Object.assign(filters, DEFAULT_FILTERS);
+  await nextTick();
+  if (view.value.count === 0) empty.value?.focus();
+  else results.value?.focus();
+}
+</script>
+
+<template>
+  <RouteFrame
+    id="code"
+    :note="note"
+    :regions="{
+      tools: true,
+      sidebar: true,
+      highlights: view.highlights.length > 0,
+    }"
+  >
+    <template #tools>
+      <SegmentGroup
+        :model-value="filters.owner"
+        :options="OWNER_OPTIONS"
+        label="Owner"
+        size="sm"
+        @update:model-value="setOwner"
+      />
+      <SelectControl
+        v-model="filters.lang"
+        class="ml-auto min-w-0"
+        :options="languages"
+        label="Language"
+        placeholder="Language"
+        :dot="languageDot"
+      />
+      <SelectControl
+        :model-value="filters.sort"
+        :options="SORT_OPTIONS"
+        label="Sort"
+        icon="arrow-down-up"
+        icon-only
+        :tint="false"
+        @update:model-value="setSort"
+      />
+      <SearchControl
+        v-model="filters.q"
+        noun="repositories"
+        collapsible
+        :status="status"
+      />
+    </template>
+
+    <template #sidebar>
+      <div class="tool-row">
+        <SegmentGroup
+          :model-value="filters.owner"
+          :options="OWNER_OPTIONS"
+          label="Owner"
+          fill
+          class="min-w-0 flex-1 *:basis-auto"
+          @update:model-value="setOwner"
+        />
+        <SearchControl
+          v-model="filters.q"
+          noun="repositories"
+          collapsible
+          :status="status"
+        />
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <SelectControl
+          v-model="filters.lang"
+          class="min-w-0"
+          :options="languages"
+          label="Language"
+          placeholder="Language"
+          :dot="languageDot"
+        />
+        <SelectControl
+          :model-value="filters.sort"
+          :options="SORT_OPTIONS"
+          label="Sort"
+          icon="arrow-down-up"
+          :tint="false"
+          @update:model-value="setSort"
+        />
+      </div>
+      <DateRail
+        v-if="months.length > 1"
+        :years="rail"
+        :active="activeMonth ?? monthKeys[0] ?? null"
+        @jump="jumpTo"
+      />
+    </template>
+
+    <template #highlights>
+      <HighlightList :rows="highlightRows" />
+    </template>
+
+    <div
+      ref="results"
+      role="region"
+      aria-label="Repositories"
+      tabindex="-1"
+      class="outline-none"
+    >
+      <EmptyState
+        v-if="view.count === 0"
+        ref="empty"
+        noun="repositories"
+        :query="filters.q"
+        @clear="reset"
+      />
+
+      <template v-else-if="filters.sort === 'recent'">
+        <SectionHead label="Recent" section />
+        <MonthSections :sections="view.sections">
+          <template #row="{ item, dayNum }">
+            <ItemRow
+              :href="item.href"
+              :title="item.title"
+              :org="item.org"
+              :text="item.text"
+              :lead="item.lead"
+              :dot="item.dot"
+              :query="filters.q"
+            >
+              <template #gutter>
+                <RowGutter :row="item" :day="dayNum" />
+              </template>
+            </ItemRow>
+          </template>
+        </MonthSections>
+      </template>
+
+      <section v-else :aria-label="sortLabel">
+        <SectionHead :label="sortLabel ?? ''" section />
+        <ul class="flex flex-col gap-1.5">
+          <li v-for="{ item, dayNum, sub } in view.sorted" :key="item.key">
+            <ItemRow
+              :href="item.href"
+              :title="item.title"
+              :org="item.org"
+              :text="item.text"
+              :lead="item.lead"
+              :dot="item.dot"
+              :query="filters.q"
+            >
+              <template #gutter>
+                <TimelineGutter :day="dayNum" :sub="sub" week-end />
+              </template>
+            </ItemRow>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <DetailModal
+      :open="openKey !== null"
+      :label="openItem?.title ?? 'Repository'"
+      noun="item"
+      :full-href="openKey === null ? undefined : codePageHref(openKey)"
+      :close-href="closeHref"
+      :loading="openItem === null"
+      :failed="openFailed"
+      :hero="false"
+      @close="closeItem"
+      @closed="restoreFocus"
+    >
+      <CodeDetail v-if="openItem" :detail="openItem" :level="2" />
+    </DetailModal>
+  </RouteFrame>
+</template>

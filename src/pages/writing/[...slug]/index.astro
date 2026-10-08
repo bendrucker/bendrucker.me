@@ -1,0 +1,77 @@
+---
+import { render } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import AdjacentNav from "@/components/parts/AdjacentNav.vue";
+import ItemHeader from "@/components/parts/ItemHeader.vue";
+import ReadingProgress from "@/components/parts/ReadingProgress.vue";
+import TagChips from "@/components/parts/TagChips.vue";
+import { getPath } from "@/blog/path";
+import { isEnabled, SITE } from "@/config";
+import { loadWriting } from "@/writing/load";
+import {
+  fullDate,
+  neighbors,
+  transitionName,
+  type PostRow,
+} from "@/writing/rows";
+
+if (!isEnabled("writing")) return Astro.rewrite("/404");
+
+const pathname = Astro.url.pathname.replace(/\/?$/, "/");
+const { entries, rows, thisYear } = await loadWriting();
+const row = rows.find((r) => r.href === pathname);
+const entry = entries.find((p) => getPath(p.id) === pathname);
+if (!entry || !row) return Astro.rewrite("/404");
+
+const { Content } = await render(entry);
+const { title, author, description, pubDatetime, modDatetime, canonicalURL } =
+  entry.data;
+const { newer, older } = neighbors(rows, pathname);
+
+function link(post: PostRow | undefined) {
+  return post && { title: post.title, href: post.href };
+}
+
+const { ogImage } = entry.data;
+const ogPath =
+  typeof ogImage === "string"
+    ? ogImage
+    : (ogImage?.src ??
+      (SITE.dynamicOgImage ? `${pathname}index.png` : undefined));
+---
+
+<Layout
+  title={`${title} | ${SITE.title}`}
+  author={author}
+  description={description}
+  pubDatetime={pubDatetime}
+  modDatetime={modDatetime}
+  canonicalURL={canonicalURL}
+  ogImage={ogPath && new URL(ogPath, Astro.url.origin).href}
+  sourcePath={entry.filePath}
+  morph={false}
+>
+  <main id="main-content" class="flex-1 pb-16 cat-writing">
+    <ReadingProgress />
+    <div class="mx-auto flex max-w-[760px] flex-col gap-6 px-4 pt-2 md:px-10 md:pt-6">
+      <ItemHeader
+        title={title}
+        backHref="/writing/"
+        date={fullDate(row.day, thisYear)}
+        dek={row.text}
+        size="post"
+        transitionName={transitionName(pathname)}
+      />
+      <article class="app-prose prose-headings:tracking-[-0.01em] prose-h2:mt-[1.6em] prose-h2:mb-[0.6em] prose-h2:text-[22px] prose-h2:leading-[1.3] prose-h3:mt-[1.4em] prose-h3:mb-[0.4em] prose-h3:text-[17px] prose-h3:leading-[1.4] prose-h3:not-italic prose-p:mt-0 prose-p:mb-[1.1em] prose-a:font-normal prose-a:decoration-cat/55 prose-a:decoration-solid prose-a:decoration-[1.5px] prose-a:underline-offset-3 prose-a:hover:text-foreground prose-a:hover:decoration-cat prose-blockquote:border-s-cat/60 prose-code:font-mono prose-code:text-[0.88em] prose-li:mb-[0.5em] prose-li:marker:text-cat max-w-none text-[17px] leading-[1.7]">
+        <Content />
+      </article>
+      <TagChips
+        tags={row.tags.map((tag) => ({
+          name: tag.name,
+          href: `/writing/?tag=${tag.slug}`,
+        }))}
+      />
+      <AdjacentNav newer={link(newer)} older={link(older)} />
+    </div>
+  </main>
+</Layout>

@@ -40,10 +40,11 @@ const controls: StoryControlSet = {
     },
   },
   width: { type: "slider", title: "width", min: 96, max: 340 },
+  size: { type: "select", title: "size", options: ["thumb", "shot"] },
 };
 
 function initState() {
-  return { media: "video", width: 340 };
+  return { media: "video", width: 340, size: "thumb" as "thumb" | "shot" };
 }
 </script>
 
@@ -61,6 +62,7 @@ function initState() {
         <div :style="{ width: `${state.width}px`, maxWidth: '100%' }">
           <MediaStrip
             :media="mediaSets[state.media]!"
+            :size="state.size"
             @open="logEvent('open', { index: $event })"
           />
         </div>

@@ -36,10 +36,16 @@ const controls: StoryControlSet = {
   },
   index: { type: "slider", title: "index", min: 0, max: 4 },
   open: { type: "checkbox", title: "open" },
+  tone: { type: "select", title: "tone", options: ["page", "black"] },
 };
 
 function initState() {
-  return { media: "five", index: 2, open: false };
+  return {
+    media: "five",
+    index: 2,
+    open: false,
+    tone: "page" as "page" | "black",
+  };
 }
 </script>
 
@@ -67,6 +73,7 @@ function initState() {
           :ride-name="travelRide.name"
           :ride-url="travelRide.stravaUrl"
           :open="state.open"
+          :tone="state.tone"
           @close="state.open = false"
         />
       </template>

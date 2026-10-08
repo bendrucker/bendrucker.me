@@ -5,6 +5,7 @@
 // year without rendering in production and nothing said so.
 import { env } from "cloudflare:workers";
 import { logger } from "@workspace/logger";
+import { markDegraded } from "./middleware/degraded";
 
 /**
  * Whether a swallowed failure is worse than an error page here.
@@ -20,7 +21,7 @@ function isLocal(): boolean {
 
 /**
  * Records a failure a page is about to swallow, and refuses to swallow it
- * locally. Call it from the catch, then fall back as usual: the fallback is
+ * locally. The response is marked degraded, so the edge does not keep it. Call it from the catch, then fall back as usual: the fallback is
  * unreachable on a local run, so a broken query arrives as a stack trace
  * instead of a blank page.
  */
@@ -31,4 +32,5 @@ export function rethrowLocally(
 ): void {
   logger.error({ error, ...context }, message);
   if (isLocal()) throw error;
+  markDegraded();
 }

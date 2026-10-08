@@ -63,20 +63,45 @@ interface PrContributionOptions {
   occurredAt: string;
   merged?: boolean;
   mergedAt?: string | null;
+  number?: number;
 }
 
 function makePrContribution(options: PrContributionOptions): PrContribution {
   return {
     occurredAt: options.occurredAt,
     pullRequest: {
+      id: `PR_${options.number ?? 1}`,
       merged: options.merged ?? false,
       mergedAt: options.mergedAt ?? null,
     },
   };
 }
 
-function makePrRepo(repository: Repository, nodes: PrContribution[]): PrRepo {
-  return { repository, contributions: { nodes } };
+type IssueRepo =
+  ContributionsCollection["issueContributionsByRepository"][number];
+
+function makeIssueRepo(
+  repository: Repository,
+  numbers: number[],
+  occurredAt = "2024-01-01T00:00:00Z",
+): IssueRepo {
+  return {
+    repository,
+    contributions: {
+      nodes: numbers.map((number) => ({
+        occurredAt,
+        issue: { id: `I_${number}` },
+      })),
+    },
+  };
+}
+
+function makePrRepo(
+  repository: Repository,
+  nodes: PrContribution[],
+  totalCount = nodes.length,
+): PrRepo {
+  return { repository, contributions: { totalCount, nodes } };
 }
 
 interface ReviewContributionOptions {
@@ -110,6 +135,7 @@ interface ContributionsParts {
   commit?: CommitRepo[];
   pullRequest?: PrRepo[];
   review?: ReviewRepo[];
+  issue?: IssueRepo[];
   repositoryContributions?: { repository: Repository; occurredAt: string }[];
 }
 
@@ -120,6 +146,7 @@ function makeContributions(
     commitContributionsByRepository: parts.commit ?? [],
     pullRequestContributionsByRepository: parts.pullRequest ?? [],
     pullRequestReviewContributionsByRepository: parts.review ?? [],
+    issueContributionsByRepository: parts.issue ?? [],
     repositoryContributions: { nodes: parts.repositoryContributions ?? [] },
   };
 }
@@ -343,6 +370,86 @@ describe("aggregateActivityByRepository", () => {
       expect(names(result)).toEqual(["merged-pr"]);
       expect(result[0].activitySummary.prCount).toBe(1);
       expect(result[0].activitySummary.hasMergedPRs).toBe(true);
+    });
+
+    it("counts pull requests past the first page by the connection's total", () => {
+      const contributions = makeContributions({
+        pullRequest: [
+          makePrRepo(
+            makeRepo({ name: "busy" }),
+            [
+              makePrContribution({
+                occurredAt: "2024-01-01T00:00:00Z",
+                merged: true,
+                mergedAt: "2024-01-02T00:00:00Z",
+              }),
+            ],
+            240,
+          ),
+        ],
+      });
+
+      const [busy] = aggregateActivityByRepository(contributions);
+
+      expect(busy.activitySummary.prCount).toBe(240);
+      expect(busy.pullRequestIds).toEqual(["PR_1"]);
+    });
+  });
+
+  describe("authored work", () => {
+    it("carries the id of each authored pull request on its repository", () => {
+      const contributions = makeContributions({
+        pullRequest: [
+          makePrRepo(makeRepo({ name: "lib" }), [
+            makePrContribution({
+              occurredAt: "2024-01-01T00:00:00Z",
+              merged: true,
+              mergedAt: "2024-01-02T00:00:00Z",
+              number: 7,
+            }),
+            makePrContribution({
+              occurredAt: "2024-01-03T00:00:00Z",
+              number: 8,
+            }),
+          ]),
+        ],
+      });
+
+      const [repo] = aggregateActivityByRepository(contributions);
+
+      expect(repo.pullRequestIds).toEqual(["PR_7", "PR_8"]);
+    });
+
+    it("carries an authored issue's id on a repository the search found", () => {
+      const repository = makeRepo({ name: "lib" });
+      const contributions = makeContributions({
+        pullRequest: [
+          makePrRepo(repository, [
+            makePrContribution({
+              occurredAt: "2024-01-01T00:00:00Z",
+              merged: true,
+              mergedAt: "2024-01-02T00:00:00Z",
+            }),
+          ]),
+        ],
+        issue: [makeIssueRepo(repository, [3])],
+      });
+
+      const [repo] = aggregateActivityByRepository(contributions, [
+        makeIssueNode({ repository }),
+      ]);
+
+      expect(repo.issueIds).toEqual(["I_3"]);
+    });
+
+    // A repository made from an authored issue alone would hold no counts, and
+    // the commits-only rule would keep it.
+    it("adds no repository for an authored issue alone", () => {
+      const contributions = makeContributions({
+        issue: [makeIssueRepo(makeRepo({ name: "issue-only" }), [1])],
+      });
+
+      expect(aggregateActivityByRepository(contributions)).toEqual([]);
     });
   });
 

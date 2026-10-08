@@ -64,10 +64,14 @@ function step(delta: number) {
       <div class="flex h-full">
         <!-- The horizontal padding is the arrows' gutter. Below `sm` there is
              no room to spend on one, and the drag Embla gives us is the
-             gesture a phone already expects. -->
+             gesture a phone already expects. Every slide but the one shown
+             is inert. Chrome still lets a `<video controls>` inside an inert
+             subtree take focus, and the dialog's focus trap counts it as the
+             last tab stop, so an off-screen video also leaves the tab order. -->
         <div
           v-for="(item, slide) in media"
           :key="item.id"
+          :inert="slide !== index"
           class="flex h-full min-w-0 flex-[0_0_100%] items-center justify-center px-2 py-4 sm:px-20"
         >
           <!-- `preload="none"` is what keeps opening the lightbox on a photo
@@ -76,6 +80,7 @@ function step(delta: number) {
             v-if="item.kind === 'video'"
             :src="item.fullUrl"
             :data-index="slide"
+            :tabindex="slide === index ? undefined : -1"
             :aria-label="item.alt"
             controls
             playsinline
@@ -99,7 +104,7 @@ function step(delta: number) {
       class="absolute left-3 hidden size-9 items-center justify-center rounded-full border border-border bg-background/90 text-foreground hover:text-accent sm:flex"
       @click="step(-1)"
     >
-      <span class="icon-[lucide--chevron-left] size-5" aria-hidden="true" />
+      <span class="size-5 icon-[lucide--chevron-left]" aria-hidden="true" />
       <span class="sr-only">Previous item</span>
     </button>
 
@@ -109,7 +114,7 @@ function step(delta: number) {
       class="absolute right-3 hidden size-9 items-center justify-center rounded-full border border-border bg-background/90 text-foreground hover:text-accent sm:flex"
       @click="step(1)"
     >
-      <span class="icon-[lucide--chevron-right] size-5" aria-hidden="true" />
+      <span class="size-5 icon-[lucide--chevron-right]" aria-hidden="true" />
       <span class="sr-only">Next item</span>
     </button>
   </div>

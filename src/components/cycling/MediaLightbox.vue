@@ -8,19 +8,34 @@ import {
   DialogRoot,
   DialogTitle,
 } from "reka-ui";
-import { computed, watch } from "vue";
+import { computed, onBeforeUnmount, watch } from "vue";
 import MediaCarousel from "./MediaCarousel.vue";
 import StravaLink from "./StravaLink.vue";
 import type { RideMedia } from "@/activity/types";
 import { withinVideo } from "./mediaTarget";
+import { usePortalTarget } from "@/detail/portal";
 
-const props = defineProps<{
-  media: RideMedia[];
-  index: number;
-  rideName: string;
-  rideUrl?: string;
-  open: boolean;
-}>();
+// Resolved here rather than in the template, which unwraps a top-level ref, so
+// `.value` there would read the dialog element's own property.
+const portalTarget = usePortalTarget();
+const portalTo = computed(() => portalTarget?.value ?? "body");
+
+const props = withDefaults(
+  defineProps<{
+    media: RideMedia[];
+    index: number;
+    rideName: string;
+    rideUrl?: string;
+    open: boolean;
+    /**
+     * `page` lays the viewer over the page's own ground. `black` is a ride
+     * page's viewer: black in either theme, with the count and the close
+     * button across the top and nothing else competing with the photo.
+     */
+    tone?: "page" | "black";
+  }>(),
+  { tone: "page" },
+);
 
 const emit = defineEmits<{
   close: [];
@@ -72,6 +87,54 @@ function onOpenChange(value: boolean) {
 }
 
 /**
+ * reka marks the rest of the page `aria-hidden`, which leaves its links and
+ * buttons focusable to anything but its own Tab trap. `inert` takes them out
+ * of reach entirely. It is lifted before reka hands focus back to the
+ * control that opened the viewer, which an inert page would refuse.
+ *
+ * `aria-hidden`'s own `inertOthers` shares one reference count with the
+ * `hideOthers` reka calls, so undoing either leaves the other's attribute
+ * behind.
+ */
+function inertPage(content: HTMLElement): () => void {
+  const others = [...document.body.children].filter(
+    (element): element is HTMLElement =>
+      element instanceof HTMLElement &&
+      !element.contains(content) &&
+      !element.inert,
+  );
+  for (const element of others) element.inert = true;
+  return () => {
+    for (const element of others) element.inert = false;
+  };
+}
+
+let releasePage = () => {};
+
+function onCloseAutoFocus() {
+  releasePage();
+  releasePage = () => {};
+}
+
+onBeforeUnmount(onCloseAutoFocus);
+
+/**
+ * Opens on the close button. reka's default is the first tabbable element,
+ * and with every slide in the DOM that can be a video several slides off
+ * screen, which then takes the arrow keys for its own controls.
+ */
+function onOpenAutoFocus(event: Event) {
+  const content = event.target;
+  if (!(content instanceof HTMLElement)) return;
+  releasePage();
+  releasePage = inertPage(content);
+  const close = content.querySelector("[data-lightbox-close]");
+  if (!(close instanceof HTMLElement)) return;
+  event.preventDefault();
+  close.focus();
+}
+
+/**
  * One listener rather than two `@keydown.arrow-*` bindings. reka merges `$attrs`
  * onto the content element twice, and two array-literal handlers are never
  * reference-equal, so each arrow press would fire the handler twice.
@@ -92,13 +155,19 @@ function onKeydown(event: KeyboardEvent) {
 
 <template>
   <DialogRoot :open="open && count > 0" @update:open="onOpenChange">
-    <DialogPortal>
-      <DialogOverlay class="fixed inset-0 z-50 bg-background/95" />
+    <DialogPortal :to="portalTo">
+      <DialogOverlay
+        class="fixed inset-0 z-50"
+        :class="tone === 'black' ? 'bg-[#0b0b0c]' : 'bg-background/95'"
+      />
       <!-- The whole viewport, so an item is as large as the screen allows.
            Capping the width left a postage stamp on a wide display. -->
       <DialogContent
         class="fixed inset-0 z-50 flex flex-col outline-none"
+        :class="tone === 'black' ? 'text-white' : ''"
         @keydown="onKeydown"
+        @open-auto-focus="onOpenAutoFocus"
+        @close-auto-focus="onCloseAutoFocus"
       >
         <DialogTitle class="sr-only">{{ rideName }}</DialogTitle>
         <DialogDescription class="sr-only">
@@ -112,6 +181,26 @@ function onKeydown(event: KeyboardEvent) {
         />
 
         <div
+          v-if="tone === 'black'"
+          class="order-first flex shrink-0 items-center justify-between py-2.5 pr-3 pl-[18px] font-mono text-xs text-white/70"
+        >
+          <p>
+            <span aria-hidden="true">{{ position + 1 }} / {{ count }}</span>
+            <span class="sr-only" aria-live="polite">
+              Item {{ position + 1 }} of {{ count }}.
+              {{ item?.alt }}
+            </span>
+          </p>
+          <DialogClose
+            data-lightbox-close
+            class="inline-flex size-10 items-center justify-center rounded-[10px] bg-white/8 text-white transition-colors hover:bg-white/16 focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <span class="size-[18px] icon-[lucide--x]" aria-hidden="true" />
+            <span class="sr-only">Close media viewer</span>
+          </DialogClose>
+        </div>
+        <div
+          v-else
           class="flex shrink-0 items-center gap-3 px-4 pb-4 text-[11px] text-foreground/70"
         >
           <p class="shrink-0">
@@ -128,8 +217,11 @@ function onKeydown(event: KeyboardEvent) {
           </p>
           <div class="ml-auto flex items-center gap-3">
             <StravaLink v-if="rideUrl" :href="rideUrl" :name="rideName" />
-            <DialogClose class="text-foreground/70 hover:text-accent">
-              <span class="icon-[lucide--x] size-4" aria-hidden="true" />
+            <DialogClose
+              data-lightbox-close
+              class="text-foreground/70 hover:text-accent"
+            >
+              <span class="size-4 icon-[lucide--x]" aria-hidden="true" />
               <span class="sr-only">Close media viewer</span>
             </DialogClose>
           </div>

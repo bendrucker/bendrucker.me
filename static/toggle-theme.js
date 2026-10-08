@@ -26,7 +26,10 @@ function setPreference() {
 function reflectPreference() {
   document.firstElementChild.setAttribute("data-theme", themeValue);
 
-  document.querySelector("#theme-btn")?.setAttribute("aria-label", themeValue);
+  // A toggle keeps one name, "Dark theme", and reports whether it is on.
+  document
+    .querySelector("#theme-btn")
+    ?.setAttribute("aria-pressed", String(themeValue === "dark"));
 
   // Get a reference to the body element
   const body = document.body;
@@ -70,6 +73,10 @@ window.addEventListener("load", () => {
 // Set theme-color value before page transition
 // to avoid navigation bar color flickering in Android dark mode
 document.addEventListener("astro:before-swap", (event) => {
+  // The swap replaces the root's attributes with the fetched page's, which
+  // leaves the theme unset, so a dark page would otherwise be captured light.
+  event.newDocument.documentElement.setAttribute("data-theme", themeValue);
+
   const bgColor = document
     .querySelector("meta[name='theme-color']")
     ?.getAttribute("content");

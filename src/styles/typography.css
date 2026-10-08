@@ -1,9 +1,18 @@
-@plugin "@tailwindcss/typography";
+/*
+ * The plugin's class is renamed so that `.app-prose` is the only way in. Under
+ * its default name, any source file that says "prose" makes Tailwind emit a
+ * second 16 KB copy of the same rules.
+ */
+/* Prettier lowercases the property, and the plugin reads it case-sensitively. */
+/* prettier-ignore */
+@plugin "@tailwindcss/typography" {
+  className: "app-prose-base";
+}
 
 @layer base {
   /* ===== Override default Tailwind Typography styles ===== */
   .app-prose {
-    @apply prose;
+    @apply app-prose-base;
 
     h1,
     h2,

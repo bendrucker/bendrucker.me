@@ -2,7 +2,7 @@
 // shaped into what the cycling page renders. The stories fill the same shape
 // by hand in `src/components/cycling/fixtures.ts`.
 import { TZDate } from "@date-fns/tz";
-import { format } from "date-fns";
+import { format, subHours } from "date-fns";
 import { sql, type Kysely, type Selectable } from "kysely";
 import { z } from "zod";
 import {
@@ -35,19 +35,30 @@ import type {
   HighlightMonth,
   LogPage,
   MonthGroup,
-  PowerBest,
-  RankedList,
-  RankedRow,
-  RecordPeriod,
   Ride,
   RideBadge,
   RideMedia,
   YearTotals,
 } from "./types";
 
-export type FeedRow = Selectable<ActivityFeedTable>;
+/**
+ * A row as the feed reads it. Only a ride's own page shows its description and
+ * the figures past distance, time, and average power, and only the Records
+ * view reads the indoor flag.
+ */
+export type FeedRow = Omit<
+  Selectable<ActivityFeedTable>,
+  DetailColumn | "indoor"
+>;
 
-/** Every column but the track: what the totals and ranked lists read. */
+type DetailColumn =
+  | "description"
+  | "normalizedWatts"
+  | "averageHeartRate"
+  | "temperatureLowC"
+  | "temperatureHighC";
+
+/** Every column but the track: what the totals read. */
 export type RideRow = Omit<
   FeedRow,
   "polyline" | "elevationProfile" | "photoKeys"
@@ -96,7 +107,6 @@ const RIDE_COLUMNS = [
   "elevationM",
   "averageWatts",
   "powerSource",
-  "indoor",
   "updatedAt",
 ] as const;
 
@@ -115,32 +125,8 @@ const LOG_COLUMNS = [
   "photoKeys",
 ] as const;
 
-export interface PowerCurvePoint {
-  activityId: string;
-  durationS: number;
-  watts: number;
-}
-
-export interface ClimbRow {
-  activityId: string;
-  position: number;
-  gainM: number;
-  name: string | null;
-}
-
 /** A ride under this length is a commute: counted in the month, not carded. */
 const COMMUTE_MAX_DISTANCE_M = 10_000;
-
-const RANKED_ROWS = 5;
-
-const POWER_LADDER = [
-  { id: "1m", label: "1 min", durationS: 60 },
-  { id: "5m", label: "5 min", durationS: 300 },
-  { id: "20m", label: "20 min", durationS: 1200 },
-  { id: "1h", label: "1 hr", durationS: 3600 },
-] as const;
-
-const LADDER_DURATIONS = POWER_LADDER.map((rung) => rung.durationS);
 
 // Scoped per month where they are awarded, so the badge can say which month it
 // won rather than leaving "longest" to read as all time.
@@ -158,56 +144,125 @@ export async function queryCyclingActivity(
   db: Kysely<Database>,
   now: Date = new Date(),
 ): Promise<CyclingActivityData> {
-  // Tracks dominate a row's size, so the ranked lists and totals read every
-  // ride without them, and only the rides with a card on the page pay for
-  // theirs. Which rides those are is settled by laying the page out first.
-  const [rides, curve, climbs] = await Promise.all([
+  // Tracks dominate a row's size, so the totals read every ride without them,
+  // and only the rides with a card on the page pay for theirs. Which rides
+  // those are is settled by laying the page out first.
+  const rides = await db
+    .selectFrom("activityFeed")
+    .select(RIDE_COLUMNS)
+    .where("sport", "=", "ride")
+    .execute();
+  const layout = layoutFeed(toEntries(rides));
+  attachTracks(layout.entries, await queryTracks(db, layout));
+  return assembleFeed(layout, now);
+}
+
+/**
+ * The furthest apart two zones' clocks can be: a ride with a later wall
+ * clock than another started no more than this long before it.
+ */
+const ZONE_SPREAD_HOURS = 26;
+
+/**
+ * The latest rides the feed would card, newest first by wall clock, with no
+ * track, media, or badge attached: what a page that names a ride wants,
+ * without the feed. Commutes stay out here as they do from the months.
+ *
+ * The rows are ordered by instant and the rides by wall clock, which agree
+ * except across zones, so the query reads on past the limit by the widest
+ * the zones can disagree before the rides are sorted and cut.
+ */
+export async function queryLatestRides(
+  db: Kysely<Database>,
+  limit: number,
+): Promise<Ride[]> {
+  const carded = () =>
     db
       .selectFrom("activityFeed")
       .select(RIDE_COLUMNS)
       .where("sport", "=", "ride")
-      .execute(),
-    // Every measured ride's points on the ladder: the year a point counts
-    // toward is the ride's local one, which only the entries know.
-    db
-      .selectFrom("activityPowerCurve")
-      .innerJoin(
-        "activityFeed",
-        "activityFeed.activityId",
-        "activityPowerCurve.activityId",
-      )
-      .where("activityFeed.sport", "=", "ride")
-      .where("activityFeed.powerSource", "=", "measured")
-      .where("activityPowerCurve.durationS", "in", LADDER_DURATIONS)
-      .select([
-        "activityPowerCurve.activityId",
-        "activityPowerCurve.durationS",
-        "activityPowerCurve.watts",
-      ])
-      .execute(),
-    db
-      .selectFrom("activityClimb")
-      .innerJoin(
-        "activityFeed",
-        "activityFeed.activityId",
-        "activityClimb.activityId",
-      )
-      .where("activityFeed.sport", "=", "ride")
-      .select([
-        "activityClimb.activityId",
-        "activityClimb.position",
-        "activityClimb.gainM",
-        "activityClimb.name",
-      ])
-      // A named climb keeps its first effort on a tie, so the earliest ride
-      // wins the same way on every render.
-      .orderBy("activityFeed.startedAt")
-      .orderBy("activityClimb.position")
-      .execute(),
-  ]);
-  const layout = layoutFeed(toEntries(rides));
-  attachTracks(layout.entries, await queryTracks(db, layout));
-  return assembleFeed(layout, curve, climbs, now);
+      .where((eb) =>
+        eb.or([
+          eb("distanceM", "is", null),
+          eb("distanceM", ">=", COMMUTE_MAX_DISTANCE_M),
+        ]),
+      );
+  const byInstant = await carded()
+    .orderBy("startedAt", "desc")
+    .limit(limit)
+    .execute();
+  const last = byInstant.at(-1);
+  const rows =
+    byInstant.length < limit || last === undefined
+      ? byInstant
+      : await carded()
+          .where(
+            "startedAt",
+            ">=",
+            subHours(new Date(last.startedAt), ZONE_SPREAD_HOURS).toISOString(),
+          )
+          .execute();
+  return toEntries(rows)
+    .slice(0, limit)
+    .map((entry) => entry.ride);
+}
+
+/**
+ * A ride for its own page, with the metres its figures format from. A figure
+ * the ride never recorded is null, and the page leaves its tile out.
+ */
+export interface RideDetail {
+  ride: Ride;
+  distanceM: number | null;
+  elevationM: number | null;
+  movingS: number | null;
+  /** Power figures from a power meter only. An estimate reads as none. */
+  averageWatts: number | null;
+  normalizedWatts: number | null;
+  averageHeartRate: number | null;
+  temperatureLowC: number | null;
+  temperatureHighC: number | null;
+  /** What the rider wrote on the activity, shown as the page's dek. */
+  description: string | null;
+}
+
+/**
+ * One ride with its track and media, for its own page, or null where no ride
+ * carries the id. A commute has a page like any other ride.
+ */
+export async function queryRideById(
+  db: Kysely<Database>,
+  id: string,
+): Promise<RideDetail | null> {
+  const row = await db
+    .selectFrom("activityFeed")
+    .select([
+      ...LOG_COLUMNS,
+      "description",
+      "normalizedWatts",
+      "averageHeartRate",
+      "temperatureLowC",
+      "temperatureHighC",
+    ])
+    .where("activityId", "=", id)
+    .where("sport", "=", "ride")
+    .executeTakeFirst();
+  if (row === undefined) return null;
+  const { ride } = toEntry(row);
+  attachTrack(ride, row);
+  const measured = row.powerSource === "measured";
+  return {
+    ride,
+    distanceM: row.distanceM,
+    elevationM: row.elevationM,
+    movingS: row.movingS,
+    averageWatts: measured ? row.averageWatts : null,
+    normalizedWatts: measured ? row.normalizedWatts : null,
+    averageHeartRate: row.averageHeartRate,
+    temperatureLowC: row.temperatureLowC,
+    temperatureHighC: row.temperatureHighC,
+    description: row.description,
+  };
 }
 
 /**
@@ -273,7 +328,12 @@ export async function queryCyclingLogPage(
     // A month's badges and totals compare only the rides inside it. A page
     // needs no context from the pages around it.
     months: groupMonths(inWindow).map((month) => month.group),
-    logCursor: await pageCursor(db, entries, start, startBound),
+    logCursor: await pageCursor(
+      db,
+      entries.map((entry) => entry.monthKey),
+      start,
+      startBound,
+    ),
   };
 }
 
@@ -281,15 +341,15 @@ export async function queryCyclingLogPage(
  * The month the page after this one loads before: the newest month older than
  * the window, so an off-season gap costs one round trip.
  */
-async function pageCursor(
+export async function pageCursor(
   db: Kysely<Database>,
-  entries: readonly Entry[],
+  monthKeys: readonly string[],
   start: string,
   startBound: string,
 ): Promise<string | null> {
   // The slack rows already reach a couple of days past the window, so one of
   // them falling under an older month names that month without another query.
-  if (entries.some((entry) => entry.monthKey < start)) return start;
+  if (monthKeys.some((key) => key < start)) return start;
 
   const older = await db
     .selectFrom("activityFeed")
@@ -307,12 +367,12 @@ async function pageCursor(
 }
 
 /** The earliest instant a ride keyed to `month` or later could carry. */
-function lowerBound(month: string): string {
+export function lowerBound(month: string): string {
   return new Date(monthInstant(month) - SLACK_MS).toISOString();
 }
 
 /** The latest instant a ride keyed before `month` could carry. */
-function upperBound(month: string): string {
+export function upperBound(month: string): string {
   return new Date(monthInstant(month) + SLACK_MS).toISOString();
 }
 
@@ -353,19 +413,15 @@ interface Entry {
   commute: boolean;
   distanceM: number;
   elevationM: number;
-  measuredWatts: number | null;
-  indoor: boolean;
 }
 
 export function buildCyclingActivity(
   rows: FeedRows,
-  curve: readonly PowerCurvePoint[],
-  climbs: readonly ClimbRow[],
   now: Date,
 ): CyclingActivityData {
   const layout = layoutFeed(toEntries(rows.rides));
   attachTracks(layout.entries, rows.tracks);
-  return assembleFeed(layout, curve, climbs, now);
+  return assembleFeed(layout, now);
 }
 
 interface Layout {
@@ -395,8 +451,6 @@ function layoutFeed(entries: Entry[]): Layout {
 
 function assembleFeed(
   { entries, firstKey, months }: Layout,
-  curve: readonly PowerCurvePoint[],
-  climbs: readonly ClimbRow[],
   now: Date,
 ): CyclingActivityData {
   const logged =
@@ -407,7 +461,6 @@ function assembleFeed(
     totals: yearTotals(entries, now),
     months: logged.map((month) => month.group),
     highlightMonths: months.flatMap((month) => month.highlights),
-    records: records(entries, curve, climbs),
     logCursor: initialCursor(entries, firstKey),
   };
 }
@@ -481,8 +534,6 @@ function toEntry(row: RideRow): Entry {
     commute: row.distanceM !== null && row.distanceM < COMMUTE_MAX_DISTANCE_M,
     distanceM: row.distanceM ?? 0,
     elevationM: row.elevationM ?? 0,
-    measuredWatts,
-    indoor: row.indoor === 1,
   };
 }
 
@@ -493,7 +544,7 @@ function toEntry(row: RideRow): Entry {
  * formatter to show as-is. `TZDate` accepts any zone name and yields an
  * invalid date for one it cannot resolve, so the check is on the result.
  */
-function wallClock(startedAt: string, timezone: string): string {
+export function wallClock(startedAt: string, timezone: string): string {
   const instant = new Date(startedAt);
   if (Number.isNaN(instant.getTime())) return startedAt;
   const zoned = new TZDate(instant, timezone);
@@ -665,178 +716,6 @@ function yearTotals(entries: readonly Entry[], now: Date): YearTotals {
     elevationFt: feet(sum(inYear, (entry) => entry.elevationM)),
     rideCount: inYear.length,
   };
-}
-
-/**
- * Records rank outdoor rides only. Climbs and power points key on these
- * entries, so dropping a ride here drops them too.
- */
-function records(
-  all: readonly Entry[],
-  curve: readonly PowerCurvePoint[],
-  climbs: readonly ClimbRow[],
-): RecordPeriod[] {
-  const entries = all.filter((entry) => !entry.indoor);
-  if (entries.length === 0) return [];
-  const years = [...new Set(entries.map((entry) => entry.year))];
-  const period = (name: string, within: readonly Entry[]): RecordPeriod => ({
-    period: name,
-    lists: rankedLists(within, climbs),
-    powerBests: powerBests(within, curve),
-  });
-  return [
-    period("all", entries),
-    ...years.map((year) =>
-      period(
-        String(year),
-        entries.filter((entry) => entry.year === year),
-      ),
-    ),
-  ];
-}
-
-function rankedLists(
-  entries: readonly Entry[],
-  climbs: readonly ClimbRow[],
-): RankedList[] {
-  const lists: RankedList[] = [
-    {
-      id: "distance",
-      icon: "ruler",
-      title: "longest rides",
-      metric: "distance",
-      rows: ranked(entries, (entry) => entry.ride.distanceMi),
-    },
-    {
-      id: "elevation",
-      icon: "trending-up",
-      title: "most climbing",
-      metric: "elevation",
-      rows: ranked(entries, (entry) => entry.ride.elevationFt),
-    },
-    {
-      id: "climb",
-      icon: "mountain",
-      title: "biggest climbs",
-      metric: "elevation",
-      rows: rankedClimbs(entries, climbs),
-    },
-    {
-      id: "duration",
-      icon: "clock",
-      title: "longest days",
-      metric: "duration",
-      rows: ranked(
-        entries,
-        (entry) => entry.ride.movingSeconds,
-        (entry) =>
-          entry.measuredWatts === null ? "" : ` · ${entry.measuredWatts} W`,
-      ),
-    },
-  ];
-  return lists.filter((list) => list.rows.length > 0);
-}
-
-function ranked(
-  entries: readonly Entry[],
-  measure: (entry: Entry) => number | undefined,
-  extra: (entry: Entry) => string = () => "",
-): RankedRow[] {
-  return entries
-    .flatMap((entry) => {
-      const value = measure(entry);
-      return value === undefined ? [] : [{ entry, value }];
-    })
-    .toSorted((a, b) => b.value - a.value)
-    .slice(0, RANKED_ROWS)
-    .map(({ entry, value }) => {
-      const row: RankedRow = {
-        id: entry.ride.id,
-        name: entry.ride.name,
-        detail: `'${String(entry.year).slice(2)}${extra(entry)}`,
-        value,
-      };
-      if (entry.ride.stravaUrl) row.href = entry.ride.stravaUrl;
-      return row;
-    });
-}
-
-/**
- * A climb ridden many times places once, by its biggest effort. A climb OSM
- * named nothing near is labeled with its ride, and two of those are rarely
- * the same hill, so they are never merged.
- */
-function rankedClimbs(
-  entries: readonly Entry[],
-  climbs: readonly ClimbRow[],
-): RankedRow[] {
-  const rides = new Map(entries.map((entry) => [entry.ride.id, entry]));
-  const byName = new Map<string, ClimbRow>();
-  const unnamed: ClimbRow[] = [];
-  for (const climb of climbs) {
-    if (!rides.has(climb.activityId)) continue;
-    if (climb.name === null) {
-      unnamed.push(climb);
-      continue;
-    }
-    const standing = byName.get(climb.name);
-    if (standing === undefined || climb.gainM > standing.gainM) {
-      byName.set(climb.name, climb);
-    }
-  }
-  return [...byName.values(), ...unnamed]
-    .toSorted((a, b) => b.gainM - a.gainM)
-    .slice(0, RANKED_ROWS)
-    .flatMap((climb) => {
-      const entry = rides.get(climb.activityId);
-      if (entry === undefined) return [];
-      const row: RankedRow = {
-        id: `${climb.activityId}:${climb.position}`,
-        name: climb.name ?? entry.ride.name,
-        detail: `'${String(entry.year).slice(2)}`,
-        value: feet(climb.gainM),
-      };
-      if (entry.ride.stravaUrl) row.href = entry.ride.stravaUrl;
-      return [row];
-    });
-}
-
-/**
- * Measured rides only: an estimated curve is Strava's guess at a rider
- * without a meter, not a best.
- */
-function powerBests(
-  entries: readonly Entry[],
-  curve: readonly PowerCurvePoint[],
-): PowerBest[] {
-  const rides = new Set(entries.map((entry) => entry.ride.id));
-  const byDuration = new Map<number, number>();
-  for (const point of curve) {
-    if (!rides.has(point.activityId)) continue;
-    const watts = Math.round(point.watts);
-    const standing = byDuration.get(point.durationS);
-    if (standing === undefined || watts > standing) {
-      byDuration.set(point.durationS, watts);
-    }
-  }
-  const rideAverage = best(
-    entries,
-    (entry) => entry.measuredWatts ?? undefined,
-  );
-  if (byDuration.size === 0 && rideAverage === undefined) return [];
-
-  return [
-    ...POWER_LADDER.map(({ id, label, durationS }) => ({
-      id,
-      label,
-      watts: byDuration.get(durationS) ?? null,
-    })),
-    {
-      id: "ride",
-      label: "ride avg",
-      watts: rideAverage?.measuredWatts ?? null,
-    },
-  ];
 }
 
 function sum(

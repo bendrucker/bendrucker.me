@@ -13,29 +13,25 @@ import {
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/shiki/fileName";
-import { SITE } from "./src/config";
-import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { isEnabled, isSwitchedOff, SITE, type CategoryEnv } from "./src/config";
+import { writingSitemapPages } from "./src/writing/sitemap";
+import { STATIC_REDIRECTS } from "./src/redirects";
+import { copyStaticAssets } from "./src/staticAssets";
+import { offCategoryIslands } from "./src/offCategoryIslands";
 
 const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
 
-function copyStaticFiles(src: string, dest: string) {
-  try {
-    mkdirSync(dest, { recursive: true });
-    for (const item of readdirSync(src)) {
-      const srcPath = join(src, item);
-      const destPath = join(dest, item);
+// Routes that render `noindex` while their data is still fixtures, so the
+// sitemap leaves them out too.
+const UNLISTED_ROUTES = new Set(["/reading", "/watching", "/listening"]);
 
-      if (statSync(srcPath).isDirectory()) {
-        copyStaticFiles(srcPath, destPath);
-      } else {
-        copyFileSync(srcPath, destPath);
-      }
-    }
-  } catch {
-    // Ignore if static directory doesn't exist
-  }
-}
+const categoryEnv = {
+  PUBLIC_ALL_CATEGORIES: process.env.PUBLIC_ALL_CATEGORIES,
+};
+
+// The dev server shows every category, so it keeps every fixture. Vite names
+// the command only once a plugin's `config` hook runs.
+let staticEnv: CategoryEnv = categoryEnv;
 
 // https://astro.build/config
 export default defineConfig({
@@ -58,23 +54,32 @@ export default defineConfig({
   cache: {
     provider: cacheCloudflare(),
   },
-  // On-demand routes that only change on deploy. `/activity` is absent because
-  // its max-age is aligned to the hourly GitHub sync and computed per request
-  // in src/middleware.ts. Prerendered routes are not cached at runtime.
+  redirects: STATIC_REDIRECTS,
+  // On-demand routes that only change on deploy. `/`, `/rides`, and `/code` are
+  // absent because their max-age is aligned to the hourly GitHub sync and
+  // computed per request in src/middleware.ts. Prerendered routes are not
+  // cached at runtime.
   routeRules: {
-    "/": DEPLOY_SCOPED_CACHE,
     "/about": DEPLOY_SCOPED_CACHE,
     "/about.md": DEPLOY_SCOPED_CACHE,
+    "/writing": DEPLOY_SCOPED_CACHE,
+    "/writing/[...slug]": DEPLOY_SCOPED_CACHE,
+    "/writing/[...slug].md": DEPLOY_SCOPED_CACHE,
     "/og.png": DEPLOY_SCOPED_CACHE,
     "/llms.txt": DEPLOY_SCOPED_CACHE,
   },
   integrations: [
     sitemap({
-      // `page` is an absolute URL whose tail moves with `trailingSlash`, so the
-      // comparison is against its path.
-      filter: (page) =>
-        SITE.showArchives ||
-        new URL(page).pathname.replace(/\/$/, "") !== "/archives",
+      customPages: isEnabled("writing", categoryEnv)
+        ? writingSitemapPages(SITE.website)
+        : [],
+      filter: (page) => {
+        const { pathname } = new URL(page);
+        return (
+          !isSwitchedOff(pathname, categoryEnv) &&
+          !UNLISTED_ROUTES.has(pathname.replace(/\/$/, ""))
+        );
+      },
     }),
     vue(),
   ],
@@ -103,8 +108,12 @@ export default defineConfig({
       tailwindcss(),
       {
         name: "copy-static-files",
-        buildStart: () => copyStaticFiles("static", "public"),
+        config(_, { command }) {
+          staticEnv = { ...categoryEnv, DEV: command === "serve" };
+        },
+        buildStart: () => copyStaticAssets("static", "public", staticEnv),
       },
+      offCategoryIslands(() => staticEnv),
     ],
     ssr: {
       external: ["node:fs", "node:path"],

@@ -1,0 +1,168 @@
+---
+import RouteLayout from "@/layouts/RouteLayout.astro";
+import EmptyState from "@/components/parts/EmptyState.vue";
+import HighlightList from "@/components/parts/HighlightList.vue";
+import ItemRow from "@/components/parts/ItemRow.vue";
+import SearchControl from "@/components/parts/SearchControl.vue";
+import SectionHead from "@/components/parts/SectionHead.vue";
+import SelectControl from "@/components/parts/SelectControl.vue";
+import TimelineGutter from "@/components/parts/TimelineGutter.vue";
+import { isEnabled, SITE } from "@/config";
+import { loadWriting } from "@/writing/load";
+import { findTag, postTags, readingFigure, writingView } from "@/writing/rows";
+import { searchStatus } from "@/writing/status";
+
+if (!isEnabled("writing")) return Astro.rewrite("/404");
+
+const { rows, thisYear } = await loadWriting();
+const query = Astro.url.searchParams.get("q") ?? "";
+const tags = postTags(rows);
+const tag = findTag(tags, Astro.url.searchParams.get("tag"));
+const view = writingView(rows, { query, tag }, thisYear);
+const tagOptions = tags.map((t) => ({ value: t.slug, label: t.name }));
+const tagValue = tag?.slug ?? "";
+const status = searchStatus(query, view.count);
+---
+
+<RouteLayout
+  category="writing"
+  description={`Posts by ${SITE.author} on open source, startups, and getting work done.`}
+  sourcePath="src/pages/writing/index.astro"
+>
+  {/* Writing's budget is no framework JS, so the search renders without
+      hydrating and `src/writing/enhance.ts` drives it. */}
+  <form
+    slot="tools"
+    action="/writing/"
+    method="get"
+    role="search"
+    data-writing-tools
+    class="tool-row flex-1 justify-end"
+  >
+    <SelectControl
+      modelValue={tagValue}
+      options={tagOptions}
+      label="Tag"
+      placeholder="Tag"
+      icon="tag"
+      name="tag"
+    />
+    <SearchControl
+      modelValue={query}
+      noun="posts"
+      status={status}
+      collapsible
+    />
+  </form>
+
+  <form
+    slot="sidebar"
+    action="/writing/"
+    method="get"
+    role="search"
+    data-writing-tools
+    class="tool-row"
+  >
+    <SelectControl
+      modelValue={tagValue}
+      options={tagOptions}
+      label="Tag"
+      placeholder="Tag"
+      icon="tag"
+      name="tag"
+    />
+    <SearchControl
+      modelValue={query}
+      noun="posts"
+      status={status}
+      collapsible
+      class="ml-auto"
+    />
+  </form>
+  <nav slot="sidebar" aria-label="Years" class="flex flex-col gap-1.5">
+    <p class="px-1 label-caps">Years</p>
+    <ul class="flex flex-col gap-0.5">
+      {view.sections.map((section) => (
+        <li data-rail={section.key} hidden={!section.shown}>
+          <a
+            href={`#year-${section.key}`}
+            class="flex h-9 items-center rounded-lg px-2.5 font-mono text-[13px] text-dim no-underline transition-colors hover:bg-hover hover:text-foreground"
+          >
+            {section.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  {view.highlights.length > 0 && (
+    <div
+      slot="highlights"
+      data-highlights
+      hidden={!view.highlights.some((r) => r.shown)}
+    >
+      <HighlightList
+        rows={view.highlights.map(({ item }) => ({
+          href: item.href,
+          title: item.title,
+          text: item.text,
+          figure: readingFigure(item.minutes),
+        }))}
+      />
+    </div>
+  )}
+
+  <SectionHead label="All posts" section />
+  {view.sections.map((section) => (
+    <section
+      id={`year-${section.key}`}
+      data-section={section.key}
+      hidden={!section.shown}
+      class="scroll-mt-16 not-first:pt-2 md:scroll-mt-6 md:not-first:pt-5 md:sidebar-collapsed:scroll-mt-16"
+    >
+      <SectionHead label={section.label} level={3} />
+      <div class="flex flex-col gap-3">
+        {section.weeks.map((week) => (
+          <ul class="flex flex-col gap-1.5" data-week hidden={!week.shown}>
+            {week.rows.map((row, i) => (
+              <li
+                data-post
+                data-title={row.item.title}
+                data-text={row.item.text}
+                hidden={!row.shown}
+              >
+                <ItemRow
+                  href={row.item.href}
+                  title={row.item.title}
+                  text={row.item.text}
+                  figure={readingFigure(row.item.minutes)}
+                  query={query}
+                >
+                  <TimelineGutter
+                    slot="gutter"
+                    day={row.dayNum}
+                    sub={row.sub}
+                    showDay={row.showDay}
+                    weekEnd={i === week.rows.length - 1}
+                  />
+                </ItemRow>
+              </li>
+            ))}
+          </ul>
+        ))}
+      </div>
+    </section>
+  ))}
+  <!-- Only a search can empty the list, since every tag names a post. The
+       placeholder query picks the search copy, and the page writes the
+       query itself into the heading when it shows this. -->
+  <div data-empty hidden={view.count > 0}>
+    <EmptyState noun="posts" query={query || " "} />
+  </div>
+</RouteLayout>
+
+<script>
+  import { enhanceWriting } from "@/writing/enhance";
+
+  document.addEventListener("astro:page-load", enhanceWriting);
+</script>

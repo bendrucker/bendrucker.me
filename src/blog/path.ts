@@ -7,5 +7,5 @@ import { SITE } from "@/config";
  */
 export function getPath(id: string): string {
   const slash = SITE.trailingSlash === "always" ? "/" : "";
-  return `/posts/${id}${slash}`;
+  return `/writing/${id}${slash}`;
 }

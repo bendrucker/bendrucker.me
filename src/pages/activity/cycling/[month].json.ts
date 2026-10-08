@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { queryCyclingLogPage } from "@/activity/feed";
 import { getDb } from "@/db";
+import { queryRideRowsPage } from "@/rides/query";
 import { logger } from "@workspace/logger";
 
 // This is a page endpoint. Actions POST to `/_actions/`, which none of the
@@ -12,6 +12,10 @@ import { logger } from "@workspace/logger";
 /** `YYYY-MM`. The route is public, so the month is validated. */
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
+/**
+ * A page of the Rides route's log: the rides of the months before `month`, as
+ * compact rows. The route's `?format=rows` is accepted as a no-op.
+ */
 export const GET: APIRoute = async ({ params }) => {
   const month = params.month;
   if (month === undefined || !MONTH.test(month)) {
@@ -19,7 +23,7 @@ export const GET: APIRoute = async ({ params }) => {
   }
 
   try {
-    return Response.json(await queryCyclingLogPage(await getDb(), month));
+    return Response.json(await queryRideRowsPage(await getDb(), month));
   } catch (error) {
     logger.error({ error, month }, "Failed to load cycling log page");
     return new Response("Internal Server Error", { status: 500 });

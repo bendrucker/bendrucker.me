@@ -6,9 +6,9 @@ Personal website/blog: Astro → Cloudflare Workers. TailwindCSS v4, Vue, npm wo
 
 - `src/config.ts` — `SITE` constant (metadata, feature flags)
 - `src/content/blog/*.md` — posts (frontmatter: `title`, `publishDate` required; `subtitle`, `categories`, `series` optional)
-- `src/pages/` — routes: `posts/`, `activity/code.astro`, `activity/cycling.astro`, `tags/`, `archives/`, `about.md`, `rss.xml.ts`, `og.png.ts`, `map/`
+- `src/pages/` — routes: `index.astro` (home cards), `rides/`, `code/`, `writing/`, `reading.astro`, `watching.astro`, `listening.astro`, `about.md`, `rss.xml.ts`, `og.png.ts`, `map/`; `activity/cycling/*.json.ts` is the Rides route's pagination and search API
 - `src/map/` — vector basemap rendering for the route cards
-- `src/layouts/` — `Layout`, `PostDetails`, `AboutLayout`, `Main`
+- `src/layouts/` — `Layout`, `RouteLayout`, `AboutLayout`
 - `src/styles/global.css` — theme variables + Tailwind `@theme inline`
 - `static/` — images, fonts (copied to `public/` at build)
 - `packages/logger` — shared pino logger; `packages/github` — GitHub API client
@@ -114,8 +114,8 @@ is styling or client-side behavior, where HMR pays for itself. Use
 `npm run dev:worker` for anything server-rendered, D1-backed, cached,
 hydration-sensitive, or wrapped in reka: the comment at `astro.config.ts:120-124`
 is the reason, and it comes down to islands wrapping reka server-rendering
-empty under `astro dev`. `SegmentedControl.vue` is the cycling page's view
-switcher, so that page in particular is a different page under each server.
+empty under `astro dev`, so a route whose controls use reka is a different
+page under each server.
 
 `npm run dev` holds the terminal. To drive the server without blocking, call
 the Astro CLI directly:
@@ -233,7 +233,7 @@ secret that gets appended once CARTO extends the requirement to vector. Set it
 with `wrangler secret put`, which keeps it out of the client bundle.
 
 The free tier is granted in exchange for keeping CARTO's and OpenStreetMap's
-credits visible, which `CyclingActivity.vue` renders once beneath the views. A
+credits visible, which the footer carries on any page that draws a basemap. A
 card at 150px cannot carry them itself.
 
 Three constraints shape the design:
@@ -306,7 +306,7 @@ the window. Starting the other way round would leave a new page reserving no
 height, and the collapsed page would keep the loading sentinel on screen and
 pull every remaining page at once.
 
-`useLogPages` holds the months in a `shallowRef`. A ride never changes once it
+`useMonthPages` holds the months in a `shallowRef`. A ride never changes once it
 has been read, and a deep ref wraps every ride, badge, fact and photo in a
 proxy that costs more than the data. Pages are appended by replacing the array.
 
@@ -316,8 +316,8 @@ incrementally. Rebuilding them on every load would cost one `observe` per
 month already mounted, quadratic across the twenty-odd pages a full scroll
 fetches.
 
-The fetched pages live in `CyclingActivity`, so the log is hidden rather than
-unmounted when the reader switches to highlights or records. Unmounting it
+The fetched pages live in `RidesRoute`, so the log is hidden rather than
+unmounted when the reader switches to routes or records. Unmounting it
 would drop the window's record of which months are collapsed while keeping the
 months themselves, and coming back would mount every month fetched so far at
 once. A hidden section measures zero, so a month keeps the last height it
@@ -334,10 +334,26 @@ Windowing trades away in-page search and linear screen-reader access to months
 the reader has scrolled past. The rail and `scrollToSection` still reach every
 month, and a section mounts as soon as it is scrolled to.
 
+## Ride Records
+
+The Records view on `/rides` ranks all time and each year: best power over five
+durations, the five longest rides and rides with the most climbing, and the
+five biggest climbs. `queryRideRecords` in `src/rides/query.ts` reads only each year's
+leaders, and `rankPeriods` in `src/rides/records.ts` ranks them.
+
+A year is the ride's local year, which differs from its UTC year only for a ride
+starting on 12-31 or 01-01 in UTC. The query ranks by UTC year and keeps every
+ride from those two days beside each year's leaders, so the local ranking in
+JavaScript stays exact without reading every ride.
+
+The page renders only the period it opens on, and only on the records view. The
+island fetches any other period from `/activity/cycling/records/<period>.json`,
+which keeps the log's HTML free of records.
+
 ## Biggest Climbs
 
-The PRs tab ranks climbs from `activity_climb`, one row per climb, so a ride
-over Diablo and then Hamilton places twice. The rows are written at publish
+The Records view ranks climbs from `activity_climb`, one row per climb, so a
+ride over Diablo and then Hamilton places twice. The rows are written at publish
 time because a name costs an Overpass request, which a page render can't make.
 
 A climb is a segment of the walk `climbSpans` in `src/activity/climb.ts`
@@ -352,8 +368,8 @@ A ride often tops out below the summit its climb is known by, beside a lesser
 knoll, so the tallest peak in reach beats the nearest. Failing that, it takes
 the nearest drivable road within 60 m, less a trailing " Road". A climb OSM
 can't name is labeled with its ride and never merged with another. The list
-keeps each name's biggest effort. The OSM credit beneath the cycling views
-covers these names.
+keeps each name's biggest effort, and `rankClimbs` in `src/rides/records.ts`
+applies that per period.
 
 `publishActivity` reuses a stored name for an unchanged summit, asking Overpass
 again for a changed route or a summit that came back unnamed. After a change to
@@ -363,9 +379,19 @@ climbs from production D1. `-- --dry-run` prints them first.
 ## Indoor Rides
 
 activity-hub flags trainer and Zwift rides as `indoor`. They stay in the log,
-its monthly highlights, and the year totals, and are left out of every record
-on the PRs tab: `records` in `src/activity/feed.ts` drops them before any list
-or power ladder is ranked. A null flag reads as outdoor.
+its monthly highlights, and the year totals, and are left out of every record:
+`queryRideRecords` drops them before any list or power ladder is ranked. A null
+flag reads as outdoor.
+
+## GitHub Backfill
+
+The hourly cron reads only the current year. `npm run backfill:github` reads
+every year since 2008 through `gh auth token` and imports the repositories and
+their authored pull requests and issues, with `-- --remote` for production D1.
+Run it once against production after migration 0008 reaches it. Past years are
+cached in `tmp/backfill/<year>.json`, and a year cached without pull request
+and issue ids is fetched again rather than imported empty. The current year is
+always fetched.
 
 ## Partial Updates
 
@@ -388,13 +414,13 @@ class like `icon-[lucide--flame]`. Never an emoji, and never a Unicode glyph
 standing in for an icon: both inherit the reader's font and land at whatever
 weight and baseline that font gives them.
 
-Lucide is the collection for the cycling components, Phosphor (`ph`) for the
+Lucide is the collection for the activity components, Phosphor (`ph`) for the
 about page. Stay within the collection already in use on a page.
 
 Tailwind extracts class candidates from source text, so an interpolated class
 name generates no CSS. Data carries a semantic name and a component maps it to a
-class written out in full. `src/components/cycling/LucideIcon.vue` is the
-pattern, and `IconName` in `types.ts` is the list of names it accepts.
+class written out in full. `PART_ICONS` in `src/components/parts/icons.ts` is
+the pattern, and its keys are the names the parts accept.
 
 ## Workers
 

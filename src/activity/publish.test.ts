@@ -29,6 +29,7 @@ function activity(
     activityId: "a1",
     stravaId: "9911",
     name: "Morning Ride",
+    description: null,
     sport: "ride",
     startedAt: "2026-01-01T14:00:00.000Z",
     timezone: "America/Los_Angeles",
@@ -124,6 +125,26 @@ describe("publishActivity", () => {
     expect(rows[0]!.elevationProfile).toBeNull();
   });
 
+  it("stores a description, trimmed", async () => {
+    await publishActivity(
+      store,
+      activity({ description: "  In the fog, above the fog\n" }),
+      noClimbNames,
+    );
+
+    expect((await feedRow()).description).toBe("In the fog, above the fog");
+  });
+
+  it.each([
+    ["missing", {}],
+    ["blank", { description: "  " }],
+  ])("stores a %s description as null", async (_label, fields) => {
+    const { description: _, ...rest } = activity();
+    await publishActivity(store, { ...rest, ...fields }, noClimbNames);
+
+    expect((await feedRow()).description).toBeNull();
+  });
+
   it("stores a track thinned to what a card draws", async () => {
     // Each repeat re-encodes the same deltas, so the string stays decodable.
     const polyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@".repeat(400);
@@ -169,6 +190,50 @@ describe("publishActivity", () => {
     const row = await feedRow();
     expect(row.polyline).toBeNull();
     expect(JSON.parse(row.photoKeys)).toEqual([]);
+  });
+
+  it("stores the ride's power, heart rate, and trimmed temperature range", async () => {
+    const moving = Array.from({ length: 100 }, (_, index): [number, number] => [
+      15 + index / 20,
+      8,
+    ]);
+    const parked = Array.from({ length: 60 }, (): [number, number] => [44, 0]);
+    await publishActivity(
+      store,
+      activity({
+        normalizedWatts: 231,
+        averageHeartRate: 142.4,
+        temperatureSamples: [...moving, ...parked],
+      }),
+      noClimbNames,
+    );
+
+    const row = await feedRow();
+    expect(row.normalizedWatts).toBe(231);
+    expect(row.averageHeartRate).toBe(142.4);
+    expect(row.temperatureLowC).toBe(15.2);
+    expect(row.temperatureHighC).toBe(19.7);
+  });
+
+  it("clears the new figures when a republish no longer carries them", async () => {
+    await publishActivity(
+      store,
+      activity({
+        normalizedWatts: 231,
+        averageHeartRate: 142,
+        temperatureSamples: Array.from({ length: 40 }, (): [number, number] => [
+          20, 8,
+        ]),
+      }),
+      noClimbNames,
+    );
+    await publishActivity(store, activity(), noClimbNames);
+
+    const row = await feedRow();
+    expect(row.normalizedWatts).toBeNull();
+    expect(row.averageHeartRate).toBeNull();
+    expect(row.temperatureLowC).toBeNull();
+    expect(row.temperatureHighC).toBeNull();
   });
 
   it("stores each climb in ride order with the name found for it", async () => {
@@ -271,6 +336,10 @@ describe("publishActivity", () => {
     ["an unparseable timestamp", { ...activity(), startedAt: "whenever" }],
     ["a non-array elevation profile", { ...activity(), elevationProfile: 12 }],
     ["a non-string photo key", { ...activity(), photoKeys: [7] }],
+    [
+      "a temperature sample without a speed",
+      { ...activity(), temperatureSamples: [[20]] },
+    ],
   ])("rejects %s", async (_label, row) => {
     await expect(publishActivity(store, row, noClimbNames)).rejects.toThrow(
       ValidationError,

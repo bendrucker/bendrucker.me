@@ -1,0 +1,31 @@
+---
+import CodeItem from "@/components/code/CodeItem.astro";
+import { isEnabled } from "@/config";
+import { getDb } from "@/db";
+import { repoDetail } from "@/code/detail";
+import { parentProject } from "@/code/page";
+import { queryRepo, type RepoPage } from "@/code/query";
+import { rethrowLocally } from "@/fallback";
+
+if (!isEnabled("code")) return Astro.rewrite("/404");
+
+const { owner = "", repo: name = "" } = Astro.params;
+let page: RepoPage | null = null;
+
+try {
+  page = await queryRepo(await getDb(), owner, name);
+} catch (error) {
+  rethrowLocally(error, "Failed to load repository", { owner, name });
+}
+
+if (!page) return Astro.rewrite("/404");
+
+// A member opened from its project's page returns there.
+const parent = parentProject(page.repo, Astro.url.searchParams.get("from"));
+---
+
+<CodeItem
+  detail={repoDetail(page)}
+  backHref={parent ? `/code/${parent.id}/` : "/code/"}
+  sourcePath="src/pages/code/[owner]/[repo].astro"
+/>

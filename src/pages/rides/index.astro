@@ -1,0 +1,120 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import RidesRoute from "@/components/rides/RidesRoute.vue";
+import { category } from "@/categories";
+import { isEnabled, SITE } from "@/config";
+import { getDb } from "@/db";
+import { routeNote } from "@/notes";
+import { rethrowLocally } from "@/fallback";
+import { parseUnits } from "@/rides/format";
+import { parseView } from "@/rides/links";
+import {
+  queryRidesPage,
+  queryRideRecords,
+  type RidesPage,
+} from "@/rides/query";
+import {
+  ALL_TIME,
+  parsePeriod,
+  pickRecords,
+  type RecordsPage,
+} from "@/rides/records";
+import { queryRideById } from "@/activity/feed";
+import type { OpenDetail } from "@/detail/useDetailModal";
+import {
+  RIDE_ID,
+  RIDE_PARAM,
+  toRideDetailWire,
+  type RideDetailWire,
+} from "@/rides/detail";
+
+if (!isEnabled("rides")) return Astro.rewrite("/404");
+
+const cat = category("rides");
+const params = Astro.url.searchParams;
+const view = parseView(params.get("view"));
+const q = (params.get("q") ?? "").slice(0, 100);
+const units = parseUnits(params.get("units"));
+let period = parsePeriod(params.get("period"));
+
+let page: RidesPage;
+// Only the period the page opens on renders. The island fetches the others,
+// and a page that opens on the log fetches even this one only once the reader
+// switches to records.
+let records: RecordsPage | null = null;
+try {
+  const db = await getDb();
+  const [rides, periods] = await Promise.all([
+    queryRidesPage(db, q),
+    view === "records" ? queryRideRecords(db) : null,
+  ]);
+  page = rides;
+  if (periods !== null) {
+    // A year with no rides falls back to all time.
+    records = pickRecords(periods, period) ?? pickRecords(periods, ALL_TIME);
+    period = records?.records.period ?? ALL_TIME;
+  }
+} catch (error) {
+  rethrowLocally(error, "Failed to load rides");
+  page = {
+    latestDay: null,
+    highlights: [],
+    months: [],
+    logCursor: null,
+    matchRecords: null,
+    matches: null,
+    partial: false,
+    monthKeys: [],
+  };
+}
+
+const thisYear = String(new Date().getUTCFullYear());
+
+// A shared link to a ride open over the list renders it open, so the link
+// reads the same without script. An id no ride carries leaves the list alone,
+// and the island takes the parameter back out of the URL.
+const openId = params.get(RIDE_PARAM);
+let open: OpenDetail<RideDetailWire> | null = null;
+if (openId !== null && RIDE_ID.test(openId)) {
+  try {
+    const detail = await queryRideById(await getDb(), openId);
+    if (detail !== null) {
+      open = { key: openId, data: toRideDetailWire(detail) };
+    }
+  } catch (error) {
+    rethrowLocally(error, "Failed to load ride", { id: openId });
+  }
+}
+
+// One island renders the whole frame, since its views, search, and units are
+// state the sidebar and the list share. `RouteLayout` hands each region to a
+// separate slot, and separate islands cannot share state. The route tiles are
+// the ride's own track with no basemap, but a ride opened over the list draws
+// its map on one, so the page carries the map credit a ride's own page does.
+---
+
+<Layout
+  title={`${cat.name} | ${SITE.title}`}
+  description="My rides: the log and the records."
+  credits={["maps"]}
+  sourcePath="src/pages/rides/index.astro"
+>
+  <RidesRoute
+    client:load
+    note={await routeNote("rides")}
+    view={view}
+    q={q}
+    units={units}
+    thisYear={thisYear}
+    highlights={page.highlights}
+    months={page.months}
+    logCursor={page.logCursor}
+    allMonths={page.monthKeys}
+    period={period}
+    records={records}
+    matchRecords={page.matchRecords}
+    matches={page.matches}
+    partial={page.partial}
+    open={open}
+  />
+</Layout>

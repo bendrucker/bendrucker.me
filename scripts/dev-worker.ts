@@ -3,7 +3,7 @@
 // The built worker, running locally over a seeded database. `astro dev` cannot
 // render this site the way production does: islands wrapping reka server-render
 // empty under it, and `SegmentedControl.vue` is the cycling page's view
-// switcher. This serves `dist` through workerd, which gets the assets binding,
+// switcher. This serves a build through workerd, which gets the assets binding,
 // the parsed `_headers` and redirect rules, and the caching middleware too.
 //
 //   npm run dev:worker              build, migrate, seed if empty, start
@@ -15,10 +15,12 @@
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  cpSync,
   existsSync,
   mkdirSync,
   openSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
@@ -32,6 +34,17 @@ const DATABASE = "bendrucker-activity";
 const STATE_DIR = path.resolve(import.meta.dirname, "../.wrangler/dev-worker");
 const PID_FILE = path.join(STATE_DIR, "state.json");
 const LOG_FILE = path.join(STATE_DIR, "worker.log");
+
+/**
+ * The build the worker serves: a copy of `dist`, not `dist` itself. Any other
+ * build (the Stop hook's, a hand-run `npm run build`) empties `dist/client`
+ * before refilling it, and wrangler reloads on the change, reads the empty
+ * directory, and then answers 404 for every asset until it is restarted.
+ */
+const SERVED_DIR = path.join(STATE_DIR, "dist");
+
+/** Where `wrangler dev` keeps local D1, R2, and KV when run from the root. */
+const PERSIST_DIR = path.resolve(import.meta.dirname, "../.wrangler/state");
 
 /**
  * Ports the worktree picks from. Wrangler's own default is 8787 for every
@@ -95,6 +108,8 @@ async function start(): Promise<void> {
 
   mkdirSync(STATE_DIR, { recursive: true });
   writeFileSync(LOG_FILE, "");
+  rmSync(SERVED_DIR, { recursive: true, force: true });
+  cpSync("dist", SERVED_DIR, { recursive: true });
 
   // Detached with its own process group, so the tsx process this runs in can
   // exit and leave the worker up, and `stop` can take the group down with it.
@@ -104,6 +119,12 @@ async function start(): Promise<void> {
     [
       "dev",
       "--local",
+      "--config",
+      path.join(SERVED_DIR, "server", "wrangler.json"),
+      // The copied config sits elsewhere, and wrangler would otherwise keep
+      // its state beside it, away from the seeded database.
+      "--persist-to",
+      PERSIST_DIR,
       "--port",
       String(port),
       // Pages swallow a failed query and render empty, which is the right

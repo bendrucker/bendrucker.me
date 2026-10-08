@@ -1,0 +1,65 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import RideDetail from "@/components/rides/RideDetail.vue";
+import RideGallery from "@/components/rides/RideGallery.vue";
+import { queryRideById, type RideDetail as Detail } from "@/activity/feed";
+import { isEnabled, SITE } from "@/config";
+import { getDb } from "@/db";
+import { rethrowLocally } from "@/fallback";
+import { RIDE_ID, toRideDetailWire } from "@/rides/detail";
+import { fullDate, parseUnits } from "@/rides/format";
+import { rideTransitionName, ridesHref } from "@/rides/links";
+
+if (!isEnabled("rides")) return Astro.rewrite("/404");
+
+// Refused before it reaches a query, and before it can land in a map URL the
+// worker would have to escape.
+const id = Astro.params.id ?? "";
+if (!RIDE_ID.test(id)) return Astro.rewrite("/404");
+
+let detail: Detail | null = null;
+try {
+  detail = await queryRideById(await getDb(), id);
+} catch (error) {
+  rethrowLocally(error, "Failed to load ride", { id });
+}
+if (detail === null) return Astro.rewrite("/404");
+
+const ride = toRideDetailWire(detail);
+const units = parseUnits(Astro.url.searchParams.get("units"));
+const thisYear = String(new Date().getUTCFullYear());
+---
+
+<Layout
+  title={`${ride.name} | ${SITE.title}`}
+  description={
+    ride.description ??
+    `${ride.name}, a ride on ${fullDate(ride.startedAt.slice(0, 10), "")}.`
+  }
+  credits={ride.route ? ["maps"] : []}
+  sourcePath="src/pages/rides/[id].astro"
+>
+  <main id="main-content" class="flex-1 bg-background cat-rides">
+    <div
+      data-ride-page
+      class="mx-auto w-full max-w-[680px] px-4 pt-1.5 pb-10 md:px-10 md:pt-6 md:pb-14"
+    >
+      <RideDetail
+        ride={ride}
+        units={units}
+        thisYear={thisYear}
+        backHref={ridesHref({ view: "log", q: "", units })}
+        transitionName={rideTransitionName(ride.id)}
+      >
+        {ride.media.length > 0 && (
+          <RideGallery
+            slot="gallery"
+            client:visible
+            media={ride.media}
+            rideName={ride.name}
+          />
+        )}
+      </RideDetail>
+    </div>
+  </main>
+</Layout>
