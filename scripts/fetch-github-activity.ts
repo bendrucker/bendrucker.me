@@ -3,12 +3,21 @@
 import { execSync } from "child_process";
 import { writeFileSync } from "fs";
 import { join } from "path";
+import { parseArgs } from "util";
 import { fetchActivity } from "../src/activity/github";
 import { logger } from "@workspace/logger";
 import { importActivity } from "./d1";
 
 async function main() {
   const startTime = Date.now();
+  // `--database` writes a remote database other than production's, such as
+  // a pull request's preview (`bendrucker-activity-pr-<n>`).
+  const { values } = parseArgs({
+    options: {
+      remote: { type: "boolean", default: false },
+      database: { type: "string" },
+    },
+  });
 
   try {
     logger.info("Getting GitHub token from gh CLI");
@@ -32,8 +41,9 @@ async function main() {
 
     await importActivity(
       activityData,
-      process.argv.includes("--remote"),
+      values.remote || values.database !== undefined,
       token,
+      values.database,
     );
 
     const duration = Date.now() - startTime;

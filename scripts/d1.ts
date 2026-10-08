@@ -40,12 +40,16 @@ const DATABASE = "bendrucker-activity";
 /** Production, or the Miniflare state the dev servers and the seed share. */
 export type D1Target = "remote" | "local";
 
-export function executeD1(statements: string[], target: D1Target = "remote") {
+export function executeD1(
+  statements: string[],
+  target: D1Target = "remote",
+  database: string = DATABASE,
+) {
   const sqlFile = join(process.cwd(), "tmp", "d1-import.sql");
   writeFileSync(sqlFile, `${statements.join("\n")}\n`);
   execFileSync(
     "wrangler",
-    ["d1", "execute", DATABASE, `--${target}`, `--file=${sqlFile}`],
+    ["d1", "execute", database, `--${target}`, `--file=${sqlFile}`],
     { encoding: "utf-8" },
   );
 }
@@ -75,25 +79,31 @@ export function queryD1<T>(
  *
  * Authored pull requests and issues are read by id first. Locally that skips
  * the ones stored merged or closed. A remote import cannot ask the remote
- * database, so it reads every one the payload names.
+ * database, so it reads every one the payload names. `database` names the
+ * remote one to write, production unless a pull request's preview is given.
  */
 export async function importActivity(
   repos: RepoActivity[],
   remote: boolean,
   token: string,
+  database: string = DATABASE,
 ): Promise<void> {
   const { store, dispose } = await connectD1();
   try {
     if (remote) {
       const work = await fetchWorkByIds(token, payloadWorkIds(repos));
       const statements = syncStatements(store.db, repos, work);
-      executeD1(statements.map((statement) => formatSql(statement)));
+      executeD1(
+        statements.map((statement) => formatSql(statement)),
+        "remote",
+        database,
+      );
       logger.info(
         {
           statements: statements.length,
           pullRequests: work.pullRequests.length,
           issues: work.issues.length,
-          remote,
+          database,
         },
         "Imported activity data to D1",
       );
