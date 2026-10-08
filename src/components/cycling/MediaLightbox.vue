@@ -195,7 +195,7 @@ function onKeydown(event: KeyboardEvent) {
             data-lightbox-close
             class="inline-flex size-10 items-center justify-center rounded-[10px] bg-white/8 text-white transition-colors hover:bg-white/16 focus-visible:outline-2 focus-visible:outline-white"
           >
-            <span class="icon-[lucide--x] size-[18px]" aria-hidden="true" />
+            <span class="size-[18px] icon-[lucide--x]" aria-hidden="true" />
             <span class="sr-only">Close media viewer</span>
           </DialogClose>
         </div>
@@ -221,7 +221,7 @@ function onKeydown(event: KeyboardEvent) {
               data-lightbox-close
               class="text-foreground/70 hover:text-accent"
             >
-              <span class="icon-[lucide--x] size-4" aria-hidden="true" />
+              <span class="size-4 icon-[lucide--x]" aria-hidden="true" />
               <span class="sr-only">Close media viewer</span>
             </DialogClose>
           </div>

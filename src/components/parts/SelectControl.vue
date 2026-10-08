@@ -70,7 +70,7 @@ function change(event: Event) {
       <span class="truncate">{{ chosen?.label ?? placeholder }}</span>
       <span
         aria-hidden="true"
-        class="icon-[lucide--chevron-down] size-3 flex-none text-dim"
+        class="size-3 flex-none text-dim icon-[lucide--chevron-down]"
       />
     </template>
     <!-- The native select sits over the face at 16px so a tap opens the

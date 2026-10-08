@@ -32,8 +32,10 @@ const thisYear = String(new Date().getUTCFullYear());
 
 <Layout
   title={`${ride.name} | ${SITE.title}`}
-  description={ride.description ??
-    `${ride.name}, a ride on ${fullDate(ride.startedAt.slice(0, 10), "")}.`}
+  description={
+    ride.description ??
+    `${ride.name}, a ride on ${fullDate(ride.startedAt.slice(0, 10), "")}.`
+  }
   credits={ride.route ? ["maps"] : []}
   sourcePath="src/pages/rides/[id].astro"
 >
@@ -49,16 +51,14 @@ const thisYear = String(new Date().getUTCFullYear());
         backHref={ridesHref({ view: "log", q: "", units })}
         transitionName={rideTransitionName(ride.id)}
       >
-        {
-          ride.media.length > 0 && (
-            <RideGallery
-              slot="gallery"
-              client:visible
-              media={ride.media}
-              rideName={ride.name}
-            />
-          )
-        }
+        {ride.media.length > 0 && (
+          <RideGallery
+            slot="gallery"
+            client:visible
+            media={ride.media}
+            rideName={ride.name}
+          />
+        )}
       </RideDetail>
     </div>
   </main>

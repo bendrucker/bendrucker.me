@@ -89,7 +89,7 @@ async function escape(event: KeyboardEvent) {
     >
       <span
         aria-hidden="true"
-        class="icon-[lucide--search] size-3.5 flex-none text-dim"
+        class="size-3.5 flex-none text-dim icon-[lucide--search]"
       />
       <input
         ref="input"
@@ -112,7 +112,7 @@ async function escape(event: KeyboardEvent) {
         class="-mr-1.5 inline-flex size-7 flex-none items-center justify-center rounded-md text-dim hover:bg-hover hover:text-foreground"
         @click="clear"
       >
-        <span aria-hidden="true" class="icon-[lucide--x] size-3.5" />
+        <span aria-hidden="true" class="size-3.5 icon-[lucide--x]" />
       </button>
     </label>
     <button
@@ -129,11 +129,11 @@ async function escape(event: KeyboardEvent) {
     >
       <span
         aria-hidden="true"
-        class="icon-[lucide--search] size-4 group-aria-expanded/toggle:hidden"
+        class="size-4 icon-[lucide--search] group-aria-expanded/toggle:hidden"
       />
       <span
         aria-hidden="true"
-        class="icon-[lucide--x] hidden size-4 group-aria-expanded/toggle:inline-block"
+        class="hidden size-4 icon-[lucide--x] group-aria-expanded/toggle:inline-block"
       />
     </button>
     <span data-search-status class="sr-only" role="status" aria-live="polite">{{

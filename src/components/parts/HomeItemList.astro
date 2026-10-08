@@ -10,11 +10,9 @@ const { rows } = Astro.props;
 ---
 
 <ul class="flex flex-col gap-0.5 md:gap-1">
-  {
-    rows.map((row) => (
-      <li>
-        <ItemRow {...row} compact />
-      </li>
-    ))
-  }
+  {rows.map((row) => (
+    <li>
+      <ItemRow {...row} compact />
+    </li>
+  ))}
 </ul>

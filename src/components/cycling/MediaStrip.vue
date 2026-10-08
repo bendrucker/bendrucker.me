@@ -140,7 +140,7 @@ watch(() => props.media.length, measure, { flush: "post" });
             aria-hidden="true"
             class="pointer-events-none absolute top-1/2 left-1/2 flex size-10 -translate-1/2 items-center justify-center rounded-xl bg-black/40 text-white backdrop-blur-md"
           >
-            <span class="ml-0.5 icon-[lucide--play] size-4" />
+            <span class="ml-0.5 size-4 icon-[lucide--play]" />
           </span>
         </template>
         <span class="sr-only">
@@ -188,7 +188,7 @@ watch(() => props.media.length, measure, { flush: "post" });
           class="pointer-events-none absolute inset-0 flex items-center justify-center rounded bg-black/45"
         >
           <span
-            class="icon-[lucide--play] size-4 text-white"
+            class="size-4 text-white icon-[lucide--play]"
             aria-hidden="true"
           />
         </span>

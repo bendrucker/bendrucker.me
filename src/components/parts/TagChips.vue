@@ -14,7 +14,7 @@ defineProps<{ tags: readonly TagChip[] }>();
         :href="tag.href"
         class="inline-flex min-h-8 items-center gap-1.5 rounded-lg tint-8 px-2.5 text-[13px] text-foreground no-underline transition-colors hover:tint-16 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cat"
       >
-        <span aria-hidden="true" class="icon-[lucide--tag] size-3 text-cat" />
+        <span aria-hidden="true" class="size-3 text-cat icon-[lucide--tag]" />
         {{ tag.name }}
       </a>
     </li>

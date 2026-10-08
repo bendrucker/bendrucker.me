@@ -109,9 +109,7 @@ const rideFigures = ride
       </p>
     </section>
 
-    <div
-      class="flex flex-col gap-2 px-4 pt-3 pb-6 md:gap-4 md:px-site md:pt-7 md:pb-10"
-    >
+    <div class="flex flex-col gap-2 px-4 pt-3 pb-6 md:gap-4 md:px-site md:pt-7 md:pb-10">
       <h2 class="label-caps text-dim md:sr-only">Lately</h2>
       <!-- Every card in a row rests at the same height, so the rows line up
            and the grid ends on one flat edge. Rides and Code, which lead with
@@ -119,108 +117,106 @@ const rideFigures = ride
            down past its row and its neighbour keeps its resting height at the
            row's top. -->
       <div class="grid grid-cols-1 items-start gap-2 md:grid-cols-2 md:gap-4">
-        {
-          cards.map((card, index) => (
-            <HomeCard
-              id={card.id}
-              tall={tallness(card.id)}
-              phonePeek={card.id === "rides" ? RIDES_PHONE_PEEK : undefined}
-              short={short(index)}
-            >
-              {card.id === "rides" && ride && (
-                <RideFeature
-                  href={rideHref(ride.ride.id, "imperial")}
-                  name={ride.ride.name}
-                  when={fullDate(
-                    ride.ride.day,
-                    String(new Date().getUTCFullYear()),
-                  )}
-                  figures={rideFigures}
-                  hilly={isHilly(ride.ride)}
-                  id={ride.ride.id}
-                  route={ride.route}
-                  photos={ride.photos}
-                />
-              )}
-              {card.id === "code" && features.code && (
-                <CodeFeature
-                  href={features.code.row.href}
-                  title={features.code.row.title}
-                  org={features.code.row.org || undefined}
-                  text={features.code.row.text || undefined}
-                  lead={features.code.row.lead}
-                  dot={features.code.row.dot}
-                  latest={features.code.latest}
-                />
-              )}
-              {card.id === "rides" && (
-                <HomeItemList
-                  rows={card.items.map((ride) => ({
-                    href: rideHref(ride.id, "imperial"),
-                    title: ride.name,
-                    figure: distanceFigure(ride.distanceM, "imperial"),
-                    hilly: isHilly(ride),
-                  }))}
-                />
-              )}
-              {card.id === "code" && (
-                <HomeItemList
-                  rows={card.items.map((row) => ({
-                    href: row.href,
-                    title: row.title,
-                    org: row.org || undefined,
-                    lead: row.lead,
-                    dot: row.dot,
-                  }))}
-                />
-              )}
-              {card.id === "reading" && (
-                <HomeItemList
-                  rows={card.items.map((row) => ({
-                    href: row.url,
-                    via: row.via,
-                    title: row.title,
-                    text: row.text,
-                    note: row.note,
-                    lead: "kind",
-                    kind: KIND_ICONS[row.type],
-                    leadLabel: row.type,
-                  }))}
-                />
-              )}
-              {card.id === "writing" && (
-                <HomeItemList
-                  rows={card.items.map((post) => ({
-                    href: post.href,
-                    title: post.title,
-                    figure: readingFigure(post.minutes),
-                  }))}
-                />
-              )}
-              {card.id === "watching" && (
-                <PosterShelf
-                  client:visible
-                  layout="home"
-                  items={card.items.map((row, i) => ({
-                    ...row,
-                    desktopOnly: desktopOnly(i, SHELF_PHONE),
-                    wideOnly: i >= HOME_ROWS.card,
-                  }))}
-                />
-              )}
-              {card.id === "listening" && (
-                <RecordShelf
-                  client:visible
-                  layout="home"
-                  items={card.items.map((row, i) => ({
-                    ...row,
-                    desktopOnly: desktopOnly(i, SHELF_PHONE),
-                  }))}
-                />
-              )}
-            </HomeCard>
-          ))
-        }
+        {cards.map((card, index) => (
+          <HomeCard
+            id={card.id}
+            tall={tallness(card.id)}
+            phonePeek={card.id === "rides" ? RIDES_PHONE_PEEK : undefined}
+            short={short(index)}
+          >
+            {card.id === "rides" && ride && (
+              <RideFeature
+                href={rideHref(ride.ride.id, "imperial")}
+                name={ride.ride.name}
+                when={fullDate(
+                  ride.ride.day,
+                  String(new Date().getUTCFullYear()),
+                )}
+                figures={rideFigures}
+                hilly={isHilly(ride.ride)}
+                id={ride.ride.id}
+                route={ride.route}
+                photos={ride.photos}
+              />
+            )}
+            {card.id === "code" && features.code && (
+              <CodeFeature
+                href={features.code.row.href}
+                title={features.code.row.title}
+                org={features.code.row.org || undefined}
+                text={features.code.row.text || undefined}
+                lead={features.code.row.lead}
+                dot={features.code.row.dot}
+                latest={features.code.latest}
+              />
+            )}
+            {card.id === "rides" && (
+              <HomeItemList
+                rows={card.items.map((ride) => ({
+                  href: rideHref(ride.id, "imperial"),
+                  title: ride.name,
+                  figure: distanceFigure(ride.distanceM, "imperial"),
+                  hilly: isHilly(ride),
+                }))}
+              />
+            )}
+            {card.id === "code" && (
+              <HomeItemList
+                rows={card.items.map((row) => ({
+                  href: row.href,
+                  title: row.title,
+                  org: row.org || undefined,
+                  lead: row.lead,
+                  dot: row.dot,
+                }))}
+              />
+            )}
+            {card.id === "reading" && (
+              <HomeItemList
+                rows={card.items.map((row) => ({
+                  href: row.url,
+                  via: row.via,
+                  title: row.title,
+                  text: row.text,
+                  note: row.note,
+                  lead: "kind",
+                  kind: KIND_ICONS[row.type],
+                  leadLabel: row.type,
+                }))}
+              />
+            )}
+            {card.id === "writing" && (
+              <HomeItemList
+                rows={card.items.map((post) => ({
+                  href: post.href,
+                  title: post.title,
+                  figure: readingFigure(post.minutes),
+                }))}
+              />
+            )}
+            {card.id === "watching" && (
+              <PosterShelf
+                client:visible
+                layout="home"
+                items={card.items.map((row, i) => ({
+                  ...row,
+                  desktopOnly: desktopOnly(i, SHELF_PHONE),
+                  wideOnly: i >= HOME_ROWS.card,
+                }))}
+              />
+            )}
+            {card.id === "listening" && (
+              <RecordShelf
+                client:visible
+                layout="home"
+                items={card.items.map((row, i) => ({
+                  ...row,
+                  desktopOnly: desktopOnly(i, SHELF_PHONE),
+                }))}
+              />
+            )}
+          </HomeCard>
+        ))}
       </div>
     </div>
     <HomeDetail

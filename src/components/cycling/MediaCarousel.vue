@@ -104,7 +104,7 @@ function step(delta: number) {
       class="absolute left-3 hidden size-9 items-center justify-center rounded-full border border-border bg-background/90 text-foreground hover:text-accent sm:flex"
       @click="step(-1)"
     >
-      <span class="icon-[lucide--chevron-left] size-5" aria-hidden="true" />
+      <span class="size-5 icon-[lucide--chevron-left]" aria-hidden="true" />
       <span class="sr-only">Previous item</span>
     </button>
 
@@ -114,7 +114,7 @@ function step(delta: number) {
       class="absolute right-3 hidden size-9 items-center justify-center rounded-full border border-border bg-background/90 text-foreground hover:text-accent sm:flex"
       @click="step(1)"
     >
-      <span class="icon-[lucide--chevron-right] size-5" aria-hidden="true" />
+      <span class="size-5 icon-[lucide--chevron-right]" aria-hidden="true" />
       <span class="sr-only">Next item</span>
     </button>
   </div>
