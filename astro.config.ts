@@ -17,6 +17,7 @@ import { isEnabled, isSwitchedOff, SITE, type CategoryEnv } from "./src/config";
 import { writingSitemapPages } from "./src/writing/sitemap";
 import { STATIC_REDIRECTS } from "./src/redirects";
 import { copyStaticAssets } from "./src/staticAssets";
+import { offCategoryIslands } from "./src/offCategoryIslands";
 
 const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
 
@@ -112,6 +113,7 @@ export default defineConfig({
         },
         buildStart: () => copyStaticAssets("static", "public", staticEnv),
       },
+      offCategoryIslands(() => staticEnv),
     ],
     ssr: {
       external: ["node:fs", "node:path"],

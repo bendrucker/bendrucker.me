@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "dev:json": "ASTRO_LOG_JSON=1 astro dev",
-    "build": "npm run build:packages && npm run types:generate && astro check && CLOUDFLARE_VITE_FORCE_LOCAL=true astro build",
+    "build": "npm run build:packages && npm run types:generate && astro check && CLOUDFLARE_VITE_FORCE_LOCAL=true astro build && node --import tsx scripts/check-client-islands.ts",
     "build:packages": "npm run build --workspace=packages/logger -- --force && npm run build --workspace=packages/github -- --force",
     "preview": "node --import tsx scripts/preview.ts",
     "sync": "astro sync",
