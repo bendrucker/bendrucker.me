@@ -13,11 +13,10 @@ import {
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/shiki/fileName";
-import { isEnabled, isSwitchedOff, SITE } from "./src/config";
+import { isEnabled, isSwitchedOff, SITE, type CategoryEnv } from "./src/config";
 import { writingSitemapPages } from "./src/writing/sitemap";
 import { STATIC_REDIRECTS } from "./src/redirects";
-import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { copyStaticAssets } from "./src/staticAssets";
 
 const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
 
@@ -29,23 +28,9 @@ const categoryEnv = {
   PUBLIC_ALL_CATEGORIES: process.env.PUBLIC_ALL_CATEGORIES,
 };
 
-function copyStaticFiles(src: string, dest: string) {
-  try {
-    mkdirSync(dest, { recursive: true });
-    for (const item of readdirSync(src)) {
-      const srcPath = join(src, item);
-      const destPath = join(dest, item);
-
-      if (statSync(srcPath).isDirectory()) {
-        copyStaticFiles(srcPath, destPath);
-      } else {
-        copyFileSync(srcPath, destPath);
-      }
-    }
-  } catch {
-    // Ignore if static directory doesn't exist
-  }
-}
+// The dev server shows every category, so it keeps every fixture. Vite names
+// the command only once a plugin's `config` hook runs.
+let staticEnv: CategoryEnv = categoryEnv;
 
 // https://astro.build/config
 export default defineConfig({
@@ -122,7 +107,10 @@ export default defineConfig({
       tailwindcss(),
       {
         name: "copy-static-files",
-        buildStart: () => copyStaticFiles("static", "public"),
+        config(_, { command }) {
+          staticEnv = { ...categoryEnv, DEV: command === "serve" };
+        },
+        buildStart: () => copyStaticAssets("static", "public", staticEnv),
       },
     ],
     ssr: {

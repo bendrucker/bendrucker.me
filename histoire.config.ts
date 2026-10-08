@@ -59,6 +59,9 @@ export default defineConfig({
   },
   vite: {
     plugins: [vue(), tailwindcss()],
+    // Serve `static/` directly: `public/` holds only what the last Astro build
+    // published, which leaves out the art of categories production turns off.
+    publicDir: path.join(root, "static"),
     // The story book shows every category, including those production builds
     // leave off, so parts can be reviewed in each category's color.
     define: {

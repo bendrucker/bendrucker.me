@@ -36,7 +36,7 @@ export const SITE = {
 
 export type CategoryId = keyof typeof SITE.categories;
 
-interface CategoryEnv {
+export interface CategoryEnv {
   DEV?: boolean;
   PUBLIC_ALL_CATEGORIES?: string;
 }
@@ -58,7 +58,7 @@ export function isEnabled(
   );
 }
 
-function isCategoryId(segment: string): segment is CategoryId {
+export function isCategoryId(segment: string): segment is CategoryId {
   return Object.hasOwn(SITE.categories, segment);
 }
 

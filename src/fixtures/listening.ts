@@ -5,16 +5,17 @@ import { ListeningItemSchema, type ListeningItem } from "@/media/types";
  * Sample listening, standing in for Last.fm and Apple Podcasts until a real
  * source lands. `loadListening` is the signature that source implements.
  *
- * Covers are in `static/fixtures/`, credited in the footer: from Apple's search
- * API, except Blonde, which it doesn't list, from the Cover Art Archive. The
- * artwork belongs to its owners. Anything without a cover draws the bare tile.
+ * Covers are in `static/fixtures/listening/`, credited in the footer: from
+ * Apple's search API, except Blonde, which it doesn't list, from the Cover Art
+ * Archive. The artwork belongs to its owners. Anything without a cover draws
+ * the bare tile.
  */
 const LISTENING = [
   {
     type: "Album",
     title: "Promises",
     text: "Floating Points, Pharoah Sanders",
-    art: "/fixtures/promises.jpg",
+    art: "/fixtures/listening/promises.jpg",
     label: "#d9c8a4",
     day: "2026-09-25",
     plays: 41,
@@ -25,7 +26,7 @@ const LISTENING = [
     type: "Podcast",
     title: "Hard Fork",
     text: "The New York Times",
-    art: "/fixtures/hard-fork.jpg",
+    art: "/fixtures/listening/hard-fork.jpg",
     day: "2026-09-24",
     plays: 35,
     url: "https://podcasts.apple.com/us/search?term=Hard%20Fork",
@@ -35,7 +36,7 @@ const LISTENING = [
     type: "Album",
     title: "In Rainbows",
     text: "Radiohead",
-    art: "/fixtures/in-rainbows.jpg",
+    art: "/fixtures/listening/in-rainbows.jpg",
     label: "#e2482f",
     day: "2026-09-14",
     plays: 30,
@@ -46,7 +47,7 @@ const LISTENING = [
     type: "Podcast",
     title: "Acquired",
     text: "Ben Gilbert and David Rosenthal",
-    art: "/fixtures/acquired.jpg",
+    art: "/fixtures/listening/acquired.jpg",
     day: "2026-09-08",
     plays: 26,
     url: "https://podcasts.apple.com/us/search?term=Acquired",
@@ -56,7 +57,7 @@ const LISTENING = [
     type: "Album",
     title: "Blonde",
     text: "Frank Ocean",
-    art: "/fixtures/blonde.jpg",
+    art: "/fixtures/listening/blonde.jpg",
     label: "#9fb4a5",
     day: "2026-08-28",
     plays: 22,
@@ -67,7 +68,7 @@ const LISTENING = [
     type: "Podcast",
     title: "The Rest Is History",
     text: "Goalhanger",
-    art: "/fixtures/rest-history.jpg",
+    art: "/fixtures/listening/rest-history.jpg",
     day: "2026-08-02",
     plays: 6,
     url: "https://podcasts.apple.com/us/search?term=The%20Rest%20Is%20History",
@@ -77,7 +78,7 @@ const LISTENING = [
     type: "Album",
     title: "Titanic Rising",
     text: "Weyes Blood",
-    art: "/fixtures/titanic-rising.jpg",
+    art: "/fixtures/listening/titanic-rising.jpg",
     label: "#3d6f8f",
     day: "2026-07-17",
     plays: 14,
