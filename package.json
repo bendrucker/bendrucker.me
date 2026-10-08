@@ -27,6 +27,7 @@
     "dev:worker": "node --import tsx scripts/dev-worker.ts",
     "seed": "node --import tsx scripts/seed.ts",
     "backfill:climbs": "node --import tsx scripts/backfill-climbs.ts",
+    "backfill:github": "node --import tsx scripts/backfill-github-activity.ts",
     "fetch-activity": "node --import tsx scripts/fetch-github-activity.ts",
     "generate:favicons": "node --import tsx scripts/generate-favicons.ts",
     "postinstall": "patch-package"

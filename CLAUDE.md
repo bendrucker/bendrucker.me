@@ -383,6 +383,16 @@ its monthly highlights, and the year totals, and are left out of every record:
 `queryRideRecords` drops them before any list or power ladder is ranked. A null
 flag reads as outdoor.
 
+## GitHub Backfill
+
+The hourly cron reads only the current year. `npm run backfill:github` reads
+every year since 2008 through `gh auth token` and imports the repositories and
+their authored pull requests and issues, with `-- --remote` for production D1.
+Run it once against production after migration 0008 reaches it. Past years are
+cached in `tmp/backfill/<year>.json`, and a year cached without pull request
+and issue ids is fetched again rather than imported empty. The current year is
+always fetched.
+
 ## Partial Updates
 
 `Publish.updateActivity` sets whitelisted scalar columns on an existing row
