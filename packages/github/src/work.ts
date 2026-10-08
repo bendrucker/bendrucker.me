@@ -2,7 +2,9 @@
 // names them by id, and this reads the details it cannot: a diff and a
 // reaction count on every pull request of a window exceed GitHub's resource
 // limits for one query, while a hundred at a time by id costs a single point.
-import { createClient } from "./client";
+import { GraphqlResponseError } from "@octokit/graphql";
+import { logger } from "@workspace/logger";
+import { createClient, type GraphQLClient } from "./client";
 import {
   workNodesResponse,
   type IssueFields,
@@ -134,6 +136,39 @@ const WORK_NODES_QUERY = `
   }
 `;
 
+// An id that no longer resolves (a deleted issue, a repository deleted or out
+// of the token's reach) comes back as a null node beside a NOT_FOUND or
+// FORBIDDEN error, and the client throws on any error. Those errors are kept
+// to their own nodes, so the rest of the page is still good. Anything else is
+// a real failure and is rethrown.
+const UNRESOLVED_NODE_ERRORS = new Set(["NOT_FOUND", "FORBIDDEN"]);
+
+async function queryWorkNodes(
+  client: GraphQLClient,
+  ids: readonly string[],
+): Promise<unknown> {
+  try {
+    return await client(WORK_NODES_QUERY, { ids });
+  } catch (error) {
+    if (!(error instanceof GraphqlResponseError)) throw error;
+
+    const errors = error.errors ?? [];
+    const unresolvedOnly =
+      errors.length > 0 &&
+      errors.every(
+        (entry) =>
+          UNRESOLVED_NODE_ERRORS.has(entry.type) && entry.path[0] === "nodes",
+      );
+    if (!unresolvedOnly) throw error;
+
+    logger.warn(
+      { errors: errors.map(({ type, message }) => ({ type, message })) },
+      "Some pull requests or issues no longer resolve",
+    );
+    return error.data;
+  }
+}
+
 // `nodes` accepts at most 100 ids a call.
 const NODES_PAGE_SIZE = 100;
 
@@ -147,9 +182,7 @@ export async function fetchWorkItems(
 
   for (let i = 0; i < ids.length; i += NODES_PAGE_SIZE) {
     const { nodes } = workNodesResponse.parse(
-      await client(WORK_NODES_QUERY, {
-        ids: ids.slice(i, i + NODES_PAGE_SIZE),
-      }),
+      await queryWorkNodes(client, ids.slice(i, i + NODES_PAGE_SIZE)),
     );
 
     for (const node of nodes) {
