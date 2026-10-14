@@ -32,7 +32,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "14.3.2",
+    "@astrojs/cloudflare": "14.3.3",
     "@astrojs/markdown-remark": "7.3.1",
     "@astrojs/rss": "4.0.19",
     "@astrojs/sitemap": "3.7.4",
@@ -44,7 +44,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.2",
     "@vueuse/core": "^14.4.0",
-    "astro": "7.3.3",
+    "astro": "7.3.5",
     "cheap-ruler": "^4.1.0",
     "culori": "^4.0.2",
     "date-fns": "^4.4.0",
