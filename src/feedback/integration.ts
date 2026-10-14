@@ -11,6 +11,12 @@ type NodeTransform = NonNullable<
   ? T
   : never;
 
+interface ConfigureOptions {
+  command: string;
+  root: string;
+  injectScript: (stage: "page", content: string) => void;
+}
+
 /**
  * Agentation's visual feedback toolbar, under `astro dev` or a build run with
  * `AGENTATION=1`. Agentation finds source files by walking React's fiber tree,
@@ -20,19 +26,33 @@ type NodeTransform = NonNullable<
 export function feedback(): {
   integration: AstroIntegration;
   sourceTransform: NodeTransform;
+  configure: (options: ConfigureOptions) => void;
 } {
   let enabled = false;
   let root = process.cwd();
 
+  const configure = ({
+    command,
+    root: projectRoot,
+    injectScript,
+  }: ConfigureOptions) => {
+    enabled = command === "dev" || process.env.AGENTATION === "1";
+    if (!enabled) return;
+    root = projectRoot;
+    injectScript("page", `import "/src/feedback/toolbar.ts";`);
+  };
+
   return {
+    configure,
     integration: {
       name: "feedback",
       hooks: {
         "astro:config:setup": ({ command, config, injectScript }) => {
-          enabled = command === "dev" || process.env.AGENTATION === "1";
-          if (!enabled) return;
-          root = fileURLToPath(config.root);
-          injectScript("page", `import "/src/feedback/toolbar.ts";`);
+          configure({
+            command,
+            root: fileURLToPath(config.root),
+            injectScript,
+          });
         },
       },
     },
