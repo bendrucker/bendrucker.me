@@ -84,7 +84,7 @@
     "linguist-languages": "^9.4.0",
     "opentype.js": "^2.0.0",
     "oxlint": "^1.80.0",
-    "oxlint-tsgolint": "^7.0.2001",
+    "oxlint-tsgolint": "^7.0.2003",
     "patch-package": "^8.0.1",
     "png-to-ico": "^3.0.2",
     "prettier": "^3.9.6",
