@@ -40,6 +40,24 @@ async function rateLimitBackoff(rateLimit: RateLimit): Promise<void> {
 
 const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
+type WorkIdFields = "pullRequestIds" | "issueIds";
+type CachedRepo = Omit<RepoActivity, WorkIdFields> &
+  Partial<Pick<RepoActivity, WorkIdFields>>;
+
+const hasWorkIds = (repo: CachedRepo): repo is RepoActivity =>
+  Array.isArray(repo.pullRequestIds) && Array.isArray(repo.issueIds);
+
+/**
+ * A year's repos from the cache, or undefined when it has to be fetched: it
+ * was never cached, or it was cached before authored pull requests and issues
+ * were tracked, and importing it would store none of them.
+ */
+function readCachedYear(file: string): RepoActivity[] | undefined {
+  if (!existsSync(file)) return undefined;
+  const cached: CachedRepo[] = JSON.parse(readFileSync(file, "utf-8"));
+  return cached.every((repo) => hasWorkIds(repo)) ? cached : undefined;
+}
+
 function mergeRepos(a: RepoActivity[], b: RepoActivity[]): RepoActivity[] {
   const map = new Map<string, RepoActivity>();
 
@@ -61,6 +79,11 @@ function mergeRepos(a: RepoActivity[], b: RepoActivity[]): RepoActivity[] {
     existing.activitySummary.issueCount += repo.activitySummary.issueCount;
     existing.activitySummary.mergeCount += repo.activitySummary.mergeCount;
     existing.activitySummary.hasMergedPRs ||= repo.activitySummary.hasMergedPRs;
+    existing.pullRequestIds = [
+      ...existing.pullRequestIds,
+      ...repo.pullRequestIds,
+    ];
+    existing.issueIds = [...existing.issueIds, ...repo.issueIds];
   }
 
   return Array.from(map.values());
@@ -128,11 +151,16 @@ async function main() {
   const currentYear = new Date().getFullYear();
   const startYear = values.from ? Number(values.from) : GITHUB_EPOCH_YEAR;
 
+  const allRepos: RepoActivity[] = [];
+
   for (let year = startYear; year <= currentYear; year++) {
     const cacheFile = join(cacheDir, `${year}.json`);
+    // The current year is still moving, so it is always read fresh.
+    const cached = year === currentYear ? undefined : readCachedYear(cacheFile);
 
-    if (existsSync(cacheFile)) {
-      logger.info({ year }, "Skipping year (cached)");
+    if (cached) {
+      logger.info({ year }, "Using cached year");
+      allRepos.push(...cached);
       continue;
     }
 
@@ -159,23 +187,14 @@ async function main() {
 
     writeFileSync(cacheFile, JSON.stringify(data, null, 2));
     logger.info({ year, repos: data.length }, "Fetched and cached year");
+    allRepos.push(...data);
 
     if (year < currentYear) {
       await rateLimitBackoff(rateLimit);
     }
   }
 
-  logger.info("Loading cached data for D1 import...");
-
-  const allRepos: RepoActivity[] = [];
-
-  for (let year = startYear; year <= currentYear; year++) {
-    const cacheFile = join(cacheDir, `${year}.json`);
-    if (!existsSync(cacheFile)) continue;
-    allRepos.push(...JSON.parse(readFileSync(cacheFile, "utf-8")));
-  }
-
-  await importActivity(allRepos, values.remote);
+  await importActivity(allRepos, values.remote, token);
 }
 
 try {

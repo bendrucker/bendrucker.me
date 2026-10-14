@@ -3,6 +3,7 @@ author: Ben Drucker
 pubDatetime: 2013-11-06T12:00:00Z
 title: Collaborating Asynchronously to Get More Done
 draft: false
+featured: true
 tags:
   - Productivity
   - Code

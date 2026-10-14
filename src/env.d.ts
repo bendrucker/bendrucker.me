@@ -31,3 +31,8 @@ declare namespace App {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface Locals extends Runtime {}
 }
+
+interface ImportMetaEnv {
+  /** `"1"` turns on every category in `SITE.categories`, for review builds. */
+  readonly PUBLIC_ALL_CATEGORIES?: string;
+}

@@ -1,0 +1,67 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import CodeRoute from "@/components/code/CodeRoute.vue";
+import { category } from "@/categories";
+import { SITE, isEnabled } from "@/config";
+import { getDb } from "@/db";
+import { routeNote } from "@/notes";
+import { queryCodeRows } from "@/code/query";
+import {
+  buildCodeRows,
+  codeWindow,
+  languageOptions,
+  localDay,
+} from "@/code/rows";
+import { parseFilters, type CodeRow, type LanguageOption } from "@/code/view";
+import { rethrowLocally } from "@/fallback";
+import { loadCodeDetail } from "@/code/detail";
+import { CODE_PARAM, type CodeDetail } from "@/code/detailWire";
+import type { OpenDetail } from "@/detail/useDetailModal";
+
+if (!isEnabled("code")) return Astro.rewrite("/404");
+
+const now = new Date();
+let rows: CodeRow[] = [];
+let languages: LanguageOption[] = [];
+
+try {
+  const repos = await queryCodeRows(await getDb(), codeWindow(now));
+  rows = buildCodeRows(repos);
+  languages = languageOptions(repos);
+} catch (error) {
+  rethrowLocally(error, "Failed to load code rows");
+}
+
+const cat = category("code");
+
+// A shared link to an item open over the list renders it open, so the link
+// reads the same without script. A key that finds nothing leaves the list
+// alone, and the island takes the parameter back out of the URL.
+const openKey = Astro.url.searchParams.get(CODE_PARAM);
+let open: OpenDetail<CodeDetail> | null = null;
+if (openKey !== null) {
+  try {
+    const detail = await loadCodeDetail(await getDb(), openKey);
+    if (detail !== null) open = { key: openKey, data: detail };
+  } catch (error) {
+    rethrowLocally(error, "Failed to load code detail", { key: openKey });
+  }
+}
+---
+
+<Layout
+  title={`${cat.name} | ${SITE.title}`}
+  description="The repositories I have worked on lately, and the projects they belong to."
+  credits={cat.credits}
+  sourcePath="src/pages/code/index.astro"
+>
+  <CodeRoute
+    client:load
+    note={await routeNote("code")}
+    rows={rows}
+    languages={languages}
+    initial={parseFilters(Astro.url.searchParams, languages)}
+    thisYear={localDay(now.toISOString()).slice(0, 4)}
+    open={open}
+  />
+</Layout>

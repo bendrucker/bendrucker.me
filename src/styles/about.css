@@ -39,6 +39,10 @@
     font-size: 1.35rem;
     vertical-align: -0.15em;
     color: color-mix(in oklab, var(--color-foreground) 28%, transparent);
+    /* The glyph's class sets only `--svg`, and a pseudo-element has no class
+       for the shared icon rule to match. */
+    background-color: currentColor;
+    mask: var(--svg) no-repeat center / 100% 100%;
   }
 
   /* Very wide viewports: the icon floats out into the left gutter, aligned to

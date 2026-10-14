@@ -46,6 +46,8 @@ export interface ActivityFeedTable {
   activityId: string;
   stravaId: string | null;
   name: string | null;
+  /** What the rider wrote on the activity, or null where the activity has none. */
+  description: string | null;
   sport: string;
   startedAt: string;
   timezone: string;
@@ -53,6 +55,12 @@ export interface ActivityFeedTable {
   movingS: number | null;
   elevationM: number | null;
   averageWatts: number | null;
+  /** Coggan normalized power in watts, computed by the hub from the 1 Hz record. */
+  normalizedWatts: number | null;
+  averageHeartRate: number | null;
+  /** The moving temperature range in Celsius, trimmed by `temperatureRange`. */
+  temperatureLowC: number | null;
+  temperatureHighC: number | null;
   powerSource: string;
   polyline: string | null;
   elevationProfile: string | null;
@@ -68,6 +76,33 @@ export interface ActivityPowerCurveTable {
   watts: number;
 }
 
+// Timestamps are ISO strings. A merged or closed row is never rewritten.
+export interface PullRequestsTable {
+  id: string;
+  repoId: number;
+  number: number;
+  title: string;
+  state: "OPEN" | "CLOSED" | "MERGED";
+  isDraft: 0 | 1;
+  createdAt: string;
+  mergedAt: string | null;
+  additions: number;
+  deletions: number;
+  reactions: number;
+}
+
+export interface IssuesTable {
+  id: string;
+  repoId: number;
+  number: number;
+  title: string;
+  state: "OPEN" | "CLOSED";
+  stateReason: string | null;
+  createdAt: string;
+  closedAt: string | null;
+  reactions: number;
+}
+
 export interface ActivityClimbTable {
   activityId: string;
   position: number;
@@ -80,6 +115,8 @@ export interface ActivityClimbTable {
 export interface Database {
   repos: ReposTable;
   repoActivity: RepoActivityTable;
+  pullRequests: PullRequestsTable;
+  issues: IssuesTable;
   languageExtensions: LanguageExtensionsTable;
   syncState: SyncStateTable;
   activityFeed: ActivityFeedTable;

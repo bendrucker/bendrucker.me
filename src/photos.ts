@@ -69,6 +69,20 @@ export function thumbnailUrl(key: string): string {
 }
 
 /**
+ * The height a ride page's shot is cut to: the phone strip's 210px, doubled
+ * for dense displays and rounded up to cover a gallery row a little taller.
+ */
+export const PREVIEW_PX = 480;
+
+/** Bumped with any change to the preview's transform, as `THUMBNAIL_VERSION` is. */
+export const PREVIEW_VERSION = 1;
+
+/** A ride page's shot: the photo, or a video's first frame, at its own shape. */
+export function previewUrl(key: string): string {
+  return `/photos/previews/${PREVIEW_VERSION}/${key}`;
+}
+
+/**
  * The request Astro routes for a photo URL. `trailingSlash: "always"` ends every
  * route pattern in a slash unless the route's name ends in an extension, which
  * a rest param cannot. Astro doesn't redirect a path ending in one either, so

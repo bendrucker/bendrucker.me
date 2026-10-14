@@ -1,18 +1,13 @@
 import { about } from "./about";
-import { activity, activityYear } from "./activity";
-import { posts } from "./posts";
+import { code } from "./code";
+import { writing } from "./posts";
 import type { Representation, RepresentationEntry } from "./types";
 
 export type { Representation, RepresentationEntry } from "./types";
 export { markdownEndpoint, MARKDOWN_CONTENT_TYPE } from "./endpoint";
-export { about, activity, activityYear, posts };
+export { about, code, writing };
 
-const REPRESENTATIONS: readonly Representation[] = [
-  about,
-  posts,
-  activity,
-  activityYear,
-];
+const REPRESENTATIONS: readonly Representation[] = [about, writing, code];
 
 const byRoute = new Map(
   REPRESENTATIONS.map((representation) => [

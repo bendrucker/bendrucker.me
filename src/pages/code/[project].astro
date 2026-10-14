@@ -1,0 +1,27 @@
+---
+import CodeItem from "@/components/code/CodeItem.astro";
+import { isEnabled } from "@/config";
+import { getDb } from "@/db";
+import { loadProject, projectDetail } from "@/code/detail";
+import type { ProjectPage } from "@/code/query";
+import { rethrowLocally } from "@/fallback";
+
+if (!isEnabled("code")) return Astro.rewrite("/404");
+
+const id = Astro.params.project ?? "";
+let page: ProjectPage | null = null;
+
+try {
+  page = await loadProject(await getDb(), id);
+} catch (error) {
+  rethrowLocally(error, "Failed to load project", { id });
+}
+
+if (!page) return Astro.rewrite("/404");
+---
+
+<CodeItem
+  detail={projectDetail(page, id)}
+  backHref="/code/"
+  sourcePath="src/pages/code/[project].astro"
+/>

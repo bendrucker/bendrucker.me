@@ -3,6 +3,7 @@ author: Ben Drucker
 pubDatetime: 2014-02-19T12:00:00Z
 title: How to Start Contributing to Open Source
 draft: false
+featured: true
 tags:
   - Software
   - Open Source

@@ -1,0 +1,15 @@
+---
+import MediaRoute from "@/components/media/MediaRoute.astro";
+import { isEnabled } from "@/config";
+
+if (!isEnabled("listening")) return Astro.rewrite("/404");
+
+// Fixtures change only on deploy.
+Astro.cache.set({ maxAge: 3600, swr: 86400 });
+---
+
+<MediaRoute
+  id="listening"
+  description="Albums and podcasts I've been listening to."
+  sourcePath="src/pages/listening.astro"
+/>

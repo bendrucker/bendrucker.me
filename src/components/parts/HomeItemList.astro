@@ -1,0 +1,18 @@
+---
+import type { ComponentProps } from "astro/types";
+import ItemRow from "./ItemRow.vue";
+
+interface Props {
+  rows: readonly Omit<ComponentProps<typeof ItemRow>, "compact">[];
+}
+
+const { rows } = Astro.props;
+---
+
+<ul class="flex flex-col gap-0.5 md:gap-1">
+  {rows.map((row) => (
+    <li>
+      <ItemRow {...row} compact />
+    </li>
+  ))}
+</ul>

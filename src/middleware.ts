@@ -2,6 +2,7 @@ import type { APIContext, MiddlewareHandler } from "astro";
 import { sequence } from "astro:middleware";
 import { env } from "cloudflare:workers";
 import { readFeedVersion } from "./activity/feed";
+import { utcDay } from "./activity/shuffle";
 import { readSyncState } from "./activity/sync-state";
 import { getDb, readTimestamp } from "./db";
 import {
@@ -11,10 +12,13 @@ import {
   BROWSER_CACHE_CONTROL,
   cachesResponse,
   isActivityPath,
+  isDayOrdered,
   unchanged,
   type Validators,
 } from "./middleware/cache";
+import { trackDegraded } from "./middleware/degraded";
 import { prefersMarkdown } from "./middleware/negotiate";
+import { redirects } from "./middleware/redirects";
 import { MARKDOWN_CONTENT_TYPE, representationFor } from "./representations";
 
 const cache: MiddlewareHandler = async (context, next) => {
@@ -25,8 +29,12 @@ const cache: MiddlewareHandler = async (context, next) => {
     isActivityPath(context.url.pathname);
 
   if (conditional) {
-    const validators = await activityValidators(context);
-    context.cache.set({ ...activityCachePolicy(new Date()), ...validators });
+    const now = new Date();
+    const validators = await activityValidators(context, now);
+    context.cache.set({
+      ...activityCachePolicy(now, context.url.pathname),
+      ...validators,
+    });
 
     if (unchanged(context.request.headers, validators)) {
       return new Response(null, {
@@ -39,9 +47,17 @@ const cache: MiddlewareHandler = async (context, next) => {
     }
   }
 
-  const response = await next();
+  const { value: response, degraded } = await trackDegraded(async () => next());
   if (method !== "GET" && method !== "HEAD") return response;
   if (context.isPrerendered) return response;
+
+  // An empty fallback beats an error page for this reader, but it must not be
+  // what every reader gets from the edge or the browser until the next sync.
+  if (degraded) {
+    context.cache.set(false);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
 
   // Only the activity branch above sets a policy before the route runs, so
   // anywhere else one is the route's own.
@@ -59,7 +75,10 @@ const cache: MiddlewareHandler = async (context, next) => {
   return response;
 };
 
-async function activityValidators(context: APIContext): Promise<Validators> {
+async function activityValidators(
+  context: APIContext,
+  now: Date,
+): Promise<Validators> {
   const db = await getDb();
   const [state, feed] = await Promise.all([
     readSyncState(db),
@@ -67,16 +86,18 @@ async function activityValidators(context: APIContext): Promise<Validators> {
   ]);
   const negotiable = representationFor(context.routePattern) !== undefined;
   const { id, timestamp } = env.CF_VERSION_METADATA;
+  const day = isDayOrdered(context.url.pathname) ? utcDay(now) : undefined;
 
   return {
     etag: activityETag(
-      { github: state?.version ?? 0, feed: feed.tag, deploy: id },
+      { github: state?.version ?? 0, feed: feed.tag, deploy: id, day },
       negotiable && prefersMarkdown(context.request) ? "md" : "html",
     ),
     lastModified: activityLastModified({
       github: readTimestamp(state?.changedAt ?? null),
       feed: feed.updatedAt,
       deploy: readTimestamp(timestamp),
+      day: day === undefined ? null : new Date(`${day}T00:00:00Z`),
     }),
   };
 }
@@ -115,7 +136,7 @@ const markdown: MiddlewareHandler = async (context, next) => {
   return response;
 };
 
-export const onRequest = sequence(cache, markdown);
+export const onRequest = sequence(redirects, cache, markdown);
 
 function addVary(headers: Headers, value: string): void {
   const existing = headers.get("Vary");

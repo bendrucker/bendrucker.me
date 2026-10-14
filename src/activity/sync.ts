@@ -1,7 +1,7 @@
 // The whole write path from a GitHub fetch to D1: which statements a payload
 // produces, whether they are worth running, and what that means for the version
 // the cached pages key on.
-import type { RepoActivity } from "@workspace/github";
+import type { RepoActivity, WorkItems } from "@workspace/github";
 import type { CompiledQuery, Kysely } from "kysely";
 import type { Database } from "../db";
 import type { ActivityStore } from "./store";
@@ -31,14 +31,20 @@ export interface SyncOptions {
    * establishes a hash over its own dataset.
    */
   recordHash?: boolean;
+  /**
+   * The authored pull requests and issues read by id: the payload's new ones
+   * and every stored open one. They join the hashed statements, so one merging
+   * moves the hash even when the window's own data repeats.
+   */
+  work?: WorkItems;
 }
 
 export async function syncActivity(
   store: ActivityStore,
   repos: RepoActivity[],
-  { recordHash = true }: SyncOptions = {},
+  { recordHash = true, work }: SyncOptions = {},
 ): Promise<SyncResult> {
-  const statements = activityStatements(store.db, repos);
+  const statements = activityStatements(store.db, repos, work);
   const payloadHash = recordHash ? await hashStatements(statements) : null;
 
   const state =
@@ -80,9 +86,10 @@ export async function syncActivity(
 export function syncStatements(
   db: Kysely<Database>,
   repos: RepoActivity[],
+  work?: WorkItems,
 ): CompiledQuery[] {
   return [
-    ...activityStatements(db, repos),
+    ...activityStatements(db, repos, work),
     recordSync(db, { payloadHash: null, changed: true }).compile(),
   ];
 }

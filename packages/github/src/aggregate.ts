@@ -31,6 +31,8 @@ export function createRepoActivity(
       hasMergedPRs: false,
     },
     createdAt: new Date(repository.createdAt),
+    pullRequestIds: [],
+    issueIds: [],
   };
 }
 
@@ -49,12 +51,14 @@ function getOrCreateRepo(
 }
 
 // Issue counts come from the search below rather than from
-// `issueContributionsByRepository`, which only feeds a truncation warning.
+// `issueContributionsByRepository`, which supplies only the authored issues a
+// repository lists.
 export type AggregatedContributions = Pick<
   ContributionsCollection,
   | "commitContributionsByRepository"
   | "pullRequestContributionsByRepository"
   | "pullRequestReviewContributionsByRepository"
+  | "issueContributionsByRepository"
   | "repositoryContributions"
 >;
 
@@ -98,9 +102,15 @@ export function aggregateActivityByRepository(
     if (!repoContrib.contributions.nodes?.length) return;
 
     const repo = getOrCreateRepo(repoMap, repoContrib.repository);
-    repo.activitySummary.prCount += repoContrib.contributions.nodes.filter(
-      (n) => n !== null,
-    ).length;
+    repo.activitySummary.prCount += Math.max(
+      repoContrib.contributions.totalCount,
+      repoContrib.contributions.nodes.length,
+    );
+    repo.pullRequestIds.push(
+      ...repoContrib.contributions.nodes.map(
+        (contrib) => contrib.pullRequest.id,
+      ),
+    );
 
     const hasMergedPRs = repoContrib.contributions.nodes.some(
       (contrib) => contrib?.pullRequest.merged,
@@ -170,6 +180,17 @@ export function aggregateActivityByRepository(
     if (issueDate > repo.lastActivity) {
       repo.lastActivity = issueDate;
     }
+  });
+
+  // An authored issue joins a repository the search already found rather than
+  // adding one: the search covers every issue this one could be, and a
+  // repository created here would carry no counts and pass as commits-only.
+  contributions.issueContributionsByRepository.forEach((repoContrib) => {
+    const { owner, name } = repoContrib.repository;
+    const repo = repoMap.get(`${owner.login}/${name}`);
+    repo?.issueIds.push(
+      ...repoContrib.contributions.nodes.map((contrib) => contrib.issue.id),
+    );
   });
 
   if (username) {

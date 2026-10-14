@@ -1,0 +1,70 @@
+---
+import RouteLayout from "@/layouts/RouteLayout.astro";
+import { SITE } from "@/config";
+import { category } from "@/categories";
+import { loadMediaFeed } from "@/media/load";
+import type { MediaCategory } from "@/media/types";
+import {
+  buildMediaView,
+  desktopSections,
+  filtersFromUrl,
+  phoneHighlights,
+} from "@/media/view";
+import MediaControls from "./MediaControls.vue";
+import MediaList from "./MediaList.vue";
+
+/*
+ * Reading, Watching, and Listening: one template, configured by category. The
+ * server renders the state the URL asks for, so a filtered link works without
+ * a script, and the islands refine it from there.
+ */
+export interface Props {
+  id: MediaCategory;
+  description: string;
+  sourcePath: string;
+}
+
+const { id, description, sourcePath } = Astro.props;
+const cat = category(id);
+
+const { rows, highlightKeys } = await loadMediaFeed(id);
+const filters = filtersFromUrl(Astro.url, cat.types ?? []);
+const thisYear = new Intl.DateTimeFormat("en-US", {
+  timeZone: SITE.timezone,
+  year: "numeric",
+}).format(new Date());
+const view = buildMediaView(rows, highlightKeys, {
+  ...filters,
+  thisYear,
+  phone: phoneHighlights(id),
+});
+
+/*
+ * Both copies of the controls hydrate at load, the hidden one included. They
+ * share one store, so a copy hydrating later, after a resize, would find it
+ * moved on from the HTML the server rendered and mismatch.
+ */
+const initial = {
+  ...filters,
+  count: view.count,
+  sections: desktopSections(view),
+};
+---
+
+<RouteLayout
+  category={id}
+  description={description}
+  noindex
+  sourcePath={sourcePath}
+>
+  <MediaControls slot="tools" id={id} initial={initial} client:load />
+  <MediaControls slot="sidebar" id={id} initial={initial} sidebar client:load />
+  <MediaList
+    id={id}
+    rows={rows}
+    highlightKeys={highlightKeys}
+    initial={initial}
+    thisYear={thisYear}
+    client:load
+  />
+</RouteLayout>

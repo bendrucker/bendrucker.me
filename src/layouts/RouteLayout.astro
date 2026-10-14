@@ -1,0 +1,46 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import RouteFrame from "@/components/parts/RouteFrame.vue";
+import { category, type CategoryId, type Credit } from "@/categories";
+import { SITE } from "@/config";
+import { routeNote } from "@/notes";
+
+export interface Props {
+  category: CategoryId;
+  description?: string;
+  /** What the current view's art needs credited, when it differs from the route's. */
+  credits?: readonly Credit[];
+  /** Keeps a route of other people's work out of search indexes. */
+  noindex?: boolean;
+  sourcePath?: string;
+}
+
+const { description, credits, noindex = false, sourcePath } = Astro.props;
+const cat = category(Astro.props.category);
+const note = await routeNote(cat.id);
+---
+
+<Layout
+  title={`${cat.name} | ${SITE.title}`}
+  description={description}
+  credits={credits ?? cat.credits}
+  noindex={noindex}
+  sourcePath={sourcePath}
+>
+  <RouteFrame
+    id={cat.id}
+    note={note}
+    regions={{
+      views: Astro.slots.has("views"),
+      tools: Astro.slots.has("tools"),
+      sidebar: Astro.slots.has("sidebar"),
+      highlights: Astro.slots.has("highlights"),
+    }}
+  >
+    <slot name="views" slot="views" />
+    <slot name="tools" slot="tools" />
+    <slot name="sidebar" slot="sidebar" />
+    <slot name="highlights" slot="highlights" />
+    <slot />
+  </RouteFrame>
+</Layout>

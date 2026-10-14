@@ -41,6 +41,46 @@ function contributionsByRepository<T extends z.ZodType>(node: T) {
   );
 }
 
+const reactions = z.object({ totalCount: z.number() });
+const repositoryRef = z.object({
+  name: z.string(),
+  owner: z.object({ login: z.string() }),
+});
+
+// The PullRequestFields fragment: an authored pull request as the site stores
+// it. Read by id, since a diff and a reaction count on every pull request of a
+// contributions window exceed GitHub's resource limits for one query.
+export const pullRequestFields = z.object({
+  id: z.string(),
+  number: z.number(),
+  title: z.string(),
+  state: z.enum(["OPEN", "CLOSED", "MERGED"]),
+  isDraft: z.boolean(),
+  createdAt: z.string(),
+  mergedAt: z.string().nullable(),
+  additions: z.number(),
+  deletions: z.number(),
+  reactions,
+  repository: repositoryRef,
+});
+
+export type PullRequestFields = z.infer<typeof pullRequestFields>;
+
+// The IssueFields fragment.
+export const issueFields = z.object({
+  id: z.string(),
+  number: z.number(),
+  title: z.string(),
+  state: z.enum(["OPEN", "CLOSED"]),
+  stateReason: z.string().nullable(),
+  createdAt: z.string(),
+  closedAt: z.string().nullable(),
+  reactions,
+  repository: repositoryRef,
+});
+
+export type IssueFields = z.infer<typeof issueFields>;
+
 const contributionsCollection = z.object({
   commitContributionsByRepository: z.array(
     z.object({
@@ -51,12 +91,23 @@ const contributionsCollection = z.object({
       }),
     }),
   ),
-  pullRequestContributionsByRepository: contributionsByRepository(
+  // The total counts every pull request in the window, where the nodes stop
+  // at the first page.
+  pullRequestContributionsByRepository: z.array(
     z.object({
-      occurredAt: z.string(),
-      pullRequest: z.object({
-        merged: z.boolean(),
-        mergedAt: z.string().nullable(),
+      repository,
+      contributions: z.object({
+        totalCount: z.number(),
+        nodes: nodes(
+          z.object({
+            occurredAt: z.string(),
+            pullRequest: z.object({
+              id: z.string(),
+              merged: z.boolean(),
+              mergedAt: z.string().nullable(),
+            }),
+          }),
+        ),
       }),
     }),
   ),
@@ -70,8 +121,11 @@ const contributionsCollection = z.object({
       }),
     }),
   ),
-  // Only the count is read, to warn that the page hit its limit.
-  issueContributionsByRepository: z.array(z.unknown()),
+  // The authored issues the site lists, by id. Issue counts come from the
+  // search instead, which also covers issues opened by someone else.
+  issueContributionsByRepository: contributionsByRepository(
+    z.object({ occurredAt: z.string(), issue: z.object({ id: z.string() }) }),
+  ),
   repositoryContributions: z.object({
     nodes: nodes(z.object({ repository, occurredAt: z.string() })),
   }),
@@ -147,3 +201,16 @@ function searchPage<
 
 export const issueSearchPage = searchPage(issueNode);
 export const mergedPullRequestSearchPage = searchPage(mergedPullRequestNode);
+
+// A node looked up by id comes back null once it is deleted or out of the
+// token's reach, and that is not an error: the stored row just stays as it was.
+export const workNodesResponse = z.object({
+  nodes: z.array(
+    z
+      .discriminatedUnion("__typename", [
+        pullRequestFields.extend({ __typename: z.literal("PullRequest") }),
+        issueFields.extend({ __typename: z.literal("Issue") }),
+      ])
+      .nullable(),
+  ),
+});

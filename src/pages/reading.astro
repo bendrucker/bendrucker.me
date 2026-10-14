@@ -1,0 +1,15 @@
+---
+import MediaRoute from "@/components/media/MediaRoute.astro";
+import { isEnabled } from "@/config";
+
+if (!isEnabled("reading")) return Astro.rewrite("/404");
+
+// Fixtures change only on deploy.
+Astro.cache.set({ maxAge: 3600, swr: 86400 });
+---
+
+<MediaRoute
+  id="reading"
+  description="Books and articles I've been reading."
+  sourcePath="src/pages/reading.astro"
+/>

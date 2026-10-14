@@ -1,0 +1,34 @@
+---
+// A repository's or a project's page: its header, its stats, then whatever
+// the page lists beneath them. It sits on the plain page ground rather than
+// the list's tint, as every item page does. The same detail opens in a modal
+// over the Code list, which renders `CodeDetail` too.
+import Layout from "@/layouts/Layout.astro";
+import CodeDetail from "@/components/code/CodeDetail.vue";
+import type { CodeDetail as Detail } from "@/code/detailWire";
+import { transitionName } from "@/code/view";
+import { SITE } from "@/config";
+
+export interface Props {
+  detail: Detail;
+  backHref: string;
+  sourcePath: string;
+}
+
+const { detail, backHref, sourcePath } = Astro.props;
+---
+
+<Layout
+  title={`${detail.title} | Code | ${SITE.title}`}
+  description={detail.description}
+  sourcePath={sourcePath}
+>
+  <main id="main-content" class="flex-1 bg-background pb-16 cat-code">
+    <article
+      class="mx-auto max-w-[632px] bg-background px-4 pt-4 md:pt-10"
+      style={{ viewTransitionName: transitionName(detail.key) }}
+    >
+      <CodeDetail detail={detail} backHref={backHref} />
+    </article>
+  </main>
+</Layout>

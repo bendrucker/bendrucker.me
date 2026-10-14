@@ -37,10 +37,18 @@ describe("isActivityPath", () => {
   it("matches the routes whose freshness tracks the sync", () => {
     expect(isActivityPath("/activity/code")).toBe(true);
     expect(isActivityPath("/activity/code/2024")).toBe(true);
+    expect(isActivityPath("/")).toBe(true);
+    expect(isActivityPath("/rides")).toBe(true);
+    expect(isActivityPath("/rides/01KX8GTM6RBTZH5J8CEQXEDEBV")).toBe(true);
+    expect(isActivityPath("/code")).toBe(true);
+    expect(isActivityPath("/code/terraform-linters")).toBe(true);
+    expect(isActivityPath("/code/bendrucker/bendrucker.me")).toBe(true);
   });
 
   it("leaves everything else to routeRules", () => {
-    expect(isActivityPath("/")).toBe(false);
+    expect(isActivityPath("/codex")).toBe(false);
+    expect(isActivityPath("/about")).toBe(false);
+    expect(isActivityPath("/ridesharing")).toBe(false);
     expect(isActivityPath("/posts/some-post")).toBe(false);
     expect(isActivityPath("/llms.txt")).toBe(false);
   });
@@ -51,6 +59,24 @@ describe("activityCachePolicy", () => {
     expect(activityCachePolicy(new Date("2026-07-06T12:30:00Z"))).toEqual({
       maxAge: 2100,
       swr: 3600,
+    });
+  });
+
+  it("ends home's cache at UTC midnight, stale window included", () => {
+    // 23:30 UTC: the next sync mark is 00:05, past midnight.
+    const late = new Date("2026-07-06T23:30:00Z");
+    expect(activityCachePolicy(late, "/")).toEqual({ maxAge: 1800, swr: 0 });
+    expect(activityCachePolicy(late, "/rides")).toEqual({
+      maxAge: 2100,
+      swr: 3600,
+    });
+  });
+
+  it("leaves home's stale window only the time before midnight", () => {
+    // 22:30 UTC: max-age runs to 23:05, and midnight is 55 minutes after.
+    expect(activityCachePolicy(new Date("2026-07-06T22:30:00Z"), "/")).toEqual({
+      maxAge: 2100,
+      swr: 3300,
     });
   });
 });
@@ -77,6 +103,12 @@ describe("activityETag", () => {
     expect(activityETag({ ...versions, feed: "4.0" }, "html")).not.toBe(html);
     expect(activityETag({ ...versions, deploy: "e5f6" }, "html")).not.toBe(
       html,
+    );
+  });
+
+  it("moves with the day on a page ordered by it", () => {
+    expect(activityETag({ ...versions, day: "2026-09-27" }, "html")).toBe(
+      'W/"7-3.2026-09-01T10:00:00.000Z-a1b2c3d4-2026-09-27-html"',
     );
   });
 });
@@ -117,6 +149,17 @@ describe("activityLastModified", () => {
         deploy,
       }),
     ).toEqual(new Date("2026-09-05T06:31:43.000Z"));
+  });
+
+  it("moves to the start of the day on a page ordered by it", () => {
+    expect(
+      activityLastModified({
+        github: null,
+        feed: null,
+        deploy,
+        day: new Date("2026-09-27T00:00:00Z"),
+      }),
+    ).toEqual(new Date("2026-09-27T00:00:00Z"));
   });
 
   it("stands on the deploy alone before any data lands", () => {

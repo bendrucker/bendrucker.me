@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "dev:json": "ASTRO_LOG_JSON=1 astro dev",
-    "build": "npm run build:packages && npm run types:generate && astro check && CLOUDFLARE_VITE_FORCE_LOCAL=true astro build",
+    "build": "npm run build:packages && npm run types:generate && astro check && CLOUDFLARE_VITE_FORCE_LOCAL=true astro build && node --import tsx scripts/check-client-islands.ts",
     "build:packages": "npm run build --workspace=packages/logger -- --force && npm run build --workspace=packages/github -- --force",
     "preview": "node --import tsx scripts/preview.ts",
     "sync": "astro sync",
@@ -27,6 +27,7 @@
     "dev:worker": "node --import tsx scripts/dev-worker.ts",
     "seed": "node --import tsx scripts/seed.ts",
     "backfill:climbs": "node --import tsx scripts/backfill-climbs.ts",
+    "backfill:github": "node --import tsx scripts/backfill-github-activity.ts",
     "fetch-activity": "node --import tsx scripts/fetch-github-activity.ts",
     "generate:favicons": "node --import tsx scripts/generate-favicons.ts",
     "postinstall": "patch-package"
@@ -49,6 +50,7 @@
     "culori": "^4.0.2",
     "date-fns": "^4.4.0",
     "embla-carousel-vue": "^8.6.0",
+    "github-slugger": "^2.0.0",
     "kysely": "^0.29.5",
     "lodash.kebabcase": "^4.1.1",
     "pbf": "^5.1.2",
@@ -56,6 +58,7 @@
     "remark-collapse": "^0.1.2",
     "remark-toc": "^9.0.0",
     "shiki": "^4.4.3",
+    "simplify-js": "^1.2.4",
     "tailwindcss": "^4.3.3",
     "vue": "^3.5.42",
     "zod": "^4.4.3"

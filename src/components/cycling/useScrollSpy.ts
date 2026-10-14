@@ -55,6 +55,22 @@ export function useScrollSpy(
       }))
       .toSorted((a, b) => a.top - b.top);
 
+    // A trailing section too short to reach the band would otherwise leave the
+    // one above it active, even straight after the rail jumped to it.
+    const page = document.scrollingElement;
+    if (
+      page !== null &&
+      page.scrollTop + window.innerHeight >= page.scrollHeight - 1
+    ) {
+      const onScreen = measured.findLast(
+        (section) => section.top < window.innerHeight,
+      );
+      if (onScreen) {
+        activeKey.value = onScreen.key;
+        return;
+      }
+    }
+
     const visible = measured.findLast((section) =>
       intersecting.has(section.element),
     );
@@ -111,6 +127,8 @@ export function useScrollSpy(
   // Resizing reflows the sections without crossing the band, so the observer
   // stays quiet while the active section moves out from under it.
   useEventListener("resize", selectActive);
+  // Reaching the foot of the page need not move any section across the band.
+  useEventListener("scrollend", selectActive, { passive: true });
 
   return activeKey;
 }

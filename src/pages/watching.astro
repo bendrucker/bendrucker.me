@@ -1,0 +1,15 @@
+---
+import MediaRoute from "@/components/media/MediaRoute.astro";
+import { isEnabled } from "@/config";
+
+if (!isEnabled("watching")) return Astro.rewrite("/404");
+
+// Fixtures change only on deploy.
+Astro.cache.set({ maxAge: 3600, swr: 86400 });
+---
+
+<MediaRoute
+  id="watching"
+  description="Shows and movies I've been watching."
+  sourcePath="src/pages/watching.astro"
+/>
