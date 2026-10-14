@@ -20,6 +20,8 @@ Each annotation names its element three ways:
 3. Call `agentation_resolve` with a one-line `summary` of what changed. If the comment can't be acted on without a decision, call `agentation_reply` with the question and leave it open. Use `agentation_dismiss` with a reason when it is out of scope.
 4. Go back to the first step.
 
+The HTTP server on port 4747 lives in whichever session started it first, and the rest only connect to it. When that session exits, every `agentation` tool fails to reach the server. Tell the user to reconnect `agentation` from `/mcp`, which starts a new server in this session, then resume the loop.
+
 Start with `agentation_get_all_pending`, so comments left before the loop began get handled too.
 
 Keep each change small enough to see on the next reload. The user is clicking through the page while you work, so don't restart the dev server or rebuild unless a change requires it. `dev:worker` serves a build and needs a restart to show any edit.

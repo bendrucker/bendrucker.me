@@ -1,4 +1,5 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
 import type { Options as VueOptions } from "@vitejs/plugin-vue";
 import { ElementTypes, NodeTypes } from "@vue/compiler-core";
@@ -30,7 +31,7 @@ export function feedback(): {
         "astro:config:setup": ({ command, config, injectScript }) => {
           enabled = command === "dev" || process.env.AGENTATION === "1";
           if (!enabled) return;
-          root = path.normalize(decodeURIComponent(config.root.pathname));
+          root = fileURLToPath(config.root);
           injectScript("page", `import "/src/feedback/toolbar.ts";`);
         },
       },
