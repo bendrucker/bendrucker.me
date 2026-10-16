@@ -183,6 +183,12 @@ agent is using it.
 Worktrunk reads `.worktreeinclude` from the base checkout, so an edit to it
 takes effect once it reaches `main`.
 
+## UI Feedback
+
+The Agentation toolbar lets the user comment on an element in the browser, and the `agentation` server in `.mcp.json` delivers each comment to Claude. `.claude/skills/feedback/SKILL.md` runs the hands-free loop. The toolbar renders under `astro dev`, and under `dev:worker` when started as `AGENTATION=1 npm run dev:worker`. `src/feedback/integration.ts` gates both on the Astro command, so a production build doesn't include either.
+
+Agentation finds source files only through React's fiber tree. In its place, a Vue template transform stamps every element with `data-source="<file>.vue:<line>"`, which the toolbar captures into each comment's `attributes`. Markup from an `.astro` file carries no attribute and is identified by selector and text alone.
+
 ## Ride Media
 
 A ride's `photoKeys` carry videos alongside photos, separated only by the file

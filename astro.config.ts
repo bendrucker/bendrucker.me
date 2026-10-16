@@ -14,10 +14,13 @@ import {
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/shiki/fileName";
 import { SITE } from "./src/config";
+import { feedback } from "./src/feedback/integration";
 import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
+
+const { integration: feedbackIntegration, sourceTransform } = feedback();
 
 function copyStaticFiles(src: string, dest: string) {
   try {
@@ -76,7 +79,10 @@ export default defineConfig({
         SITE.showArchives ||
         new URL(page).pathname.replace(/\/$/, "") !== "/archives",
     }),
-    vue(),
+    vue({
+      template: { compilerOptions: { nodeTransforms: [sourceTransform] } },
+    }),
+    feedbackIntegration,
   ],
   markdown: {
     processor: unified({
