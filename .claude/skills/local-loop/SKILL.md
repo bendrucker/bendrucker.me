@@ -77,16 +77,22 @@ Set the attribute:
 export AGENT_BROWSER_SESSION="$(agent-browser session id --scope worktree --prefix loop)"
 theme() { agent-browser eval "document.documentElement.setAttribute('data-theme','$1')"; }
 
-agent-browser open http://localhost:$PORT/activity/cycling
+shot() { agent-browser wait --load networkidle && agent-browser screenshot "$1"; }
+
+agent-browser open http://localhost:$PORT/activity/cycling/
 
 agent-browser set viewport 1280 900
-theme light; agent-browser screenshot tmp/desktop-light.png
-theme dark;  agent-browser screenshot tmp/desktop-dark.png
+theme light; shot tmp/desktop-light.png
+theme dark;  shot tmp/desktop-dark.png
 
 agent-browser set viewport 390 844
-theme light; agent-browser screenshot tmp/phone-light.png
-theme dark;  agent-browser screenshot tmp/phone-dark.png
+theme light; shot tmp/phone-light.png
+theme dark;  shot tmp/phone-dark.png
 ```
+
+Wait for the network before each shot. Basemaps load lazily, and a theme
+switch requests the other theme's images, so a shot taken straight after
+either shows cards with no map and the month rail missing.
 
 Set the attribute for light too. `static/toggle-theme.js` restores whatever
 `localStorage` holds, and the browser session outlives a run, so a shot taken
@@ -99,6 +105,23 @@ all, since it is hidden below `sm`.
 Route cards carry both themes as separate images and swap them in CSS, so a
 dark screenshot that still shows a light basemap means the dark render failed
 rather than the toggle.
+
+## Cloud Sessions
+
+The same commands run in a Claude Code cloud session.
+`.claude/hooks/session-start.sh` installs dependencies and a pinned
+agent-browser, and points `AGENT_BROWSER_EXECUTABLE_PATH` at the image's
+Playwright Chromium, so nothing downloads Chrome. There is no sandbox there, so
+the `dangerouslyDisableSandbox` note below is local only.
+
+`dev:worker` needs no Cloudflare credentials: the build forces local bindings,
+and the CARTO tiles and seeded photos come through the container's proxy.
+`astro dev` gets `CLOUDFLARE_VITE_FORCE_LOCAL` from the hook instead of the
+remote MEDIA proxy it would otherwise fail to open, so a video's poster frame
+404s there and nowhere else.
+
+The user can't open the container's `localhost`. Read each screenshot to check
+it yourself, and attach the ones worth showing to your reply.
 
 ## Gotchas
 
