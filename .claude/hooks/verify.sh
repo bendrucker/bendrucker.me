@@ -58,9 +58,7 @@ if [[ -n "$errors" ]]; then
   exit 2
 fi
 
-# GNU stat reads `-f` as "file system", and on Linux `stat -f %m` prints the
-# filesystem's details rather than failing cleanly, so the flavour is probed
-# instead of falling back.
+# GNU stat reads `-f` as "file system".
 if stat -c %Y / >/dev/null 2>&1; then
   mtime=(-c %Y)
 else
