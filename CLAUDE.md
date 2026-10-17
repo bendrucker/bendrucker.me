@@ -224,6 +224,15 @@ The build runs only once the four cheap checks pass. Together they cost about
 seven seconds against the build's twenty-five, and a turn with a lint error or a
 red test has something to fix without waiting for one.
 
+## Cloud Sessions
+
+`.claude/hooks/session-start.sh` runs only when `CLAUDE_CODE_REMOTE` is set. It
+installs dependencies with `npm ci`, since the image's npm 10 would rewrite this
+npm 11 lockfile, and installs a pinned agent-browser that drives the image's
+Playwright Chromium. The local-loop skill's commands then run unchanged.
+`dev:worker` needs no Cloudflare credentials. `astro dev` runs with
+`CLOUDFLARE_VITE_FORCE_LOCAL`, which the hook sets when no token is present.
+
 ## Route Maps
 
 `RouteMap.vue` draws a route line over a basemap PNG that the worker renders

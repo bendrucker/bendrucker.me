@@ -58,6 +58,15 @@ if [[ -n "$errors" ]]; then
   exit 2
 fi
 
+# GNU stat reads `-f` as "file system", and on Linux `stat -f %m` prints the
+# filesystem's details rather than failing cleanly, so the flavour is probed
+# instead of falling back.
+if stat -c %Y / >/dev/null 2>&1; then
+  mtime=(-c %Y)
+else
+  mtime=(-f %m)
+fi
+
 # Skip build if source files haven't changed since last successful build
 build_marker="/tmp/claude-stop-hook-build-$(echo "$cwd" | md5sum | cut -d' ' -f1)"
 # Untracked files count here for the same reason they count above: a new file
@@ -66,11 +75,11 @@ newest_source=$(
   {
     git ls-files -- "${glob_patterns[@]}"
     git ls-files --others --exclude-standard -- "${glob_patterns[@]}"
-  } | xargs stat -f '%m' 2>/dev/null | sort -rn | head -1
+  } | xargs stat "${mtime[@]}" 2>/dev/null | sort -rn | head -1
 )
 
 if [[ -f "$build_marker" ]] && [[ -n "$newest_source" ]]; then
-  marker_time=$(stat -f '%m' "$build_marker")
+  marker_time=$(stat "${mtime[@]}" "$build_marker")
   # No source files changed since the last successful build
   if [[ "$newest_source" -le "$marker_time" ]]; then
     exit 0
