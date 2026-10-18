@@ -19,7 +19,7 @@ describe("about", () => {
   it("lists itself once", async () => {
     const entries = await about.list();
     expect(entries).toHaveLength(1);
-    expect(entries[0].path).toBe("/about");
-    expect(entries[0].title).toBe("About");
+    expect(entries[0]!.path).toBe("/about");
+    expect(entries[0]!.title).toBe("About");
   });
 });

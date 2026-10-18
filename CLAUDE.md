@@ -24,7 +24,7 @@ npm run build              # packages → wrangler types → astro check → ast
 npm test                   # vitest, whole suite
 npm run lint               # oxlint + ESLint
 npm run lint:types         # oxlint's type-aware rules, via tsgolint
-npm run format             # Prettier
+npm run format             # oxfmt
 npm run story:dev          # Histoire component stories on :6006
 npm run story:build        # Static story book into .histoire/dist
 npm run preview -- deploy  # Build and deploy this branch as a Worker Preview
@@ -41,13 +41,18 @@ over a real database when reproducing a data bug.
 checker attached, several seconds rather than a fraction of one, so CI runs it
 in place of `lint` rather than after it.
 
-Eight rules need the type checker. `typescript/no-unsafe-type-assertion` is the
+Nine rules need the type checker. `typescript/no-unsafe-type-assertion` is the
 one that shapes how code gets written: data arriving from KV, a GraphQL
 response, or a file is parsed with a zod schema and typed from it via `z.infer`,
 rather than asserted with `as`. `no-floating-promises`, `no-misused-promises`,
 `promise-function-async`, `return-await`, `prefer-promise-reject-errors`,
-`no-implied-eval`, and `restrict-template-expressions` catch what their names
-say.
+`no-implied-eval`, `restrict-template-expressions`, and
+`no-unnecessary-type-assertion` catch what their names say.
+
+`noUncheckedIndexedAccess` is on, so `items[i]` is `T | undefined`. Source
+narrows it with a check, `.at()`, or a destructuring default; tests assert it
+with `!`, which `no-unnecessary-type-assertion` flags once it is no longer
+needed.
 
 tsgolint reads only `.ts`, so a cast or a dropped promise in a `.vue` or
 `.astro` file reaches no linter and is the reviewer's to catch.
@@ -215,9 +220,9 @@ credentials. `astro dev` still proxies it, along with R2 and D1, and needs a
 
 ## Stop Hook
 
-`.claude/hooks/verify.sh` runs on turns touching a file Prettier, a linter, or
+`.claude/hooks/verify.sh` runs on turns touching a file oxfmt, a linter, or
 the build reads: `.js`, `.mjs`, `.cjs`, `.ts`, `.astro`, `.vue`, `.css`, `.md`,
-`.json`. It formats with Prettier, runs oxlint and ESLint, runs the suite, and
+`.json`. It formats with oxfmt, runs oxlint and ESLint, runs the suite, and
 builds (cached against a marker). Exit 2 blocks Claude until fixed.
 
 The build runs only once the four cheap checks pass. Together they cost about

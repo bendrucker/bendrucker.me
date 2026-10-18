@@ -237,8 +237,8 @@ export async function queryRepos(db: Kysely<Database>, input: ReposInput) {
   const pageResults = hasMore ? results.slice(0, PAGE_SIZE) : results;
 
   let nextCursor: string | null = null;
-  if (hasMore) {
-    const last = pageResults[pageResults.length - 1];
+  const last = hasMore ? pageResults.at(-1) : undefined;
+  if (last) {
     if (sort === "recent") {
       nextCursor = `${last.lastActivity}|${last.id}`;
     } else {

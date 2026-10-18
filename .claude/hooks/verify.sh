@@ -15,9 +15,9 @@ changed=$(
   git ls-files --others --exclude-standard 2>/dev/null
 )
 
-# Everything Prettier, oxlint, ESLint, or the build reads. .vue needs ESLint
+# Everything oxfmt, oxlint, ESLint, or the build reads. .vue needs ESLint
 # for its <template> (oxlint's vue plugin only reads <script>); .css, .md, and
-# .json are Prettier's alone.
+# .json are oxfmt's alone.
 extensions=(js mjs cjs ts astro vue css md json)
 glob_patterns=("${extensions[@]/#/*.}")
 extension_pattern=$(IFS='|'; echo "${extensions[*]}")
@@ -36,14 +36,16 @@ run_check() {
   fi
 }
 
-# Format only changed files that still exist on disk. `--list-different`
-# names the files Prettier rewrote, where the working tree names every file
-# the turn touched.
+# Format only changed files that still exist on disk. oxfmt can't list and
+# write in one pass, so `--list-different` names the files it is about to
+# rewrite, where the working tree names every file the turn touched.
 changed_existing=$(echo "$changed" | while read -r f; do [ -f "$f" ] && echo "$f"; done | sort -u)
 if [[ -n "$changed_existing" ]]; then
-  formatted=$(npx prettier --write --list-different --ignore-unknown $changed_existing 2>/dev/null)
+  # With every file ignored or unsupported, the only output is its summary line.
+  formatted=$(npx oxfmt --list-different --no-error-on-unmatched-pattern $changed_existing 2>/dev/null | grep -v '^Finished in ')
   if [[ -n "$formatted" ]]; then
-    errors+="Prettier formatted files:\n${formatted}\n\nStage and commit the formatting changes.\n\n"
+    npx oxfmt $formatted >/dev/null 2>&1
+    errors+="oxfmt formatted files:\n${formatted}\n\nStage and commit the formatting changes.\n\n"
   fi
 fi
 

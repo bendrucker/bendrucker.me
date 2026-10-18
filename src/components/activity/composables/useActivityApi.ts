@@ -88,8 +88,9 @@ export function useActivityApi(
       state.cursor = data.nextCursor;
       state.hasMore = data.hasMore;
       state.total = data.total;
-      if (state.filters.sort === "recent" && data.repos.length > 0) {
-        state.currentYear = activityYear(data.repos[0].lastActivity);
+      const [first] = data.repos;
+      if (state.filters.sort === "recent" && first) {
+        state.currentYear = activityYear(first.lastActivity);
       } else if (state.filters.sort !== "recent") {
         state.currentYear = activityYear(new Date());
       }
