@@ -189,7 +189,7 @@ describe("queryRepos", () => {
   it("filters by search term", async () => {
     const result = await queryRepos(db, { search: "cool" });
     expect(result.total).toBe(1);
-    expect(result.repos[0].name).toBe("cool-lib");
+    expect(result.repos[0]!.name).toBe("cool-lib");
   });
 
   it("filters by year", async () => {
@@ -207,7 +207,7 @@ describe("queryRepos", () => {
     const result = await queryRepos(db, { sort: "stars" });
     const stars = result.repos.map((r) => r.stargazerCount);
     expect(stars).toEqual(stars.toSorted((a, b) => b - a));
-    expect(result.repos[0].name).toBe("big-project");
+    expect(result.repos[0]!.name).toBe("big-project");
   });
 
   it("sorts by name ascending", async () => {
@@ -230,7 +230,7 @@ describe("queryRepos", () => {
 
   it("maps repo row fields correctly", async () => {
     const result = await queryRepos(db, { search: "cool" });
-    const repo = result.repos[0];
+    const repo = result.repos[0]!;
     expect(repo.owner).toBe("bendrucker");
     expect(repo.name).toBe("cool-lib");
     expect(repo.description).toBe("A cool library");
@@ -248,7 +248,7 @@ describe("queryRepos", () => {
 
   it("returns null primaryLanguage when repo has no language", async () => {
     const result = await queryRepos(db, { search: "big" });
-    expect(result.repos[0].primaryLanguage).toBeNull();
+    expect(result.repos[0]!.primaryLanguage).toBeNull();
   });
 });
 
@@ -437,8 +437,8 @@ describe("queryLanguages with limit", () => {
 
     const limited = await queryLanguages(db, { limit: 2 });
     expect(limited.languages).toHaveLength(2);
-    expect(limited.languages[0].name).toBe("TypeScript");
-    expect(limited.languages[0].count).toBe(2);
+    expect(limited.languages[0]!.name).toBe("TypeScript");
+    expect(limited.languages[0]!.count).toBe(2);
     const counts = limited.languages.map((l) => l.count);
     expect(counts).toEqual(counts.toSorted((a, b) => b - a));
   });

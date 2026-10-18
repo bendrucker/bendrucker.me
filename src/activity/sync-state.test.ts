@@ -29,10 +29,10 @@ describe("sync state", () => {
       .select("changedAt")
       .executeTakeFirstOrThrow();
 
-    const [{ version }] = await recordSync(db, {
+    const { version } = await recordSync(db, {
       payloadHash: "reordered",
       changed: false,
-    }).execute();
+    }).executeTakeFirstOrThrow();
 
     expect(version).toBe(1);
     expect(await readSyncState(db)).toMatchObject({

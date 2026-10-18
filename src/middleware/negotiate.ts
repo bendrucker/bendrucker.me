@@ -12,7 +12,7 @@ type AcceptEntry = {
 };
 
 function parseEntry(part: string): AcceptEntry | null {
-  const [mediaRange, ...paramParts] = part.split(";").map((s) => s.trim());
+  const [mediaRange = "", ...paramParts] = part.split(";").map((s) => s.trim());
   const [type, subtype] = mediaRange.toLowerCase().split("/");
   if (!type || !subtype) return null;
 
@@ -53,10 +53,10 @@ export function negotiate(
   produces: readonly string[],
 ): string | null {
   if (produces.length === 0) return null;
-  if (!acceptHeader || acceptHeader.trim() === "") return produces[0];
+  if (!acceptHeader || acceptHeader.trim() === "") return produces[0] ?? null;
 
   const entries = parseAccept(acceptHeader);
-  if (entries.length === 0) return produces[0];
+  if (entries.length === 0) return produces[0] ?? null;
 
   type Best = { candidate: string; q: number; index: number };
   let best: Best | null = null;

@@ -64,12 +64,14 @@ function project(lat: number, lon: number, zoom: number): [number, number] {
  */
 function unwrapLongitudes(coordinates: Coordinate[]): Coordinate[] {
   let offset = 0;
-  return coordinates.map((coordinate, index) => {
-    if (index > 0) {
-      const delta = coordinate[1] - coordinates[index - 1][1];
+  let previous: Coordinate | undefined;
+  return coordinates.map((coordinate) => {
+    if (previous) {
+      const delta = coordinate[1] - previous[1];
       if (delta > 180) offset -= 360;
       else if (delta < -180) offset += 360;
     }
+    previous = coordinate;
     return [coordinate[0], coordinate[1] + offset] as Coordinate;
   });
 }

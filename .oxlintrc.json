@@ -127,11 +127,7 @@
         "allowNever": true
       }
     ],
-    // Off until `noUncheckedIndexedAccess` is on. Every assertion it flags is a
-    // `!` on an index access, unnecessary only because the compiler types
-    // `items[i]` as `T` rather than `T | undefined`. Stripping them now means
-    // writing them back when that flag lands.
-    "typescript/no-unnecessary-type-assertion": "off"
+    "typescript/no-unnecessary-type-assertion": "error"
   },
   "overrides": [
     {

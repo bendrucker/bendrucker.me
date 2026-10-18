@@ -234,7 +234,7 @@ describe("aggregateActivityByRepository", () => {
       const result = aggregateActivityByRepository(contributions);
 
       expect(names(result)).toEqual(["commits-only"]);
-      expect(result[0].activitySummary).toEqual({
+      expect(result[0]!.activitySummary).toEqual({
         prCount: 0,
         reviewCount: 0,
         issueCount: 0,
@@ -305,7 +305,7 @@ describe("aggregateActivityByRepository", () => {
       );
 
       expect(names(result)).toEqual(["reviews-only"]);
-      expect(result[0].activitySummary.reviewCount).toBe(1);
+      expect(result[0]!.activitySummary.reviewCount).toBe(1);
     });
 
     it("keeps a repository with only attributed merges", () => {
@@ -321,8 +321,8 @@ describe("aggregateActivityByRepository", () => {
       );
 
       expect(names(result)).toEqual(["merges-only"]);
-      expect(result[0].activitySummary.mergeCount).toBe(1);
-      expect(result[0].activitySummary.hasMergedPRs).toBe(true);
+      expect(result[0]!.activitySummary.mergeCount).toBe(1);
+      expect(result[0]!.activitySummary.hasMergedPRs).toBe(true);
     });
 
     it("keeps a repository with a merged PR contribution", () => {
@@ -341,8 +341,8 @@ describe("aggregateActivityByRepository", () => {
       const result = aggregateActivityByRepository(contributions);
 
       expect(names(result)).toEqual(["merged-pr"]);
-      expect(result[0].activitySummary.prCount).toBe(1);
-      expect(result[0].activitySummary.hasMergedPRs).toBe(true);
+      expect(result[0]!.activitySummary.prCount).toBe(1);
+      expect(result[0]!.activitySummary.hasMergedPRs).toBe(true);
     });
   });
 
@@ -376,7 +376,7 @@ describe("aggregateActivityByRepository", () => {
       );
 
       expect(names(result)).toEqual(["mixed-reviews"]);
-      expect(result[0].activitySummary.reviewCount).toBe(1);
+      expect(result[0]!.activitySummary.reviewCount).toBe(1);
     });
 
     it("drops a repository whose only reviews are all filtered out", () => {
@@ -409,7 +409,7 @@ describe("aggregateActivityByRepository", () => {
       });
 
       expect(names(result)).toEqual(["attributed"]);
-      expect(result[0].activitySummary.mergeCount).toBe(1);
+      expect(result[0]!.activitySummary.mergeCount).toBe(1);
     });
 
     it("drops a node that is not merged", () => {
@@ -465,7 +465,7 @@ describe("aggregateActivityByRepository", () => {
 
       const result = aggregateActivityByRepository(contributions);
 
-      expect(result[0].activitySummary.hasMergedPRs).toBe(true);
+      expect(result[0]!.activitySummary.hasMergedPRs).toBe(true);
     });
 
     it("sets hasMergedPRs from the merged-PR search", () => {
@@ -476,7 +476,7 @@ describe("aggregateActivityByRepository", () => {
         USERNAME,
       );
 
-      expect(result[0].activitySummary.hasMergedPRs).toBe(true);
+      expect(result[0]!.activitySummary.hasMergedPRs).toBe(true);
     });
   });
 
@@ -494,7 +494,7 @@ describe("aggregateActivityByRepository", () => {
 
       const result = aggregateActivityByRepository(contributions);
 
-      expect(result[0].lastActivity).toEqual(new Date("2024-03-15T00:00:00Z"));
+      expect(result[0]!.lastActivity).toEqual(new Date("2024-03-15T00:00:00Z"));
     });
 
     it("sorts repositories by lastActivity descending", () => {

@@ -66,13 +66,13 @@ describe("upsert builders", () => {
 
     const repos = await db.selectFrom("repos").selectAll().execute();
     expect(repos).toHaveLength(1);
-    expect(repos[0].description).toBe("An even cooler library");
-    expect(repos[0].stargazerCount).toBe(200);
+    expect(repos[0]!.description).toBe("An even cooler library");
+    expect(repos[0]!.stargazerCount).toBe(200);
 
     const activity = await db.selectFrom("repoActivity").selectAll().execute();
     expect(activity).toHaveLength(1);
-    expect(activity[0].prCount).toBe(12);
-    expect(activity[0].lastActivity).toBe(
+    expect(activity[0]!.prCount).toBe(12);
+    expect(activity[0]!.lastActivity).toBe(
       Math.floor(updated.lastActivity.getTime() / 1000),
     );
   });
@@ -101,8 +101,11 @@ describe("upsert builders", () => {
       .set({ updatedAt: "1999-12-31 23:59:59" })
       .execute();
 
-    const [repoResult] = await upsertRepo(db, repo).execute();
-    const [activityResult] = await upsertActivity(db, repo).execute();
+    const repoResult = await upsertRepo(db, repo).executeTakeFirstOrThrow();
+    const activityResult = await upsertActivity(
+      db,
+      repo,
+    ).executeTakeFirstOrThrow();
 
     expect(repoResult.numInsertedOrUpdatedRows).toBe(0n);
     expect(activityResult.numInsertedOrUpdatedRows).toBe(0n);
@@ -117,16 +120,16 @@ describe("upsert builders", () => {
   it("writes when a primary language appears or disappears", async () => {
     await upsertRepo(db, makeRepo({ primaryLanguage: null })).execute();
 
-    const [added] = await upsertRepo(
+    const added = await upsertRepo(
       db,
       makeRepo({ primaryLanguage: { name: "Go", color: "#00ADD8" } }),
-    ).execute();
+    ).executeTakeFirstOrThrow();
     expect(added.numInsertedOrUpdatedRows).toBe(1n);
 
-    const [removed] = await upsertRepo(
+    const removed = await upsertRepo(
       db,
       makeRepo({ primaryLanguage: null }),
-    ).execute();
+    ).executeTakeFirstOrThrow();
     expect(removed.numInsertedOrUpdatedRows).toBe(1n);
 
     const stored = await db
@@ -139,18 +142,18 @@ describe("upsert builders", () => {
   it("writes a language extension only when it changes", async () => {
     await upsertLanguageExtension(db, "TypeScript", ".ts").execute();
 
-    const [same] = await upsertLanguageExtension(
+    const same = await upsertLanguageExtension(
       db,
       "TypeScript",
       ".ts",
-    ).execute();
+    ).executeTakeFirstOrThrow();
     expect(same.numInsertedOrUpdatedRows).toBe(0n);
 
-    const [changed] = await upsertLanguageExtension(
+    const changed = await upsertLanguageExtension(
       db,
       "TypeScript",
       ".tsx",
-    ).execute();
+    ).executeTakeFirstOrThrow();
     expect(changed.numInsertedOrUpdatedRows).toBe(1n);
   });
 });

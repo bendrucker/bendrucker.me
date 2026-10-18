@@ -55,7 +55,7 @@ export interface GitHubActivityResult {
 }
 
 // Simple gql tag for syntax highlighting
-const gql = (strings: TemplateStringsArray) => strings.raw[0];
+const gql = (strings: TemplateStringsArray) => strings.raw.join("");
 
 const GET_USER_CONTRIBUTIONS_QUERY = gql`
   fragment RepositoryInfo on Repository {

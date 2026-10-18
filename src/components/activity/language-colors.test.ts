@@ -15,14 +15,19 @@ function mustParseRgb(color: string): Rgb {
 function contrastAgainst(css: string, background: string): number {
   const match = css.match(/^rgba\((\d+),(\d+),(\d+),([\d.]+)\)$/);
   if (!match) throw new Error(`unexpected label color format: ${css}`);
-  const [, r, g, b, alpha] = match;
+  const [r, g, b, alpha] = match.slice(1).map(Number) as [
+    number,
+    number,
+    number,
+    number,
+  ];
   const bg = mustParseRgb(background);
-  const fg: Rgb = { mode: "rgb", r: +r / 255, g: +g / 255, b: +b / 255 };
+  const fg: Rgb = { mode: "rgb", r: r / 255, g: g / 255, b: b / 255 };
   const composited: Rgb = {
     mode: "rgb",
-    r: +alpha * fg.r + (1 - +alpha) * bg.r,
-    g: +alpha * fg.g + (1 - +alpha) * bg.g,
-    b: +alpha * fg.b + (1 - +alpha) * bg.b,
+    r: alpha * fg.r + (1 - alpha) * bg.r,
+    g: alpha * fg.g + (1 - alpha) * bg.g,
+    b: alpha * fg.b + (1 - alpha) * bg.b,
   };
   return wcagContrast(composited, bg);
 }
