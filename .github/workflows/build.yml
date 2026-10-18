@@ -32,7 +32,7 @@ jobs:
       - name: Run ESLint
         run: npx eslint .
 
-      - name: Check Prettier formatting
+      - name: Check formatting
         run: npm run format:check
 
   test:

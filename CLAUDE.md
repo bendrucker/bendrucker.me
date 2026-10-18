@@ -24,7 +24,7 @@ npm run build              # packages → wrangler types → astro check → ast
 npm test                   # vitest, whole suite
 npm run lint               # oxlint + ESLint
 npm run lint:types         # oxlint's type-aware rules, via tsgolint
-npm run format             # Prettier
+npm run format             # oxfmt
 npm run story:dev          # Histoire component stories on :6006
 npm run story:build        # Static story book into .histoire/dist
 npm run preview -- deploy  # Build and deploy this branch as a Worker Preview
@@ -220,9 +220,9 @@ credentials. `astro dev` still proxies it, along with R2 and D1, and needs a
 
 ## Stop Hook
 
-`.claude/hooks/verify.sh` runs on turns touching a file Prettier, a linter, or
+`.claude/hooks/verify.sh` runs on turns touching a file oxfmt, a linter, or
 the build reads: `.js`, `.mjs`, `.cjs`, `.ts`, `.astro`, `.vue`, `.css`, `.md`,
-`.json`. It formats with Prettier, runs oxlint and ESLint, runs the suite, and
+`.json`. It formats with oxfmt, runs oxlint and ESLint, runs the suite, and
 builds (cached against a marker). Exit 2 blocks Claude until fixed.
 
 The build runs only once the four cheap checks pass. Together they cost about
