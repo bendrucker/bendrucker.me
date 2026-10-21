@@ -10,7 +10,7 @@ import type { MediaCategory, MediaRow } from "@/media/types";
 import { queryRideHighlights } from "@/rides/query";
 import { loadWriting } from "@/writing/load";
 import { highlightRows } from "@/writing/rows";
-import { homeCards, type HomeCard, type HomeSources } from "./cards";
+import { HOME_ROWS, homeCards, type HomeCard, type HomeSources } from "./cards";
 import {
   codeFeature,
   rideFeature,
@@ -66,14 +66,16 @@ export interface HomePage {
 export async function loadHome(now = new Date()): Promise<HomePage> {
   const [rides, repos, reading, writing, watching, listening] =
     await Promise.all([
-      read("rides", async () => queryRideHighlights(await getDb())),
+      read("rides", async () =>
+        queryRideHighlights(await getDb(), HOME_ROWS.featured),
+      ),
       read("code", async () => queryCodeRows(await getDb(), codeWindow(now))),
       read("reading", async () => mediaHighlights("reading")),
       read("writing", async () => highlightRows((await loadWriting(now)).rows)),
       read("watching", async () => mediaHighlights("watching")),
       read("listening", async () => mediaHighlights("listening")),
     ]);
-  const code = rankHighlights(buildCodeRows(repos));
+  const code = rankHighlights(buildCodeRows(repos), HOME_ROWS.featured);
 
   const sources: HomeSources = {
     rides,

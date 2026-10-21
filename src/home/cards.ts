@@ -1,6 +1,7 @@
 // What home shows: a card per category that is on and has something to show,
 // each holding the first highlights of its route in the route's own order.
-// Every card carries five, except Watching, whose narrow posters fit six
+// Every card carries five, except Rides and Code, which lead with a feature and
+// keep eight more in a drawer that pulls well past it, and Watching, whose narrow posters fit six
 // across a desktop card. A list card rests at a peek height and keeps the rows
 // past it in a drawer, so a phone carries all five too. A shelf lays its art
 // out in one row, which a phone's width fits four of, so the page hides the
@@ -17,6 +18,8 @@ import type { PostRow } from "@/writing/rows";
 /** Highlights a card carries, and how many of a shelf's a phone shows. */
 export const HOME_ROWS = {
   card: HIGHLIGHTS.desktop,
+  /** The feature and the eight rows under it. */
+  featured: 9,
   posters: 6,
   phoneShelf: SHELF_PHONE,
 } as const;
@@ -43,9 +46,9 @@ function top<T>(items: readonly T[]): T[] {
 function cardFor(id: CategoryId, sources: HomeSources, now: Date): HomeCard {
   switch (id) {
     case "rides":
-      return { id, items: top(sources.rides) };
+      return { id, items: sources.rides.slice(0, HOME_ROWS.featured) };
     case "code":
-      return { id, items: top(sources.code) };
+      return { id, items: sources.code.slice(0, HOME_ROWS.featured) };
     case "reading":
       return { id, items: top(sources.reading) };
     case "writing":

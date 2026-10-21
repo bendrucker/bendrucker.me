@@ -3,6 +3,8 @@
 // profile, and the photos to the ride's own page.
 import { sql, type Expression, type Kysely, type SqlBool } from "kysely";
 import { lowerBound, pageCursor, upperBound, wallClock } from "@/activity/feed";
+import { HIGHLIGHTS } from "@/activity/highlights";
+import { isDefaultName } from "./names";
 import {
   monthAfter,
   monthKeyOf,
@@ -179,20 +181,57 @@ async function queryMonthKeys(db: Kysely<Database>): Promise<string[]> {
   return [...keys];
 }
 
-/** The Rides route's highlights on their own, for the home card. */
+/**
+ * The newest big rides, newest first, for the home card. A ride left with
+ * Strava's default name takes the name of its biggest named climb.
+ */
 export async function queryRideHighlights(
   db: Kysely<Database>,
+  count: number = HIGHLIGHTS.desktop,
 ): Promise<RideRow[]> {
-  const latest = await db
+  const rows = await db
     .selectFrom("activityFeed")
-    .select(["startedAt", "timezone"])
+    .select(ROW_COLUMNS)
     .where("sport", "=", "ride")
+    .where("distanceM", ">", 0)
+    .where((eb) =>
+      eb.or([
+        eb("distanceM", ">=", BIG.distanceM),
+        eb("elevationM", ">=", BIG.climbM),
+      ]),
+    )
     .orderBy("startedAt", "desc")
-    .limit(1)
-    .executeTakeFirst();
-  if (latest === undefined) return [];
-  const latestDay = wallClock(latest.startedAt, latest.timezone).slice(0, 10);
-  return queryHighlights(db, latest.startedAt, latestDay);
+    .limit(count)
+    .execute();
+  const rides = rows.map((row) => toRideRow(row));
+  const climbNames = await queryClimbNames(
+    db,
+    rides.filter((ride) => isDefaultName(ride.name)).map((ride) => ride.id),
+  );
+  return rides.map((ride) => {
+    const climb = climbNames.get(ride.id);
+    return climb === undefined ? ride : { ...ride, name: climb };
+  });
+}
+
+/** Each ride's biggest named climb. */
+async function queryClimbNames(
+  db: Kysely<Database>,
+  ids: string[],
+): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const climbs = await db
+    .selectFrom("activityClimb")
+    .select(["activityId", "name"])
+    .where("activityId", "in", ids)
+    .where("name", "is not", null)
+    .orderBy("gainM", "desc")
+    .execute();
+  const names = new Map<string, string>();
+  for (const { activityId, name } of climbs) {
+    if (name !== null && !names.has(activityId)) names.set(activityId, name);
+  }
+  return names;
 }
 
 function recordTuples(records: Records<RideRow>): Records<RideTuple> {

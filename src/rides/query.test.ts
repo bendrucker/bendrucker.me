@@ -547,20 +547,85 @@ describe("queryRideHighlights", () => {
     expect(await queryRideHighlights(db)).toEqual([]);
   });
 
-  it("picks the same rides as the route's highlights", async () => {
+  it("takes the newest big rides, newest first", async () => {
     await seed(
+      ride("old-epic", {
+        startedAt: "2026-08-10T15:00:00Z",
+        distanceM: 300_000,
+      }),
       ride("long", { startedAt: "2026-09-10T15:00:00Z", distanceM: 120_000 }),
-      ride("steep", { startedAt: "2026-08-10T15:00:00Z", elevationM: 2_400 }),
-      ride("short", { startedAt: "2026-09-12T15:00:00Z" }),
-      ride("old", { startedAt: "2026-05-01T15:00:00Z", distanceM: 200_000 }),
+      ride("steep", {
+        startedAt: "2026-09-14T15:00:00Z",
+        distanceM: 40_000,
+        elevationM: 1_300,
+      }),
+      ride("loop", { startedAt: "2026-09-16T15:00:00Z" }),
+      ride("manual", {
+        startedAt: "2026-09-17T15:00:00Z",
+        distanceM: 0,
+        elevationM: 5_000,
+      }),
     );
 
     const rows = await queryRideHighlights(db);
-    const page = await queryRidesPage(db);
 
-    expect(rows.map((row) => row.id)).toEqual(["steep", "long"]);
-    expect(rows.map((row) => row.id)).toEqual(
-      page.highlights.map(([id]) => id),
+    expect(rows.map((row) => row.id)).toEqual(["steep", "long", "old-epic"]);
+  });
+
+  it("stops at the count it is given", async () => {
+    await seed(
+      ...Array.from({ length: 4 }, (_, day) =>
+        ride(`day-${day}`, {
+          startedAt: `2026-09-${String(day + 10)}T15:00:00Z`,
+          distanceM: 100_000,
+        }),
+      ),
     );
+
+    const rows = await queryRideHighlights(db, 2);
+
+    expect(rows.map((row) => row.id)).toEqual(["day-3", "day-2"]);
+  });
+
+  it("names a default-named ride after its biggest named climb", async () => {
+    await seed(
+      ride("default", { name: "Morning Ride", distanceM: 100_000 }),
+      ride("unclimbed", {
+        name: "Evening Ride",
+        startedAt: "2026-09-19T15:00:00Z",
+        distanceM: 100_000,
+      }),
+      ride("named", {
+        name: "Diablo loop",
+        startedAt: "2026-09-18T15:00:00Z",
+        distanceM: 100_000,
+      }),
+    );
+    await db
+      .insertInto("activityClimb")
+      .values(
+        [
+          ["default", 0, 400, "Ballou Point"],
+          ["default", 1, 900, null],
+          ["default", 2, 600, "Mount Tamalpais"],
+          ["named", 0, 800, "Mount Diablo"],
+        ].map(([activityId, position, gainM, name]) => ({
+          activityId: String(activityId),
+          position: Number(position),
+          gainM: Number(gainM),
+          summitLat: 37.88,
+          summitLng: -121.91,
+          name: name === null ? null : String(name),
+        })),
+      )
+      .execute();
+
+    const rows = await queryRideHighlights(db);
+
+    expect(rows.map((row) => [row.id, row.name])).toEqual([
+      ["default", "Mount Tamalpais"],
+      ["unclimbed", "Evening Ride"],
+      ["named", "Diablo loop"],
+    ]);
   });
 });

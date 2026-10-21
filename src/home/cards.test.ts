@@ -43,7 +43,7 @@ function posts(count: number): PostRow[] {
 
 function sources(overrides: Partial<HomeSources> = {}): HomeSources {
   return {
-    rides: rides(7),
+    rides: rides(11),
     code: [] satisfies CodeRow[],
     reading: media(2),
     writing: posts(4),
@@ -56,11 +56,11 @@ function sources(overrides: Partial<HomeSources> = {}): HomeSources {
 const all = () => true;
 
 describe("homeCards", () => {
-  it("takes five from each category and six posters, in category order", () => {
+  it("takes nine for a featured card, five for the rest, and six posters", () => {
     const cards = homeCards(sources(), NOW, all);
 
     expect(cards.map((c) => [c.id, c.items.length])).toEqual([
-      ["rides", 5],
+      ["rides", 9],
       ["reading", 2],
       ["writing", 4],
       ["watching", 6],
@@ -100,6 +100,6 @@ describe("homeCards", () => {
     const [ridesCard] = homeCards(sources(), NOW, (id) => id === "rides");
 
     expect(ridesCard?.id).toBe("rides");
-    expect(ridesCard?.items).toEqual(sources().rides.slice(0, 5));
+    expect(ridesCard?.items).toEqual(sources().rides.slice(0, 9));
   });
 });

@@ -1,6 +1,7 @@
 // Which rides stand out. A big ride goes past 80 km or climbs past 1,200 m,
 // and its score is how far past that bar it goes on whichever it clears by
-// more. The same rule picks the highlights on the Rides route and on home.
+// more. The same bar picks the highlights on the Rides route, ranked by size,
+// and on home, newest first.
 import { HIGHLIGHTS } from "@/activity/highlights";
 import type { RideRow } from "./rows";
 
