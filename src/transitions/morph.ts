@@ -73,7 +73,7 @@ function prepareCard(event: TransitionBeforePreparationEvent): boolean {
   if (from === "/" && event.direction === "forward") {
     const card = event.sourceElement
       ?.closest("h2 a")
-      ?.closest("[data-drawer-card]");
+      ?.closest("[data-home-card]");
     if (!(card instanceof HTMLElement) || card.dataset.route !== to) {
       return false;
     }
@@ -107,7 +107,7 @@ function nameArrivingCard() {
   returningCard = null;
   if (route === null) return;
   const card = [
-    ...document.querySelectorAll<HTMLElement>("[data-drawer-card]"),
+    ...document.querySelectorAll<HTMLElement>("[data-home-card]"),
   ].find((element) => element.dataset.route === route);
   if (card !== undefined && onScreen(card)) {
     nameGround(card, card.querySelector("[data-card-title]"));

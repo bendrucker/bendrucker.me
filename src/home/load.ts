@@ -10,7 +10,13 @@ import type { MediaCategory, MediaRow } from "@/media/types";
 import { queryRideHighlights } from "@/rides/query";
 import { loadWriting } from "@/writing/load";
 import { highlightRows } from "@/writing/rows";
-import { HOME_ROWS, homeCards, type HomeCard, type HomeSources } from "./cards";
+import {
+  HOME_ROWS,
+  homeCards,
+  onHome,
+  type HomeCard,
+  type HomeSources,
+} from "./cards";
 import {
   codeFeature,
   rideFeature,
@@ -25,14 +31,15 @@ async function mediaHighlights(id: MediaCategory): Promise<MediaRow[]> {
 }
 
 /**
- * One category's highlights, or none when it is off. A failed query hides
- * only its own card. Locally the failure is thrown so the page says what broke.
+ * One category's highlights, or none when it is off or has no home card. A
+ * failed query hides only its own card. Locally the failure is thrown so the
+ * page says what broke.
  */
 async function read<T>(
   id: CategoryId,
   query: () => Promise<T[]>,
 ): Promise<T[]> {
-  if (!isEnabled(id)) return [];
+  if (!isEnabled(id) || !onHome(id)) return [];
   try {
     return await query();
   } catch (error) {

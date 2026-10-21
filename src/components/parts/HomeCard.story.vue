@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { defineComponent, h, onMounted, onUpdated, ref } from "vue";
 import type { StoryControlSet } from "@/stories/controls";
 import PanelControls from "@/stories/PanelControls.vue";
 import PreviewControls from "@/stories/PreviewControls.vue";
 import { CATEGORIES, type CategoryId } from "@/categories";
-import { installDrawers } from "@/home/drawer";
 import { storyCategory } from "./fixtures";
 import { epicRide } from "@/components/cycling/fixtures";
 import CodeFeature from "./CodeFeature.vue";
@@ -72,32 +70,6 @@ const ROWS: Record<string, { title: string; text?: string; org?: string }[]> = {
     { title: "Kid A", text: "Radiohead" },
   ],
 };
-
-/** A card that opens, one that stays shut, and one short enough to fit. */
-const SHOWCASE: readonly { id: CategoryId; rows: number }[] = [
-  { id: "reading", rows: 5 },
-  { id: "code", rows: 5 },
-  { id: "writing", rows: 1 },
-];
-
-/**
- * Stands in for the home page's script: measures the cards once they mount and
- * again whenever the controls change them, and can open the first one.
- */
-const Drawers = defineComponent({
-  props: { openFirst: Boolean },
-  setup(props, { slots }) {
-    const root = ref<HTMLElement>();
-    onMounted(() => {
-      installDrawers();
-      if (!props.openFirst) return;
-      const toggle = root.value?.querySelector("[data-drawer-toggle]");
-      if (toggle instanceof HTMLElement) toggle.click();
-    });
-    onUpdated(installDrawers);
-    return () => h("div", { ref: root }, slots.default?.());
-  },
-});
 </script>
 
 <template>
@@ -110,36 +82,34 @@ const Drawers = defineComponent({
     <Variant title="Home cards" :init-state="initState">
       <template #default="{ state }">
         <PreviewControls :controls="controls" :state="state" />
-        <Drawers>
-          <div
-            class="grid items-start gap-2 md:grid-cols-2 md:gap-4"
-            :style="{ width: `${state.width}px`, maxWidth: '100%' }"
+        <div
+          class="grid gap-2 md:grid-cols-2 md:gap-4"
+          :style="{ width: `${state.width}px`, maxWidth: '100%' }"
+        >
+          <HomeCard
+            v-for="cat in CATEGORIES.slice(0, state.count)"
+            :id="cat.id"
+            :key="cat.id"
           >
-            <HomeCard
-              v-for="cat in CATEGORIES.slice(0, state.count)"
-              :id="cat.id"
-              :key="cat.id"
-            >
-              <ul class="flex flex-col gap-0.5 md:gap-1">
-                <li
-                  v-for="row in ROWS[cat.id]?.slice(0, state.rows)"
-                  :key="row.title"
-                >
-                  <ItemRow
-                    href="#"
-                    :title="row.title"
-                    :text="row.text"
-                    :org="row.org"
-                    :lead="cat.id === 'code' ? 'dot' : 'none'"
-                    dot="#3178c6"
-                    :via="storyCategory(cat.id).art ? 'Trakt' : undefined"
-                    compact
-                  />
-                </li>
-              </ul>
-            </HomeCard>
-          </div>
-        </Drawers>
+            <ul class="flex flex-col gap-0.5 md:gap-1">
+              <li
+                v-for="row in ROWS[cat.id]?.slice(0, state.rows)"
+                :key="row.title"
+              >
+                <ItemRow
+                  href="#"
+                  :title="row.title"
+                  :text="row.text"
+                  :org="row.org"
+                  :lead="cat.id === 'code' ? 'dot' : 'none'"
+                  dot="#3178c6"
+                  :via="storyCategory(cat.id).art ? 'Trakt' : undefined"
+                  compact
+                />
+              </li>
+            </ul>
+          </HomeCard>
+        </div>
       </template>
 
       <template #controls="{ state }">
@@ -147,77 +117,48 @@ const Drawers = defineComponent({
       </template>
     </Variant>
 
-    <Variant title="Open, shut, and fitting">
-      <Drawers open-first>
-        <div class="grid items-start gap-2 md:grid-cols-2 md:gap-4">
-          <HomeCard v-for="{ id, rows } in SHOWCASE" :id="id" :key="id">
-            <ul class="flex flex-col gap-0.5 md:gap-1">
-              <li v-for="row in ROWS[id]?.slice(0, rows)" :key="row.title">
-                <ItemRow
-                  href="#"
-                  :title="row.title"
-                  :text="row.text"
-                  :org="row.org"
-                  :lead="id === 'code' ? 'dot' : 'none'"
-                  dot="#3178c6"
-                  compact
-                />
-              </li>
-            </ul>
-          </HomeCard>
-        </div>
-      </Drawers>
-    </Variant>
-
     <Variant title="Featured pair">
-      <Drawers>
-        <div class="grid items-start gap-2 md:grid-cols-2 md:gap-4">
-          <HomeCard id="rides" tall="always">
-            <RideFeature
-              href="#"
-              :id="epicRide.id"
-              :name="epicRide.name"
-              :figures="['139 mi', '18,100 ft']"
-              hilly
-              :route="epicRide.route"
-              :photo="featuredPhoto"
-            />
-            <ul class="flex flex-col gap-0.5 md:gap-1">
-              <li v-for="row in ROWS.rides?.slice(1)" :key="row.title">
-                <ItemRow
-                  href="#"
-                  :title="row.title"
-                  :figure="row.text"
-                  compact
-                />
-              </li>
-            </ul>
-          </HomeCard>
-          <HomeCard id="code" tall="always">
-            <CodeFeature
-              href="#"
-              title="extensions"
-              org="raycast"
-              text="Everything you need to extend Raycast."
-              lead="dot"
-              dot="#3178c6"
-              latest="Refresh the menu bar in the background"
-            />
-            <ul class="flex flex-col gap-0.5 md:gap-1">
-              <li v-for="row in ROWS.code?.slice(1)" :key="row.title">
-                <ItemRow
-                  href="#"
-                  :title="row.title"
-                  :org="row.org"
-                  lead="dot"
-                  dot="#3178c6"
-                  compact
-                />
-              </li>
-            </ul>
-          </HomeCard>
-        </div>
-      </Drawers>
+      <div class="grid gap-2 md:grid-cols-2 md:gap-4">
+        <HomeCard id="rides">
+          <RideFeature
+            href="#"
+            :id="epicRide.id"
+            :name="epicRide.name"
+            :figures="['139 mi', '18,100 ft']"
+            hilly
+            :route="epicRide.route"
+            :photo="featuredPhoto"
+          />
+          <ul class="flex flex-col gap-0.5 md:gap-1">
+            <li v-for="row in ROWS.rides?.slice(1, 4)" :key="row.title">
+              <ItemRow href="#" :title="row.title" :figure="row.text" compact />
+            </li>
+          </ul>
+        </HomeCard>
+        <HomeCard id="code">
+          <CodeFeature
+            href="#"
+            title="extensions"
+            org="raycast"
+            text="Everything you need to extend Raycast."
+            lead="dot"
+            dot="#3178c6"
+            latest="Refresh the menu bar in the background"
+          />
+          <ul class="flex flex-col gap-0.5 md:gap-1">
+            <li v-for="row in ROWS.code?.slice(1, 4)" :key="row.title">
+              <ItemRow
+                href="#"
+                :title="row.title"
+                :org="row.org"
+                lead="dot"
+                dot="#3178c6"
+                compact
+              />
+            </li>
+          </ul>
+        </HomeCard>
+      </div>
     </Variant>
   </Story>
 </template>
@@ -228,20 +169,8 @@ const Drawers = defineComponent({
 One category on the home page. A watermark of its icon sits in the heading
 band at 8%, 60px on a phone and 76px on desktop. The heading opens the route.
 
-The body is a drawer resting at a peek height, 148px on a phone and 208px on
-desktop, so every card stands the same height and the grid ends on a flat edge.
-A body that overruns the peek fades at its foot and shows a handle: a grabber
-on a phone, which a tap toggles and a drag pulls, and a chevron on desktop. A
-body that fits shows neither.
-
-The grid is two columns from the desktop breakpoint up, and an odd card out
-spans both. An open card grows down past its row while its neighbour keeps its
-resting height. Set three cards at full width to see the span, and one row to
-see a card that fits.
-
-Rides and Code lead with a feature and rest taller: 280px on a phone and 288px
-on desktop. They share the home page's first row, so both stand at that height
-and the row stays level. The featured pair shows them together. On the page, a
-featured card that lands beside a card without one rests at the taller peek
-only on a phone.
+A card shows the rows home carries whole: five for most categories, and a
+feature with three rows under it for Rides and Code. The grid is two columns
+from the desktop breakpoint up, a row's cards stretch to the taller one, and an
+odd card out spans both. Set three cards at full width to see the span.
 </docs>
