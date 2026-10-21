@@ -1,11 +1,14 @@
 // What home shows: a card per category that is on and has something to show,
 // each holding the first highlights of its route in the route's own order.
 // Every card carries five, except Rides and Code, which lead with a feature and
-// keep eight more in a drawer that pulls well past it, and Watching, whose narrow posters fit six
-// across a desktop card. A list card rests at a peek height and keeps the rows
-// past it in a drawer, so a phone carries all five too. A shelf lays its art
-// out in one row, which a phone's width fits four of, so the page hides the
-// rest there, since the server can't know the width it renders for.
+// show three rows under it, and Watching, whose narrow posters fit six across a
+// desktop card. A card shows what it carries whole, and its heading opens the
+// route for the rest. A shelf lays its art out in one row, which a phone's
+// width fits four of, so the page hides the rest there, since the server can't
+// know the width it renders for.
+//
+// Writing has a route but no card. Its posts date from 2013 and 2014, and a
+// card of them reads as recent; the introduction links the archive instead.
 import { HIGHLIGHTS, SHELF_PHONE } from "@/activity/highlights";
 import { dayShuffle } from "@/activity/shuffle";
 import { enabledCategories, type CategoryId } from "@/categories";
@@ -18,11 +21,19 @@ import type { PostRow } from "@/writing/rows";
 /** Highlights a card carries, and how many of a shelf's a phone shows. */
 export const HOME_ROWS = {
   card: HIGHLIGHTS.desktop,
-  /** The feature and the eight rows under it. */
-  featured: 9,
+  /** The feature and the three rows under it. */
+  featured: 4,
   posters: 6,
   phoneShelf: SHELF_PHONE,
 } as const;
+
+/** Categories with a route but no home card. */
+const OFF_HOME: ReadonlySet<CategoryId> = new Set(["writing"]);
+
+/** Whether a category has a card on home when it is on. */
+export function onHome(id: CategoryId): boolean {
+  return !OFF_HOME.has(id);
+}
 
 /** Each category's highlights, ranked the way its route ranks them. */
 export interface HomeSources {
@@ -70,6 +81,7 @@ export function homeCards(
   enabled: (id: CategoryId) => boolean = isEnabled,
 ): HomeCard[] {
   return enabledCategories(enabled)
+    .filter(({ id }) => onHome(id))
     .map(({ id }) => cardFor(id, sources, now))
     .filter((card) => card.items.length > 0);
 }

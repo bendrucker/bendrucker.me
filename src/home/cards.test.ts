@@ -56,13 +56,12 @@ function sources(overrides: Partial<HomeSources> = {}): HomeSources {
 const all = () => true;
 
 describe("homeCards", () => {
-  it("takes nine for a featured card, five for the rest, and six posters", () => {
+  it("takes four for a featured card, five for the rest, and six posters", () => {
     const cards = homeCards(sources(), NOW, all);
 
     expect(cards.map((c) => [c.id, c.items.length])).toEqual([
-      ["rides", 9],
+      ["rides", 4],
       ["reading", 2],
-      ["writing", 4],
       ["watching", 6],
       ["listening", 5],
     ]);
@@ -74,11 +73,17 @@ describe("homeCards", () => {
     expect(cards.map((c) => c.id)).not.toContain("code");
   });
 
+  it("gives Writing no card while it is on", () => {
+    const cards = homeCards(sources(), NOW, all);
+
+    expect(cards.map((c) => c.id)).not.toContain("writing");
+  });
+
   it("leaves out a category that is off", () => {
     const off = new Set<CategoryId>(["reading", "watching", "listening"]);
     const cards = homeCards(sources(), NOW, (id) => !off.has(id));
 
-    expect(cards.map((c) => c.id)).toEqual(["rides", "writing"]);
+    expect(cards.map((c) => c.id)).toEqual(["rides"]);
     expect(homeCredits(cards.map((c) => c.id))).toEqual([]);
   });
 
@@ -100,6 +105,6 @@ describe("homeCards", () => {
     const [ridesCard] = homeCards(sources(), NOW, (id) => id === "rides");
 
     expect(ridesCard?.id).toBe("rides");
-    expect(ridesCard?.items).toEqual(sources().rides.slice(0, 9));
+    expect(ridesCard?.items).toEqual(sources().rides.slice(0, 4));
   });
 });

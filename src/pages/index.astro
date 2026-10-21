@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import Band from "@/components/about/Band.astro";
 import CodeFeature from "@/components/parts/CodeFeature.vue";
 import HomeCard from "@/components/parts/HomeCard.vue";
 import HomeDetail from "@/components/parts/HomeDetail.vue";
@@ -8,8 +9,7 @@ import RideFeature from "@/components/parts/RideFeature.vue";
 import { KIND_ICONS } from "@/components/parts/icons";
 import PosterShelf from "@/components/media/PosterShelf.vue";
 import RecordShelf from "@/components/media/RecordShelf.vue";
-import { homeCredits, type CategoryId } from "@/categories";
-import { SITE } from "@/config";
+import { homeCredits } from "@/categories";
 import { desktopOnly, SHELF_PHONE } from "@/activity/highlights";
 import { HOME_ROWS } from "@/home/cards";
 import { loadHome } from "@/home/load";
@@ -27,34 +27,10 @@ import { RIDE_ID, toRideDetailWire } from "@/rides/detail";
 import { climbFigure, distanceFigure, fullDate } from "@/rides/format";
 import { rideHref } from "@/rides/links";
 import { isHilly } from "@/rides/rank";
-import { readingFigure } from "@/writing/rows";
 
 const { cards, features } = await loadHome();
 const credits = homeCredits(cards.map((card) => card.id));
 if (features.rides?.route) credits.push("maps");
-
-// Rides and Code lead with a feature and rest taller. Desktop raises them
-// only when they share the first row, so every row's cards stand level.
-const pairedFeatures = cards[0]?.id === "rides" && cards[1]?.id === "code";
-// Watching and Listening show only a shelf each, so when they share a row
-// that row rests shorter on desktop rather than standing over empty ground.
-const SHELVES = new Set<CategoryId>(["watching", "listening"]);
-function short(index: number) {
-  const row = index - (index % 2);
-  return (
-    cards.slice(row, row + 2).every((card) => SHELVES.has(card.id)) &&
-    cards.length > row + 1
-  );
-}
-
-// The ride's feature stands shorter than Code's on a phone, so its card rests
-// lower, leaving a row and a half under it.
-const RIDES_PHONE_PEEK = 158;
-
-function tallness(id: CategoryId) {
-  if (id !== "rides" && id !== "code") return undefined;
-  return pairedFeatures ? "always" : "phone";
-}
 
 // A shared link to an item open over the cards renders it open, as the lists
 // do. A key naming nothing leaves the cards alone, and the island takes the
@@ -99,31 +75,37 @@ const rideFigures = ride
   sourcePath="src/pages/index.astro"
 >
   <main id="main-content" class="flex-1">
+    <Band heading />
     <section
       aria-label="Introduction"
-      class="border-b border-line px-4 py-2.5 md:px-site md:py-7"
+      class="border-b border-line px-4 py-4 md:px-site md:py-7"
     >
-      <h1 class="sr-only">{SITE.title}</h1>
-      <p class="text-sm leading-normal md:text-xl">
-        Programmer, cyclist, and photographer in San Francisco.
-      </p>
+      <div class="flex max-w-prose flex-col gap-3 text-[15px] leading-relaxed md:text-lg">
+        <p>
+          I'm Ben. I write software, mostly open source in Go and TypeScript,
+          and I ride bikes around the Bay Area, where I'm president of the San
+          Francisco Cycling Club.
+        </p>
+        <p class="text-dim">
+          Below is what I've ridden and built lately. I used to write here too,
+          and those posts are in the{" "}
+          <a
+            href="/writing/"
+            class="text-foreground underline decoration-dashed underline-offset-4"
+          >
+            archive
+          </a>
+          .
+        </p>
+      </div>
     </section>
 
     <div class="flex flex-col gap-2 px-4 pt-3 pb-6 md:gap-4 md:px-site md:pt-7 md:pb-10">
       <h2 class="label-caps text-dim md:sr-only">Lately</h2>
-      <!-- Every card in a row rests at the same height, so the rows line up
-           and the grid ends on one flat edge. Rides and Code, which lead with
-           a feature, share the first row at a taller peek. An open card grows
-           down past its row and its neighbour keeps its resting height at the
-           row's top. -->
-      <div class="grid grid-cols-1 items-start gap-2 md:grid-cols-2 md:gap-4">
-        {cards.map((card, index) => (
-          <HomeCard
-            id={card.id}
-            tall={tallness(card.id)}
-            phonePeek={card.id === "rides" ? RIDES_PHONE_PEEK : undefined}
-            short={short(index)}
-          >
+      <!-- A row's cards stretch to the taller one, so the rows line up. -->
+      <div class="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
+        {cards.map((card) => (
+          <HomeCard id={card.id}>
             {card.id === "rides" && ride && (
               <RideFeature
                 href={rideHref(ride.ride.id, "imperial")}
@@ -185,15 +167,6 @@ const rideFigures = ride
                 }))}
               />
             )}
-            {card.id === "writing" && (
-              <HomeItemList
-                rows={card.items.map((post) => ({
-                  href: post.href,
-                  title: post.title,
-                  figure: readingFigure(post.minutes),
-                }))}
-              />
-            )}
             {card.id === "watching" && (
               <PosterShelf
                 client:visible
@@ -226,9 +199,3 @@ const rideFigures = ride
     />
   </main>
 </Layout>
-
-<script>
-  import { installDrawers } from "@/home/drawer";
-
-  installDrawers();
-</script>
