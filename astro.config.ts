@@ -17,9 +17,12 @@ import { isEnabled, isSwitchedOff, SITE, type CategoryEnv } from "./src/config";
 import { writingSitemapPages } from "./src/writing/sitemap";
 import { STATIC_REDIRECTS } from "./src/redirects";
 import { copyStaticAssets } from "./src/staticAssets";
+import { feedback } from "./src/feedback/integration";
 import { offCategoryIslands } from "./src/offCategoryIslands";
 
 const DEPLOY_SCOPED_CACHE = { maxAge: 3600, swr: 86400 };
+
+const { integration: feedbackIntegration, sourceTransform } = feedback();
 
 // Routes that render `noindex` while their data is still fixtures, so the
 // sitemap leaves them out too.
@@ -81,7 +84,10 @@ export default defineConfig({
         );
       },
     }),
-    vue(),
+    vue({
+      template: { compilerOptions: { nodeTransforms: [sourceTransform] } },
+    }),
+    feedbackIntegration,
   ],
   markdown: {
     processor: unified({
