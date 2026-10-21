@@ -174,14 +174,17 @@ function tickBackground(fraction: number): string {
       >
 
       <span v-if="compact" class="flex min-w-0 flex-1 flex-col gap-px">
-        <span
-          v-if="org"
-          class="line-clamp-1 text-[11px] leading-[1.3] text-dim"
-        >
-          <MarkedText :text="org" :query="query" />
-        </span>
         <span class="flex min-w-0 items-baseline gap-2">
-          <span class="line-clamp-1 max-w-full flex-none text-sm">
+          <!-- The owner prefixes the name as GitHub writes it, so a row stays
+               one line in a card with width to spare. -->
+          <span
+            v-if="org"
+            class="line-clamp-1 max-w-[40%] flex-none text-sm text-dim"
+          >
+            <MarkedText :text="org" :query="query" />
+            <span aria-hidden="true">/</span>
+          </span>
+          <span class="line-clamp-1 min-w-0 flex-none shrink text-sm">
             <MarkedText :text="title" :query="query" />
           </span>
           <span v-if="text" class="line-clamp-1 min-w-0 text-xs text-dim">
