@@ -19,12 +19,11 @@ This took an `.astro` save from about 490ms to 290ms. The handler comes from Vit
 
 ## `astro`
 
-Two changes, both in the content layer:
+The data store is written 50ms after a content change instead of 500ms. The browser reload waits on that write. A build waits on the save promise and is unaffected. In dev, each write re-serializes the whole store, so a burst of changes spaced more than 50ms apart, like a branch switch, now writes it several times where 500ms coalesced them into one.
 
-- The data store is written 50ms after a content change instead of 500ms. The browser reload waits on that write. A build waits on the save promise and is unaffected. In dev, each write re-serializes the whole store, so a burst of changes spaced more than 50ms apart, like a branch switch, now writes it several times where 500ms coalesced them into one.
-- When the data store or asset imports change, Astro sends a server environment that Vite cannot run in-process (workerd) a reload naming the changed module. Unpatched, Astro refreshes those modules only in an in-process environment. workerd picked up new content only because Tailwind's scan of the posts sent a reload that cleared every module.
+workerd doesn't need a reload to see the new store. Astro invalidates the data store in every server environment's module graph, and workerd's module runner learns of that the next time it fetches the module, which re-evaluates the content runtime on the next request.
 
-`src/styles/global.css` keeps `src/content` out of Tailwind's scan, which stops that clear-everything reload on every post save. Posts don't use utility classes, and the production CSS is byte-identical with and without the exclusion. Together these took a `.md` save from about 780ms to 310ms.
+`src/styles/global.css` keeps `src/content` out of Tailwind's scan, which stops a clear-everything reload on every post save. Posts don't use utility classes, and the production CSS is byte-identical with and without the exclusion. Together these took a `.md` save from about 780ms to 310ms.
 
 ## Maintenance
 
