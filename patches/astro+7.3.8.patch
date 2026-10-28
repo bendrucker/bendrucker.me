@@ -1,0 +1,35 @@
+diff --git a/node_modules/astro/dist/content/mutable-data-store.js b/node_modules/astro/dist/content/mutable-data-store.js
+index 569589a..0785e51 100644
+--- a/node_modules/astro/dist/content/mutable-data-store.js
++++ b/node_modules/astro/dist/content/mutable-data-store.js
+@@ -8,7 +8,7 @@ import { DATA_STORE_MANIFEST_FILE, IMAGE_IMPORT_PREFIX } from "./consts.js";
+ import { ChunkedWriter, FileWriter, serializeDataStore } from "./data-store-writer.js";
+ import { ChunkedCollectionParser, ImmutableDataStore } from "./data-store.js";
+ import { contentModuleToId } from "./utils.js";
+-const SAVE_DEBOUNCE_MS = 500;
++const SAVE_DEBOUNCE_MS = 50;
+ const MAX_DEPTH = 10;
+ /**
+ * Extends the DataStore with the ability to change entries and write them to disk.
+diff --git a/node_modules/astro/dist/content/vite-plugin-content-virtual-mod.js b/node_modules/astro/dist/content/vite-plugin-content-virtual-mod.js
+index 3120f28..8910ac3 100644
+--- a/node_modules/astro/dist/content/vite-plugin-content-virtual-mod.js
++++ b/node_modules/astro/dist/content/vite-plugin-content-virtual-mod.js
+@@ -26,6 +26,8 @@ function invalidateAssetImports(viteServer, filePath) {
+ 					environment.runner.evaluatedModules.invalidateModule(runnerModule);
+ 				}
+ 			}
++		} else if (environment.name !== "client" && modules) {
++			environment.hot.send({ type: "full-reload", triggeredBy: filePath, path: "*" });
+ 		}
+ 	}
+ }
+@@ -54,6 +56,8 @@ function invalidateDataStore(viteServer, { notifyClient = true } = {}) {
+ 			if (runnerModule) {
+ 				environment.runner.evaluatedModules.invalidateModule(runnerModule);
+ 			}
++		} else if (module) {
++			environment.hot.send({ type: "full-reload", triggeredBy: RESOLVED_DATA_STORE_VIRTUAL_ID, path: "*" });
+ 		}
+ 		// Signal the runner to clear its route cache so that getStaticPaths()
+ 		// is re-evaluated with the updated content collection data.
