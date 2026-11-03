@@ -87,7 +87,7 @@
     "eslint-plugin-oxlint": "^1.87.0",
     "eslint-plugin-vue": "^10.11.1",
     "histoire": "^1.0.0-beta.1",
-    "linguist-languages": "^9.4.0",
+    "linguist-languages": "^9.5.0",
     "opentype.js": "^2.0.0",
     "oxfmt": "^0.73.0",
     "oxlint": "^1.80.0",
