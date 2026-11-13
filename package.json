@@ -32,11 +32,11 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "14.3.4",
-    "@astrojs/markdown-remark": "7.3.2",
+    "@astrojs/cloudflare": "14.4.1",
+    "@astrojs/markdown-remark": "7.3.3",
     "@astrojs/rss": "4.0.19",
     "@astrojs/sitemap": "3.7.4",
-    "@astrojs/vue": "7.0.3",
+    "@astrojs/vue": "7.1.1",
     "@cf-wasm/resvg": "^0.4.0",
     "@cf-wasm/satori": "^0.4.2",
     "@date-fns/tz": "^1.5.0",
@@ -44,7 +44,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.5",
     "@vueuse/core": "^15.0.0",
-    "astro": "7.3.8",
+    "astro": "7.4.1",
     "cheap-ruler": "^4.1.1",
     "culori": "^4.0.2",
     "date-fns": "^4.4.0",
@@ -61,7 +61,7 @@
     "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.10",
+    "@astrojs/check": "0.9.11",
     "@astrojs/compiler-rs": "^0.5.2",
     "@histoire/plugin-vue": "^1.0.0-beta.1",
     "@iconify-json/lucide": "^1.2.146",
