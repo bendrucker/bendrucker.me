@@ -44,7 +44,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.5",
     "@vueuse/core": "^15.0.0",
-    "astro": "7.3.8",
+    "astro": "7.4.12",
     "cheap-ruler": "^4.1.1",
     "culori": "^4.0.2",
     "date-fns": "^4.4.0",
